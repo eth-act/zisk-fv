@@ -4,6 +4,7 @@ import ZiskFv.Compliance.TraceLevelExport.ProgramDecode
 import ZiskFv.Compliance.TraceLevelExport.RawProgramDecode
 import ZiskFv.Compliance.TraceLevelExport.RegisterFileAgreement
 import ZiskFv.Compliance.TraceLevelExport.RegisterCoverageBridge
+import ZiskFv.Compliance.TraceLevelExport.PureInputs
 import ZiskFv.AirsClean.ArithTableProjections
 
 /-!
@@ -2047,7 +2048,9 @@ theorem root_soundness
             (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩) :=
           stepSound_of_evidence ziskTrace (chainedSailTrace ziskStep init) ⟨j, hj⟩
             (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩)
-            (inputsAgree_of_pcBridge ⟨j, hj⟩ h_pc_j (ziskStep ⟨j, hj⟩) (inputsAgree ⟨j, hj⟩))
+            (inputsAgree_of_pcBridge ⟨j, hj⟩ h_pc_j (ziskStep ⟨j, hj⟩)
+              (pureInputsOfRegAgree ziskStep rowDecodes init ⟨j, hj⟩ h_reg_j
+                (inputsAgree ⟨j, hj⟩)))
             (memEvidence_of_bootSeed bootSeed ⟨j, hj⟩) (hAvoidKnownBugs ⟨j, hj⟩)
             (laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init j hj
               h_reg_j h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range)
@@ -2059,7 +2062,8 @@ theorem root_soundness
   obtain ⟨h_reg_i, h_pc_i⟩ := combined i.val i.isLt
   exact stepSound_of_evidence ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)
     (rowDecodes i)
-    (inputsAgree_of_pcBridge i h_pc_i (ziskStep i) (inputsAgree i))
+    (inputsAgree_of_pcBridge i h_pc_i (ziskStep i)
+      (pureInputsOfRegAgree ziskStep rowDecodes init i h_reg_i (inputsAgree i)))
     (memEvidence_of_bootSeed bootSeed i) (hAvoidKnownBugs i)
     (laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init i.val i.isLt
       h_reg_i h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range)
