@@ -188,6 +188,26 @@ private theorem full_component_identifiers_nodup
   simp only [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal,
     Ensemble.allTables, SoundEnsemble.addTable_tables,
     SoundEnsemble.addFinishedChannel_tables]
+  -- Project away the ROM-dependent circuits and the verifier's ensemble before
+  -- kernel evaluation: only their concrete names and raw widths matter here.
+  change
+    ([("anonymous", 0),
+      ("RegisterBoundary", 3),
+      ("MemAlignReadByte", ZiskFv.AirsClean.MemAlignReadByte.component.rawWidth),
+      ("MemAlignByte", ZiskFv.AirsClean.MemAlignByte.component.rawWidth),
+      ("MemAlignWithMemBusAndMemAlignRomAndRanges", 30),
+      ("MemAlignRangeSlice107", ZiskFv.AirsClean.MemAlignRangeSlice.component.rawWidth),
+      ("MemAlignRomSlice133", ZiskFv.AirsClean.MemAlignRomSlice.component.rawWidth),
+      ("MemWithDualMemBusAndRange", 17),
+      ("SpecifiedRangesSlice102", ZiskFv.AirsClean.RegisterStepRangeSlice.component.rawWidth),
+      ("SpecifiedRangesSlice103", ZiskFv.AirsClean.SpecifiedRangesSlice.component.rawWidth),
+      ("ArithDiv", ZiskFv.AirsClean.ArithDiv.component.rawWidth),
+      ("ArithComplete", ZiskFv.AirsClean.ArithMul.componentComplete.rawWidth),
+      ("BinaryExtensionWithStaticTableAndShiftRange",
+        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rawWidth),
+      ("BinaryWithStaticBinaryTable", ZiskFv.AirsClean.Binary.staticLookupComponent.rawWidth),
+      ("BinaryAdd", ZiskFv.AirsClean.BinaryAdd.component.rawWidth),
+      ("anonymous", 41)] : List (String × Nat)).Nodup
   decide
 
 /-- Positional component correspondence and the concrete ensemble's unique

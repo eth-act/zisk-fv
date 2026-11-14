@@ -44,13 +44,13 @@ theorem source_cases {raw : BitVec 32} (lowering : SuccessfulRowLowering raw) :
       ((lowering.rows.row_count = 1#u32 ∧
           lowering.rows.first_row = terminal.row ∧
           ((ZiskFv.Compliance.Decode.toU32 raw &&& 127#u32) ≠ 103#u32 ∨
-            terminal.decode.imm % 4#i32 = .ok 0#i32)) ∨
+            (terminal.decode.imm % 4#i32) = (Result.ok (0#i32) : Result Std.I32))) ∨
         (lowering.rows.row_count = 2#u32 ∧
           (ZiskFv.Compliance.Decode.toU32 raw &&& 127#u32) = 103#u32 ∧
           ∃ (remainder : Std.I32)
               (input : riscv2zisk_single_row.Rv64imLoweringInput)
               (ctx : riscv2zisk_context.Riscv2ZiskContext),
-            terminal.decode.imm % 4#i32 = .ok remainder ∧
+            (terminal.decode.imm % 4#i32) = (Result.ok remainder : Result Std.I32) ∧
             remainder ≠ 0#i32 ∧
             riscv2zisk_single_row.Rv64imLoweringInput.new 0#u64
               terminal.decode.rd terminal.decode.rs1 terminal.decode.rs2
@@ -80,7 +80,9 @@ theorem source_cases {raw : BitVec 32} (lowering : SuccessfulRowLowering raw) :
           Or.inr ⟨rfl, htag, remainder, input, ctx, hrem, ?_, hinput, hctx, hfirst⟩⟩
         simpa using hnonzero
       · rename_i hzero
-        have hremzero : remainder = 0#i32 := by simpa using hzero
+        have hremzero : remainder = 0#i32 := by
+          apply IScalar.val_eq_imp
+          simpa using hzero
         rw [Result.ok.injEq] at hsource
         subst rows
         exact ⟨terminal, hterminal, haccepted, rfl, rfl,
@@ -134,11 +136,13 @@ remainder computation, not target-PC alignment or an opcode-based estimate. -/
 theorem jalr_width_one_iff_aligned {raw : BitVec 32}
     (lowering : SuccessfulRowLowering raw)
     (hjalr : (ZiskFv.Compliance.Decode.toU32 raw &&& 127#u32) = 103#u32) :
-    lowering.width = 1 ↔ lowering.rows.decode.imm % 4#i32 = .ok 0#i32 := by
+    lowering.width = 1 ↔
+      (lowering.rows.decode.imm % 4#i32) = (Result.ok (0#i32) : Result Std.I32) := by
   obtain ⟨terminal, _, _, hdecode, _, hcases⟩ := lowering.source_cases
   rw [hdecode]
   rcases hcases with ⟨hcount, _, hreason⟩ | ⟨hcount, _, rem, _, _, hrem, hne, _⟩
-  · have haligned : terminal.decode.imm % 4#i32 = .ok 0#i32 :=
+  · have haligned :
+        (terminal.decode.imm % 4#i32) = (Result.ok (0#i32) : Result Std.I32) :=
       hreason.resolve_left (fun hnon => hnon hjalr)
     have hwidth : lowering.width = 1 := congrArg UScalar.val hcount
     exact ⟨fun _ => haligned, fun _ => hwidth⟩
@@ -155,7 +159,8 @@ theorem jalr_width_of_remainder {raw : BitVec 32}
     (lowering : SuccessfulRowLowering raw)
     (hjalr : (ZiskFv.Compliance.Decode.toU32 raw &&& 127#u32) = 103#u32)
     (remainder : Std.I32)
-    (hrem : lowering.rows.decode.imm % 4#i32 = .ok remainder) :
+    (hrem : (lowering.rows.decode.imm % 4#i32) =
+      (Result.ok remainder : Result Std.I32)) :
     lowering.width = if remainder = 0#i32 then 1 else 2 := by
   by_cases hz : remainder = 0#i32
   · rw [if_pos hz]
@@ -245,8 +250,11 @@ theorem jalr_first_pins_of_width_two {raw : BitVec 32}
     · simp [hnone, core.option.Option.unwrap, Result.ofOption] at hfirst
     · simp only [hsome, core.option.Option.unwrap, Result.ofOption] at hfirst
       have heq : first = lowering.rows.first_row := Result.ok.inj hfirst
-      refine ⟨{ rom_address := 0#u64, rd := terminal.decode.rd,
-        rs1 := terminal.decode.rs1, rs2 := terminal.decode.rs2,
+      refine ⟨{
+        rom_address := 0#u64
+        rd := terminal.decode.rd
+        rs1 := terminal.decode.rs1
+        rs2 := terminal.decode.rs2
         imm := terminal.decode.imm }, ?_, ?_, ?_, ?_⟩
       · exact congrArg (fun d => d.rd) hdecode.symm
       · exact congrArg (fun d => d.rs1) hdecode.symm
@@ -346,7 +354,10 @@ private theorem sourceJalrTwo_exists :
     rw [hctx]
     rfl
   rcases hpins with ⟨hrem, _⟩ | ⟨rem, hrem, hne, first, last, hfirst, hlast, _⟩
-  · have htwo : input.imm % 4#i32 = .ok 2#i32 := rfl
+  · have htwo : (input.imm % 4#i32) = (Result.ok (2#i32) : Result Std.I32) := by
+      change IScalar.rem (2#i32) (4#i32) = _
+      norm_num [IScalar.rem]
+      decide
     rw [htwo] at hrem
     have hbad : (2#i32 : Std.I32) = 0#i32 := Result.ok.inj hrem
     exact False.elim ((by decide : (2#i32 : Std.I32) ≠ 0#i32) hbad)
@@ -378,13 +389,35 @@ private theorem sourceJalrTwo_exists :
       rw [hterminal]
       simp only [terminal, hdextrd, hdextrs1, hdextrs2, hdextimm,
         lift, Bind.bind, bind_ok]
+      have htag :
+          (ZiskFv.Compliance.Decode.toU32 (0x00208067#32) &&& 127#u32) =
+            103#u32 := by decide
+      have hremDecoded :
+          (decoded.imm % 4#i32) = (Result.ok rem : Result Std.I32) := by
+        simpa only [input] using hrem
+      have hremval : rem.val ≠ 0 := by
+        intro hz
+        apply hne
+        apply IScalar.val_eq_imp
+        simpa using hz
+      have hnonzero : (rem != 0#i32) = true := by
+        simpa using hremval
+      have hinputNew :
+          riscv2zisk_single_row.Rv64imLoweringInput.new 0#u64
+            decoded.rd decoded.rs1 decoded.rs2 decoded.imm = .ok input := rfl
+      simp only [htag, if_true, hremDecoded, bind_ok, Bind.bind,
+        hnonzero, hinputNew]
       change (do
         let ctx' ←
           riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
             defCtx input .Jalr false
         let first' ← core.option.Option.unwrap ctx'.extract_first_inst
-        .ok ({ accepted := true, decode := dext, row_count := 2#u32,
-          first_row := first', last_row := lastRow } :
+        .ok ({
+          accepted := true
+          decode := dext
+          row_count := 2#u32
+          first_row := first'
+          last_row := lastRow } :
           aeneas_extract.Rv64imTranspileRowsExtract)) = .ok rows
       rw [hlower]
       simp only [Bind.bind, hfirst, core.option.Option.unwrap, Result.ofOption, bind_ok]
@@ -450,7 +483,8 @@ private theorem sourceAddiOne_exists :
       (ZiskFv.Compliance.Decode.toU32 (0x00000013#32)) = .ok rows := by
     unfold aeneas_extract.extract_transpile_rv64im_rows_raw
     rw [hterminal]
-    change .ok rows = .ok rows
+    change (Result.ok rows : Result aeneas_extract.Rv64imTranspileRowsExtract) =
+      (Result.ok rows : Result aeneas_extract.Rv64imTranspileRowsExtract)
     rfl
   exact ⟨⟨rows, hrows, rfl⟩, rfl⟩
 
