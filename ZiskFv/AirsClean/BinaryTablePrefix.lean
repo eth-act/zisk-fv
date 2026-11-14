@@ -62,18 +62,16 @@ theorem extensionWidth (table : Table FGL)
 theorem binaryPrefix_bound (table : Table FGL)
     (hc : table.component = BinaryTableSlice.sourceComponent) :
     table.length ≤ BinaryTable.tableSize := by
-  have hfixed : table.component.fixedColumns = some BinaryTableSlice.sourceFixedColumns := by
-    rw [hc]
-    rfl
-  exact table.fixed_domain _ hfixed
+  have hdomain := table.fixed_domain
+  rewrite [hc] at hdomain
+  exact hdomain BinaryTableSlice.sourceFixedColumns rfl
 
 theorem extensionPrefix_bound (table : Table FGL)
     (hc : table.component = BinaryExtensionTableSlice.sourceComponent) :
     table.length ≤ BinaryExtensionTable.tableSize := by
-  have hfixed : table.component.fixedColumns = some BinaryExtensionTableSlice.sourceFixedColumns := by
-    rw [hc]
-    rfl
-  exact table.fixed_domain _ hfixed
+  have hdomain := table.fixed_domain
+  rewrite [hc] at hdomain
+  exact hdomain BinaryExtensionTableSlice.sourceFixedColumns rfl
 
 /-- Both target sources use one physical witness. The other three target
 sources and every unrelated physical raw cell retain their base values. -/
@@ -132,12 +130,15 @@ theorem binaryPrefix_materialized (base : Witness FGL) (binary extension : Table
     (he : extension.component = BinaryExtensionTableSlice.sourceComponent) :
     binary.table = (binaryProviderTable (reifyPrefixes base binary extension hb he)
       binary.data).table.take binary.length := by
-  have hfixed : binary.component.fixedColumns = some BinaryTableSlice.sourceFixedColumns := by
-    rw [hb]
+  have hmaterialized : binary.table = binary.rawRows.mapIdx
+      (fun index row => BinaryTableSlice.sourceFixedColumns.materialize index row) := by
+    unfold Table.table
+    rewrite [hb]
     rfl
-  rw [Table.table, hfixed, binaryProviderTable_materialized]
+  rw [hmaterialized, binaryProviderTable_materialized]
   apply List.ext_getElem
-  · simp [Nat.min_eq_left (binaryPrefix_bound binary hb)]
+  · simp only [List.length_mapIdx, List.length_take, List.length_ofFn,
+      Nat.min_eq_left (binaryPrefix_bound binary hb)]
   · intro index hi hi'
     have hindex : index < binary.length := by simpa only [List.length_mapIdx] using hi
     simpa only [List.getElem_mapIdx, List.getElem_take, List.getElem_ofFn] using
@@ -148,12 +149,15 @@ theorem extensionPrefix_materialized (base : Witness FGL) (binary extension : Ta
     (he : extension.component = BinaryExtensionTableSlice.sourceComponent) :
     extension.table = (extensionProviderTable (reifyPrefixes base binary extension hb he)
       extension.data).table.take extension.length := by
-  have hfixed : extension.component.fixedColumns = some BinaryExtensionTableSlice.sourceFixedColumns := by
-    rw [he]
+  have hmaterialized : extension.table = extension.rawRows.mapIdx
+      (fun index row => BinaryExtensionTableSlice.sourceFixedColumns.materialize index row) := by
+    unfold Table.table
+    rewrite [he]
     rfl
-  rw [Table.table, hfixed, extensionProviderTable_materialized]
+  rw [hmaterialized, extensionProviderTable_materialized]
   apply List.ext_getElem
-  · simp [Nat.min_eq_left (extensionPrefix_bound extension he)]
+  · simp only [List.length_mapIdx, List.length_take, List.length_ofFn,
+      Nat.min_eq_left (extensionPrefix_bound extension he)]
   · intro index hi hi'
     have hindex : index < extension.length := by simpa only [List.length_mapIdx] using hi
     simpa only [List.getElem_mapIdx, List.getElem_take, List.getElem_ofFn] using
@@ -165,7 +169,9 @@ theorem binaryPrefix_interactionsWith (base : Witness FGL) (binary extension : T
     binary.interactionsWith BinaryTableChannel.toRaw =
       (binaryInteractions (reifyPrefixes base binary extension hb he)).take binary.length := by
   have hp := BinaryTableSlice.sourceComponent_interactionsWith
-  have hprefix : binary.component.operations.interactionsWith BinaryTableChannel.toRaw = _ := by
+  have hprefix : binary.component.operations.interactionsWith BinaryTableChannel.toRaw =
+      [((BinaryTableChannel.emitted BinaryTableSlice.sourceComponent.rowInputVar.multiplicity
+        BinaryTableSlice.sourceComponent.rowInputVar.message).toRaw)] := by
     simpa only [hb] using hp
   have hfull := hp
   change (binaryProviderTable (reifyPrefixes base binary extension hb he) binary.data).component.operations.interactionsWith
@@ -181,7 +187,10 @@ theorem extensionPrefix_interactionsWith (base : Witness FGL) (binary extension 
     extension.interactionsWith BinaryExtensionTableChannel.toRaw =
       (extensionInteractions (reifyPrefixes base binary extension hb he)).take extension.length := by
   have hp := BinaryExtensionTableSlice.sourceComponent_interactionsWith
-  have hprefix : extension.component.operations.interactionsWith BinaryExtensionTableChannel.toRaw = _ := by
+  have hprefix : extension.component.operations.interactionsWith BinaryExtensionTableChannel.toRaw =
+      [((BinaryExtensionTableChannel.emitted
+        BinaryExtensionTableSlice.sourceComponent.rowInputVar.multiplicity
+        BinaryExtensionTableSlice.sourceComponent.rowInputVar.message).toRaw)] := by
     simpa only [he] using hp
   have hfull := hp
   change (extensionProviderTable (reifyPrefixes base binary extension hb he) extension.data).component.operations.interactionsWith

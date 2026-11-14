@@ -78,7 +78,7 @@ theorem consumedSourceRequests_balanceOf {n : Nat} (channel : Channel FGL Messag
       consumedSourceRequests channel row rest) message = _
     rw [balanceOf_cons, ih]
     by_cases h : (toElements (row index)).toArray = message <;>
-      simp [Channel.pushedIfValue, h, neg_add]
+      simp [Channel.pushedIfValue, h, neg_add, add_comm]
 
 /-- Per-message balance of a real full-domain source multiplicity witness and
     its negative requests. The separate count bound is stated explicitly. -/
