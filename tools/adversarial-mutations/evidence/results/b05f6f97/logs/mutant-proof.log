@@ -1,0 +1,548 @@
+argv: ["nix", "--extra-experimental-features", "nix-command flakes", "develop", "--no-write-lock-file", "/home/cody/zisk-fv-closure-mutation", "-c", "lake", "build", "ZiskFv.AirsClean.Main.Wiring", "--log-level=warning"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+⚠ [8081/8083] Replayed ZiskFv.AirsClean.RegisterBoundary
+warning: ZiskFv/AirsClean/RegisterBoundary.lean:137:8: This simp argument is unused:
+  reloadDistanceExpr
+
+Hint: Omit it from the simp argument list.
+  simp [̵r̵e̵l̵o̵a̵d̵D̵i̵s̵t̵a̵n̵c̵e̵E̵x̵p̵r̵,̵ ̵r̵e̵l̵o̵a̵d̵D̵i̵s̵t̵a̵n̵c̵e̵,̵[̲r̲e̲l̲o̲a̲d̲D̲i̲s̲t̲a̲n̲c̲e̲,̲ circuit_norm, sub_eq_add_neg, ProvableStruct.eval_eq_eval,
+  ̲  ̲ ̲ ̲ProvableStruct.eval, ProvableStruct.fromComponents, ProvableStruct.components,
+  ̲  ̲ ̲ ̲ProvableStruct.toComponents, ProvableStruct.eval.go]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: ZiskFv/AirsClean/RegisterBoundary.lean:366:19: This simp argument is unused:
+  List.mem_singleton
+
+Hint: Omit it from the simp argument list.
+  simp only [component, circuit, Component.exposedChannels, expose, List.mem_cons, L̵i̵s̵t̵.̵m̵e̵m̵_̵s̵i̵n̵g̵l̵e̵t̵o̵n̵,̵ ̵List.map_cons,
+  ̲  ̲ ̲ ̲List.map_nil, List.cons_append, List.nil_append]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: ZiskFv/AirsClean/RegisterBoundary.lean:381:19: This simp argument is unused:
+  List.mem_singleton
+
+Hint: Omit it from the simp argument list.
+  simp only [component, circuit, Component.exposedChannels, expose, List.mem_cons, L̵i̵s̵t̵.̵m̵e̵m̵_̵s̵i̵n̵g̵l̵e̵t̵o̵n̵,̵ ̵List.map_cons,
+  ̲  ̲ ̲ ̲List.map_nil, List.cons_append, List.nil_append]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+✔ [8082/8083] Built Extraction.LookupWiring (10s)
+✖ [8083/8083] Building ZiskFv.AirsClean.Main.Wiring (23s)
+trace: .> LEAN_PATH=/home/cody/zisk-fv-closure-mutation/.lake/packages/Cli/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/batteries/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/Qq/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/aesop/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/proofwidgets/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/importGraph/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/LeanSearchClient/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/plausible/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/mathlib/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/build/sail-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/build/clean-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/build/aeneas-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/repl/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/build/lib/lean /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean --tstack=400000 /home/cody/zisk-fv-closure-mutation/ZiskFv/AirsClean/Main/Wiring.lean -o /home/cody/zisk-fv-closure-mutation/.lake/build/lib/lean/ZiskFv/AirsClean/Main/Wiring.olean -i /home/cody/zisk-fv-closure-mutation/.lake/build/lib/lean/ZiskFv/AirsClean/Main/Wiring.ilean -c /home/cody/zisk-fv-closure-mutation/.lake/build/ir/ZiskFv/AirsClean/Main/Wiring.c --setup /home/cody/zisk-fv-closure-mutation/.lake/build/ir/ZiskFv/AirsClean/Main/Wiring.setup.json --json
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨0, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨0, ⋯⟩)
+
+case «0»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨0, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨0, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨1, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨1, ⋯⟩)
+
+case «1»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨1, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨1, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨2, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨2, ⋯⟩)
+
+case «2»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨2, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨2, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨3, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨3, ⋯⟩)
+
+case «3»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨3, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨3, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨4, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨4, ⋯⟩)
+
+case «4»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨4, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨4, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨5, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨5, ⋯⟩)
+
+case «5»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨5, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨5, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨6, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨6, ⋯⟩)
+
+case «6»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨6, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨6, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨7, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨7, ⋯⟩)
+
+case «7»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨7, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨7, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨8, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨8, ⋯⟩)
+
+case «8»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨8, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨8, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨9, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨9, ⋯⟩)
+
+case «9»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨9, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨9, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨10, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨10, ⋯⟩)
+
+case «10»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨10, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨10, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨11, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨11, ⋯⟩)
+
+case «11»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨11, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨11, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨12, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨12, ⋯⟩)
+
+case «12»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨12, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨12, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨13, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨13, ⋯⟩)
+
+case «13»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨13, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨13, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨14, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨14, ⋯⟩)
+
+case «14»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨14, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨14, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨15, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨15, ⋯⟩)
+
+case «15»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨15, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨15, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨16, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨16, ⋯⟩)
+
+case «16»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨16, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨16, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨17, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨17, ⋯⟩)
+
+case «17»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨17, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨17, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨18, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨18, ⋯⟩)
+
+case «18»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨18, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨18, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨19, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨19, ⋯⟩)
+
+case «19»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨19, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨19, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨20, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨20, ⋯⟩)
+
+case «20»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨20, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨20, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨21, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨21, ⋯⟩)
+
+case «21»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨21, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨21, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨22, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨22, ⋯⟩)
+
+case «22»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨22, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨22, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨23, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨23, ⋯⟩)
+
+case «23»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨23, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨23, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨24, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨24, ⋯⟩)
+
+case «24»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨24, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨24, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨25, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨25, ⋯⟩)
+
+case «25»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨25, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨25, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨26, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨26, ⋯⟩)
+
+case «26»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨26, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨26, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨27, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨27, ⋯⟩)
+
+case «27»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨27, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨27, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨28, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨28, ⋯⟩)
+
+case «28»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨28, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨28, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨29, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨29, ⋯⟩)
+
+case «29»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨29, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨29, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:463:44: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨30, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨30, ⋯⟩)
+
+case «30»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨30, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨30, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨0, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨0, ⋯⟩)
+
+case «0»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨0, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨0, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨1, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨1, ⋯⟩)
+
+case «1»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨1, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨1, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨2, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨2, ⋯⟩)
+
+case «2»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨2, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨2, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨3, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨3, ⋯⟩)
+
+case «3»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨3, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨3, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨4, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨4, ⋯⟩)
+
+case «4»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨4, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨4, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨5, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨5, ⋯⟩)
+
+case «5»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨5, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨5, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨6, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨6, ⋯⟩)
+
+case «6»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨6, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨6, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨7, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨7, ⋯⟩)
+
+case «7»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨7, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨7, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨8, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨8, ⋯⟩)
+
+case «8»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨8, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨8, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨9, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨9, ⋯⟩)
+
+case «9»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨9, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨9, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨10, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨10, ⋯⟩)
+
+case «10»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨10, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨10, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨11, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨11, ⋯⟩)
+
+case «11»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨11, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨11, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨12, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨12, ⋯⟩)
+
+case «12»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨12, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨12, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨13, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨13, ⋯⟩)
+
+case «13»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨13, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨13, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨14, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨14, ⋯⟩)
+
+case «14»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨14, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨14, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨15, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨15, ⋯⟩)
+
+case «15»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨15, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨15, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨16, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨16, ⋯⟩)
+
+case «16»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨16, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨16, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨17, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨17, ⋯⟩)
+
+case «17»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨17, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨17, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨18, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨18, ⋯⟩)
+
+case «18»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨18, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨18, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨19, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨19, ⋯⟩)
+
+case «19»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨19, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨19, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨20, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨20, ⋯⟩)
+
+case «20»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨20, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨20, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨21, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨21, ⋯⟩)
+
+case «21»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨21, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨21, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨22, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨22, ⋯⟩)
+
+case «22»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨22, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨22, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨23, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨23, ⋯⟩)
+
+case «23»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨23, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨23, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨24, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨24, ⋯⟩)
+
+case «24»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨24, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨24, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨25, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨25, ⋯⟩)
+
+case «25»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨25, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨25, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨26, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨26, ⋯⟩)
+
+case «26»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨26, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨26, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨27, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨27, ⋯⟩)
+
+case «27»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨27, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨27, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨28, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨28, ⋯⟩)
+
+case «28»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨28, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨28, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨29, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨29, ⋯⟩)
+
+case «29»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨29, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨29, ⋯⟩)
+error: ZiskFv/AirsClean/Main/Wiring.lean:466:26: Tactic `rfl` failed: The left-hand side
+  (reloadRangeHint ((fun i ↦ i) ⟨30, ⋯⟩)).slots
+is not definitionally equal to the right-hand side
+  expectedReloadRangeSlots ((fun i ↦ i) ⟨30, ⋯⟩)
+
+case «30»
+rows : ReloadRows
+⊢ (reloadRangeHint ((fun i ↦ i) ⟨30, ⋯⟩)).slots = expectedReloadRangeSlots ((fun i ↦ i) ⟨30, ⋯⟩)
+warning: ZiskFv/AirsClean/Main/Wiring.lean:475:13: This simp argument is unused:
+  sourceReloadDistanceExpr
+
+Hint: Omit it from the simp argument list.
+  simp only [s̵o̵u̵r̵c̵e̵R̵e̵l̵o̵a̵d̵D̵i̵s̵t̵a̵n̵c̵e̵E̵x̵p̵r̵,̵ ̵ZiskFv.AirsClean.RegisterBoundary.reloadDistanceExpr,
+      ZiskFv.AirsClean.RegisterBoundary.reloadEndTimestamp, Expression.eval]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+warning: ZiskFv/AirsClean/Main/Wiring.lean:475:39: This simp argument is unused:
+  ZiskFv.AirsClean.RegisterBoundary.reloadDistanceExpr
+
+Hint: Omit it from the simp argument list.
+  simp only [sourceReloadDistanceExpr, Z̵i̵s̵k̵F̵v̵.̵A̵i̵r̵s̵C̵l̵e̵a̵n̵.̵R̵e̵g̵i̵s̵t̵e̵r̵B̵o̵u̵n̵d̵a̵r̵y̵.̵r̵e̵l̵o̵a̵d̵D̵i̵s̵t̵a̵n̵c̵e̵E̵x̵p̵r̵,̵ZiskFv.AirsClean.RegisterBoundary.reloadEndTimestamp,
+      Expression.eval]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+error: Lean exited with code 1
+Some required targets logged failures:
+- ZiskFv.AirsClean.Main.Wiring
+error: build failed

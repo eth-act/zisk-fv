@@ -75,6 +75,15 @@ proof path still starts from clean baseline artifacts. A green proof alone
 remains `fidelity`, a miss; timeouts, missing inputs, and unrelated gate errors
 are infrastructure. Full merge-baseline proof/trust gates remain required.
 
+Round 54 changes the actual `main.pil:447` reload distance from `-1` to `-2`.
+The observed control has a green baseline, successful source compilation and
+independent round trip, and changes exactly all 31 generated checks `49+3*k`.
+The real `Main.Wiring.reloadRangeWiring` rejects both named-slot proofs for
+every register (62 `rfl` failures). Its retained source/log provenance is under
+`evidence/results/b05f6f97/`; this is a source-wiring proof detection, not a
+claim that first-segment timestamp zero is invalid or that the remaining
+Main finalizer/provider-composition work is complete.
+
 Round 50 uses `tools/virtual-tables/check.py` on the clean and mutant
 `MemAlignRom.tsv` exports. The gate evaluates the actual accepted-model static
 provider, including all six columns, physical indices, and reset-padding rows.

@@ -18,7 +18,7 @@ def divSpinOpBusTables1 : List (Table FGL) :=
   [emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component,
     emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component,
     emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus,
-    registerStepRangeRowsTable [2, 6, 5, 2, 10],
+    registerStepRangeRowsTable ([2, 6, 5, 2, 10] ++ registerBoundaryRangeValues divSpinBoundaryRows),
     emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component]
 
 def divSpinOpBusTables2 : List (Table FGL) :=

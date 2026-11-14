@@ -189,6 +189,10 @@ solver. `nix/test.nix` regenerates and Lean-compiles the module, checks the
 kernel examples are present, and asserts the Mem `AirValue(11)` raw padding
 survives.
 
+`link_Main_reloadRange : Fin 31 → ValidatedLink` indexes c49+3k in source
+order. It is separate from `link_Main_reload`, which indexes the corresponding
+memory reload messages. Both are generated only after exact template checks.
+
 ## Clean `Air.Flat.Component` emission (`clean-component`, C0g)
 
 The `clean-component` subcommand emits the **Clean `Air.Flat.Component`

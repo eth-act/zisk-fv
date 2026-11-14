@@ -37,5 +37,6 @@
   "48": ["MainMirrorWeld"],
   "49": ["MainMirrorWeld"],
   "50": ["MemAlignRom"] ,
-  "51": ["ArithMirrorWeld"]
+  "51": ["ArithMirrorWeld"],
+  "54": ["ZiskFv/AirsClean/Main/Wiring.lean"]
 }

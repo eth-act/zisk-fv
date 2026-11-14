@@ -308,6 +308,16 @@ theorem sdLdBoundaryRows_enumerated :
   interval_cases i <;> rfl
 
 
+set_option maxRecDepth 10000 in
+/-- All 31 source447 distances in this existing witness have actual 24-bit provider rows. -/
+theorem sdLdBoundaryRangeValues_spec :
+    ∀ v ∈ registerBoundaryRangeValues sdLdBoundaryRows,
+      ZiskFv.AirsClean.RangeTables.rangeTable24.Spec v := by
+  change ∀ v ∈ registerBoundaryRangeValues sdLdBoundaryRows, v.val < 2 ^ 24
+  letI := List.decidableBAll (fun v : FGL => v.val < 2 ^ 24)
+    (registerBoundaryRangeValues sdLdBoundaryRows)
+  decide
+
 def sdLdBoundaryTable : Air.Flat.Table FGL :=
   registerBoundaryRowsTableOf sdLdBoundaryRows sdLdBoundaryRows_length
 
@@ -878,7 +888,7 @@ def sdLdTables : List (Table FGL) :=
   -- bus-102: ten of the twenty-four pulls are active. Row 1's store (2); rows 2 and 3 each
   -- read a and write c one step on (1 each); row 4's store (14); the SD row's a and b (5, 2);
   -- the LD row's a and store (3, 22). Both JAL rows emit all three at multiplicity 0.
-  , sdLdTableWithData (registerStepRangeRowsTable [2, 1, 1, 1, 1, 14, 5, 2, 3, 22])
+  , sdLdTableWithData (registerStepRangeRowsTable ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] ++ registerBoundaryRangeValues sdLdBoundaryRows))
   , sdLdSpecifiedRangesTable
   , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component)
   , sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete)
@@ -978,7 +988,7 @@ private theorem sdLdBinaryExtensionTableWithData_constraints :
 
 private theorem sdLdRegisterStepRangeTableWithData_constraints :
     (sdLdTableWithData
-      (registerStepRangeRowsTable [2, 1, 1, 1, 1, 14, 5, 2, 3, 22])).Constraints := by
+      (registerStepRangeRowsTable ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] ++ registerBoundaryRangeValues sdLdBoundaryRows))).Constraints := by
   have h_range :
       ∀ v ∈ ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] : List FGL),
         ZiskFv.AirsClean.RangeTables.rangeTable24.Spec v := by
@@ -986,7 +996,12 @@ private theorem sdLdRegisterStepRangeTableWithData_constraints :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
     rcases hv with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       simp [AirsClean.RangeTables.rangeTable24, AirsClean.RangeTables.rangeStaticTable]
-  exact registerStepRangeRowsTableWithData_constraints _ sdLdMemData h_range
+  apply registerStepRangeRowsTableWithData_constraints _ sdLdMemData
+  intro v hv
+  rcases (List.mem_append (s := ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] : List FGL))
+      (t := registerBoundaryRangeValues sdLdBoundaryRows)).mp hv with hv | hv
+  · exact h_range v hv
+  · exact sdLdBoundaryRangeValues_spec v hv
 
 private theorem sdLdEmptyTableWithData_constraints (component : Component FGL) :
     (sdLdTableWithData (emptyComponentTable component)).Constraints := by
@@ -1335,8 +1350,10 @@ private theorem sdLdTables_interactionsWith_nil_of_ne_protocol
   have h_boundary :
       (sdLdTableWithData sdLdBoundaryTable).interactionsWith channel = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
-    change channel ∉ [MemBusChannel.toRaw]
-    simpa using h_mem
+    change channel ∉ [MemBusChannel.toRaw,
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    exact not_or_intro h_mem h_rsr
   have h_memTable :
       (sdLdTableWithData sdLdMemTable).interactionsWith channel = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
@@ -1366,11 +1383,12 @@ private theorem sdLdTables_interactionsWith_nil_of_ne_protocol
     exact ⟨h_mem, h_op, h_rsr⟩
   have h_stepRange :
       (sdLdTableWithData
-        (registerStepRangeRowsTable [2, 1, 1, 1, 1, 14, 5, 2, 3, 22])).interactionsWith
+        (registerStepRangeRowsTable ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] ++ registerBoundaryRangeValues sdLdBoundaryRows))).interactionsWith
           channel = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
     change channel ∉ [ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
     simpa using h_rsr
+  simp only [List.cons_append, List.nil_append] at h_stepRange
   rw [sdLdWitness_tables]
   simp [sdLdTables, h_boundary, h_memTable, h_rangeTable, h_extension, h_binaryAdd, h_main,
     h_stepRange]
@@ -1404,9 +1422,8 @@ private theorem sdLdWitness_rangeInteractions :
   have h_boundary :
       (sdLdTableWithData sdLdBoundaryTable).interactionsWith
           SpecifiedRangesSliceChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    change SpecifiedRangesSliceChannel.toRaw ∉ [MemBusChannel.toRaw]
-    simpa using h_ne_mem
+    exact ZiskFv.AirsClean.RegisterBoundary.table_interactionsWith_nil_of_names
+      rfl _ (by decide) (by decide)
   have h_extension :
       (sdLdTableWithData sdLdBinaryExtensionTable).interactionsWith
           SpecifiedRangesSliceChannel.toRaw = [] := by
@@ -1433,7 +1450,7 @@ private theorem sdLdWitness_rangeInteractions :
     simp at h_name
   have h_stepRange :
       (sdLdTableWithData
-        (registerStepRangeRowsTable [2, 1, 1, 1, 1, 14, 5, 2, 3, 22])).interactionsWith
+        (registerStepRangeRowsTable ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] ++ registerBoundaryRangeValues sdLdBoundaryRows))).interactionsWith
           SpecifiedRangesSliceChannel.toRaw = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
     change SpecifiedRangesSliceChannel.toRaw ∉ [ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
@@ -1442,6 +1459,7 @@ private theorem sdLdWitness_rangeInteractions :
     have h_name := congrArg (fun c : RawChannel FGL => c.name) h
     change "SpecifiedRangesSlice103" = "SpecifiedRangesSlice102" at h_name
     simp at h_name
+  simp only [List.cons_append, List.nil_append] at h_stepRange
   rw [sdLdWitness_tables]
   simp [sdLdTables, h_boundary, sdLdMemTable_rangeInteractions,
     sdLdSpecifiedRangesTable_rangeInteractions, h_extension, h_binaryAdd, h_main, h_stepRange]
@@ -1734,7 +1752,7 @@ private theorem sdLdWitness_opBusInteractions :
     have h_name := congrArg (fun c : RawChannel FGL => c.name) h
     simp [SpecifiedRangesSliceChannel, OpBusChannel, Channel.toRaw] at h_name
   have h_stepRangeTable :
-      (sdLdTableWithData (registerStepRangeRowsTable [2, 1, 1, 1, 1, 14, 5, 2, 3, 22])).interactionsWith
+      (sdLdTableWithData (registerStepRangeRowsTable ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] ++ registerBoundaryRangeValues sdLdBoundaryRows))).interactionsWith
           OpBusChannel.toRaw = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
     change OpBusChannel.toRaw ∉ [ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
@@ -1743,6 +1761,7 @@ private theorem sdLdWitness_opBusInteractions :
     have h_name := congrArg (fun c : RawChannel FGL => c.name) h
     change "OperationBus" = "SpecifiedRangesSlice102" at h_name
     simp at h_name
+  simp only [List.cons_append, List.nil_append] at h_stepRangeTable
   rw [sdLdWitness_tables]
   simp [sdLdTables, h_boundary, h_mem, h_ranges, h_stepRangeTable,
     sdLdBinaryExtensionTable_opBusInteractions, sdLdBinaryAddTable_opBusInteractions,
@@ -1861,7 +1880,7 @@ private theorem sdLdWitness_memBusInteractions :
       (sdLdTableWithData sdLdBinaryAddTable).interactionsWith MemBusChannel.toRaw = [] :=
     ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_memBus_nil rfl
   have h_stepRangeTable :
-      (sdLdTableWithData (registerStepRangeRowsTable [2, 1, 1, 1, 1, 14, 5, 2, 3, 22])).interactionsWith
+      (sdLdTableWithData (registerStepRangeRowsTable ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] ++ registerBoundaryRangeValues sdLdBoundaryRows))).interactionsWith
           MemBusChannel.toRaw = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
     change MemBusChannel.toRaw ∉ [ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
@@ -1870,6 +1889,7 @@ private theorem sdLdWitness_memBusInteractions :
     have h_name := congrArg (fun c : RawChannel FGL => c.name) h
     change "MemoryBus" = "SpecifiedRangesSlice102" at h_name
     simp at h_name
+  simp only [List.cons_append, List.nil_append] at h_stepRangeTable
   rw [sdLdWitness_tables]
   simp [sdLdTables, sdLdBoundaryTable_memBusInteractions,
     sdLdMemTable_memBusInteractions, sdLdMainTable_memBusInteractions, h_ranges,
@@ -2422,14 +2442,19 @@ theorem sdLdWitness_memAlignRomChannel_balanced :
 
 theorem sdLdWitness_registerStepRange_interactions :
     sdLdWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) =
-      ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] : List FGL).map registerStepRangeInteraction ++
+      sdLdBoundaryRows.map registerBoundaryRangeInteraction ++
+      (([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] : List FGL).map registerStepRangeInteraction ++
+        (registerBoundaryRangeValues sdLdBoundaryRows).map registerStepRangeInteraction ++
         sdLdMainRows.flatMap (fun row =>
           [mainARegStepInteraction row, mainBRegStepInteraction row,
-            mainCRegStepInteraction row]) := by
+            mainCRegStepInteraction row])) := by
   have h_boundary :
-      (sdLdTableWithData sdLdBoundaryTable).interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] :=
-    ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_registerStepRange_nil
-      rfl
+      (sdLdTableWithData sdLdBoundaryTable).interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+        sdLdBoundaryRows.map registerBoundaryRangeInteraction := by
+    simpa [sdLdBoundaryTable, sdLdTableWithData] using
+      registerBoundaryRowsTableOf_interactionsWith_registerStepRange sdLdBoundaryRows
+        sdLdBoundaryRows_length sdLdBoundaryRows_enumerated sdLdMemData
   have h_mem :
       (sdLdTableWithData sdLdMemTable).interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] :=
     ZiskFv.AirsClean.FullEnsemble.mem_table_interactionsWith_registerStepRange_nil rfl
@@ -2450,21 +2475,23 @@ theorem sdLdWitness_registerStepRange_interactions :
     change "SpecifiedRangesSlice102" = "SpecifiedRangesSlice103" at h_name
     simp at h_name
   have h_provider :
-      (sdLdTableWithData (registerStepRangeRowsTable [2, 1, 1, 1, 1, 14, 5, 2, 3, 22])).interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
-        ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] : List FGL).map registerStepRangeInteraction := by
-    exact registerStepRangeRowsTableWithData_interactionsWith
-      [2, 1, 1, 1, 1, 14, 5, 2, 3, 22] sdLdMemData
+      (sdLdTableWithData (registerStepRangeRowsTable ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] ++ registerBoundaryRangeValues sdLdBoundaryRows))).interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+        (([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] : List FGL) ++
+          registerBoundaryRangeValues sdLdBoundaryRows).map registerStepRangeInteraction := by
+    exact registerStepRangeRowsTableWithData_interactionsWith _ sdLdMemData
+  simp only [List.cons_append, List.nil_append] at h_provider
   rw [sdLdWitness_tables]
   simp [sdLdTables, h_boundary, h_mem, h_extension, h_add, h_ranges, h_provider,
-    sdLdMainTable_registerStepRangeInteractions]
+    sdLdMainTable_registerStepRangeInteractions, List.map_append, List.append_assoc]
 
 set_option maxRecDepth 20000 in
 /-- Bus-102 balance. Ten of the twenty-four pulls are active and the provider supplies exactly
     those ten distances; the remaining fourteen sit at multiplicity 0 and contribute nothing. -/
-theorem sdLdWitness_registerStepRangeChannel_balanced :
-    BalancedInteractions
-      (sdLdWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw)) := by
-  rw [sdLdWitness_registerStepRange_interactions]
+theorem sdLdMainRegisterStepRange_balanced :
+    BalancedInteractions (([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] : List FGL).map registerStepRangeInteraction ++
+        sdLdMainRows.flatMap (fun row =>
+          [mainARegStepInteraction row, mainBRegStepInteraction row,
+            mainCRegStepInteraction row])) := by
   refine Air.Flat.balancedInteractions_of_present ?_
     (([0, 1, 2, 3, 5, 9, 12, 13, 14, 18, 21, 22, 24, 25, 26, 28, 29, 30] : List FGL).map
       (fun v => (registerStepRangeInteraction v).msg)) ?_ ?_
@@ -2485,6 +2512,15 @@ theorem sdLdWitness_registerStepRangeChannel_balanced :
     simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false]
     rintro (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl) <;> decide
+
+theorem sdLdWitness_registerStepRangeChannel_balanced :
+    BalancedInteractions
+      (sdLdWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw)) := by
+
+  rw [sdLdWitness_registerStepRange_interactions]
+  simpa only [List.append_assoc] using
+    (registerBoundaryRange_balanced sdLdBoundaryRows (([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] : List FGL).map registerStepRangeInteraction) _
+      (by decide) sdLdMainRegisterStepRange_balanced)
 
 theorem sdLdWitness_balancedChannels : sdLdWitness.BalancedChannels := by
   refine sdLdWitness.balancedChannels_of_tables sdLdEnsemble_verifier ?_

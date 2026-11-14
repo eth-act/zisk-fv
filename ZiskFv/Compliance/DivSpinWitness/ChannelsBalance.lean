@@ -21,8 +21,10 @@ private theorem divSpinWitness_otherChannel_balanced
       (divSpinWitness.tables.flatMap (·.interactionsWith channel)) := by
   have h_boundary : divSpinBoundaryTable.interactionsWith channel = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
-    change channel ∉ [MemBusChannel.toRaw]
-    simpa using h_mem
+    change channel ∉ [MemBusChannel.toRaw,
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
+    simp only [List.mem_cons, List.not_mem_nil, or_false]
+    exact not_or_intro h_mem h_rsr
   have h_arith : divSpinArithTable.interactionsWith channel = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
     change channel ∉ [OpBusChannel.toRaw]
@@ -48,8 +50,9 @@ private theorem divSpinWitness_otherChannel_balanced
         channel = [] :=
     ZiskFv.Compliance.SingleAddWitness.emptyComponentTable_interactionsWith component channel
   have h_stepRange :
-      (registerStepRangeRowsTable [2, 6, 5, 2, 10]).interactionsWith channel = [] :=
+      (registerStepRangeRowsTable ([2, 6, 5, 2, 10] ++ registerBoundaryRangeValues divSpinBoundaryRows)).interactionsWith channel = [] :=
     registerStepRangeRowsTable_interactionsWith_of_ne _ channel h_rsr
+  simp only [List.cons_append, List.nil_append] at h_stepRange
   rw [divSpinWitness_tables]
   simp [divSpinTables, h_boundary, h_arith, h_remainder, h_binaryAdd, h_main,
     h_stepRange, h_empty]
@@ -146,19 +149,24 @@ theorem divSpinWitness_memAlignRomChannel_balanced :
 
 theorem divSpinWitness_registerStepRange_interactions :
     divSpinWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) =
-      ([2, 6, 5, 2, 10] : List FGL).map registerStepRangeInteraction ++
+      divSpinBoundaryRows.map registerBoundaryRangeInteraction ++
+      (([2, 6, 5, 2, 10] : List FGL).map registerStepRangeInteraction ++
+        (registerBoundaryRangeValues divSpinBoundaryRows).map registerStepRangeInteraction ++
         divSpinMainRows.flatMap (fun row =>
           [mainARegStepInteraction row, mainBRegStepInteraction row,
-            mainCRegStepInteraction row]) := by
+            mainCRegStepInteraction row])) := by
   have h_ne_op : ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ≠ OpBusChannel.toRaw := by
     intro h
     have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h
     change "SpecifiedRangesSlice102" = "OperationBus" at h_name
     simp at h_name
   have h_boundary :
-      divSpinBoundaryTable.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] :=
-    ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_registerStepRange_nil
-      rfl
+      divSpinBoundaryTable.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+        divSpinBoundaryRows.map registerBoundaryRangeInteraction := by
+    simpa [divSpinBoundaryTable] using
+      registerBoundaryRowsTableOf_interactionsWith_registerStepRange divSpinBoundaryRows
+        divSpinBoundaryRows_length divSpinBoundaryRows_enumerated emptyData
   have h_arith : divSpinArithTable.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
     change ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉ [OpBusChannel.toRaw]
@@ -177,16 +185,17 @@ theorem divSpinWitness_registerStepRange_interactions :
   simp [divSpinTables, h_boundary, h_arith, h_remainder, h_binaryAdd,
     ZiskFv.Compliance.SingleAddWitness.emptyComponentTable_interactionsWith,
     registerStepRangeRowsTable_interactionsWith,
-    divSpinMainTable_registerStepRangeInteractions]
+    divSpinMainTable_registerStepRangeInteractions, List.map_append, List.append_assoc]
 
 set_option maxRecDepth 8000 in
 /-- Bus-102 balance. Five of the fifteen pulls are active: each ADDI row's store (distances 2
     and 6) and all three of the DIV row's slots (5, 2, 10). The provider supplies exactly those
     five; both JAL rows emit at multiplicity 0. -/
-theorem divSpinWitness_registerStepRangeChannel_balanced :
-    BalancedInteractions
-      (divSpinWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw)) := by
-  rw [divSpinWitness_registerStepRange_interactions]
+theorem divSpinMainRegisterStepRange_balanced :
+    BalancedInteractions (([2, 6, 5, 2, 10] : List FGL).map registerStepRangeInteraction ++
+        divSpinMainRows.flatMap (fun row =>
+          [mainARegStepInteraction row, mainBRegStepInteraction row,
+            mainCRegStepInteraction row])) := by
   refine Air.Flat.balancedInteractions_of_present ?_
     (([0, 1, 2, 4, 5, 6, 10, 12, 13, 14, 16, 17, 18] : List FGL).map
       (fun v => (registerStepRangeInteraction v).msg)) ?_ ?_
@@ -205,6 +214,15 @@ theorem divSpinWitness_registerStepRangeChannel_balanced :
     simp only [List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false]
     rintro (rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl) <;> decide
+
+theorem divSpinWitness_registerStepRangeChannel_balanced :
+    BalancedInteractions
+      (divSpinWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw)) := by
+
+  rw [divSpinWitness_registerStepRange_interactions]
+  simpa only [List.append_assoc] using
+    (registerBoundaryRange_balanced divSpinBoundaryRows (([2, 6, 5, 2, 10] : List FGL).map registerStepRangeInteraction) _
+      (by decide) divSpinMainRegisterStepRange_balanced)
 
 theorem divSpinWitness_balancedChannels : divSpinWitness.BalancedChannels := by
   refine divSpinWitness.balancedChannels_of_tables divSpinEnsemble_verifier ?_

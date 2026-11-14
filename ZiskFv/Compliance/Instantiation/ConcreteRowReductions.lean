@@ -1991,6 +1991,113 @@ theorem registerBoundaryRowsTableOf_interactionsWith_memBus
   rw [Table.interactionsWith, registerBoundaryRowsTableOf_effectiveRows rows h_len h_enum]
   exact registerBoundaryRowsTableOf_interactionsWith_memBus_go rows h_len rows
 
+/-- The unconditional source447 pull, distinct from the two boundary MemBus terms. -/
+def registerBoundaryRangeInteraction (row : RegisterBoundaryRow FGL) : Interaction FGL where
+  channel := ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+  mult := -1
+  msg := (toElements (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+    (ZiskFv.AirsClean.RegisterBoundary.reloadDistance row))).toArray
+  same_size := by simp [Channel.toRaw]
+  assumeGuarantees := false
+
+/-- One actual provider row for each source reload check, including the idle registers. -/
+def registerBoundaryRangeValues (rows : List (RegisterBoundaryRow FGL)) : List FGL :=
+  rows.map ZiskFv.AirsClean.RegisterBoundary.reloadDistance
+
+theorem registerBoundaryRangeInteraction_eval_of_rowInput
+    (row : RegisterBoundaryRow FGL) (env : Environment FGL)
+    (h_input : eval env ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar = row) :
+    (((ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.emitted (-1)
+      (ZiskFv.Channels.SpecifiedRanges.registerStepMessage
+        (ZiskFv.AirsClean.RegisterBoundary.reloadDistanceExpr
+          ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar))).toRaw).eval env) =
+      registerBoundaryRangeInteraction row := by
+  exact registerStepRange_emitted_eval env _ _ _ _ rfl
+    (by rw [ZiskFv.AirsClean.RegisterBoundary.eval_reloadDistanceExpr, h_input])
+
+theorem registerBoundaryRowsTableOf_interactionsWith_registerStepRange
+    (rows : List (RegisterBoundaryRow FGL))
+    (h_len : rows.length ≤ ZiskFv.AirsClean.RegisterBoundary.registerBoundaryCapacity)
+    (h_enum : RegisterBoundaryRowsEnumerated rows) (data : ProverData FGL) :
+    { registerBoundaryRowsTableOf rows h_len with data := data }.interactionsWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+      rows.map registerBoundaryRangeInteraction := by
+  have h_rows :
+      ({ registerBoundaryRowsTableOf rows h_len with data := data } : Table FGL).table =
+        rows.map registerBoundaryRowArray :=
+    registerBoundaryRowsTableOf_effectiveRows rows h_len h_enum
+  rw [Table.interactionsWith, h_rows]
+  simp only [Operations.interactionValuesWith_eq_map, registerBoundaryRowsTableOf,
+    ZiskFv.AirsClean.RegisterBoundary.component_interactionsWith_registerStepRange,
+    List.flatMap_map, List.map_cons, List.map_nil]
+  rw [← List.map_eq_flatMap]
+  apply List.map_congr_left
+  intro row _
+  apply registerBoundaryRangeInteraction_eval_of_rowInput
+  simpa [registerBoundaryRowsTableOf, registerBoundaryRowArray, Table.environment,
+    Environment.fromInput] using
+      ProvableType.eval_fromInput_varFromOffset_zero row data
+
+/-- Source447's upper-range obligation is derived from the same accepted ensemble/provider as
+    Main's descent checks; no range assumption is supplied by a boundary-row caller. -/
+theorem rangeTable24_spec_reloadDistance_of_boundaryRow
+    {length : ℕ} {program : ZiskFv.AirsClean.ZiskInstructionRom.Program length}
+    {witness : Air.Flat.EnsembleWitness
+      (ZiskFv.AirsClean.FullEnsemble.fullRv64imEnsemble length program).ensemble}
+    (h_balanced : witness.BalancedChannels) (h_specs : witness.Spec)
+    (h_constraints : witness.Constraints)
+    {table : Table FGL} (h_table : table ∈ witness.allTables)
+    (h_component : table.component = ZiskFv.AirsClean.RegisterBoundary.component)
+    {rowArray : Array FGL} (h_rowArray : rowArray ∈ table.table) :
+    ZiskFv.AirsClean.RangeTables.rangeTable24.Spec
+      (ZiskFv.AirsClean.RegisterBoundary.reloadDistance
+        (eval (table.environment rowArray)
+          ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar)) := by
+  let row := eval (table.environment rowArray)
+    ZiskFv.AirsClean.RegisterBoundary.component.rowInputVar
+  have h_pull : registerBoundaryRangeInteraction row ∈ table.interactionsWith
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw := by
+    rw [Table.interactionsWith]
+    apply List.mem_flatMap.mpr
+    refine ⟨rowArray, h_rowArray, ?_⟩
+    rw [h_component, Operations.interactionValuesWith_eq_map,
+      ZiskFv.AirsClean.RegisterBoundary.component_interactionsWith_registerStepRange]
+    simp only [List.map_cons, List.map_nil, List.mem_singleton]
+    exact (registerBoundaryRangeInteraction_eval_of_rowInput row _ rfl).symm
+  exact ZiskFv.AirsClean.FullEnsemble.rangeTable24_spec_of_registerStepRange_pull
+    h_balanced h_specs h_constraints h_table h_pull rfl rfl
+
+/-- The additional real provider rows cancel exactly the boundary's new pulls.
+    This lemma is purely interaction algebra; provider constraints are checked separately. -/
+theorem registerBoundaryRange_balanceOf
+    (rows : List (RegisterBoundaryRow FGL)) (msg : Array FGL) :
+    balanceOf (rows.map registerBoundaryRangeInteraction) msg +
+      balanceOf ((registerBoundaryRangeValues rows).map registerStepRangeInteraction) msg = 0 := by
+  induction rows with
+  | nil => simp [registerBoundaryRangeValues, balanceOf]
+  | cons row rows ih =>
+      simp only [registerBoundaryRangeValues, List.map_cons, balanceOf_cons] at ih ⊢
+      change (if (registerBoundaryRangeInteraction row).msg = msg then -1 else 0) + _ +
+        ((if (registerBoundaryRangeInteraction row).msg = msg then 1 else 0) + _) = 0
+      split_ifs <;> linear_combination ih
+
+theorem registerBoundaryRange_balanced
+    (rows : List (RegisterBoundaryRow FGL)) (providers pulls : List (Interaction FGL))
+    (h_count : 2 * rows.length + providers.length + pulls.length < GL_prime)
+    (h : BalancedInteractions (providers ++ pulls)) :
+    BalancedInteractions
+      (rows.map registerBoundaryRangeInteraction ++ providers ++
+        (registerBoundaryRangeValues rows).map registerStepRangeInteraction ++ pulls) := by
+  refine ⟨Or.inl ?_, ?_⟩
+  · rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    simpa [registerBoundaryRangeValues, List.length_append, List.length_map,
+      two_mul, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using h_count
+  · intro msg
+    have h_old := h.2 msg
+    have h_new := registerBoundaryRange_balanceOf rows msg
+    simp only [balanceOf_append] at h_old ⊢
+    linear_combination h_old + h_new
+
 theorem registerBoundarySingleRowTable_constraints
     (row : RegisterBoundaryRow FGL) (h_reg : row.reg = 1) :
     (registerBoundarySingleRowTable row).Constraints := by
