@@ -913,6 +913,7 @@ theorem singleAddWitness_binaryTableChannel_balanced :
       noRequestBinarySourceTable.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
     unfold singleAddTables
     generalize noRequestBinarySourceTable = sourceTable
+    generalize noRequestExtensionSourceTable = silentSourceTable at h_silent_14 ⊢
     simp only [List.flatMap_cons, List.flatMap_nil,
       h_silent_0, h_silent_1, h_silent_2, h_silent_3, h_silent_4, h_silent_5, h_silent_6, h_silent_7, h_silent_8, h_silent_9, h_silent_10, h_silent_11, h_silent_12, h_silent_13, h_silent_14, h_silent_16, List.nil_append, List.append_nil]
   rw [h_list]
@@ -983,6 +984,7 @@ theorem singleAddWitness_extensionTableChannel_balanced :
       noRequestExtensionSourceTable.interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
     unfold singleAddTables
     generalize noRequestExtensionSourceTable = sourceTable
+    generalize noRequestBinarySourceTable = silentSourceTable at h_silent_15 ⊢
     simp only [List.flatMap_cons, List.flatMap_nil,
       h_silent_0, h_silent_1, h_silent_2, h_silent_3, h_silent_4, h_silent_5, h_silent_6, h_silent_7, h_silent_8, h_silent_9, h_silent_10, h_silent_11, h_silent_12, h_silent_13, h_silent_15, h_silent_16, List.nil_append, List.append_nil]
   rw [h_list]
