@@ -1,0 +1,8 @@
+argv: ["nix", "--extra-experimental-features", "nix-command flakes", "develop", "--no-write-lock-file", "/home/cody/zisk-fv-closure-mutation", "-c", "lake", "build", "ZiskFv.AirsClean.MemAlign.ExtractedWiring", "--log-level=warning"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+⚠ [8076/8080] Replayed ZiskFv.AirsClean.MemAlign.Circuit
+warning: ZiskFv/AirsClean/MemAlign/Circuit.lean:258:57: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice
+
+Note: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`
+Build completed successfully (8080 jobs).

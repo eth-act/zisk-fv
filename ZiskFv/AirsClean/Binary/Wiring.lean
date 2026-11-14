@@ -3,6 +3,7 @@ import ZiskFv.AirsClean.Binary.Circuit
 import ZiskFv.AirsClean.BinaryTableSlice
 import ZiskFv.AirsClean.ExtractionExpr
 import Clean.Air.Vm
+import Extraction.Binary
 
 /-!
 # Binary byte lookup wiring
@@ -333,5 +334,61 @@ theorem binaryTableConnectionEnsemble_finishes_bus125 :
     BinaryTableChannel.toRaw ∈ binaryTableConnectionEnsemble.ensemble.channels := by
   simp [binaryTableConnectionEnsemble, SoundEnsemble.toFormal,
     SoundEnsemble.addFinishedChannel_channels, SoundEnsemble.addTable_channels]
+
+/-! ## Segment padding Direct constraint (local source fidelity only)
+
+`binary/pil/binary.pil:158–159` calls
+`assumes_padding_operation(OP_ADD, padding_size)`, whose full tuple is fixed by
+`pil/operations.pil:160–167`. The producer computes `padding_size` as
+`num_rows - total_inputs` and fills exactly those rows with ADD(0,0)
+(`binary/src/binary_basic.rs:898–923`).
+
+Unlike the ordinary row provider tuple, this is a segment-level negative
+contribution. The following equation pins its source AIR-value cells and
+challenges independently of the generated AST. It does not assert that
+Clean's row-only component emits it, or that an arbitrary exposed value is
+the producer's physical padding count. That segment/trace connection remains
+required before claiming the c12 live-model boundary or closing #372.
+-/
+
+/-- Closed interpretation of the padding tuple and its source multiplicity. -/
+def paddingSourceExprToField (paddingSize : FGL) : Expr → Option FGL
+  | .constant "0" => some 0
+  | .constant "10" => some 10
+  | .airValue 0 => some paddingSize
+  | .add value (.constant "0") => paddingSourceExprToField paddingSize value
+  | _ => none
+
+theorem paddingHint_source_metadata :
+    link_Binary_12.hints = [hint_Binary_12_0] ∧
+    hint_Binary_12_0.piop = "Direct" ∧
+    hint_Binary_12_0.busId = Expr.constant "5000" ∧
+    hint_Binary_12_0.proves = false ∧
+    hint_Binary_12_0.multiplicity = Expr.add (.airValue 0) (.constant "0") :=
+  ⟨rfl, rfl, rfl, rfl, rfl⟩
+
+theorem paddingHint_decode_success (paddingSize : FGL) :
+    hint_Binary_12_0.slots.mapM (fun slot => paddingSourceExprToField paddingSize slot.value) =
+      some [10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] ∧
+    paddingSourceExprToField paddingSize hint_Binary_12_0.multiplicity =
+      some paddingSize := ⟨rfl, rfl⟩
+
+/-- Negative Direct contribution for the source-defined all-zero ADD padding
+tuple. `imDirect` is the extension accumulator cell, not a Clean row field. -/
+def paddingDirectSourceEquation (paddingSize imDirect alpha gamma : FGL) : Prop :=
+  imDirect * ((10 * alpha + 5000) + gamma) - (0 - paddingSize) = 0
+
+/-- Independent equation weld: exact AIR values 0/1, challenges 0/1, bus5000,
+opcode10 and negative multiplicity. There is no row-local replacement for
+the segment padding count in this theorem. -/
+theorem paddingDirect_source_iff
+    {C : Type → Type → Sort u} [Extraction.Circuit FGL FGL C]
+    (c : C FGL FGL) (row : Nat) :
+    Binary.extraction.constraint_12_every_row c row ↔
+      paddingDirectSourceEquation
+        (Extraction.Circuit.exposed c (index := 0))
+        (Extraction.Circuit.exposed c (index := 1))
+        (Extraction.Circuit.challenge c (index := 0))
+        (Extraction.Circuit.challenge c (index := 1)) := Iff.rfl
 
 end ZiskFv.AirsClean.Binary

@@ -1,0 +1,28 @@
+argv: ["nix", "--extra-experimental-features", "nix-command flakes", "develop", "--no-write-lock-file", "/home/cody/zisk-fv-closure-mutation", "-c", "lake", "build", "ZiskFv.AirsClean.MemAlign.ExtractedWiring", "--log-level=warning"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+⚠ [8075/8080] Replayed ZiskFv.AirsClean.MemAlign.Circuit
+warning: ZiskFv/AirsClean/MemAlign/Circuit.lean:258:57: Used `tac1 <;> tac2` where `(tac1; tac2)` would suffice
+
+Note: This linter can be disabled with `set_option linter.unnecessarySeqFocus false`
+✔ [8077/8080] Built Extraction.LookupWiring (29s)
+✔ [8078/8080] Built ZiskFv.AirsClean.ExtractionExpr (3.1s)
+✖ [8079/8080] Building ZiskFv.AirsClean.MemAlign.Bridge (4.1s)
+trace: .> LEAN_PATH=/home/cody/zisk-fv-closure-mutation/.lake/packages/Cli/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/batteries/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/Qq/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/aesop/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/proofwidgets/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/importGraph/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/LeanSearchClient/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/plausible/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/mathlib/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/build/sail-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/build/clean-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/build/aeneas-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/repl/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/build/lib/lean /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean --tstack=400000 /home/cody/zisk-fv-closure-mutation/ZiskFv/AirsClean/MemAlign/Bridge.lean -o /home/cody/zisk-fv-closure-mutation/.lake/build/lib/lean/ZiskFv/AirsClean/MemAlign/Bridge.olean -i /home/cody/zisk-fv-closure-mutation/.lake/build/lib/lean/ZiskFv/AirsClean/MemAlign/Bridge.ilean -c /home/cody/zisk-fv-closure-mutation/.lake/build/ir/ZiskFv/AirsClean/MemAlign/Bridge.c --setup /home/cody/zisk-fv-closure-mutation/.lake/build/ir/ZiskFv/AirsClean/MemAlign/Bridge.setup.json --json
+error: ZiskFv/AirsClean/MemAlign/Bridge.lean:240:4: Tactic `rfl` failed: The left-hand side
+  h998TupleFromLink current successor
+is not definitionally equal to the right-hand side
+  some (memAlignRomSuccessorTuple current successor)
+
+current successor : MemAlignRow (Fin 18446744069414584321)
+⊢ h998TupleFromLink current successor = some (memAlignRomSuccessorTuple current successor)
+error: ZiskFv/AirsClean/MemAlign/Bridge.lean:237:21: Type mismatch
+  rfl
+has type
+  ?m.15 = ?m.15
+but is expected to have type
+  hint_MemAlign_36_1.multiplicity = Expr.constant "1"
+error: Lean exited with code 1
+Some required targets logged failures:
+- ZiskFv.AirsClean.MemAlign.Bridge
+error: build failed
