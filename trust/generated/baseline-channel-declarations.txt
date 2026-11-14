@@ -1,10 +1,12 @@
 channelsWithGuarantees	channelsWithGuarantees := [] }
 channelsWithGuarantees	channelsWithGuarantees := [] }
+channelsWithGuarantees	channelsWithGuarantees := [] }
 channelsWithRequirements	channelsWithRequirements := [ArithRangeChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [BinaryExtensionTableChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [BinaryTableChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [MemAlignRangeChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [MemAlignRomChannel.toRaw]
+channelsWithRequirements	channelsWithRequirements := [MemBusChannel.toRaw, DualByteChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [MemBusChannel.toRaw, MemAlignRomChannel.toRaw, MemAlignRangeChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [MemBusChannel.toRaw, OpBusChannel.toRaw, RegisterStepRangeChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [MemBusChannel.toRaw, RegisterStepRangeChannel.toRaw]
@@ -48,6 +50,7 @@ exposedChannels	exposedChannels row _ := expose MemBusChannel [ MemBusChannel.em
 exposedChannels	exposedChannels row _ := expose MemBusChannel [ MemBusChannel.emitted row.rom.a_src_reg (aRegPreMessageExpr row) , MemBusChannel.emitted (-(row.rom.a_src_mem + row.rom.a_src_reg)) (aMemMessageExpr row) , MemBusChannel.emitted row.rom.b_src_reg (bRegPreMessageExpr row) , MemBusChannel.emitted (-(row.rom.b_src_mem + row.rom.b_src_ind + row.rom.b_src_reg)) (bMemMessageExpr row) , MemBusChannel.emitted row.rom.store_reg (cRegPreMessageExpr row) , MemBusChannel.emitted (-(row.rom.store_mem + row.rom.store_ind + row.rom.store_reg)) (cMemMessageExpr row) ] ++ expose OpBusChannel [ OpBusChannel.emitted (-row.core.is_external_op) (opBusMessageExpr row.core) ] ++ expose RegisterStepRangeChannel [ RegisterStepRangeChannel.emitted (-row.rom.a_src_reg) (registerStepMessage (aRegStepDistanceExpr row)) , RegisterStepRangeChannel.emitted (-row.rom.b_src_reg) (registerStepMessage (bRegStepDistanceExpr row)) , RegisterStepRangeChannel.emitted (-row.rom.store_reg) (registerStepMessage (cRegStepDistanceExpr row)) ]
 exposedChannels	exposedChannels row _ := expose MemBusChannel [ MemBusChannel.emitted row.sel (memBusMessageExpr row) , MemBusChannel.emitted row.sel_dual (memBusDualMessageExpr row) ]
 exposedChannels	exposedChannels row _ := expose MemBusChannel [ MemBusChannel.emitted row.sel (memBusMessageExpr row) , MemBusChannel.emitted row.sel_dual (memBusDualMessageExpr row) ] ++ expose SpecifiedRangesSliceChannel [ SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceBase0Expr) , SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceBase1Expr) , SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceEnd0Expr) , SpecifiedRangesSliceChannel.emitted (-1) (memDistanceMessage memDistanceEnd1Expr) ]
+exposedChannels	exposedChannels row _ := expose MemBusChannel [ MemBusChannel.pulled (memReadMessageExpr row) , MemBusChannel.pulled (memWriteMessageExpr row) , MemBusChannel.pushed (memBusMessageExpr row) ] ++ expose DualByteChannel [DualByteChannel.pulled (dualByteMessageExpr row)]
 exposedChannels	exposedChannels row _ := expose MemBusChannel [ MemBusChannel.pulled (memReadMessageExpr row) , MemBusChannel.pushed (memBusMessageExpr row) ]
 exposedChannels	exposedChannels row _ := expose MemBusChannel [ MemBusChannel.pulled (memReadMessageExpr row) , MemBusChannel.pushed (memBusMessageExpr row) ]
 exposedChannels	exposedChannels row _ := expose MemBusChannel [MemBusChannel.emitted (row.sel_prove - selAssumeExpr row) (memBusMessageExpr row)]
@@ -71,4 +74,4 @@ exposedChannels	exposedChannels row _ := expose OpBusChannel [OpBusChannel.pushe
 exposedChannels	exposedChannels row _ := expose OpBusChannel [OpBusChannel.pushed (secondaryOpBusMessageExpr row)]
 exposedChannels	exposedChannels value _ := expose RegisterStepRangeChannel [RegisterStepRangeChannel.pushed (registerStepMessage value)]
 exposedChannels	exposedChannels value _ := expose SpecifiedRangesSliceChannel [SpecifiedRangesSliceChannel.pushed (memDistanceMessage value)]
-# total declarations: 73
+# total declarations: 76
