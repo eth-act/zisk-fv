@@ -15,7 +15,7 @@ use crate::{
     const_operand_to_u64, format_basefield, hint_field_by_name,
     pilout::{
         constraint::Constraint as ConstraintKind, expression::Operation as ExprOp, hint_field,
-        operand::Operand as OperandKind, Air, Constraint, Hint, Operand, PilOut,
+        operand::Operand as OperandKind, Air, Constraint, Hint, Operand, PilOut, SymbolType,
     },
 };
 
@@ -379,6 +379,7 @@ pub(crate) fn render(pilout: &PilOut) -> Result<String> {
 
     let mut out = String::new();
     write_prelude(&mut out);
+    write_source_schema(&mut out, pilout)?;
     for air in &airs {
         write_air_status(&mut out, air)?;
     }
@@ -439,6 +440,112 @@ pub(crate) fn render(pilout: &PilOut) -> Result<String> {
     }
     out.push_str("]\n\nend Extraction.LookupWiring\n");
     Ok(out)
+}
+
+/// Preserve symbol declarations separately from polynomial operands: fixed
+/// operands do not carry stages, and AIR-value operands do not carry names.
+/// This additive catalog never changes the Circuit or validated-link API.
+fn write_source_schema(out: &mut String, pilout: &PilOut) -> Result<()> {
+    let mut symbols = Vec::new();
+    for symbol in &pilout.symbols {
+        let kind = match SymbolType::try_from(symbol.r#type)
+            .map_err(|_| anyhow!("unknown symbol kind {} for {}", symbol.r#type, symbol.name))?
+        {
+            SymbolType::FixedCol => "fixed",
+            SymbolType::WitnessCol => "witness",
+            SymbolType::AirValue => "airValue",
+            SymbolType::AirGroupValue => "airGroupValue",
+            _ => continue,
+        };
+        if let Some(group_index) = symbol.air_group_id {
+            let group = pilout.air_groups.get(group_index as usize)
+                .ok_or_else(|| anyhow!("invalid group scope for symbol {}", symbol.name))?;
+            if let Some(air_index) = symbol.air_id {
+                if group.airs.get(air_index as usize).is_none() {
+                    bail!("invalid AIR scope for symbol {}", symbol.name);
+                }
+            }
+        } else if symbol.air_id.is_some() {
+            bail!("AIR scope without group scope for symbol {}", symbol.name);
+        }
+        symbols.push((symbol, kind));
+    }
+    out.push_str(r#"namespace SourceSchema
+
+inductive Kind where
+  | fixed | witness | airValue | airGroupValue
+  deriving BEq, DecidableEq, Repr
+
+/-- Raw source declarations, not inferred operand names. Array declarations
+retain their base index, rank and complete dimension roster. -/
+structure Symbol where
+  groupIndex : Option Nat
+  airIndex : Option Nat
+  name : String
+  kind : Kind
+  stage : Option Nat
+  index : Nat
+  dimensions : Nat
+  lengths : List Nat
+  deriving DecidableEq, Repr
+
+structure Air where
+  groupIndex : Nat
+  airIndex : Nat
+  groupName : String
+  airName : String
+  symbols : List Symbol
+  deriving DecidableEq, Repr
+
+"#);
+    for (group_index, group) in pilout.air_groups.iter().enumerate() {
+        let group_name = group.name.as_deref()
+            .ok_or_else(|| anyhow!("missing source group name at {group_index}"))?;
+        for (air_index, air) in group.airs.iter().enumerate() {
+            let air_name = air.name.as_deref()
+                .ok_or_else(|| anyhow!("missing source AIR name at {group_index}/{air_index}"))?;
+            writeln!(out, "def air_{} : Air := ⟨{}, {}, \"{}\", \"{}\", [",
+                ident(air_name), group_index, air_index, lean_string(group_name), lean_string(air_name))?;
+            for &(symbol, kind) in &symbols {
+                if symbol.air_group_id != Some(group_index as u32)
+                    || (symbol.air_id.is_some() && symbol.air_id != Some(air_index as u32)) {
+                    continue;
+                }
+                write_source_symbol(out, symbol, kind)?;
+            }
+            out.push_str("]⟩\n\n");
+        }
+    }
+    out.push_str("def unscopedSymbols : List Symbol := [\n");
+    for (symbol, kind) in symbols {
+        if symbol.air_group_id.is_none() {
+            write_source_symbol(out, symbol, kind)?;
+        }
+    }
+    out.push_str("]\n\nend SourceSchema\n\n");
+    Ok(())
+}
+
+fn write_source_symbol(out: &mut String, symbol: &crate::pilout::Symbol, kind: &str) -> Result<()> {
+    out.push_str("  ⟨");
+    for value in [symbol.air_group_id, symbol.air_id] {
+        match value {
+            Some(index) => write!(out, "some {index}, ")?,
+            None => out.push_str("none, "),
+        }
+    }
+    write!(out, "\"{}\", .{kind}, ", lean_string(&symbol.name))?;
+    match symbol.stage {
+        Some(stage) => write!(out, "some {stage}")?,
+        None => out.push_str("none"),
+    }
+    write!(out, ", {}, {}, [", symbol.id, symbol.dim)?;
+    for (index, length) in symbol.lengths.iter().enumerate() {
+        if index != 0 { out.push_str(", "); }
+        write!(out, "{length}")?;
+    }
+    out.push_str("]⟩,\n");
+    Ok(())
 }
 
 fn write_link_index_lists(out: &mut String, air: &AirManifest) -> Result<()> {
@@ -1962,6 +2069,27 @@ fn ident(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn source_schema_rejects_unknown_kinds_and_orphan_scopes() {
+        let mut pilout = PilOut {
+            symbols: vec![crate::pilout::Symbol {
+                name: "named_cell".to_string(),
+                r#type: i32::MAX,
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        assert!(write_source_schema(&mut String::new(), &pilout).unwrap_err()
+            .to_string().contains("unknown symbol kind"));
+        pilout.symbols[0].r#type = SymbolType::WitnessCol as i32;
+        pilout.symbols[0].air_id = Some(0);
+        assert!(write_source_schema(&mut String::new(), &pilout).unwrap_err()
+            .to_string().contains("AIR scope without group scope"));
+        pilout.symbols[0].air_group_id = Some(0);
+        assert!(write_source_schema(&mut String::new(), &pilout).unwrap_err()
+            .to_string().contains("invalid group scope"));
+    }
 
     #[test]
     fn validated_link_carries_shape_computed_kernel_equalities() {

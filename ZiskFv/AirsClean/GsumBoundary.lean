@@ -42,7 +42,7 @@ def mainDirectSum : F :=
     (· + ·) (Extraction.Circuit.exposed c (index := 101))
 
 /-- Main c143: __L1__ is fixed column 2; gsum is stage 2 column 0;
-gsum_result is air-group value 0; direct im_airvals occupy 101--196. -/
+Zisk.gsum_result is air-group value 0; Main.im_direct spans AIR indices 101--196. -/
 theorem main_finalizer_source_iff :
     Main.extraction.constraint_143_every_row c row ↔
       Closed (Extraction.Circuit.preprocessed c (column := 2) (row := row + 1) (rotation := 0))
@@ -253,6 +253,110 @@ theorem memAlignWriteByte_finalizer_cells :
     link_MemAlignWriteByte_14.groupValue = .airGroupValue 0 ∧
     link_MemAlignWriteByte_14.gsum = .witness 2 0 0 ∧
     link_MemAlignWriteByte_14.directTerms = [.airValue 1, .airValue 2, .airValue 3] := by
+  exact ⟨rfl, rfl, rfl, rfl⟩
+
+/-- All declarations participating in the final-row protocol: the selected
+fixed column, stage-2 running sum, complete group-value roster, and complete
+stage-2 AIR-value roster. Names are not used to select the expected cells. -/
+def protocolSchema (schema : SourceSchema.Air) (selectorIndex : Nat) :
+    List SourceSchema.Symbol :=
+  schema.symbols.filter fun symbol =>
+    (symbol.kind == .fixed && symbol.index == selectorIndex) ||
+    (symbol.kind == .witness && symbol.stage == some 2 && symbol.index == 0) ||
+    symbol.kind == .airGroupValue ||
+    (symbol.kind == .airValue && symbol.stage == some 2)
+
+/-- Actual public source symbols name this array `Main.im_direct`, not the
+internal `im_airvals` alias in std_sum. Its base index and full array roster
+jointly cover the 96 independently pinned direct-term operands above. -/
+theorem main_finalizer_schema :
+    link_Main_143.air = "Main" ∧ link_Main_143.constraintIndex = 143 ∧
+    (SourceSchema.air_Main.groupIndex, SourceSchema.air_Main.airIndex,
+      SourceSchema.air_Main.groupName, SourceSchema.air_Main.airName) = (0, 12, "Zisk", "Main") ∧
+    protocolSchema SourceSchema.air_Main 2 =
+      [ ⟨some 0, none, "Zisk.gsum_result", .airGroupValue, some 2, 0, 0, []⟩
+      , ⟨some 0, some 12, "gsum", .witness, some 2, 0, 0, []⟩
+      , ⟨some 0, some 12, "__L1__", .fixed, some 0, 2, 0, []⟩
+      , ⟨some 0, some 12, "Main.im_direct", .airValue, some 2, 101, 1, [96]⟩ ] := by
+  exact ⟨rfl, rfl, rfl, rfl⟩
+
+theorem binary_finalizer_schema :
+    link_Binary_13.air = "Binary" ∧ link_Binary_13.constraintIndex = 13 ∧
+    (SourceSchema.air_Binary.groupIndex, SourceSchema.air_Binary.airIndex,
+      SourceSchema.air_Binary.groupName, SourceSchema.air_Binary.airName) = (0, 22, "Zisk", "Binary") ∧
+    protocolSchema SourceSchema.air_Binary 0 =
+      [ ⟨some 0, none, "Zisk.gsum_result", .airGroupValue, some 2, 0, 0, []⟩
+      , ⟨some 0, some 22, "gsum", .witness, some 2, 0, 0, []⟩
+      , ⟨some 0, some 22, "__L1__", .fixed, some 0, 0, 0, []⟩
+      , ⟨some 0, some 22, "Binary.im_direct", .airValue, some 2, 1, 1, [1]⟩ ] := by
+  exact ⟨rfl, rfl, rfl, rfl⟩
+
+theorem binaryAdd_finalizer_schema :
+    link_BinaryAdd_8.air = "BinaryAdd" ∧ link_BinaryAdd_8.constraintIndex = 8 ∧
+    (SourceSchema.air_BinaryAdd.groupIndex, SourceSchema.air_BinaryAdd.airIndex,
+      SourceSchema.air_BinaryAdd.groupName, SourceSchema.air_BinaryAdd.airName) = (0, 23, "Zisk", "BinaryAdd") ∧
+    protocolSchema SourceSchema.air_BinaryAdd 0 =
+      [ ⟨some 0, none, "Zisk.gsum_result", .airGroupValue, some 2, 0, 0, []⟩
+      , ⟨some 0, some 23, "gsum", .witness, some 2, 0, 0, []⟩
+      , ⟨some 0, some 23, "__L1__", .fixed, some 0, 0, 0, []⟩
+      , ⟨some 0, some 23, "BinaryAdd.im_direct", .airValue, some 2, 1, 1, [1]⟩ ] := by
+  exact ⟨rfl, rfl, rfl, rfl⟩
+
+theorem binaryExtension_finalizer_schema :
+    link_BinaryExtension_7.air = "BinaryExtension" ∧ link_BinaryExtension_7.constraintIndex = 7 ∧
+    (SourceSchema.air_BinaryExtension.groupIndex, SourceSchema.air_BinaryExtension.airIndex,
+      SourceSchema.air_BinaryExtension.groupName, SourceSchema.air_BinaryExtension.airName) =
+        (0, 24, "Zisk", "BinaryExtension") ∧
+    protocolSchema SourceSchema.air_BinaryExtension 0 =
+      [ ⟨some 0, none, "Zisk.gsum_result", .airGroupValue, some 2, 0, 0, []⟩
+      , ⟨some 0, some 24, "gsum", .witness, some 2, 0, 0, []⟩
+      , ⟨some 0, some 24, "__L1__", .fixed, some 0, 0, 0, []⟩
+      , ⟨some 0, some 24, "BinaryExtension.im_direct", .airValue, some 2, 1, 1, [1]⟩ ] := by
+  exact ⟨rfl, rfl, rfl, rfl⟩
+
+theorem memAlign_finalizer_schema :
+    link_MemAlign_39.air = "MemAlign" ∧ link_MemAlign_39.constraintIndex = 39 ∧
+    (SourceSchema.air_MemAlign.groupIndex, SourceSchema.air_MemAlign.airIndex,
+      SourceSchema.air_MemAlign.groupName, SourceSchema.air_MemAlign.airName) = (0, 17, "Zisk", "MemAlign") ∧
+    protocolSchema SourceSchema.air_MemAlign 1 =
+      [ ⟨some 0, none, "Zisk.gsum_result", .airGroupValue, some 2, 0, 0, []⟩
+      , ⟨some 0, some 17, "gsum", .witness, some 2, 0, 0, []⟩
+      , ⟨some 0, some 17, "__L1__", .fixed, some 0, 1, 0, []⟩ ] := by
+  exact ⟨rfl, rfl, rfl, rfl⟩
+
+theorem memAlignByte_finalizer_schema :
+    link_MemAlignByte_15.air = "MemAlignByte" ∧ link_MemAlignByte_15.constraintIndex = 15 ∧
+    (SourceSchema.air_MemAlignByte.groupIndex, SourceSchema.air_MemAlignByte.airIndex,
+      SourceSchema.air_MemAlignByte.groupName, SourceSchema.air_MemAlignByte.airName) = (0, 18, "Zisk", "MemAlignByte") ∧
+    protocolSchema SourceSchema.air_MemAlignByte 0 =
+      [ ⟨some 0, none, "Zisk.gsum_result", .airGroupValue, some 2, 0, 0, []⟩
+      , ⟨some 0, some 18, "gsum", .witness, some 2, 0, 0, []⟩
+      , ⟨some 0, some 18, "__L1__", .fixed, some 0, 0, 0, []⟩
+      , ⟨some 0, some 18, "MemAlignByte.im_direct", .airValue, some 2, 1, 1, [2]⟩ ] := by
+  exact ⟨rfl, rfl, rfl, rfl⟩
+
+theorem memAlignReadByte_finalizer_schema :
+    link_MemAlignReadByte_9.air = "MemAlignReadByte" ∧ link_MemAlignReadByte_9.constraintIndex = 9 ∧
+    (SourceSchema.air_MemAlignReadByte.groupIndex, SourceSchema.air_MemAlignReadByte.airIndex,
+      SourceSchema.air_MemAlignReadByte.groupName, SourceSchema.air_MemAlignReadByte.airName) =
+        (0, 19, "Zisk", "MemAlignReadByte") ∧
+    protocolSchema SourceSchema.air_MemAlignReadByte 0 =
+      [ ⟨some 0, none, "Zisk.gsum_result", .airGroupValue, some 2, 0, 0, []⟩
+      , ⟨some 0, some 19, "gsum", .witness, some 2, 0, 0, []⟩
+      , ⟨some 0, some 19, "__L1__", .fixed, some 0, 0, 0, []⟩
+      , ⟨some 0, some 19, "MemAlignReadByte.im_direct", .airValue, some 2, 1, 1, [2]⟩ ] := by
+  exact ⟨rfl, rfl, rfl, rfl⟩
+
+theorem memAlignWriteByte_finalizer_schema :
+    link_MemAlignWriteByte_14.air = "MemAlignWriteByte" ∧ link_MemAlignWriteByte_14.constraintIndex = 14 ∧
+    (SourceSchema.air_MemAlignWriteByte.groupIndex, SourceSchema.air_MemAlignWriteByte.airIndex,
+      SourceSchema.air_MemAlignWriteByte.groupName, SourceSchema.air_MemAlignWriteByte.airName) =
+        (0, 20, "Zisk", "MemAlignWriteByte") ∧
+    protocolSchema SourceSchema.air_MemAlignWriteByte 0 =
+      [ ⟨some 0, none, "Zisk.gsum_result", .airGroupValue, some 2, 0, 0, []⟩
+      , ⟨some 0, some 20, "gsum", .witness, some 2, 0, 0, []⟩
+      , ⟨some 0, some 20, "__L1__", .fixed, some 0, 0, 0, []⟩
+      , ⟨some 0, some 20, "MemAlignWriteByte.im_direct", .airValue, some 2, 1, 1, [3]⟩ ] := by
   exact ⟨rfl, rfl, rfl, rfl⟩
 
 end ZiskFv.AirsClean.GsumBoundary
