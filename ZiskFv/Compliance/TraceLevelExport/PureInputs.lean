@@ -24,22 +24,11 @@ private theorem read_pureInputRegValue {trace : AcceptedZiskTrace n}
   · simpa [pureInputRegValue, hk, chainedSailTrace] using
       read_xreg_of_regAgree steps rowDecodes init i.val k hk h_reg
 
-private theorem store_rX_from_read
-    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (r : regidx)
-    (h_read : ∃ value : BitVec 64,
-      read_xreg (regidx_to_fin r) state = EStateM.Result.ok value state) :
-    LeanRV64D.Functions.rX_bits (regidx.Regidx (storeRegBits r)) state =
-      EStateM.Result.ok (Classical.choose h_read) state := by
-  rw [storeRegBits_roundtrip,
-    rX_read_xreg_equiv state r (regidx_to_fin r)
-      (by cases r <;> simp [regidx_to_fin])]
-  exact Classical.choose_spec h_read
-
 /-- Reconstruct30 pure ALU inputs from decoded operands and current register/PC
 agreement, not caller operand values or operand proofs. Four store families also
-reconstruct their successful-read witnesses from this same induction invariant;
-only their existing range/alignment, lane and platform facts are retained.
+reconstruct their successful-read witnesses from this same induction invariant
+and consume the complete-old-domain constructors AND whole-input equality
+certificates. Existing range/alignment, lane and platform facts are retained.
 
 No public aggregate premise is removed here. The other29 families pass through
 unchanged. The construction uses current, never all-step, soundness. -/
@@ -361,19 +350,19 @@ noncomputable def pureInputsOfRegAgree {trace : AcceptedZiskTrace n}
       let h_pc : ∃ pc : BitVec 64,
           (chainedSailTrace steps init i).regs.get? Register.PC = some pc :=
         ⟨pc, hpc⟩
-      exact {
+      rcases c with ⟨⟨r1⟩, ⟨r2⟩, imm⟩
+      let construction := InputsCore_sb.of_state_assumptions i ia.input ia.regs
+        ia.h_opcode_assumptions ia.h_a0_value ia.h_a1_value
+        ia.h_b0_value ia.h_b1_value ia.h_risc_v_assumptions
+      have h_old_domain : PureSpec.sb_state_assumptions construction.val.input
+          (chainedSailTrace steps init i) := by
+        rw [construction.property]
+        exact ia.h_opcode_assumptions
+      exact { construction.val with
         h_input_r1 := h_r1
         h_input_r2 := h_r2
         h_input_pc := h_pc
-        regs := ia.regs
-        h_opcode_assumptions := ⟨Classical.choose_spec h_pc,
-          store_rX_from_read _ c.r1 h_r1, store_rX_from_read _ c.r2 h_r2,
-          ia.h_opcode_assumptions.2.2.2⟩
-        h_a0_value := ia.h_a0_value
-        h_a1_value := ia.h_a1_value
-        h_b0_value := ia.h_b0_value
-        h_b1_value := ia.h_b1_value
-        h_risc_v_assumptions := ia.h_risc_v_assumptions }
+        h_opcode_assumptions := h_old_domain }
   | .sh c, ia => by
       let h_r1 : ∃ value : BitVec 64,
           read_xreg (regidx_to_fin c.r1) (chainedSailTrace steps init i) =
@@ -386,19 +375,19 @@ noncomputable def pureInputsOfRegAgree {trace : AcceptedZiskTrace n}
       let h_pc : ∃ pc : BitVec 64,
           (chainedSailTrace steps init i).regs.get? Register.PC = some pc :=
         ⟨pc, hpc⟩
-      exact {
+      rcases c with ⟨⟨r1⟩, ⟨r2⟩, imm⟩
+      let construction := InputsCore_sh.of_state_assumptions i ia.input ia.regs
+        ia.h_opcode_assumptions ia.h_a0_value ia.h_a1_value
+        ia.h_b0_value ia.h_b1_value ia.h_risc_v_assumptions
+      have h_old_domain : PureSpec.sh_state_assumptions construction.val.input
+          (chainedSailTrace steps init i) := by
+        rw [construction.property]
+        exact ia.h_opcode_assumptions
+      exact { construction.val with
         h_input_r1 := h_r1
         h_input_r2 := h_r2
         h_input_pc := h_pc
-        regs := ia.regs
-        h_opcode_assumptions := ⟨Classical.choose_spec h_pc,
-          store_rX_from_read _ c.r1 h_r1, store_rX_from_read _ c.r2 h_r2,
-          ia.h_opcode_assumptions.2.2.2⟩
-        h_a0_value := ia.h_a0_value
-        h_a1_value := ia.h_a1_value
-        h_b0_value := ia.h_b0_value
-        h_b1_value := ia.h_b1_value
-        h_risc_v_assumptions := ia.h_risc_v_assumptions }
+        h_opcode_assumptions := h_old_domain }
   | .sw c, ia => by
       let h_r1 : ∃ value : BitVec 64,
           read_xreg (regidx_to_fin c.r1) (chainedSailTrace steps init i) =
@@ -411,19 +400,19 @@ noncomputable def pureInputsOfRegAgree {trace : AcceptedZiskTrace n}
       let h_pc : ∃ pc : BitVec 64,
           (chainedSailTrace steps init i).regs.get? Register.PC = some pc :=
         ⟨pc, hpc⟩
-      exact {
+      rcases c with ⟨⟨r1⟩, ⟨r2⟩, imm⟩
+      let construction := InputsCore_sw.of_state_assumptions i ia.input ia.regs
+        ia.h_opcode_assumptions ia.h_a0_value ia.h_a1_value
+        ia.h_b0_value ia.h_b1_value ia.h_risc_v_assumptions
+      have h_old_domain : PureSpec.sw_state_assumptions construction.val.input
+          (chainedSailTrace steps init i) := by
+        rw [construction.property]
+        exact ia.h_opcode_assumptions
+      exact { construction.val with
         h_input_r1 := h_r1
         h_input_r2 := h_r2
         h_input_pc := h_pc
-        regs := ia.regs
-        h_opcode_assumptions := ⟨Classical.choose_spec h_pc,
-          store_rX_from_read _ c.r1 h_r1, store_rX_from_read _ c.r2 h_r2,
-          ia.h_opcode_assumptions.2.2.2⟩
-        h_a0_value := ia.h_a0_value
-        h_a1_value := ia.h_a1_value
-        h_b0_value := ia.h_b0_value
-        h_b1_value := ia.h_b1_value
-        h_risc_v_assumptions := ia.h_risc_v_assumptions }
+        h_opcode_assumptions := h_old_domain }
   | .sd c, ia => by
       let h_r1 : ∃ value : BitVec 64,
           read_xreg (regidx_to_fin c.r1) (chainedSailTrace steps init i) =
@@ -436,19 +425,19 @@ noncomputable def pureInputsOfRegAgree {trace : AcceptedZiskTrace n}
       let h_pc : ∃ pc : BitVec 64,
           (chainedSailTrace steps init i).regs.get? Register.PC = some pc :=
         ⟨pc, hpc⟩
-      exact {
+      rcases c with ⟨⟨r1⟩, ⟨r2⟩, imm⟩
+      let construction := InputsCore_sd.of_state_assumptions i ia.input ia.regs
+        ia.h_opcode_assumptions ia.h_a0_value ia.h_a1_value
+        ia.h_b0_value ia.h_b1_value ia.h_risc_v_assumptions
+      have h_old_domain : PureSpec.sd_state_assumptions construction.val.input
+          (chainedSailTrace steps init i) := by
+        rw [construction.property]
+        exact ia.h_opcode_assumptions
+      exact { construction.val with
         h_input_r1 := h_r1
         h_input_r2 := h_r2
         h_input_pc := h_pc
-        regs := ia.regs
-        h_opcode_assumptions := ⟨Classical.choose_spec h_pc,
-          store_rX_from_read _ c.r1 h_r1, store_rX_from_read _ c.r2 h_r2,
-          ia.h_opcode_assumptions.2.2.2⟩
-        h_a0_value := ia.h_a0_value
-        h_a1_value := ia.h_a1_value
-        h_b0_value := ia.h_b0_value
-        h_b1_value := ia.h_b1_value
-        h_risc_v_assumptions := ia.h_risc_v_assumptions }
+        h_opcode_assumptions := h_old_domain }
   | .ld _, ia => ia
   | .lbu _, ia => ia
   | .lhu _, ia => ia
