@@ -124,22 +124,37 @@ def sourceFixedColumns : IndexedFixedColumns FGL 1 where
 def sourceComponent : Component FGL :=
   { circuit := sourceCircuit, rawWidth := 1, fixedColumns := some sourceFixedColumns }
 
+private theorem sourceRow_toArray (message : BinaryTableMessage FGL)
+    (multiplicity : FGL) :
+    (toElements ({ message, multiplicity } : SourceRow FGL)).toArray =
+      (toElements message).toArray ++ #[multiplicity] := by
+  cases message
+  rfl
+
 /-- The materialized row is the exact production tuple with unchanged raw
     multiplicity, for every production index and every field value. -/
 theorem sourceFixedColumns_materialize (index : Fin tableSize) (multiplicity : FGL) :
     sourceFixedColumns.materialize index.val #[multiplicity] =
       (toElements ({ message := rowOfIndex index.val, multiplicity } :
         SourceRow FGL)).toArray := by
+  rw [sourceRow_toArray]
+  have hsize : (toElements (rowOfIndex index.val)).toArray.size = 7 :=
+    Vector.size_toArray _
   apply Array.ext
-  · rw [IndexedFixedColumns.materialize_size, Vector.size_toArray]
+  · rw [IndexedFixedColumns.materialize_size, Array.size_append, hsize]
     rfl
   · intro i hi hi'
     have h_i : i < 8 := by simpa only [IndexedFixedColumns.materialize_size] using hi
-    interval_cases i <;>
-      simp [IndexedFixedColumns.materialize, IndexedFixedColumns.fixedAt,
-        sourceFixedColumns, Nat.mod_eq_of_lt index.isLt, toElements,
-        ProvableType.fromStruct, ProvableStruct.componentsToElements,
-        ProvableStruct.toComponents, ProvableStruct.components]
+    by_cases hslot : i < 7
+    · rw [Array.getElem_append_left (by simpa only [hsize] using hslot)]
+      simp only [IndexedFixedColumns.materialize, Array.getElem_ofFn,
+        sourceFixedColumns, IndexedFixedColumns.fixedAt, dif_pos hslot,
+        Nat.mod_eq_of_lt index.isLt, Vector.getElem_toArray]
+    · have hi7 : i = 7 := by omega
+      subst i
+      rw [Array.getElem_append_right (by simpa only [hsize] using (Nat.le_refl 7))]
+      simp only [hsize, Nat.sub_self]
+      rfl
 
 theorem eval_sourceFixedColumns (index : Fin tableSize) (multiplicity : FGL)
     (data : ProverData FGL) :
@@ -260,7 +275,8 @@ theorem source_constraints_fromInput (row : SourceRow FGL) (data : ProverData FG
       { table := (Table.fromStatic binaryTable).toRaw
         entry := toElements sourceComponent.rowInputVar.message }
       (Environment.fromInput row data)
-    rw [Lookup.completeness_def]
+    apply (Lookup.completeness_def (Table.fromStatic binaryTable)
+      (Environment.fromInput row data) sourceComponent.rowInputVar.message).mpr
     change binaryTable.Spec
       (eval (Environment.fromInput row data) sourceComponent.rowInputVar.message)
     rw [source_input_message]

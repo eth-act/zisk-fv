@@ -774,5 +774,5 @@ Source constructibility follows Clean's actual `(input, data, hint)` argument
 order and quantifies over arbitrary prover hints. Provider membership reuses
 the checked circuit soundness, discharging its non-assuming emission's
 guarantees unconditionally; construction uses generic lookup completeness.
-Materialization uses the vector's stored size proof rather than normalizing
-the arithmetic source decoder to compute an array length.
+Materialization uses the vector's stored size proof and an abstract seven-slot
+serialization lemma rather than normalizing the arithmetic source decoder.
