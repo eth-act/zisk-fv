@@ -909,13 +909,29 @@ theorem singleAddWitness_binaryTableChannel_balanced :
   have h_list :
       singleAddWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw) =
       (noRequestBinarySourceTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw := by
-    change singleAddTables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw) =
-      noRequestBinarySourceTable.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
-    unfold singleAddTables
-    generalize noRequestBinarySourceTable = sourceTable
-    generalize noRequestExtensionSourceTable = silentSourceTable at h_silent_14 ⊢
-    simp only [List.flatMap_cons, List.flatMap_nil,
-      h_silent_0, h_silent_1, h_silent_2, h_silent_3, h_silent_4, h_silent_5, h_silent_6, h_silent_7, h_silent_8, h_silent_9, h_silent_10, h_silent_11, h_silent_12, h_silent_13, h_silent_14, h_silent_16, List.nil_append, List.append_nil]
+    have h := ZiskFv.AirsClean.FullEnsemble.flatMap_seventeen_source15
+      (fun table : Table FGL =>
+        table.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw)
+      registerBoundaryRowsTable
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlign.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component)
+      (emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+      (registerStepRangeRowsTable ([0, 0, 0] ++ registerBoundaryRangeValues singleAddBoundaryRows))
+      (emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component)
+      (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component)
+      (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete)
+      (emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent)
+      (emptyComponentTable ZiskFv.AirsClean.Binary.tableConsumerComponent)
+      (binaryAddRowsTable [addX1BinaryAddRow])
+      noRequestExtensionSourceTable noRequestBinarySourceTable
+      (mainSingleRowTable 1 addX1Program addX1Row)
+      h_silent_0 h_silent_1 h_silent_2 h_silent_3 h_silent_4 h_silent_5
+      h_silent_6 h_silent_7 h_silent_8 h_silent_9 h_silent_10 h_silent_11
+      h_silent_12 h_silent_13 h_silent_14 h_silent_16
+    exact h
   rw [h_list]
   exact noRequestBinarySourceTable_balanced
 
@@ -980,13 +996,29 @@ theorem singleAddWitness_extensionTableChannel_balanced :
   have h_list :
       singleAddWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw) =
       (noRequestExtensionSourceTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw := by
-    change singleAddTables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw) =
-      noRequestExtensionSourceTable.interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
-    unfold singleAddTables
-    generalize noRequestExtensionSourceTable = sourceTable
-    generalize noRequestBinarySourceTable = silentSourceTable at h_silent_15 ⊢
-    simp only [List.flatMap_cons, List.flatMap_nil,
-      h_silent_0, h_silent_1, h_silent_2, h_silent_3, h_silent_4, h_silent_5, h_silent_6, h_silent_7, h_silent_8, h_silent_9, h_silent_10, h_silent_11, h_silent_12, h_silent_13, h_silent_15, h_silent_16, List.nil_append, List.append_nil]
+    have h := ZiskFv.AirsClean.FullEnsemble.flatMap_seventeen_source14
+      (fun table : Table FGL =>
+        table.interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw)
+      registerBoundaryRowsTable
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlign.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component)
+      (emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+      (registerStepRangeRowsTable ([0, 0, 0] ++ registerBoundaryRangeValues singleAddBoundaryRows))
+      (emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component)
+      (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component)
+      (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete)
+      (emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent)
+      (emptyComponentTable ZiskFv.AirsClean.Binary.tableConsumerComponent)
+      (binaryAddRowsTable [addX1BinaryAddRow])
+      noRequestExtensionSourceTable noRequestBinarySourceTable
+      (mainSingleRowTable 1 addX1Program addX1Row)
+      h_silent_0 h_silent_1 h_silent_2 h_silent_3 h_silent_4 h_silent_5
+      h_silent_6 h_silent_7 h_silent_8 h_silent_9 h_silent_10 h_silent_11
+      h_silent_12 h_silent_13 h_silent_15 h_silent_16
+    exact h
   rw [h_list]
   exact noRequestExtensionSourceTable_balanced
 

@@ -18,6 +18,70 @@ open ZiskFv.AirsClean.BinaryTableBalance
 open ZiskFv.AirsClean.PackedVirtualTableSources
 open ZiskFv.Channels.OperationBus (OpBusChannel)
 
+/-- Pure list-spine algebra: the function and every table remain variables
+while this proof is kernel checked, including the two full-domain providers. -/
+theorem flatMap_seventeen_source15
+    (f : Table FGL → List (Interaction FGL))
+    (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12 t13 t14 t15 t16 : Table FGL)
+    (h0 : f t0 = []) (h1 : f t1 = []) (h2 : f t2 = [])
+    (h3 : f t3 = []) (h4 : f t4 = []) (h5 : f t5 = [])
+    (h6 : f t6 = []) (h7 : f t7 = []) (h8 : f t8 = [])
+    (h9 : f t9 = []) (h10 : f t10 = []) (h11 : f t11 = [])
+    (h12 : f t12 = []) (h13 : f t13 = []) (h14 : f t14 = [])
+    (h16 : f t16 = []) :
+    [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13,
+      t14, t15, t16].flatMap f = f t15 := by
+  simp only [List.flatMap_cons, List.flatMap_nil, h0, h1, h2, h3, h4,
+    h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h16,
+    List.nil_append, List.append_nil]
+
+theorem flatMap_seventeen_source14
+    (f : Table FGL → List (Interaction FGL))
+    (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12 t13 t14 t15 t16 : Table FGL)
+    (h0 : f t0 = []) (h1 : f t1 = []) (h2 : f t2 = [])
+    (h3 : f t3 = []) (h4 : f t4 = []) (h5 : f t5 = [])
+    (h6 : f t6 = []) (h7 : f t7 = []) (h8 : f t8 = [])
+    (h9 : f t9 = []) (h10 : f t10 = []) (h11 : f t11 = [])
+    (h12 : f t12 = []) (h13 : f t13 = []) (h15 : f t15 = [])
+    (h16 : f t16 = []) :
+    [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13,
+      t14, t15, t16].flatMap f = f t14 := by
+  simp only [List.flatMap_cons, List.flatMap_nil, h0, h1, h2, h3, h4,
+    h5, h6, h7, h8, h9, h10, h11, h12, h13, h15, h16,
+    List.nil_append, List.append_nil]
+
+theorem flatMap_seventeen_consumer12_source15
+    (f : Table FGL → List (Interaction FGL))
+    (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12 t13 t14 t15 t16 : Table FGL)
+    (consumer : List (Interaction FGL))
+    (h0 : f t0 = []) (h1 : f t1 = []) (h2 : f t2 = [])
+    (h3 : f t3 = []) (h4 : f t4 = []) (h5 : f t5 = [])
+    (h6 : f t6 = []) (h7 : f t7 = []) (h8 : f t8 = [])
+    (h9 : f t9 = []) (h10 : f t10 = []) (h11 : f t11 = [])
+    (h12 : f t12 = consumer) (h13 : f t13 = []) (h14 : f t14 = [])
+    (h16 : f t16 = []) :
+    [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13,
+      t14, t15, t16].flatMap f = consumer ++ f t15 := by
+  simp only [List.flatMap_cons, List.flatMap_nil, h0, h1, h2, h3, h4,
+    h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h16,
+    List.nil_append, List.append_nil]
+
+theorem flatMap_seventeen_consumer11_source14
+    (f : Table FGL → List (Interaction FGL))
+    (t0 t1 t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12 t13 t14 t15 t16 : Table FGL)
+    (consumer : List (Interaction FGL))
+    (h0 : f t0 = []) (h1 : f t1 = []) (h2 : f t2 = [])
+    (h3 : f t3 = []) (h4 : f t4 = []) (h5 : f t5 = [])
+    (h6 : f t6 = []) (h7 : f t7 = []) (h8 : f t8 = [])
+    (h9 : f t9 = []) (h10 : f t10 = []) (h11 : f t11 = consumer)
+    (h12 : f t12 = []) (h13 : f t13 = []) (h15 : f t15 = [])
+    (h16 : f t16 = []) :
+    [t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13,
+      t14, t15, t16].flatMap f = consumer ++ f t14 := by
+  simp only [List.flatMap_cons, List.flatMap_nil, h0, h1, h2, h3, h4,
+    h5, h6, h7, h8, h9, h10, h11, h12, h13, h15, h16,
+    List.nil_append, List.append_nil]
+
 /-- Retain the actual operation-bus emission while adding table requests. -/
 theorem binary_consumer_interactionsWith_opBus :
     Binary.tableConsumerComponent.operations.interactionsWith OpBusChannel.toRaw =
