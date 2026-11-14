@@ -150,7 +150,8 @@ theorem sourceFixedColumns_materialize (index : Fin tableSize) (multiplicity : F
       subst i
       rw [Array.getElem_append_right (by simpa only [hsize] using (Nat.le_refl 7))]
       simp only [hsize, Nat.sub_self]
-      rfl
+      simpa only [IndexedFixedColumns.materialize, Array.getElem_ofFn,
+        sourceFixedColumns, dif_neg (by decide : ¬(7 < 7))]
 
 theorem eval_sourceFixedColumns (index : Fin tableSize) (multiplicity : FGL)
     (data : ProverData FGL) :
