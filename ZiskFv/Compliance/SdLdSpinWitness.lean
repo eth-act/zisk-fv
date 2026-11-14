@@ -2668,8 +2668,30 @@ theorem sdLdWitness_binaryTableChannel_balanced :
   have h_list :
       sdLdWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw) =
       (sdLdBinarySourceTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw := by
-    simp only [sdLdWitness, sdLdTables, List.flatMap_cons, List.flatMap_nil,
-      h_silent_0, h_silent_1, h_silent_2, h_silent_3, h_silent_4, h_silent_5, h_silent_6, h_silent_7, h_silent_8, h_silent_9, h_silent_10, h_silent_11, h_silent_12, h_silent_13, h_silent_14, h_silent_16, List.nil_append, List.append_nil]
+    have h := ZiskFv.AirsClean.FullEnsemble.flatMap_seventeen_source15
+      (fun table : Table FGL =>
+        table.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw)
+      (sdLdTableWithData sdLdBoundaryTable)
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component))
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component))
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlign.component))
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component))
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component))
+      (sdLdTableWithData sdLdMemTable)
+      (sdLdTableWithData (registerStepRangeRowsTable
+        ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] ++ registerBoundaryRangeValues sdLdBoundaryRows)))
+      sdLdSpecifiedRangesTable
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component))
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete))
+      (sdLdTableWithData sdLdBinaryExtensionTable)
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.Binary.tableConsumerComponent))
+      (sdLdTableWithData sdLdBinaryAddTable)
+      sdLdExtensionSourceTable sdLdBinarySourceTable
+      (sdLdTableWithData sdLdMainTable)
+      h_silent_0 h_silent_1 h_silent_2 h_silent_3 h_silent_4 h_silent_5
+      h_silent_6 h_silent_7 h_silent_8 h_silent_9 h_silent_10 h_silent_11
+      h_silent_12 h_silent_13 h_silent_14 h_silent_16
+    exact h
   rw [h_list]
   change BalancedInteractions
     ((ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable
@@ -2737,11 +2759,37 @@ theorem sdLdWitness_extensionTableChannel_balanced :
             (Environment.fromInput sdLdSlliBinaryExtensionRow sdLdMemData) := by
       change (ZiskFv.AirsClean.FullEnsemble.extensionConsumerRowsTable
         sdLdMemData [sdLdSlliBinaryExtensionRow]).interactionsWith _ = _
-      rw [ZiskFv.AirsClean.FullEnsemble.extensionConsumerRowsTable_interactionsWith]
+      rw [ZiskFv.AirsClean.FullEnsemble.extensionConsumerRowsTable_interactionsWith
+        sdLdMemData [sdLdSlliBinaryExtensionRow]
+        ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw]
       simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
-    simp only [sdLdWitness, sdLdTables, List.flatMap_cons, List.flatMap_nil,
-      h_silent_0, h_silent_1, h_silent_2, h_silent_3, h_silent_4, h_silent_5, h_silent_6, h_silent_7, h_silent_8, h_silent_9, h_silent_10, h_silent_12, h_silent_13, h_silent_15, h_silent_16, List.nil_append, List.append_nil,
-      h_consumer]
+    have h := ZiskFv.AirsClean.FullEnsemble.flatMap_seventeen_consumer11_source14
+      (fun table : Table FGL =>
+        table.interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw)
+      (sdLdTableWithData sdLdBoundaryTable)
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component))
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component))
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlign.component))
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component))
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component))
+      (sdLdTableWithData sdLdMemTable)
+      (sdLdTableWithData (registerStepRangeRowsTable
+        ([2, 1, 1, 1, 1, 14, 5, 2, 3, 22] ++ registerBoundaryRangeValues sdLdBoundaryRows)))
+      sdLdSpecifiedRangesTable
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component))
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete))
+      (sdLdTableWithData sdLdBinaryExtensionTable)
+      (sdLdTableWithData (emptyComponentTable ZiskFv.AirsClean.Binary.tableConsumerComponent))
+      (sdLdTableWithData sdLdBinaryAddTable)
+      sdLdExtensionSourceTable sdLdBinarySourceTable
+      (sdLdTableWithData sdLdMainTable)
+      (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.operations.interactionValuesWith
+        ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+        (Environment.fromInput sdLdSlliBinaryExtensionRow sdLdMemData))
+      h_silent_0 h_silent_1 h_silent_2 h_silent_3 h_silent_4 h_silent_5
+      h_silent_6 h_silent_7 h_silent_8 h_silent_9 h_silent_10 h_consumer
+      h_silent_12 h_silent_13 h_silent_15 h_silent_16
+    exact h
   rw [h_list]
   exact balancedInteractions_of_perm sdLdExtensionSource_actual_consumer_balanced List.perm_append_comm
 
