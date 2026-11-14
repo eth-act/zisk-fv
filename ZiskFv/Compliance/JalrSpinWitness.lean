@@ -671,7 +671,8 @@ theorem jalrWitness_table_constraints :
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignRangeSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignRomSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Mem.componentWithDualMemBus
-  · refine registerStepRangeRowsTable_constraints _ ?_
+  · refine registerStepRangeRowsTable_constraints
+      ([2, 2, 10, 7] ++ registerBoundaryRangeValues jalrBoundaryRows) ?_
     intro v hv
     rcases (List.mem_append (s := ([2, 2, 10, 7] : List FGL))
       (t := registerBoundaryRangeValues jalrBoundaryRows)).mp hv with hv | hv

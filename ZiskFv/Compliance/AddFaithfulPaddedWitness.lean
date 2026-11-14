@@ -459,7 +459,8 @@ theorem addFaithfulWitness_table_constraints :
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignRangeSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignRomSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Mem.componentWithDualMemBus
-  · refine registerStepRangeRowsTable_constraints _ ?_
+  · refine registerStepRangeRowsTable_constraints
+      ([0, 0, 0, 1, 0, 0] ++ registerBoundaryRangeValues addFaithfulBoundaryRows) ?_
     intro v hv
     rcases (List.mem_append (s := ([0, 0, 0, 1, 0, 0] : List FGL))
       (t := registerBoundaryRangeValues addFaithfulBoundaryRows)).mp hv with hv | hv
