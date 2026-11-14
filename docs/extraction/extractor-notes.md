@@ -308,6 +308,9 @@ The sixth local lookup is not inferred from a `bits` annotation or from the
 bus-byte mux. Source-only Direct accumulator equations are separately recorded
 as challenge/stage-2 predicates, with their generated-constraint welds; this
 does not claim row-count correlation or finished provider composition.
+The faithfulness check uses an explicit `PIL_EXTRACT` override when supplied;
+otherwise it runs Cargo against the current extractor source. An existing
+debug CLI is not freshness evidence: `cargo test` can leave it stale.
 
 Regenerate the Clean Component source with:
 
