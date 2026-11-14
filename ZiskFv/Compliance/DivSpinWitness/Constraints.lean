@@ -435,8 +435,10 @@ theorem divSpinWitness_transitions : divSpinWitness.TransitionConstraints := by
       intro index
       simp [divSpinBinaryAddTable, binaryAddRowsTable,
         ZiskFv.AirsClean.BinaryAdd.component]
-    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_transitions rfl
-    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_transitions rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_transitions
+        (table := divSpinExtensionSourceTable) rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_transitions
+        (table := divSpinBinarySourceTable) rfl
     · exact divSpinMainTable_transitions
 
 theorem divSpinWitness_cyclicSuccessorTransitions :
@@ -488,8 +490,10 @@ theorem divSpinWitness_cyclicSuccessorTransitions :
       intro index
       simp [divSpinBinaryAddTable, binaryAddRowsTable,
         ZiskFv.AirsClean.BinaryAdd.component]
-    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_cyclicSuccessorTransitions rfl
-    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_cyclicSuccessorTransitions rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_cyclicSuccessorTransitions
+        (table := divSpinExtensionSourceTable) rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_cyclicSuccessorTransitions
+        (table := divSpinBinarySourceTable) rfl
     · exact divSpinMainTable_cyclicSuccessorTransitions
 
 

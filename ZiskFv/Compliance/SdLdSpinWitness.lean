@@ -1221,8 +1221,10 @@ theorem sdLdWitness_transitions : sdLdWitness.TransitionConstraints := by
       intro index
       simp [sdLdTableWithData, sdLdBinaryAddTable, binaryAddRowsTable,
         ZiskFv.AirsClean.BinaryAdd.component]
-    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_transitions rfl
-    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_transitions rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_transitions
+        (table := sdLdExtensionSourceTable) rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_transitions
+        (table := sdLdBinarySourceTable) rfl
     · simpa [sdLdTableWithData, sdLdMainTable] using sdLdMainTable_transitions
 
 theorem sdLdWitness_cyclicSuccessorTransitions :
@@ -1270,8 +1272,10 @@ theorem sdLdWitness_cyclicSuccessorTransitions :
       intro index
       simp [sdLdTableWithData, sdLdBinaryAddTable, binaryAddRowsTable,
         ZiskFv.AirsClean.BinaryAdd.component]
-    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_cyclicSuccessorTransitions rfl
-    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_cyclicSuccessorTransitions rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_cyclicSuccessorTransitions
+        (table := sdLdExtensionSourceTable) rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_cyclicSuccessorTransitions
+        (table := sdLdBinarySourceTable) rfl
     · simpa [sdLdTableWithData, sdLdMainTable] using
         sdLdMainTable_cyclicSuccessorTransitions
 

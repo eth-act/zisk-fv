@@ -333,8 +333,10 @@ theorem singleAddWitness_transitions : singleAddWitness.TransitionConstraints :=
     · rw [Table.TransitionConstraints]
       intro index
       simp [binaryAddRowsTable, ZiskFv.AirsClean.BinaryAdd.component]
-    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_transitions rfl
-    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_transitions rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_transitions
+        (table := noRequestExtensionSourceTable) rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_transitions
+        (table := noRequestBinarySourceTable) rfl
     · exact addX1MainTable_transitions
 
 theorem singleAddWitness_cyclicSuccessorTransitions :
@@ -376,8 +378,10 @@ theorem singleAddWitness_cyclicSuccessorTransitions :
     · rw [Table.CyclicSuccessorTransitionConstraints]
       intro index
       simp [binaryAddRowsTable, ZiskFv.AirsClean.BinaryAdd.component]
-    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_cyclicSuccessorTransitions rfl
-    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_cyclicSuccessorTransitions rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_cyclicSuccessorTransitions
+        (table := noRequestExtensionSourceTable) rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_cyclicSuccessorTransitions
+        (table := noRequestBinarySourceTable) rfl
     · rw [Table.CyclicSuccessorTransitionConstraints]
       intro index
       simp [mainSingleRowTable, ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus]

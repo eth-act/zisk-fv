@@ -727,8 +727,10 @@ theorem jalrWitness_transitions : jalrWitness.TransitionConstraints := by
       intro index
       simp [jalrBinaryAddTable, binaryAddRowsTable,
         ZiskFv.AirsClean.BinaryAdd.component]
-    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_transitions rfl
-    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_transitions rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_transitions
+        (table := jalrExtensionSourceTable) rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_transitions
+        (table := jalrBinarySourceTable) rfl
     · exact jalrMainTable_transitions
 
 theorem jalrWitness_cyclicSuccessorTransitions :
@@ -777,8 +779,10 @@ theorem jalrWitness_cyclicSuccessorTransitions :
       intro index
       simp [jalrBinaryAddTable, binaryAddRowsTable,
         ZiskFv.AirsClean.BinaryAdd.component]
-    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_cyclicSuccessorTransitions rfl
-    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_cyclicSuccessorTransitions rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_cyclicSuccessorTransitions
+        (table := jalrExtensionSourceTable) rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_cyclicSuccessorTransitions
+        (table := jalrBinarySourceTable) rfl
     · exact jalrMainTable_cyclicSuccessorTransitions
 
 private theorem jalrMainOpBusInteraction_eval_at
