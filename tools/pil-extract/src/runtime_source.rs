@@ -8,6 +8,7 @@
 //!
 //! The resulting Rust is an Aeneas INPUT, not a claim that Aeneas extraction or
 //! the loader/physical-execution correspondence has already been proved.
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use anyhow::{anyhow, bail, Result};
 use regex::Regex;
@@ -78,6 +79,79 @@ fn function<'a>(source: &'a str, code: &str, name: &str) -> Result<(&'a str, usi
     let open = code[matches[0].end()..].find('{').ok_or_else(|| anyhow!("missing {name} body"))? + matches[0].end();
     let end = close(code,open,b'{',b'}')?;
     Ok((&source[start..=end],start))
+}
+
+struct MethodSource {
+    name: String,
+    source_line: usize,
+    attributes: Vec<String>,
+    source: String,
+    tokens: Vec<String>,
+}
+
+fn attributes_before(source: &str, code: &str, start: usize) -> Result<(usize,Vec<String>)> {
+    let mut cursor = start;
+    let mut attributes = Vec::new();
+    loop {
+        while cursor > 0 && code.as_bytes()[cursor-1].is_ascii_whitespace() { cursor -= 1; }
+        if cursor == 0 || code.as_bytes()[cursor-1] != b']' { break; }
+        let end = cursor;
+        let mut depth = 1;
+        cursor -= 1;
+        while cursor > 0 && depth > 0 {
+            cursor -= 1;
+            match code.as_bytes()[cursor] {
+                b']' => depth += 1,
+                b'[' => depth -= 1,
+                _ => (),
+            }
+        }
+        if depth != 0 || cursor == 0 || code.as_bytes()[cursor-1] != b'#' {
+            bail!("malformed source method attribute");
+        }
+        cursor -= 1;
+        attributes.push(tokens(&source[cursor..end])?.join(" "));
+    }
+    attributes.reverse();
+    Ok((cursor,attributes))
+}
+
+fn methods_in_impl(source: &str, code: &str, implementation: &str) -> Result<Vec<MethodSource>> {
+    let implementation = Regex::new(implementation)?;
+    let implementations = implementation.find_iter(code).collect::<Vec<_>>();
+    if implementations.len() != 1 { bail!("expected one source implementation matching {}",implementation); }
+    let open = implementations[0].end()-1;
+    let end = close(code,open,b'{',b'}')?;
+    let method = Regex::new(r"\b(?:pub(?:\s*\([^)]*\))?\s+)?(?:const\s+)?fn\s+([A-Za-z_][A-Za-z_0-9]*)\s*\(")?;
+    let mut cursor = open+1;
+    let mut declarations = Vec::new();
+    while let Some(capture) = method.captures(&code[cursor..end]) {
+        let matched = capture.get(0).unwrap();
+        let start = cursor + matched.start();
+        let body_open = code[cursor+matched.end()..end].find('{')
+            .ok_or_else(||anyhow!("missing source method body"))? + cursor+matched.end();
+        let body_end = close(code,body_open,b'{',b'}')?;
+        let (_,attributes) = attributes_before(source,code,start)?;
+        let body = &source[start..=body_end];
+        declarations.push(MethodSource {
+            name: capture[1].to_owned(),
+            source_line: source[..start].bytes().filter(|c|*c==b'\n').count()+1,
+            attributes,
+            source: body.to_owned(),
+            tokens: tokens(&mask_with_strings(body,false)?)?,
+        });
+        cursor = body_end+1;
+    }
+    Ok(declarations)
+}
+
+fn builder_declaration(source: &str, code: &str) -> Result<String> {
+    let declaration = Regex::new(r"\bpub\s+struct\s+ZiskInstBuilder\s*\{")?;
+    let declarations = declaration.find_iter(code).collect::<Vec<_>>();
+    if declarations.len()!=1 { bail!("expected actual ZiskInstBuilder declaration"); }
+    let (start,_) = attributes_before(source,code,declarations[0].start())?;
+    let end = close(code,declarations[0].end()-1,b'{',b'}')?;
+    Ok(source[start..=end].to_owned())
 }
 
 struct Helper {
@@ -329,10 +403,24 @@ pub(crate) fn render(context_source: &str, elf2rom_source: &str,
     let opcodes = opcode_sources(operations_source)?;
     let (pubout_argument,pubout_flag) = pubout_result(operations_source)?;
     let builder_code = mask(builder_source)?;
-    let builder_methods = ["src_a","src_b","store","store_pc","op","src_a_reg",
-        "src_b_reg","src_b_lastc","src_b_ind","store_reg","store_pc_reg","store_ind","op_zisk","end"]
-        .into_iter().map(|name| Ok((name,function(builder_source,&builder_code,name)?.0)))
-        .collect::<Result<Vec<_>>>()?;
+    let builder_declaration = builder_declaration(builder_source,&builder_code)?;
+    let builder_methods = methods_in_impl(builder_source,&builder_code,
+        r"\bimpl\s+ZiskInstBuilder\s*\{")?;
+    let mut declarations: BTreeMap<&str,Vec<usize>> = BTreeMap::new();
+    for (index,method) in builder_methods.iter().enumerate() {
+        declarations.entry(&method.name).or_default().push(index);
+    }
+    let required_methods: BTreeSet<&str> = rows.iter()
+        .flat_map(|row| row.calls.iter().map(|call|call.method.as_str())).collect();
+    for name in &required_methods {
+        if !declarations.contains_key(name) {
+            bail!("actual runtime helper calls undeclared builder method {name}");
+        }
+    }
+    let typed_setters = ["src_a_imm","src_b_imm","src_a_reg","src_b_reg","src_b_lastc",
+        "src_b_ind","store_reg","store_pc_reg","store_ind","op_zisk"];
+    let profile_names: BTreeSet<&str> = declarations.keys().copied()
+        .chain(required_methods.iter().copied()).chain(typed_setters.iter().copied()).collect();
     let mut rust=String::from("// Generated from actual source helper bodies. Compile with aeneas_extract.\nuse zisk_core::*;\n\n#[derive(Clone, Copy)]\npub enum RuntimeOrigin { EndAndLib, ReadWriteInitialization, ReadOnlyInitialization, EntryExit }\npub struct RuntimeEmission { pub origin: RuntimeOrigin, pub site: usize, pub ordinal: usize, pub address: u64, pub instruction: ZiskInst }\npub struct RuntimeRows { pub next: u64, pub emissions: Vec<RuntimeEmission> }\nstruct RuntimeSink { origin: RuntimeOrigin, emissions: Vec<RuntimeEmission> }\nimpl RuntimeSink {\n fn insert(&mut self, site: usize, address: u64, builder: ZiskInstBuilder) {\n  let ordinal = self.emissions.len();\n  self.emissions.push(RuntimeEmission { origin: self.origin, site, ordinal, address, instruction: builder.i });\n }\n}\nstruct RuntimeRom { next_init_inst_addr: u64, insts: RuntimeSink }\nimpl RuntimeRom {\n fn new(next: u64, origin: RuntimeOrigin) -> Self { Self { next_init_inst_addr: next, insts: RuntimeSink { origin, emissions: Vec::new() } } }\n fn finish(self) -> RuntimeRows { RuntimeRows { next: self.next_init_inst_addr, emissions: self.insts.emissions } }\n}\n\n");
     for constant in &constants { rust.push_str(constant); rust.push('\n'); }
     for helper in &helpers { rust.push_str(&helper.projected); rust.push_str("\n\n"); }
@@ -359,8 +447,31 @@ pub(crate) fn render(context_source: &str, elf2rom_source: &str,
         writeln!(lean," ⟨{}, {}, {}, {}, {}, {}⟩,",quoted(&op.name),quoted(&op.constructor),
             quoted(&op.family),op.code,op.input,op.output).unwrap();
     }
-    lean.push_str("]\n\ndef builderMethods : List (String × String) := [\n");
-    for (name,body) in &builder_methods { writeln!(lean," ({}, {}),",quoted(name),quoted(body)).unwrap(); }
-    writeln!(lean,"]\n\ndef puboutResultArgument : Nat := {pubout_argument}\ndef puboutResultFlag : Bool := {pubout_flag}\n\nend Extraction.RuntimeSource").unwrap();
+    lean.push_str("]\n\nstructure MethodSource where\n name : String\n sourceLine : Nat\n attributes : List String\n source : String\n tokens : List String\n deriving DecidableEq, Repr\n\ndef declaredBuilderMethods : List MethodSource := [\n");
+    for method in &builder_methods {
+        writeln!(lean," ⟨{}, {}, [{}], {}, [{}]⟩,",quoted(&method.name),method.source_line,
+            method.attributes.iter().map(|s|quoted(s)).collect::<Vec<_>>().join(", "),
+            quoted(&method.source),method.tokens.iter().map(|s|quoted(s)).collect::<Vec<_>>().join(", ")).unwrap();
+    }
+    lean.push_str("]\n\nstructure BuilderMethodProfile where\n name : String\n helperRequired : Bool\n typedSetter : Bool\n declarationIndices : List Nat\n deriving DecidableEq, Repr\n\ndef builderMethods : List BuilderMethodProfile := [\n");
+    for name in profile_names {
+        let indices = declarations.get(name).map(Vec::as_slice).unwrap_or(&[]);
+        writeln!(lean," ⟨{}, {}, {}, [{}]⟩,",quoted(name),required_methods.contains(name),
+            typed_setters.contains(&name),indices.iter().map(usize::to_string).collect::<Vec<_>>().join(", ")).unwrap();
+    }
+    writeln!(lean,"]\n\ndef requiredBuilderMethods : List String := [{}]",
+        required_methods.iter().map(|s|quoted(s)).collect::<Vec<_>>().join(", ")).unwrap();
+    writeln!(lean,"def availableTypedSetters : List String := [{}]",
+        typed_setters.iter().filter(|name|declarations.contains_key(**name))
+            .map(|s|quoted(s)).collect::<Vec<_>>().join(", ")).unwrap();
+    writeln!(lean,"def missingTypedSetters : List String := [{}]",
+        typed_setters.iter().filter(|name|!declarations.contains_key(**name))
+            .map(|s|quoted(s)).collect::<Vec<_>>().join(", ")).unwrap();
+    writeln!(lean,"\ndef builderDeclaration : String := {}",quoted(&builder_declaration)).unwrap();
+    writeln!(lean,"def builderDeclarationTokens : List String := [{}]",
+        tokens(&mask_with_strings(&builder_declaration,false)?)?.iter()
+            .map(|s|quoted(s)).collect::<Vec<_>>().join(", ")).unwrap();
+    lean.push_str("\n-- Four-input metadata does not supply the actual instruction Default implementation.\n-- The new method and builder declaration above expose, but do not discharge, this dependency.\ndef instructionDefaultSourceProvided : Bool := false\ndef unprovidedInitializationSource : String := \"core/src/zisk_inst.rs\"\n");
+    writeln!(lean,"\ndef puboutResultArgument : Nat := {pubout_argument}\ndef puboutResultFlag : Bool := {pubout_flag}\n\nend Extraction.RuntimeSource").unwrap();
     Ok(RuntimeSourceOutput {rust,lean})
 }
