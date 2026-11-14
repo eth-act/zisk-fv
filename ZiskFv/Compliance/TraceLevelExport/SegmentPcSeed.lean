@@ -268,9 +268,9 @@ theorem h_pc_bridge_of_pcSeed
     feeds `h_pc_bridge_of_pcSeed` the row's own Sail-PC naming, which every op already
     carries in one of three places:
 
-    * 45 ops and the 4 stores name it directly, as `h_input_pc` (stores carry presence);
+    * 45 ops name it directly, as `h_input_pc`;
     * the 7 signed M-extension ops carry it inside `promises` (`input_pc_eq`);
-    * the 7 loads carry it as the first conjunct of `<op>_state_assumptions`.
+    * the 4 stores and 7 loads carry PC presence and expose `input_pc_read`.
 
     None of those three is a new premise — all were already fields of the same structure.
     What the seed supplies is the other half: that the Main `pc` column equals that named
@@ -394,19 +394,19 @@ def inputsAgree_of_pcBridge {numInstructions : ℕ}
   | .sd _, core =>
       { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.input_pc_read }
   | .ld _, core =>
-      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.h_opcode_assumptions.1 }
+      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.input_pc_read }
   | .lbu _, core =>
-      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.h_opcode_assumptions.1 }
+      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.input_pc_read }
   | .lhu _, core =>
-      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.h_opcode_assumptions.1 }
+      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.input_pc_read }
   | .lwu _, core =>
-      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.h_opcode_assumptions.1 }
+      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.input_pc_read }
   | .lb _, core =>
-      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.h_opcode_assumptions.1 }
+      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.input_pc_read }
   | .lh _, core =>
-      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.h_opcode_assumptions.1 }
+      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.input_pc_read }
   | .lw _, core =>
-      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.h_opcode_assumptions.1 }
+      { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.input_pc_read }
   | .fence _, core =>
       { core with h_pc_bridge := h_pc_bridge_of_pcBridge h_bridge core.h_input_pc }
 
@@ -421,8 +421,8 @@ def inputsAgree_of_pcSeed {numInstructions : ℕ}
   inputsAgree_of_pcBridge i (pcBridge_of_pcSeed seed i)
 
 /-- **The row's Sail PC is named.** Every `InputsAgree` arm carries `(binding i).regs.get? PC =
-    some v` somewhere — 45 ops as `h_input_pc`, the 4 stores as PC presence, the 7 signed
-    M-ext ops inside `promises`, the 7 loads as the first conjunct of state assumptions.
+    some v` somewhere — 45 ops as `h_input_pc`, the 4 stores and 7 loads as PC
+    presence, and the 7 signed M-ext ops inside `promises`.
     Projecting just the `some` is what the retire-chain bridge needs, because `Option.elim`
     throws it away. -/
 theorem pcNamed_of_inputsAgree {numInstructions : ℕ}
@@ -486,13 +486,13 @@ theorem pcNamed_of_inputsAgree {numInstructions : ℕ}
   | .sh _, ia => ia.h_input_pc
   | .sw _, ia => ia.h_input_pc
   | .sd _, ia => ia.h_input_pc
-  | .ld _, ia => ⟨_, ia.h_opcode_assumptions.1⟩
-  | .lbu _, ia => ⟨_, ia.h_opcode_assumptions.1⟩
-  | .lhu _, ia => ⟨_, ia.h_opcode_assumptions.1⟩
-  | .lwu _, ia => ⟨_, ia.h_opcode_assumptions.1⟩
-  | .lb _, ia => ⟨_, ia.h_opcode_assumptions.1⟩
-  | .lh _, ia => ⟨_, ia.h_opcode_assumptions.1⟩
-  | .lw _, ia => ⟨_, ia.h_opcode_assumptions.1⟩
+  | .ld _, ia => ia.h_input_pc
+  | .lbu _, ia => ia.h_input_pc
+  | .lhu _, ia => ia.h_input_pc
+  | .lwu _, ia => ia.h_input_pc
+  | .lb _, ia => ia.h_input_pc
+  | .lh _, ia => ia.h_input_pc
+  | .lw _, ia => ia.h_input_pc
   | .fence _, ia => ⟨_, ia.h_input_pc⟩
 
 /-- The PC half of a full `InputsAgree`, in the seed's `Option.elim` form.
@@ -575,13 +575,27 @@ theorem pcAgreement_of_inputsAgree {numInstructions : ℕ}
   | .sd _, ia => by
       rw [Classical.choose_spec ia.h_input_pc]
       exact ia.h_pc_bridge
-  | .ld _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
-  | .lbu _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
-  | .lhu _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
-  | .lwu _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
-  | .lb _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
-  | .lh _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
-  | .lw _, ia => by simpa only [ia.h_opcode_assumptions.1, Option.elim] using ia.h_pc_bridge
+  | .ld _, ia => by
+      rw [Classical.choose_spec ia.h_input_pc]
+      exact ia.h_pc_bridge
+  | .lbu _, ia => by
+      rw [Classical.choose_spec ia.h_input_pc]
+      exact ia.h_pc_bridge
+  | .lhu _, ia => by
+      rw [Classical.choose_spec ia.h_input_pc]
+      exact ia.h_pc_bridge
+  | .lwu _, ia => by
+      rw [Classical.choose_spec ia.h_input_pc]
+      exact ia.h_pc_bridge
+  | .lb _, ia => by
+      rw [Classical.choose_spec ia.h_input_pc]
+      exact ia.h_pc_bridge
+  | .lh _, ia => by
+      rw [Classical.choose_spec ia.h_input_pc]
+      exact ia.h_pc_bridge
+  | .lw _, ia => by
+      rw [Classical.choose_spec ia.h_input_pc]
+      exact ia.h_pc_bridge
   | .fence _, ia => by simpa only [ia.h_input_pc, Option.elim] using ia.h_pc_bridge
 
 /-- **`SegmentPcSeed` is no stronger than what callers already assumed.** Anything that
