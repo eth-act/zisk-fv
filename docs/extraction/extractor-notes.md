@@ -24,6 +24,8 @@ pil-extract arith-range-table --rust-source <path> [--output <path>]
 
 pil-extract source-dimensions --pilout <path> [--output <path>]
 
+pil-extract packed-virtual-tables --compiled-json <path> [--output <path>]
+
 pil-extract clean-component --pilout <path> --air <needle>
                  [--row-output <path>] [--constraints-output <path>]
                  [--bus-id <N>] [--channel op-bus|mem-align-bus]
@@ -51,6 +53,12 @@ the flags themselves.
 - `lookup-wiring`: emit a closed typed syntax manifest for all pilout AIRs.
   A hint tuple is retained only when a generated Lean `rfl` check links it to
   a standard direct or two-hint-cluster accumulator template.
+- `packed-virtual-tables`: emit indexed placements for buses 88/124/125/330/331
+  observed in the actual production VirtualTable0/1 fixed columns. The compiler
+  observer checks every target payload/UID/padding cell and converse ownership
+  using the real Rust-generated external fixed columns. The generated placement
+  theorems do not themselves establish logical payload fidelity or provider
+  composition; those remain checked at the concrete model consumers.
 - `arith-table`: emit the extracted arithmetic lookup table from upstream
   Rust source.
 - `arith-range-table`: emit source-derived `RANGES`, `OFFSETS`, row-mapping
