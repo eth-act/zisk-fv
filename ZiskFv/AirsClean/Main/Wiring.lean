@@ -374,4 +374,138 @@ def reloadWiring (rows : ReloadRows) (index : Fin 31) : ReloadWiring rows index 
       fin_cases index <;> rfl]
     fin_cases index <;> rfl
 
+/-! ## The 31 unconditional reload-range checks (`main.pil:439,447`)
+
+The interpretation fixes only the already-modeled segment number to zero. Register addresses remain
+component-owned, and every reload timestamp is the same live cell used by its MemBus reload tie.
+Unsupported AIR values and expression constructors fail closed.
+-/
+
+@[reducible]
+def reloadRangeExprToClean (rows : ReloadRows) (register : Fin 31) :
+    Expr → Option (Expression FGL)
+  | .constant "1" => some 1
+  | .constant "4" => some 4
+  | .constant "4194304" => some 4194304
+  | .airValue index =>
+      if index = 1 then some 0
+      else if index = 70 + register.val then some (rows register).reloadTimestamp
+      else none
+  | .add lhs rhs => do
+      return (← reloadRangeExprToClean rows register lhs) +
+        (← reloadRangeExprToClean rows register rhs)
+  | .sub lhs rhs => do
+      return (← reloadRangeExprToClean rows register lhs) -
+        (← reloadRangeExprToClean rows register rhs)
+  | .mul lhs rhs => do
+      return (← reloadRangeExprToClean rows register lhs) *
+        (← reloadRangeExprToClean rows register rhs)
+  | _ => none
+
+@[reducible]
+def sourceReloadDistanceExpr (row : Var ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL) :
+    Expression FGL :=
+  (((1 + 4 * ((0 + 1) * 4194304 - 1)) + 4) - 1) - row.reloadTimestamp - 1
+
+@[reducible]
+def expectedReloadRangeSlots (index : Fin 31) : List Slot :=
+  [{ name := s!"(last_segment_reg_mem_step - Main.last_reg_mem_step[{index.val}]) - 1"
+     value := .sub (.sub
+       (.sub (.add (.add (.constant "1")
+         (.mul (.constant "4")
+           (.sub (.mul (.add (.airValue 1) (.constant "1")) (.constant "4194304"))
+             (.constant "1")))) (.constant "4")) (.constant "1"))
+       (.airValue (70 + index.val))) (.constant "1") }]
+
+theorem reloadRangeLink_one_hint (index : Fin 31) :
+    (link_Main_reloadRange index).hints.length = 1 := by
+  fin_cases index <;> rfl
+
+@[reducible]
+def reloadRangeHint (index : Fin 31) : HintTuple :=
+  (link_Main_reloadRange index).hints[0]'(by rw [reloadRangeLink_one_hint index]; decide)
+
+/-- Constraint, accumulator and hint indices, source names, expression, selector/direction, bus
+    and multiplicity are pinned for every loop instance, not inferred from a representative row. -/
+structure ReloadRangeWiring (rows : ReloadRows) (index : Fin 31) where
+  constraintIndex : (link_Main_reloadRange index).constraintIndex = 49 + 3 * index.val
+  accumulator : (link_Main_reloadRange index).accumulator = .airValue (103 + 3 * index.val)
+  linkShape : (link_Main_reloadRange index).shape = .direct
+  constraintValidated :
+    templateOf (link_Main_reloadRange index).shape
+      (link_Main_reloadRange index).alpha (link_Main_reloadRange index).gamma
+      (link_Main_reloadRange index).accumulator (link_Main_reloadRange index).hints
+      (link_Main_reloadRange index).derivedTuples = some (link_Main_reloadRange index).constraint
+  linkedHint : (link_Main_reloadRange index).hints = [reloadRangeHint index]
+  hintIndex : (reloadRangeHint index).hintIndex = 639 + 4 * index.val
+  piop : (reloadRangeHint index).piop = "Range Check"
+  bus : (reloadRangeHint index).busId = .constant "102"
+  assumes : (reloadRangeHint index).proves = false
+  multiplicity : (reloadRangeHint index).multiplicity = .constant "1"
+  exactNamedSlots : (reloadRangeHint index).slots = expectedReloadRangeSlots index
+  slotInterpretation :
+    ((reloadRangeHint index).slots.mapM
+      (fun slot => reloadRangeExprToClean rows index slot.value)) =
+      some [sourceReloadDistanceExpr (reloadRowAt rows index)]
+
+set_option maxRecDepth 10000 in
+def reloadRangeWiring (rows : ReloadRows) (index : Fin 31) : ReloadRangeWiring rows index where
+  constraintIndex := by fin_cases index <;> rfl
+  accumulator := by fin_cases index <;> rfl
+  linkShape := by fin_cases index <;> rfl
+  constraintValidated := ValidatedLink.constraintValidated (link_Main_reloadRange index)
+  linkedHint := by fin_cases index <;> rfl
+  hintIndex := by fin_cases index <;> rfl
+  piop := by fin_cases index <;> rfl
+  bus := by fin_cases index <;> rfl
+  assumes := by fin_cases index <;> rfl
+  multiplicity := by fin_cases index <;> rfl
+  exactNamedSlots := by fin_cases index <;> rfl
+  slotInterpretation := by
+    rw [show (reloadRangeHint index).slots = expectedReloadRangeSlots index by
+      fin_cases index <;> rfl]
+    fin_cases index <;> rfl
+
+/-- The source's physical end-step expression evaluates to the actual boundary consumer distance.
+    This is segment zero only, exactly like Main's existing fixed STEP schema. -/
+theorem eval_sourceReloadDistanceExpr_eq_live (env : Environment FGL)
+    (row : Var ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL) :
+    Expression.eval env (sourceReloadDistanceExpr row) =
+      Expression.eval env (ZiskFv.AirsClean.RegisterBoundary.reloadDistanceExpr row) := by
+  simp only [sourceReloadDistanceExpr, ZiskFv.AirsClean.RegisterBoundary.reloadDistanceExpr,
+    ZiskFv.AirsClean.RegisterBoundary.reloadEndTimestamp, Expression.eval]
+  ring
+
+/-- Each exact named generated slot evaluates to the distance in the real boundary emission.
+    This consumes the checked 31-instance source contract, not merely a generated import. -/
+theorem reloadRange_emission_matches_source (rows : ReloadRows) (index : Fin 31)
+    (env : Environment FGL) :
+    Option.map (List.map (Expression.eval env))
+      ((reloadRangeHint index).slots.mapM
+        (fun slot => reloadRangeExprToClean rows index slot.value)) =
+      some [Expression.eval env
+        (ZiskFv.AirsClean.RegisterBoundary.reloadDistanceExpr (reloadRowAt rows index))] := by
+  rw [(reloadRangeWiring rows index).slotInterpretation]
+  simp only [Option.map_some, List.map_cons, List.map_nil]
+  rw [eval_sourceReloadDistanceExpr_eq_live]
+
+theorem reloadRangeExprToClean_rejects_other_register (rows : ReloadRows) (register : Fin 31)
+    (index : Nat) (h_segment : index ≠ 1) (h_register : index ≠ 70 + register.val) :
+    reloadRangeExprToClean rows register (.airValue index) = none := by
+  simp [reloadRangeExprToClean, h_segment, h_register]
+
+/-- Only the audited source language is interpreted. In particular, unsupported source cells
+    and opaque expressions cannot silently become a zero distance. -/
+theorem reloadRangeExprToClean_rejects_unsupported
+    (rows : ReloadRows) (register : Fin 31) (stage index : Nat) (offset : Int)
+    (kind payload : String) (value : Expr) :
+    reloadRangeExprToClean rows register (.constant "0") = none ∧
+    reloadRangeExprToClean rows register (.witness stage index offset) = none ∧
+    reloadRangeExprToClean rows register (.fixed index offset) = none ∧
+    reloadRangeExprToClean rows register (.challenge stage index) = none ∧
+    reloadRangeExprToClean rows register (.airGroupValue index) = none ∧
+    reloadRangeExprToClean rows register (.opaque kind payload) = none ∧
+    reloadRangeExprToClean rows register (.neg value) = none := by
+  repeat constructor
+
 end ZiskFv.AirsClean.Main

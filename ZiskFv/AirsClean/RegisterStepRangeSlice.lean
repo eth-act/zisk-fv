@@ -7,9 +7,10 @@ import ZiskFv.Channels.SpecifiedRanges
 # `SpecifiedRanges` bus-102 static provider slice — the register-step descent
 
 The source-linked, bounded provider for Main's three register-step range hints
-(`main.pil:333-335`). Like `SpecifiedRangesSlice` (bus 103, 16-bit) this is deliberately a slice,
-not a claim to extract the whole virtual `SpecifiedRanges` AIR: its membership predicate is the
-exact constructive `rangeTable24` model and its range id is the manifest's bus 102.
+(`main.pil:333-335`) and RegisterBoundary's 31 reload-distance hints (`main.pil:447`).
+Like `SpecifiedRangesSlice` (bus 103, 16-bit), this is deliberately a slice, not a claim to extract
+the whole virtual `SpecifiedRanges` AIR: its membership predicate is the exact constructive
+`rangeTable24` model and its range id is the manifest's bus 102.
 
 ## Why this slice exists — it is load-bearing, not decorative
 

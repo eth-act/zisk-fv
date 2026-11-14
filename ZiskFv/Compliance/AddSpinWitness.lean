@@ -494,7 +494,7 @@ def addSpinTables : List (Table FGL) :=
   -- bus-102: only the ADD row has active register slots, and each of its distances is 0
   -- (boot timestamp 0, chain 1/2/3). The two JAL rows emit at multiplicity 0, so they
   -- need no matching push.
-  , registerStepRangeRowsTable [0, 0, 0]
+  , registerStepRangeRowsTable ([0, 0, 0] ++ registerBoundaryRangeValues singleAddBoundaryRows)
   , emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
   , emptyComponentTable ZiskFv.AirsClean.ArithDiv.component
   , emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete
@@ -514,7 +514,7 @@ def addSpinNonMainTables : List (Table FGL) :=
   -- bus-102: only the ADD row has active register slots, and each of its distances is 0
   -- (boot timestamp 0, chain 1/2/3). The two JAL rows emit at multiplicity 0, so they
   -- need no matching push.
-  , registerStepRangeRowsTable [0, 0, 0]
+  , registerStepRangeRowsTable ([0, 0, 0] ++ registerBoundaryRangeValues singleAddBoundaryRows)
   , emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
   , emptyComponentTable ZiskFv.AirsClean.ArithDiv.component
   , emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete
@@ -568,9 +568,13 @@ theorem addSpinWitness_table_constraints :
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Mem.componentWithDualMemBus
   · refine registerStepRangeRowsTable_constraints _ ?_
     intro v hv
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
-    rcases hv with rfl | rfl | rfl <;>
-      simp [AirsClean.RangeTables.rangeTable24, AirsClean.RangeTables.rangeStaticTable]
+    rcases (List.mem_append (s := ([0, 0, 0] : List FGL))
+      (t := registerBoundaryRangeValues singleAddBoundaryRows)).mp hv with hv | hv
+    ·
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hv
+      rcases hv with rfl | rfl | rfl <;>
+        simp [AirsClean.RangeTables.rangeTable24, AirsClean.RangeTables.rangeStaticTable]
+    · exact singleAddBoundaryRangeValues_spec v hv
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.SpecifiedRangesSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithDiv.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithMul.componentComplete
@@ -1231,10 +1235,8 @@ private theorem addSpinMemAlignRangeChannel_ne_opBus :
 
 private theorem addSpinRegisterBoundary_interactionsWith_rangeChannel_nil :
     registerBoundaryRowsTable.interactionsWith SpecifiedRangesSliceChannel.toRaw = [] := by
-  apply Table.interactionsWith_nil_of_channel_not_mem
-  change SpecifiedRangesSliceChannel.toRaw ∉ [MemBusChannel.toRaw]
-  simp only [List.mem_singleton]
-  exact addSpinRangeChannel_ne_memBus
+  exact ZiskFv.AirsClean.RegisterBoundary.table_interactionsWith_nil_of_names
+    rfl _ (by decide) (by decide)
 
 private theorem addSpinBinaryAdd_interactionsWith_rangeChannel_nil :
     (binaryAddRowsTable [addX1BinaryAddRow]).interactionsWith
@@ -1278,10 +1280,8 @@ theorem addSpinWitness_rangeChannel_balanced :
 
 private theorem addSpinRegisterBoundary_interactionsWith_memAlignRangeChannel_nil :
     registerBoundaryRowsTable.interactionsWith MemAlignRangeChannel.toRaw = [] := by
-  apply Table.interactionsWith_nil_of_channel_not_mem
-  change MemAlignRangeChannel.toRaw ∉ [MemBusChannel.toRaw]
-  simp only [List.mem_singleton]
-  exact addSpinMemAlignRangeChannel_ne_memBus
+  exact ZiskFv.AirsClean.RegisterBoundary.table_interactionsWith_nil_of_names
+    rfl _ (by decide) (by decide)
 
 private theorem addSpinBinaryAdd_interactionsWith_memAlignRangeChannel_nil :
     (binaryAddRowsTable [addX1BinaryAddRow]).interactionsWith MemAlignRangeChannel.toRaw = [] := by
@@ -1324,14 +1324,8 @@ theorem addSpinWitness_memAlignRangeChannel_balanced :
 
 private theorem addSpinRegisterBoundary_interactionsWith_memAlignRomChannel_nil :
     registerBoundaryRowsTable.interactionsWith MemAlignRomChannel.toRaw = [] := by
-  apply Table.interactionsWith_nil_of_channel_not_mem
-  change MemAlignRomChannel.toRaw ∉ [MemBusChannel.toRaw]
-  intro h
-  have h' : MemAlignRomChannel.toRaw = MemBusChannel.toRaw := by
-    simpa only [List.mem_cons, List.not_mem_nil, or_false] using h
-  have h_name := congrArg (fun channel : RawChannel FGL => channel.name) h'
-  change "MemAlignRom133" = "MemoryBus" at h_name
-  simp at h_name
+  exact ZiskFv.AirsClean.RegisterBoundary.table_interactionsWith_nil_of_names
+    rfl _ (by decide) (by decide)
 
 private theorem addSpinBinaryAdd_interactionsWith_memAlignRomChannel_nil :
     (binaryAddRowsTable [addX1BinaryAddRow]).interactionsWith MemAlignRomChannel.toRaw = [] := by
@@ -1418,24 +1412,30 @@ theorem addSpinRegisterStepRange_interactions :
     addSpinWitness.tables.flatMap
         (·.interactionsWith
           ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) =
-      ([registerStepRangeInteraction (0 : FGL), registerStepRangeInteraction (0 : FGL),
+      singleAddBoundaryRows.map registerBoundaryRangeInteraction ++
+      (([registerStepRangeInteraction (0 : FGL), registerStepRangeInteraction (0 : FGL),
         registerStepRangeInteraction (0 : FGL)] ++
+        (registerBoundaryRangeValues singleAddBoundaryRows).map registerStepRangeInteraction ++
         [mainARegStepInteraction addSpinAddRow, mainBRegStepInteraction addSpinAddRow,
           mainCRegStepInteraction addSpinAddRow]) ++
       [ mainARegStepInteraction (addSpinJalRow 1), mainBRegStepInteraction (addSpinJalRow 1)
       , mainCRegStepInteraction (addSpinJalRow 1)
       , mainARegStepInteraction (addSpinJalRow 2), mainBRegStepInteraction (addSpinJalRow 2)
-      , mainCRegStepInteraction (addSpinJalRow 2) ] := by
-  have h_boundary :=
-    ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_registerStepRange_nil
-      (table := registerBoundaryRowsTable) rfl
+      , mainCRegStepInteraction (addSpinJalRow 2) ]) := by
+  have h_boundary :
+      registerBoundaryRowsTable.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+        singleAddBoundaryRows.map registerBoundaryRangeInteraction := by
+    simpa [registerBoundaryRowsTable] using
+      registerBoundaryRowsTableOf_interactionsWith_registerStepRange singleAddBoundaryRows
+        singleAddBoundaryRows_length singleAddBoundaryRows_enumerated emptyData
   have h_binaryAdd :=
     ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_registerStepRange_nil
       (table := binaryAddRowsTable [addX1BinaryAddRow]) rfl
   rw [show addSpinWitness.tables = addSpinTables from rfl]
   simp [addSpinTables, emptyComponentTable_interactionsWith, h_boundary, h_binaryAdd,
     registerStepRangeRowsTable_interactionsWith,
-    addSpinMainTable_interactionsWith_registerStepRange]
+    addSpinMainTable_interactionsWith_registerStepRange, List.map_append, List.append_assoc]
 
 /-- Both JAL rows emit every bus-102 pull at multiplicity 0. -/
 theorem addSpinJalRegisterStepInteractions_balanced :
@@ -1454,26 +1454,41 @@ theorem addSpinJalRegisterStepInteractions_balanced :
     rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
     decide
 
-theorem addSpinWitness_registerStepRangeChannel_balanced :
-    BalancedInteractions
-      (addSpinWitness.tables.flatMap
-        (·.interactionsWith
-          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw)) := by
-  rw [addSpinRegisterStepRange_interactions]
+theorem addSpinMainRegisterStepRange_balanced :
+    BalancedInteractions (([registerStepRangeInteraction (0 : FGL), registerStepRangeInteraction (0 : FGL),
+        registerStepRangeInteraction (0 : FGL)] ++
+        [mainARegStepInteraction addSpinAddRow, mainBRegStepInteraction addSpinAddRow,
+          mainCRegStepInteraction addSpinAddRow]) ++
+      [ mainARegStepInteraction (addSpinJalRow 1), mainBRegStepInteraction (addSpinJalRow 1)
+      , mainCRegStepInteraction (addSpinJalRow 1)
+      , mainARegStepInteraction (addSpinJalRow 2), mainBRegStepInteraction (addSpinJalRow 2)
+      , mainCRegStepInteraction (addSpinJalRow 2) ]) := by
   have h_add :
       BalancedInteractions
         ([registerStepRangeInteraction (0 : FGL), registerStepRangeInteraction (0 : FGL),
           registerStepRangeInteraction (0 : FGL)] ++
           [mainARegStepInteraction addSpinAddRow, mainBRegStepInteraction addSpinAddRow,
             mainCRegStepInteraction addSpinAddRow]) := by
-    simpa [singleAddWitness_registerStepRange_interactions, addSpinAddRow] using
-      singleAddWitness_registerStepRangeChannel_balanced
+    simpa [addSpinAddRow] using
+      singleAddMainRegisterStepRange_balanced
   exact balancedInteractions_append_of_balanced h_add
     addSpinJalRegisterStepInteractions_balanced
     (by
       left
       rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
       decide)
+
+theorem addSpinWitness_registerStepRangeChannel_balanced :
+    BalancedInteractions
+      (addSpinWitness.tables.flatMap
+        (·.interactionsWith
+          ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw)) := by
+
+  rw [addSpinRegisterStepRange_interactions]
+  simpa only [List.append_assoc] using
+    (registerBoundaryRange_balanced singleAddBoundaryRows ([registerStepRangeInteraction (0 : FGL), registerStepRangeInteraction (0 : FGL),
+        registerStepRangeInteraction (0 : FGL)]) _
+      (by decide) addSpinMainRegisterStepRange_balanced)
 
 theorem addSpinWitness_balancedChannels : addSpinWitness.BalancedChannels := by
   refine addSpinWitness.balancedChannels_of_tables addSpinEnsemble_verifier ?_
