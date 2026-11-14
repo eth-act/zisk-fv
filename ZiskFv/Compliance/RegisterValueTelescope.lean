@@ -148,7 +148,7 @@ theorem memBus_mem_op_three_counterpart
   rcases component_mem_fullRv64im_cases h_component_mem with
     h_verifier | h_regBoundary | h_marb | h_mab | h_memAlign | h_memAlignRange | h_memAlignRom |
     h_mem | h_ranges | h_regRange | h_arithDiv | h_arithMul | h_binExt | h_binary | h_binaryAdd |
-    h_main
+    h_extensionSource | h_binarySource | h_main
   · exfalso
     have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
       have h_ops_nil :
@@ -279,6 +279,12 @@ theorem memBus_mem_op_three_counterpart
     have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
       binaryAdd_table_interactionsWith_memBus_nil h_binaryAdd
     simp [h_nil] at h_mem_table
+  · have h_nil := extensionTableSource_interactionsWith_nil_of_name
+      h_extensionSource MemBusChannel.toRaw (by decide)
+    simp [h_nil] at h_mem_table
+  · have h_nil := binaryTableSource_interactionsWith_nil_of_name
+      h_binarySource MemBusChannel.toRaw (by decide)
+    simp [h_nil] at h_mem_table
   -- Main: the three register-pre pushes ride at their selector, in `{0, 1}`; the three current
   -- accesses survive.
   · obtain ⟨r, h_r, h_branch⟩ := exists_main_mem_row_eval_of_interaction_mem h_main h_mem_table
@@ -363,7 +369,7 @@ theorem memBus_mem_op_three_table_component
   rcases component_mem_fullRv64im_cases h_component_mem with
     h_verifier | h_regBoundary | h_marb | h_mab | h_memAlign | h_memAlignRange | h_memAlignRom |
     h_mem | h_ranges | h_regRange | h_arithDiv | h_arithMul | h_binExt | h_binary | h_binaryAdd |
-    h_main
+    h_extensionSource | h_binarySource | h_main
   · exfalso
     have h_nil : table.interactionsWith MemBusChannel.toRaw = [] := by
       have h_ops_nil :
@@ -493,6 +499,12 @@ theorem memBus_mem_op_three_table_component
   · exfalso
     have h_nil : table.interactionsWith MemBusChannel.toRaw = [] :=
       binaryAdd_table_interactionsWith_memBus_nil h_binaryAdd
+    simp [h_nil] at h_mem_table
+  · have h_nil := extensionTableSource_interactionsWith_nil_of_name
+      h_extensionSource MemBusChannel.toRaw (by decide)
+    simp [h_nil] at h_mem_table
+  · have h_nil := binaryTableSource_interactionsWith_nil_of_name
+      h_binarySource MemBusChannel.toRaw (by decide)
     simp [h_nil] at h_mem_table
   -- Main: the three register-pre pushes ride at their selector, in `{0, 1}`; the three current
   -- accesses survive.

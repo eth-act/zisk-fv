@@ -176,6 +176,25 @@ theorem exists_op_provider_row_msg_eq_spec_of_active_interaction
     exact ⟨providerRow, h_providerRow,
       h_providerSpecs providerRow h_providerRow, h_binaryAdd, h_providerEval⟩
 
+/-- Seal opcode refutation at an abstract row: concrete component projections
+are only compared once, when the accepted facts and message equality enter. -/
+private theorem extension_remainder_bound_contradiction
+    (row : ZiskFv.AirsClean.BinaryExtension.BinaryExtensionRow FGL)
+    (h_facts : ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableSpecFacts row)
+    (op : Nat)
+    (h_op : op = 6 ∨ op = 80 ∨ op = 81 ∨ op = 8)
+    (h_eq : op = row.flags.op.val) :
+    False := by
+  have h_ne :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_div_remainder_bound_of_spec_facts
+      row h_facts
+  rw [h_eq] at h_op
+  rcases h_op with h | h | h | h
+  · exact h_ne.1 h
+  · exact h_ne.2.1 h
+  · exact h_ne.2.2.1 h
+  · exact h_ne.2.2.2 h
+
 set_option maxHeartbeats 8000000 in
 set_option maxRecDepth 4096 in
 /-- A live comparison request used by ArithDiv's remainder-bound check is
@@ -255,9 +274,6 @@ theorem exists_staticBinary_provider_of_active_remainder_bound_interaction
   · obtain ⟨providerRow, _, h_providerSpec, h_component, h_providerEval⟩ := h_extension
     let env := providerTable.environment providerRow
     have h_tableFacts := h_providerSpec.2.1
-    have h_ne :=
-      ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_div_remainder_bound_of_spec_facts
-        _ h_tableFacts
     have h_match :
         ZiskFv.Airs.OperationBus.matches_entry
           (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -279,12 +295,11 @@ theorem exists_staticBinary_provider_of_active_remainder_bound_interaction
         ZiskFv.AirsClean.BinaryExtension.opBusMessage,
         Component.rowInputVar, eval_varFromOffset_valueFromOffset, Component.rowInput]
         using congrArg Fin.val hm
-    rw [h_op_eq] at h_op
-    rcases h_op with h | h | h | h
-    · exact False.elim (h_ne.1 h)
-    · exact False.elim (h_ne.2.1 h)
-    · exact False.elim (h_ne.2.2.1 h)
-    · exact False.elim (h_ne.2.2.2 h)
+    dsimp only [env] at h_op_eq
+    exact False.elim
+      (extension_remainder_bound_contradiction
+        (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow))
+        h_tableFacts (eval consumerEnv consumerMsg).op.val h_op h_op_eq)
   · obtain ⟨providerRow, h_providerRow, h_providerSpec, h_component,
         h_providerEval⟩ := h_binary
     refine ⟨providerTable, h_providerTable, providerRow, h_providerRow,

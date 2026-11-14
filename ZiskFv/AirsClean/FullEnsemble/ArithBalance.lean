@@ -98,9 +98,10 @@ theorem staticBinaryExtension_provider_branch_ne_arithMulPrimary
       m.op r_main = ZiskFv.Trusted.OP_MUL_W) :
     False := by
   let env := providerTable.environment providerRow
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
     ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_mul_w_of_spec_facts
-      (shiftTableConsumerComponent.rowInput env) h_providerSpec.2.1
+      (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
         (shiftTableConsumerComponent.rowInput env).flags.op.val := by
@@ -370,9 +371,10 @@ theorem staticBinaryExtension_provider_branch_ne_arithMulSecondary
       m.op r_main = ZiskFv.Trusted.OP_MULUH) :
     False := by
   let env := providerTable.environment providerRow
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
     ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_mul_uh_of_spec_facts
-      (shiftTableConsumerComponent.rowInput env) h_providerSpec.2.1
+      (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
         (shiftTableConsumerComponent.rowInput env).flags.op.val := by
@@ -483,9 +485,10 @@ theorem staticBinaryExtension_provider_branch_ne_arithMulhSecondary
       m.op r_main = ZiskFv.Trusted.OP_MULH) :
     False := by
   let env := providerTable.environment providerRow
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
     ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_mul_h_of_spec_facts
-      (shiftTableConsumerComponent.rowInput env) h_providerSpec.2.1
+      (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
         (shiftTableConsumerComponent.rowInput env).flags.op.val := by
@@ -596,9 +599,10 @@ theorem staticBinaryExtension_provider_branch_ne_arithMulhsuSecondary
       m.op r_main = ZiskFv.Trusted.OP_MULSUH) :
     False := by
   let env := providerTable.environment providerRow
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
     ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_mul_hsu_of_spec_facts
-      (shiftTableConsumerComponent.rowInput env) h_providerSpec.2.1
+      (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
         (shiftTableConsumerComponent.rowInput env).flags.op.val := by
@@ -826,7 +830,12 @@ private theorem exists_arithMul_provider_row_matches_secondary_of_active_main_ro
     (h_active : mainInteraction.mult = -1)
     (h_binExt : ∀ {providerTable : Table FGL} {providerRow : Array FGL},
       providerTable.component = shiftTableConsumerComponent →
-      providerTable.component.Spec (providerTable.environment providerRow) →
+      (ZiskFv.AirsClean.BinaryExtension.Spec
+          (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.StaticBinaryExtensionTableSpecFacts
+          (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.BinaryExtension.ShiftB0RangeSpecFact
+          (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow))) →
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -836,7 +845,12 @@ private theorem exists_arithMul_provider_row_matches_secondary_of_active_main_ro
       False)
     (h_binary : ∀ {providerTable : Table FGL} {providerRow : Array FGL},
       providerTable.component = ZiskFv.AirsClean.Binary.tableConsumerComponent →
-      providerTable.component.Spec (providerTable.environment providerRow) →
+      (ZiskFv.AirsClean.Binary.Spec
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
+            (providerTable.environment providerRow)) ∧
+        ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
+            (providerTable.environment providerRow))) →
       ZiskFv.Airs.OperationBus.matches_entry
         (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
         (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
@@ -926,7 +940,9 @@ private theorem exists_arithMul_provider_row_matches_secondary_of_active_main_ro
       apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
       rw [← h_providerEval, ← h_mainInteraction_eval]
       exact h_msg
-    exact False.elim (h_binExt h_component h_providerSpec h_match)
+    exact False.elim
+      (h_binExt (providerTable := providerTable) (providerRow := providerRow)
+        h_component h_providerSpec h_match)
   · obtain ⟨providerRow, _h_providerRow, h_providerSpec, h_component,
       h_providerEval⟩ := h_binary'
     have h_match :
@@ -940,7 +956,9 @@ private theorem exists_arithMul_provider_row_matches_secondary_of_active_main_ro
       apply ZiskFv.Channels.OperationBus.matches_entry_of_eval_msg_eq
       rw [← h_providerEval, ← h_mainInteraction_eval]
       exact h_msg
-    exact False.elim (h_binary h_component h_providerSpec h_match)
+    exact False.elim
+      (h_binary (providerTable := providerTable) (providerRow := providerRow)
+        h_component h_providerSpec h_match)
   · obtain ⟨providerRow, _h_providerRow, _h_providerSpec, _h_component,
       h_providerEval⟩ := h_binaryAdd'
     have h_match :
@@ -1005,11 +1023,13 @@ theorem exists_arithMul_provider_row_matches_secondary_of_mulh_active_main_row_i
   exact exists_arithMul_provider_row_matches_secondary_of_active_main_row_interaction
     m r_main witness h_constraints h_balanced h_specs h_mainTable h_mainComponent
     h_mainRow h_main_row h_main_active h_mainInteraction h_mainInteraction_eval h_active
-    (fun h_component h_spec h_match =>
+    (fun {providerTable} {providerRow} h_component h_spec h_match =>
       staticBinaryExtension_provider_branch_ne_arithMulhSecondary
+        (providerTable := providerTable) (providerRow := providerRow)
         h_component h_spec h_match h_main_op)
-    (fun h_component h_spec h_match =>
+    (fun {providerTable} {providerRow} h_component h_spec h_match =>
       staticBinary_provider_branch_ne_arithMulhSecondary
+        (providerTable := providerTable) (providerRow := providerRow)
         h_component h_spec h_match h_main_op)
     (fun h_match => binaryAdd_provider_branch_ne_arithMulhSecondary h_match h_main_op)
 
@@ -1062,11 +1082,13 @@ theorem exists_arithMul_provider_row_matches_secondary_of_mulhsu_active_main_row
   exact exists_arithMul_provider_row_matches_secondary_of_active_main_row_interaction
     m r_main witness h_constraints h_balanced h_specs h_mainTable h_mainComponent
     h_mainRow h_main_row h_main_active h_mainInteraction h_mainInteraction_eval h_active
-    (fun h_component h_spec h_match =>
+    (fun {providerTable} {providerRow} h_component h_spec h_match =>
       staticBinaryExtension_provider_branch_ne_arithMulhsuSecondary
+        (providerTable := providerTable) (providerRow := providerRow)
         h_component h_spec h_match h_main_op)
-    (fun h_component h_spec h_match =>
+    (fun {providerTable} {providerRow} h_component h_spec h_match =>
       staticBinary_provider_branch_ne_arithMulhsuSecondary
+        (providerTable := providerTable) (providerRow := providerRow)
         h_component h_spec h_match h_main_op)
     (fun h_match => binaryAdd_provider_branch_ne_arithMulhsuSecondary h_match h_main_op)
 
@@ -1134,9 +1156,10 @@ theorem staticBinaryExtension_provider_branch_ne_arithDivPrimary
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_DIV) :
     False := by
   let env := providerTable.environment providerRow
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
     ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_div_of_spec_facts
-      (shiftTableConsumerComponent.rowInput env) h_providerSpec.2.1
+      (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
         (shiftTableConsumerComponent.rowInput env).flags.op.val := by
@@ -1253,9 +1276,10 @@ theorem staticBinaryExtension_provider_branch_ne_arithDivuPrimary
       m.op r_main = ZiskFv.Trusted.OP_DIVU) :
     False := by
   let env := providerTable.environment providerRow
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
     ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_divu_of_spec_facts
-      (shiftTableConsumerComponent.rowInput env) h_providerSpec.2.1
+      (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
         (shiftTableConsumerComponent.rowInput env).flags.op.val := by
@@ -1532,9 +1556,10 @@ theorem staticBinaryExtension_provider_branch_ne_arithDivuwPrimary
       m.op r_main = ZiskFv.Trusted.OP_DIVU_W) :
     False := by
   let env := providerTable.environment providerRow
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
     ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_divuw_of_spec_facts
-      (shiftTableConsumerComponent.rowInput env) h_providerSpec.2.1
+      (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
         (shiftTableConsumerComponent.rowInput env).flags.op.val := by
@@ -1806,9 +1831,10 @@ theorem staticBinaryExtension_provider_branch_ne_arithRemuPrimary
       m.op r_main = ZiskFv.Trusted.OP_REMU) :
     False := by
   let env := providerTable.environment providerRow
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
     ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_remu_of_spec_facts
-      (shiftTableConsumerComponent.rowInput env) h_providerSpec.2.1
+      (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
         (shiftTableConsumerComponent.rowInput env).flags.op.val := by
@@ -2081,9 +2107,10 @@ theorem staticBinaryExtension_provider_branch_ne_arithRemuwPrimary
       m.op r_main = ZiskFv.Trusted.OP_REMU_W) :
     False := by
   let env := providerTable.environment providerRow
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
     ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_remuw_of_spec_facts
-      (shiftTableConsumerComponent.rowInput env) h_providerSpec.2.1
+      (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
         (shiftTableConsumerComponent.rowInput env).flags.op.val := by
@@ -2336,9 +2363,10 @@ theorem staticBinaryExtension_provider_branch_ne_arithMulPrimary_raw
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_MUL) :
     False := by
   let env := providerTable.environment providerRow
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
     ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_mul_of_spec_facts
-      (shiftTableConsumerComponent.rowInput env) h_providerSpec.2.1
+      (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
         (shiftTableConsumerComponent.rowInput env).flags.op.val := by
@@ -2577,9 +2605,10 @@ theorem staticBinaryExtension_provider_branch_ne_arithRemPrimary
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_REM) :
     False := by
   let env := providerTable.environment providerRow
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
     ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_rem_of_spec_facts
-      (shiftTableConsumerComponent.rowInput env) h_providerSpec.2.1
+      (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
         (shiftTableConsumerComponent.rowInput env).flags.op.val := by
@@ -2816,9 +2845,10 @@ theorem staticBinaryExtension_provider_branch_ne_arithDivwPrimary
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_DIV_W) :
     False := by
   let env := providerTable.environment providerRow
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
     ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_divw_of_spec_facts
-      (shiftTableConsumerComponent.rowInput env) h_providerSpec.2.1
+      (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
         (shiftTableConsumerComponent.rowInput env).flags.op.val := by
@@ -3055,9 +3085,10 @@ theorem staticBinaryExtension_provider_branch_ne_arithRemwPrimary
     (h_main_op : m.op r_main = ZiskFv.Trusted.OP_REM_W) :
     False := by
   let env := providerTable.environment providerRow
+  have h_tableFacts := h_providerSpec.2.1
   have h_ne :=
     ZiskFv.AirsClean.BinaryExtension.static_table_op_val_ne_arith_remw_of_spec_facts
-      (shiftTableConsumerComponent.rowInput env) h_providerSpec.2.1
+      (shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)) h_tableFacts
   have h_provider_op :
       (m.op r_main).val =
         (shiftTableConsumerComponent.rowInput env).flags.op.val := by

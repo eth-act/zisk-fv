@@ -1334,8 +1334,8 @@ def binaryConsumerSingleRowTable (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) :
 private theorem binaryConsumerSingleRowTable_effectiveRows
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) :
     (binaryConsumerSingleRowTable row).table = [binaryRowArray row] := by
-  simp [binaryConsumerSingleRowTable, Table.table, binaryRowArray,
-    ZiskFv.AirsClean.Binary.tableConsumerComponent]
+  simp [binaryConsumerSingleRowTable, ZiskFv.AirsClean.FullEnsemble.binaryConsumerRowsTable,
+    Table.table, binaryRowArray, ZiskFv.AirsClean.Binary.tableConsumerComponent]
 
 theorem binaryConsumerSingleRowTable_rowInput
     (row : ZiskFv.AirsClean.Binary.BinaryRow FGL) :

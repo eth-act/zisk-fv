@@ -19,12 +19,6 @@ import ZiskFv.Equivalence.Remuw
 import ZiskFv.Equivalence.Remw
 import ZiskFv.Equivalence.Sb
 import ZiskFv.Equivalence.Sh
-import ZiskFv.Equivalence.Slliw
-import ZiskFv.Equivalence.Sllw
-import ZiskFv.Equivalence.Sraiw
-import ZiskFv.Equivalence.Sraw
-import ZiskFv.Equivalence.Srliw
-import ZiskFv.Equivalence.Srlw
 import ZiskFv.Equivalence.Sw
 
 /-!
@@ -47,6 +41,7 @@ namespace ZiskFv.Compliance
 
 open Goldilocks
 open ZiskFv.Channels
+open ZiskFv.Airs.OperationBus
 open ZiskFv.Airs.Main (Valid_Main)
 
 variable {state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource}
@@ -83,22 +78,22 @@ def OpEnvelope.exec_eq_remaining
         sw_input.imm, regidx.Regidx sw_input.r2, regidx.Regidx sw_input.r1, 4
       )) state = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   -- W-shifts (6)
-  | .sllw _ r1 r2 rd _ _ bus .. =>
+  | .sllw sllw_input r1 r2 rd providerTable providerRow bus .. =>
       execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SLLW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .srlw _ r1 r2 rd _ _ bus .. =>
+  | .srlw srlw_input r1 r2 rd providerTable providerRow bus .. =>
       execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRLW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .sraw _ r1 r2 rd _ _ bus .. =>
+  | .sraw sraw_input r1 r2 rd providerTable providerRow bus .. =>
       execute_instruction (instruction.RTYPEW (r2, r1, rd, ropw.SRAW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .slliw slliw_input r1 rd _ _ bus .. =>
+  | .slliw slliw_input r1 rd providerTable providerRow bus .. =>
       execute_instruction (instruction.SHIFTIWOP (slliw_input.shamt, r1, rd, sopw.SLLIW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .srliw srliw_input r1 rd _ _ bus .. =>
+  | .srliw srliw_input r1 rd providerTable providerRow bus .. =>
       execute_instruction (instruction.SHIFTIWOP (srliw_input.shamt, r1, rd, sopw.SRLIW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-  | .sraiw sraiw_input r1 rd _ _ bus .. =>
+  | .sraiw sraiw_input r1 rd providerTable providerRow bus .. =>
       execute_instruction (instruction.SHIFTIWOP (sraiw_input.shamt, r1, rd, sopw.SRAIW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
   -- Mul family (5)
@@ -354,9 +349,16 @@ theorem zisk_riscv_compliant_program_bus_remaining
         m2_mult := h_m2_mult
         m2_as := h_m2_as
         rd_idx := h_rd_idx }
-    exact ZiskFv.Equivalence.Sllw.equiv_SLLW state sllw_input r1 r2 rd
-      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      r_main bus promises pins h_match
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    let row := ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+    have h_facts := ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts row
+      (h_table_spec providerRow h_provider_row).2.1
+    have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
+    exact ZiskFv.EquivCore.Sllw.equiv_SLLW_of_static_row state sllw_input r1 r2 rd
+      m row r_main bus
+      promises
+      pins h_match h_facts h_b0_range
       h_input_r1_row h_shift_pin_row h_lane_rd
   | srlw srlw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
@@ -385,9 +387,16 @@ theorem zisk_riscv_compliant_program_bus_remaining
         m2_mult := h_m2_mult
         m2_as := h_m2_as
         rd_idx := h_rd_idx }
-    exact ZiskFv.Equivalence.Srlw.equiv_SRLW state srlw_input r1 r2 rd
-      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      r_main bus promises pins h_match
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    let row := ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+    have h_facts := ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts row
+      (h_table_spec providerRow h_provider_row).2.1
+    have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
+    exact ZiskFv.EquivCore.Srlw.equiv_SRLW_of_static_row state srlw_input r1 r2 rd
+      m row r_main bus
+      promises
+      pins h_match h_facts h_b0_range
       h_input_r1_row h_shift_pin_row h_lane_rd
   | sraw sraw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
@@ -416,36 +425,58 @@ theorem zisk_riscv_compliant_program_bus_remaining
         m2_mult := h_m2_mult
         m2_as := h_m2_as
         rd_idx := h_rd_idx }
-    exact ZiskFv.Equivalence.Sraw.equiv_SRAW state sraw_input r1 r2 rd
-      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      r_main bus promises pins h_match
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    let row := ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+    have h_facts := ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts row
+      (h_table_spec providerRow h_provider_row).2.1
+    have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
+    exact ZiskFv.EquivCore.Sraw.equiv_SRAW_of_static_row state sraw_input r1 r2 rd
+      m row r_main bus
+      promises
+      pins h_match h_facts h_b0_range
       h_input_r1_row h_shift_pin_row h_lane_rd
   | slliw slliw_input r1 rd providerTable providerRow bus promises pins
       h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd =>
     change execute_instruction (instruction.SHIFTIWOP (slliw_input.shamt, r1, rd, sopw.SLLIW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    exact ZiskFv.Equivalence.Slliw.equiv_SLLIW state slliw_input r1 rd
-      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      r_main bus promises pins h_match
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    let row := ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+    have h_facts := ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts row
+      (h_table_spec providerRow h_provider_row).2.1
+    have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
+    exact ZiskFv.EquivCore.Slliw.equiv_SLLIW_of_static_row state slliw_input r1 rd
+      m row r_main bus promises pins h_match h_facts h_b0_range
       h_input_r1_row h_shift_pin_row h_lane_rd
   | srliw srliw_input r1 rd providerTable providerRow bus promises pins
       h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd =>
     change execute_instruction (instruction.SHIFTIWOP (srliw_input.shamt, r1, rd, sopw.SRLIW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    exact ZiskFv.Equivalence.Srliw.equiv_SRLIW state srliw_input r1 rd
-      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      r_main bus promises pins h_match
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    let row := ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+    have h_facts := ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts row
+      (h_table_spec providerRow h_provider_row).2.1
+    have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
+    exact ZiskFv.EquivCore.Srliw.equiv_SRLIW_of_static_row state srliw_input r1 rd
+      m row r_main bus promises pins h_match h_facts h_b0_range
       h_input_r1_row h_shift_pin_row h_lane_rd
   | sraiw sraiw_input r1 rd providerTable providerRow bus promises pins
       h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd =>
     change execute_instruction (instruction.SHIFTIWOP (sraiw_input.shamt, r1, rd, sopw.SRAIW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    exact ZiskFv.Equivalence.Sraiw.equiv_SRAIW state sraiw_input r1 rd
-      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      r_main bus promises pins h_match
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    let row := ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+    have h_facts := ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts row
+      (h_table_spec providerRow h_provider_row).2.1
+    have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
+    exact ZiskFv.EquivCore.Sraiw.equiv_SRAIW_of_static_row state sraiw_input r1 rd
+      m row r_main bus promises pins h_match h_facts h_b0_range
       h_input_r1_row h_shift_pin_row h_lane_rd
   -- Mul family
   | mul mul_input r1 r2 rd srs1 srs2 bus v r_a pins h_match_primary
@@ -811,9 +842,16 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
         m2_mult := h_m2_mult
         m2_as := h_m2_as
         rd_idx := h_rd_idx }
-    exact ZiskFv.Equivalence.Sllw.equiv_SLLW state sllw_input r1 r2 rd
-      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      r_main bus promises pins h_match
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    let row := ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+    have h_facts := ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts row
+      (h_table_spec providerRow h_provider_row).2.1
+    have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
+    exact ZiskFv.EquivCore.Sllw.equiv_SLLW_of_static_row state sllw_input r1 r2 rd
+      m row r_main bus
+      promises
+      pins h_match h_facts h_b0_range
       h_input_r1_row h_shift_pin_row h_lane_rd
   | srlw srlw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
@@ -842,9 +880,16 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
         m2_mult := h_m2_mult
         m2_as := h_m2_as
         rd_idx := h_rd_idx }
-    exact ZiskFv.Equivalence.Srlw.equiv_SRLW state srlw_input r1 r2 rd
-      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      r_main bus promises pins h_match
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    let row := ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+    have h_facts := ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts row
+      (h_table_spec providerRow h_provider_row).2.1
+    have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
+    exact ZiskFv.EquivCore.Srlw.equiv_SRLW_of_static_row state srlw_input r1 r2 rd
+      m row r_main bus
+      promises
+      pins h_match h_facts h_b0_range
       h_input_r1_row h_shift_pin_row h_lane_rd
   | sraw sraw_input r1 r2 rd providerTable providerRow bus
          h_input_r1_sail h_input_r2_sail h_input_rd h_input_pc
@@ -873,36 +918,58 @@ theorem zisk_riscv_compliant_program_bus_remaining_except_known_defects
         m2_mult := h_m2_mult
         m2_as := h_m2_as
         rd_idx := h_rd_idx }
-    exact ZiskFv.Equivalence.Sraw.equiv_SRAW state sraw_input r1 r2 rd
-      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      r_main bus promises pins h_match
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    let row := ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+    have h_facts := ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts row
+      (h_table_spec providerRow h_provider_row).2.1
+    have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
+    exact ZiskFv.EquivCore.Sraw.equiv_SRAW_of_static_row state sraw_input r1 r2 rd
+      m row r_main bus
+      promises
+      pins h_match h_facts h_b0_range
       h_input_r1_row h_shift_pin_row h_lane_rd
   | slliw slliw_input r1 rd providerTable providerRow bus promises pins
       h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd =>
     change execute_instruction (instruction.SHIFTIWOP (slliw_input.shamt, r1, rd, sopw.SLLIW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    exact ZiskFv.Equivalence.Slliw.equiv_SLLIW state slliw_input r1 rd
-      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      r_main bus promises pins h_match
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    let row := ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+    have h_facts := ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts row
+      (h_table_spec providerRow h_provider_row).2.1
+    have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
+    exact ZiskFv.EquivCore.Slliw.equiv_SLLIW_of_static_row state slliw_input r1 rd
+      m row r_main bus promises pins h_match h_facts h_b0_range
       h_input_r1_row h_shift_pin_row h_lane_rd
   | srliw srliw_input r1 rd providerTable providerRow bus promises pins
       h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd =>
     change execute_instruction (instruction.SHIFTIWOP (srliw_input.shamt, r1, rd, sopw.SRLIW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    exact ZiskFv.Equivalence.Srliw.equiv_SRLIW state srliw_input r1 rd
-      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      r_main bus promises pins h_match
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    let row := ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+    have h_facts := ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts row
+      (h_table_spec providerRow h_provider_row).2.1
+    have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
+    exact ZiskFv.EquivCore.Srliw.equiv_SRLIW_of_static_row state srliw_input r1 rd
+      m row r_main bus promises pins h_match h_facts h_b0_range
       h_input_r1_row h_shift_pin_row h_lane_rd
   | sraiw sraiw_input r1 rd providerTable providerRow bus promises pins
       h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd =>
     change execute_instruction (instruction.SHIFTIWOP (sraiw_input.shamt, r1, rd, sopw.SRAIW)) state
         = state_effect_via_channels ⟨bus.exec_row, [bus.e0, bus.e1, bus.e2]⟩ state
-    exact ZiskFv.Equivalence.Sraiw.equiv_SRAIW state sraiw_input r1 rd
-      m ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      r_main bus promises pins h_match
+    rw [ZiskFv.Channels.state_effect_via_channels_eq_bus_effect_2]
+    let row := ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+    have h_facts := ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts row
+      (h_table_spec providerRow h_provider_row).2.1
+    have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
+    exact ZiskFv.EquivCore.Sraiw.equiv_SRAIW_of_static_row state sraiw_input r1 rd
+      m row r_main bus promises pins h_match h_facts h_b0_range
       h_input_r1_row h_shift_pin_row h_lane_rd
   | mul mul_input r1 r2 rd srs1 srs2 bus v r_a pins h_match_primary
         promises arith_mem bounds h_row_constraints arith_table
