@@ -1,0 +1,557 @@
+{
+  "scope": "Source metadata comparison only; no Rust/Aeneas execution equivalence or accepted-image theorem.",
+  "pins": {
+    "nix_production": "b63274507a040bf9e09d22214df43066e8f80cb7",
+    "local_comparison": "9ca88b5b182fd7d534343181354f5319528c82d2 (immutable git archive of checked gitlink)"
+  },
+  "input_sha256": {
+    "riscv2zisk_context.rs": {
+      "b632": "ed577b19ab1cb683b1ef7007202f162b4ebd94a2b1d38da9c564cf902d1b0a0c",
+      "9ca": "6b88dedf6758b4e1fb81d20e0c98565a325f47084ba955e0c18a1a676647d620"
+    },
+    "elf2rom.rs": {
+      "b632": "2569fbcbae8999ad6a4f14ea62c9406095586d24002458ce22854cf3ee7a037a",
+      "9ca": "2569fbcbae8999ad6a4f14ea62c9406095586d24002458ce22854cf3ee7a037a"
+    },
+    "zisk_inst_builder.rs": {
+      "b632": "22e76585c217e6c4a8b100d7f8177e2d2ba10a02669a38fb3525d3625ab24517",
+      "9ca": "7746c397f49866ae00c0c015cabecc79bbae8dafbc9ee6f1b220b8246d34dffd"
+    },
+    "zisk_ops.rs": {
+      "b632": "5ee5b536ed88f2de35850d2698968886400e905caf5c6f618cc88be5b6beb0bc",
+      "9ca": "ab6b0f775593ec3bbe6fbf87ebb6b9deb8a90d5fd8f27bbe0023f1ae342dde84"
+    },
+    "zisk_inst.rs": {
+      "b632": "4d35108438a11e655fab5a662099f0cfabedf6d811fb70103143081449d68c85",
+      "9ca": "c23fd16ac54353db6c8f227b62fbc11f10462469419b3180c6ad5b5e880a94af"
+    }
+  },
+  "instruction_contracts": {
+    "constants": {
+      "exactly_identical": true,
+      "diff": ""
+    },
+    "fields": {
+      "exactly_identical": false,
+      "diff": "--- b632/zisk_inst.rs:fields\n+++ 9ca/zisk_inst.rs:fields\n@@ -22,12 +22,16 @@\n     pub jmp_offset2: i64,\n     pub is_external_op: bool,\n     pub op: u8,\n+    #[cfg(not(feature = \"aeneas_extract\"))]\n     pub func: fn(&mut InstContext) -> (),\n+    #[cfg(not(feature = \"aeneas_extract\"))]\n     pub op_str: &'static str,\n     pub op_type: ZiskOperationType,\n+    #[cfg(not(feature = \"aeneas_extract\"))]\n     pub verbose: String,\n     pub m32: bool,\n     pub input_size: u64,\n     pub sorted_pc_list_index: usize,\n+    #[cfg(not(feature = \"aeneas_extract\"))]\n     pub riscv_inst: Option<String>,\n }"
+    },
+    "default": {
+      "exactly_identical": false,
+      "diff": "--- b632/zisk_inst.rs:default\n+++ 9ca/zisk_inst.rs:default\n@@ -24,13 +24,17 @@\n             jmp_offset2: 0,\n             is_external_op: false,\n             op: 0,\n+            #[cfg(not(feature = \"aeneas_extract\"))]\n             func: |_| (),\n+            #[cfg(not(feature = \"aeneas_extract\"))]\n             op_str: \"\",\n             op_type: ZiskOperationType::None,\n+            #[cfg(not(feature = \"aeneas_extract\"))]\n             verbose: String::new(),\n             m32: false,\n             input_size: 0,\n             sorted_pc_list_index: 0,\n+            #[cfg(not(feature = \"aeneas_extract\"))]\n             riscv_inst: None,\n         }\n     }\n"
+    }
+  },
+  "instruction_numeric_bool_projection": {
+    "scope": "Exact source-declared primitive numeric/bool fields and initializer expressions only; no whole-default/type/execution equivalence, no new theorem.",
+    "exactly_identical": true,
+    "b632": {
+      "a_offset_imm0": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "a_src": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "a_use_sp_imm1": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "b_offset_imm0": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "b_src": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "b_use_sp_imm1": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "end": {
+        "type": "bool",
+        "initializer_source": "false"
+      },
+      "ind_width": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "input_size": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "is_external_op": {
+        "type": "bool",
+        "initializer_source": "false"
+      },
+      "is_precompiled": {
+        "type": "bool",
+        "initializer_source": "false"
+      },
+      "jmp_offset1": {
+        "type": "i64",
+        "initializer_source": "0"
+      },
+      "jmp_offset2": {
+        "type": "i64",
+        "initializer_source": "0"
+      },
+      "m32": {
+        "type": "bool",
+        "initializer_source": "false"
+      },
+      "op": {
+        "type": "u8",
+        "initializer_source": "0"
+      },
+      "paddr": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "set_pc": {
+        "type": "bool",
+        "initializer_source": "false"
+      },
+      "sorted_pc_list_index": {
+        "type": "usize",
+        "initializer_source": "0"
+      },
+      "store": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "store_offset": {
+        "type": "i64",
+        "initializer_source": "0"
+      },
+      "store_pc": {
+        "type": "bool",
+        "initializer_source": "false"
+      },
+      "store_use_sp": {
+        "type": "bool",
+        "initializer_source": "false"
+      }
+    },
+    "9ca": {
+      "a_offset_imm0": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "a_src": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "a_use_sp_imm1": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "b_offset_imm0": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "b_src": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "b_use_sp_imm1": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "end": {
+        "type": "bool",
+        "initializer_source": "false"
+      },
+      "ind_width": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "input_size": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "is_external_op": {
+        "type": "bool",
+        "initializer_source": "false"
+      },
+      "is_precompiled": {
+        "type": "bool",
+        "initializer_source": "false"
+      },
+      "jmp_offset1": {
+        "type": "i64",
+        "initializer_source": "0"
+      },
+      "jmp_offset2": {
+        "type": "i64",
+        "initializer_source": "0"
+      },
+      "m32": {
+        "type": "bool",
+        "initializer_source": "false"
+      },
+      "op": {
+        "type": "u8",
+        "initializer_source": "0"
+      },
+      "paddr": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "set_pc": {
+        "type": "bool",
+        "initializer_source": "false"
+      },
+      "sorted_pc_list_index": {
+        "type": "usize",
+        "initializer_source": "0"
+      },
+      "store": {
+        "type": "u64",
+        "initializer_source": "0"
+      },
+      "store_offset": {
+        "type": "i64",
+        "initializer_source": "0"
+      },
+      "store_pc": {
+        "type": "bool",
+        "initializer_source": "false"
+      },
+      "store_use_sp": {
+        "type": "bool",
+        "initializer_source": "false"
+      }
+    }
+  },
+  "builder_function_bodies": {
+    "build": {
+      "b632_variants": 1,
+      "9ca_variants": 1,
+      "exactly_identical": true,
+      "diff": ""
+    },
+    "end": {
+      "b632_variants": 1,
+      "9ca_variants": 1,
+      "exactly_identical": true,
+      "diff": ""
+    },
+    "ind_width": {
+      "b632_variants": 1,
+      "9ca_variants": 2,
+      "exactly_identical": false,
+      "diff": "--- b632/ind_width\n+++ 9ca/ind_width\n@@ -6,3 +6,10 @@\n             }\n         };\n     }\n+\n+pub fn ind_width(&mut self, w: u64) {\n+        self.i.ind_width = match w {\n+            1 | 2 | 4 | 8 => w,\n+            _ => panic!(\"ZiskInstBuilder::indWidth() invalid width\"),\n+        };\n+    }\n"
+    },
+    "j": {
+      "b632_variants": 1,
+      "9ca_variants": 1,
+      "exactly_identical": true,
+      "diff": ""
+    },
+    "new": {
+      "b632_variants": 1,
+      "9ca_variants": 1,
+      "exactly_identical": true,
+      "diff": ""
+    },
+    "new_for_riscv": {
+      "b632_variants": 0,
+      "9ca_variants": 2,
+      "exactly_identical": false,
+      "diff": "--- b632/new_for_riscv\n+++ 9ca/new_for_riscv\n@@ -1 +1,7 @@\n+pub fn new_for_riscv(i: &RiscvInstruction) -> ZiskInstBuilder {\n+        Self::new_from_riscv(i.rom_address, i.inst.clone())\n+    }\n \n+pub fn new_for_riscv(i: &RiscvInstruction) -> ZiskInstBuilder {\n+        Self::new(i.rom_address)\n+    }\n"
+    },
+    "new_for_rv64im_lowering": {
+      "b632_variants": 0,
+      "9ca_variants": 2,
+      "exactly_identical": false,
+      "diff": "--- b632/new_for_rv64im_lowering\n+++ 9ca/new_for_rv64im_lowering\n@@ -1 +1,7 @@\n+pub fn new_for_rv64im_lowering(i: &Rv64imLoweringInput) -> ZiskInstBuilder {\n+        Self::new(i.rom_address)\n+    }\n \n+pub fn new_for_rv64im_lowering(i: &Rv64imLoweringInput) -> ZiskInstBuilder {\n+        Self::new(i.rom_address)\n+    }\n"
+    },
+    "new_from_riscv": {
+      "b632_variants": 1,
+      "9ca_variants": 2,
+      "exactly_identical": false,
+      "diff": "--- b632/new_from_riscv\n+++ 9ca/new_from_riscv\n@@ -4,3 +4,8 @@\n         zib.i.riscv_inst = Some(riscv_inst);\n         zib\n     }\n+\n+pub fn new_from_riscv(paddr: u64, riscv_inst: String) -> ZiskInstBuilder {\n+        let _ = riscv_inst;\n+        Self::new(paddr)\n+    }\n"
+    },
+    "nto32s": {
+      "b632_variants": 1,
+      "9ca_variants": 1,
+      "exactly_identical": true,
+      "diff": ""
+    },
+    "op": {
+      "b632_variants": 1,
+      "9ca_variants": 1,
+      "exactly_identical": false,
+      "diff": "--- b632/op\n+++ 9ca/op\n@@ -1,13 +1,5 @@\n pub fn op(&mut self, optxt: &str) -> Result<(), InvalidNameError> {\n         let op = ZiskOp::try_from_name(optxt)?;\n-        self.i.is_external_op = op.op_type() != OpType::Internal && op.op_type() != OpType::Fcall;\n-        self.i.op = op.code();\n-        self.i.op_str = op.name();\n-        self.i.m32 = optxt.contains(\"_w\");\n-        self.i.func = op.get_call_function();\n-        self.i.op_type = op.op_type().into();\n-        self.i.input_size = op.input_size();\n-        // assume that input_size > 0 implies a precompiled, and precompiled uses step on operations\n-        self.i.is_precompiled = op.input_size() > 0;\n+        self.op_zisk(op);\n         Ok(())\n     }\n"
+    },
+    "op_zisk": {
+      "b632_variants": 0,
+      "9ca_variants": 1,
+      "exactly_identical": false,
+      "diff": "--- b632/op_zisk\n+++ 9ca/op_zisk\n@@ -1 +1,12 @@\n-\n+pub fn op_zisk(&mut self, op: ZiskOp) {\n+        let op_type = op.op_type();\n+        self.i.is_external_op = match op_type {\n+            OpType::Internal | OpType::Fcall => false,\n+            _ => true,\n+        };\n+        self.i.op = op.code();\n+        self.set_runtime_op_fields(op);\n+        self.i.op_type = op_type.into();\n+        self.i.input_size = op.input_size();\n+        self.i.is_precompiled = op.input_size() > 0;\n+    }\n"
+    },
+    "set_pc": {
+      "b632_variants": 1,
+      "9ca_variants": 1,
+      "exactly_identical": true,
+      "diff": ""
+    },
+    "src_a": {
+      "b632_variants": 1,
+      "9ca_variants": 1,
+      "exactly_identical": true,
+      "diff": ""
+    },
+    "src_a_imm": {
+      "b632_variants": 0,
+      "9ca_variants": 2,
+      "exactly_identical": false,
+      "diff": "--- b632/src_a_imm\n+++ 9ca/src_a_imm\n@@ -1 +1,12 @@\n+pub fn src_a_imm(&mut self, value: u64) {\n+        let (v0, v1) = Self::nto32s(value as i128);\n+        self.i.a_src = SRC_IMM;\n+        self.i.a_use_sp_imm1 = v1 as u64;\n+        self.i.a_offset_imm0 = v0 as u64;\n+    }\n \n+pub fn src_a_imm(&mut self, value: u64) {\n+        self.i.a_src = SRC_IMM;\n+        self.i.a_use_sp_imm1 = value >> 32;\n+        self.i.a_offset_imm0 = value & 0xffffffff;\n+    }\n"
+    },
+    "src_a_reg": {
+      "b632_variants": 0,
+      "9ca_variants": 1,
+      "exactly_identical": false,
+      "diff": "--- b632/src_a_reg\n+++ 9ca/src_a_reg\n@@ -1 +1,13 @@\n-\n+pub fn src_a_reg(&mut self, reg: u64, use_sp: bool) {\n+        if reg == 0 {\n+            self.src_a_imm(0);\n+        } else if reg < REGS_IN_MAIN_FROM as u64 || reg > REGS_IN_MAIN_TO as u64 {\n+            self.i.a_src = SRC_MEM;\n+            self.i.a_use_sp_imm1 = if use_sp { 1 } else { 0 };\n+            self.i.a_offset_imm0 = REG_FIRST + reg * 8;\n+        } else {\n+            self.i.a_src = SRC_REG;\n+            self.i.a_use_sp_imm1 = if use_sp { 1 } else { 0 };\n+            self.i.a_offset_imm0 = reg;\n+        }\n+    }\n"
+    },
+    "src_b": {
+      "b632_variants": 1,
+      "9ca_variants": 1,
+      "exactly_identical": true,
+      "diff": ""
+    },
+    "src_b_imm": {
+      "b632_variants": 0,
+      "9ca_variants": 2,
+      "exactly_identical": false,
+      "diff": "--- b632/src_b_imm\n+++ 9ca/src_b_imm\n@@ -1 +1,12 @@\n+pub fn src_b_imm(&mut self, value: u64) {\n+        let (v0, v1) = Self::nto32s(value as i128);\n+        self.i.b_src = SRC_IMM;\n+        self.i.b_use_sp_imm1 = v1 as u64;\n+        self.i.b_offset_imm0 = v0 as u64;\n+    }\n \n+pub fn src_b_imm(&mut self, value: u64) {\n+        self.i.b_src = SRC_IMM;\n+        self.i.b_use_sp_imm1 = value >> 32;\n+        self.i.b_offset_imm0 = value & 0xffffffff;\n+    }\n"
+    },
+    "src_b_ind": {
+      "b632_variants": 0,
+      "9ca_variants": 1,
+      "exactly_identical": false,
+      "diff": "--- b632/src_b_ind\n+++ 9ca/src_b_ind\n@@ -1 +1,5 @@\n-\n+pub fn src_b_ind(&mut self, offset: u64, use_sp: bool) {\n+        self.i.b_src = SRC_IND;\n+        self.i.b_use_sp_imm1 = if use_sp { 1 } else { 0 };\n+        self.i.b_offset_imm0 = offset;\n+    }\n"
+    },
+    "src_b_lastc": {
+      "b632_variants": 0,
+      "9ca_variants": 1,
+      "exactly_identical": false,
+      "diff": "--- b632/src_b_lastc\n+++ 9ca/src_b_lastc\n@@ -1 +1,5 @@\n-\n+pub fn src_b_lastc(&mut self) {\n+        self.i.b_src = SRC_C;\n+        self.i.b_use_sp_imm1 = 0;\n+        self.i.b_offset_imm0 = 0;\n+    }\n"
+    },
+    "src_b_reg": {
+      "b632_variants": 0,
+      "9ca_variants": 1,
+      "exactly_identical": false,
+      "diff": "--- b632/src_b_reg\n+++ 9ca/src_b_reg\n@@ -1 +1,13 @@\n-\n+pub fn src_b_reg(&mut self, reg: u64, use_sp: bool) {\n+        if reg == 0 {\n+            self.src_b_imm(0);\n+        } else if reg < REGS_IN_MAIN_FROM as u64 || reg > REGS_IN_MAIN_TO as u64 {\n+            self.i.b_src = SRC_MEM;\n+            self.i.b_use_sp_imm1 = if use_sp { 1 } else { 0 };\n+            self.i.b_offset_imm0 = REG_FIRST + reg * 8;\n+        } else {\n+            self.i.b_src = SRC_REG;\n+            self.i.b_use_sp_imm1 = if use_sp { 1 } else { 0 };\n+            self.i.b_offset_imm0 = reg;\n+        }\n+    }\n"
+    },
+    "store": {
+      "b632_variants": 1,
+      "9ca_variants": 1,
+      "exactly_identical": true,
+      "diff": ""
+    },
+    "store_ind": {
+      "b632_variants": 0,
+      "9ca_variants": 1,
+      "exactly_identical": false,
+      "diff": "--- b632/store_ind\n+++ 9ca/store_ind\n@@ -1 +1,6 @@\n-\n+pub fn store_ind(&mut self, offset: i64, use_sp: bool) {\n+        self.i.store_pc = false;\n+        self.i.store = STORE_IND;\n+        self.i.store_use_sp = use_sp;\n+        self.i.store_offset = offset;\n+    }\n"
+    },
+    "store_pc": {
+      "b632_variants": 1,
+      "9ca_variants": 1,
+      "exactly_identical": true,
+      "diff": ""
+    },
+    "store_pc_reg": {
+      "b632_variants": 0,
+      "9ca_variants": 1,
+      "exactly_identical": false,
+      "diff": "--- b632/store_pc_reg\n+++ 9ca/store_pc_reg\n@@ -1 +1,3 @@\n-\n+pub fn store_pc_reg(&mut self, offset: i64, use_sp: bool) {\n+        self.store_reg(offset, use_sp, true);\n+    }\n"
+    },
+    "store_reg": {
+      "b632_variants": 0,
+      "9ca_variants": 1,
+      "exactly_identical": false,
+      "diff": "--- b632/store_reg\n+++ 9ca/store_reg\n@@ -1 +1,15 @@\n-\n+pub fn store_reg(&mut self, offset: i64, use_sp: bool, store_pc: bool) {\n+        if offset == 0 {\n+            return;\n+        } else if offset < REGS_IN_MAIN_FROM as i64 || offset > REGS_IN_MAIN_TO as i64 {\n+            self.i.store_pc = store_pc;\n+            self.i.store = STORE_MEM;\n+            self.i.store_use_sp = use_sp;\n+            self.i.store_offset = REG_FIRST as i64 + offset * 8;\n+        } else {\n+            self.i.store_pc = store_pc;\n+            self.i.store = STORE_REG;\n+            self.i.store_use_sp = use_sp;\n+            self.i.store_offset = offset;\n+        }\n+    }\n"
+    },
+    "verbose": {
+      "b632_variants": 1,
+      "9ca_variants": 2,
+      "exactly_identical": false,
+      "diff": "--- b632/verbose\n+++ 9ca/verbose\n@@ -1,3 +1,7 @@\n pub fn verbose(&mut self, s: &str) {\n         self.i.verbose = s.to_owned();\n     }\n+\n+pub fn verbose(&mut self, s: &str) {\n+        let _ = s;\n+    }\n"
+    }
+  },
+  "helper_function_bodies": {
+    "add_end_and_lib": {
+      "b632_variants": 1,
+      "9ca_variants": 1,
+      "exactly_identical": false,
+      "diff": "--- b632/add_end_and_lib\n+++ 9ca/add_end_and_lib\n@@ -2,6 +2,7 @@\n     //print!(\"add_entry_exit_jmp() rom.next_init_inst_addr={}\\n\", rom.next_init_inst_addr);\n \n     // :0000 we jump to the third instruction, leaving room for the end instruction\n+    #[cfg(not(feature = \"aeneas_extract\"))]\n     assert!(rom.next_init_inst_addr == ROM_ENTRY);\n     let mut zib = ZiskInstBuilder::new(rom.next_init_inst_addr);\n     zib.src_a(\"imm\", 0, false);\n@@ -16,6 +17,7 @@\n     // :0004 END: all programs should exit here, regardless of the execution result\n     // This is the last instruction to be executed.  The emulator must stop after the instruction\n     // end flag is found to be true\n+    #[cfg(not(feature = \"aeneas_extract\"))]\n     assert!(rom.next_init_inst_addr == ROM_EXIT);\n     let mut zib = ZiskInstBuilder::new(rom.next_init_inst_addr);\n     zib.src_a(\"imm\", 0, false);\n@@ -33,6 +35,7 @@\n     // The instruction to be handled is in register FREG_INST\n     // The return address is in register FREG_RA\n     // We must save integer registers before calling the zisk_float function\n+    #[cfg(not(feature = \"aeneas_extract\"))]\n     assert!(rom.next_init_inst_addr == FLOAT_HANDLER_ADDR);\n     for i in 1..32 {\n         let mut zib = ZiskInstBuilder::new(rom.next_init_inst_addr);\n@@ -86,6 +89,7 @@\n     rom.next_init_inst_addr += 4;\n \n     // We must retrieve integer registers after calling the zisk_float function\n+    #[cfg(not(feature = \"aeneas_extract\"))]\n     assert!(rom.next_init_inst_addr == FLOAT_HANDLER_RETURN_ADDR);\n     for i in 1..32 {\n         let mut zib = ZiskInstBuilder::new(rom.next_init_inst_addr);\n"
+    },
+    "add_entry_exit_jmp": {
+      "b632_variants": 1,
+      "9ca_variants": 1,
+      "exactly_identical": true,
+      "diff": ""
+    },
+    "add_zisk_init_data": {
+      "b632_variants": 1,
+      "9ca_variants": 1,
+      "exactly_identical": true,
+      "diff": ""
+    }
+  },
+  "generated_metadata": {
+    "b632_sha256": "234e65c4009a43cc97b114447ae6ee3619de548c6d034f1cff6776d1181cf1d6",
+    "9ca_sha256": "a128c147b41ad55bc14175ba4f541b702e092f1b82f519151b1eaf9e53d0b1ec",
+    "comparison": "Exact emitted source records, token lists, row-call ASTs and numeric opcode contracts; not Rust execution semantics.",
+    "b632_only_definitions": [],
+    "9ca_only_definitions": [],
+    "definitions": {
+      "availableTypedSetters": {
+        "exactly_identical": false,
+        "diff": "--- b632/availableTypedSetters\n+++ 9ca/availableTypedSetters\n@@ -1 +1 @@\n-def availableTypedSetters : List String := []\n+def availableTypedSetters : List String := [\"src_a_imm\", \"src_b_imm\", \"src_a_reg\", \"src_b_reg\", \"src_b_lastc\", \"src_b_ind\", \"store_reg\", \"store_pc_reg\", \"store_ind\", \"op_zisk\"]\n",
+        "b632_sha256": "4b4f1a7416304905cf025f65c6bd3b702ea3d8c47b83ceab2cf59080f12f26aa",
+        "9ca_sha256": "7a1b02fb89f85259f46e0c9aefb5087b0ba1c8c8d2b825faeff852c46696f6b0"
+      },
+      "builderDeclaration": {
+        "exactly_identical": true,
+        "diff": "",
+        "b632_sha256": "a0380a7ab1d1726ef250e3b238e2b705619bfaaafa311d334a71aa8556af6511",
+        "9ca_sha256": "a0380a7ab1d1726ef250e3b238e2b705619bfaaafa311d334a71aa8556af6511"
+      },
+      "builderDeclarationTokens": {
+        "exactly_identical": true,
+        "diff": "",
+        "b632_sha256": "e9729ec59f7990045b495868b63344a3cdb998195e147c7670b9428479f07854",
+        "9ca_sha256": "e9729ec59f7990045b495868b63344a3cdb998195e147c7670b9428479f07854"
+      },
+      "builderMethods": {
+        "exactly_identical": false,
+        "b632_sha256": "2475a41c8c39aac902360dc46187be43afa7479277099f88fd98f1e4a3fefaf0",
+        "9ca_sha256": "307e2a8924b124d0028e9dbada8e965286cef31c890d402dfa37ea63660001e2",
+        "difference_detail": "Exact source body/cfg diffs are recorded separately in helper_function_bodies, builder_function_bodies and instruction_contracts; actual complete metadata outputs are identified by hashes above."
+      },
+      "declaredBuilderMethods": {
+        "exactly_identical": false,
+        "b632_sha256": "34947167ad50ab182fe3cfb296df23251a0de6b1bb619fd393d9a2eacef5a78f",
+        "9ca_sha256": "68dcceccc0dfd3bc42e61e31b0ce76c1e3b09229f250a99645f916a23813b1b1",
+        "difference_detail": "Exact source body/cfg diffs are recorded separately in helper_function_bodies, builder_function_bodies and instruction_contracts; actual complete metadata outputs are identified by hashes above."
+      },
+      "helpers": {
+        "exactly_identical": false,
+        "b632_sha256": "d8adc13600659dd8c73dab34f4ad5ecbee594b405fd9eee89d021f780faa0ede",
+        "9ca_sha256": "e9f1435ad2f2f84783e7bc5a8d865ddd97e7e15f95a83863e59f1204425ac720",
+        "difference_detail": "Exact source body/cfg diffs are recorded separately in helper_function_bodies, builder_function_bodies and instruction_contracts; actual complete metadata outputs are identified by hashes above."
+      },
+      "imageCalls": {
+        "exactly_identical": true,
+        "diff": "",
+        "b632_sha256": "a73fce166ad3b88e14f978073b347136e93ed3db608b96bbce3bbffeb6afc532",
+        "9ca_sha256": "a73fce166ad3b88e14f978073b347136e93ed3db608b96bbce3bbffeb6afc532"
+      },
+      "instructionConstants": {
+        "exactly_identical": false,
+        "b632_sha256": "eb3b7e2bc3f14ef13ac40ad74f3ce52c11581dedd234a8dc042f9d8d3da1209d",
+        "9ca_sha256": "c5942e508248a9b2fdaec9422d3e57fdbda7ff5652859f4c0fd04442b2e9521c",
+        "difference_detail": "Exact source body/cfg diffs are recorded separately in helper_function_bodies, builder_function_bodies and instruction_contracts; actual complete metadata outputs are identified by hashes above."
+      },
+      "instructionDeclaration": {
+        "exactly_identical": false,
+        "b632_sha256": "0db42fdbb99c860aae0f75f6d80930a5b2161cfa1ac3040ab0461fafa81e9892",
+        "9ca_sha256": "0003be978d3280bbbd005688138d5ed36f57c2ffcc9e852c57f1e6b268ab5453",
+        "difference_detail": "Exact source body/cfg diffs are recorded separately in helper_function_bodies, builder_function_bodies and instruction_contracts; actual complete metadata outputs are identified by hashes above."
+      },
+      "instructionDefault": {
+        "exactly_identical": false,
+        "b632_sha256": "1b0903c1907d089df909a54da84d5782985ee263ad6a3bff49fb26aa6748a582",
+        "9ca_sha256": "8ee6f0f2d3bfb9f84f1d92a913ec97f638ec9519d273c92629f9f18fa422bc27",
+        "difference_detail": "Exact source body/cfg diffs are recorded separately in helper_function_bodies, builder_function_bodies and instruction_contracts; actual complete metadata outputs are identified by hashes above."
+      },
+      "instructionDefaultFields": {
+        "exactly_identical": false,
+        "diff": "--- b632/instructionDefaultFields\n+++ 9ca/instructionDefaultFields\n@@ -18,13 +18,13 @@\n  ⟨\"jmp_offset2\", [], [\"0\"]⟩,\n  ⟨\"is_external_op\", [], [\"false\"]⟩,\n  ⟨\"op\", [], [\"0\"]⟩,\n- ⟨\"func\", [], [\"|\", \"_\", \"|\", \"(\", \")\"]⟩,\n- ⟨\"op_str\", [], [\"\\\"\\\"\"]⟩,\n+ ⟨\"func\", [\"# [ cfg ( not ( feature = \\\"aeneas_extract\\\" ) ) ]\"], [\"|\", \"_\", \"|\", \"(\", \")\"]⟩,\n+ ⟨\"op_str\", [\"# [ cfg ( not ( feature = \\\"aeneas_extract\\\" ) ) ]\"], [\"\\\"\\\"\"]⟩,\n  ⟨\"op_type\", [], [\"ZiskOperationType\", \":\", \":\", \"None\"]⟩,\n- ⟨\"verbose\", [], [\"String\", \":\", \":\", \"new\", \"(\", \")\"]⟩,\n+ ⟨\"verbose\", [\"# [ cfg ( not ( feature = \\\"aeneas_extract\\\" ) ) ]\"], [\"String\", \":\", \":\", \"new\", \"(\", \")\"]⟩,\n  ⟨\"m32\", [], [\"false\"]⟩,\n  ⟨\"input_size\", [], [\"0\"]⟩,\n  ⟨\"sorted_pc_list_index\", [], [\"0\"]⟩,\n- ⟨\"riscv_inst\", [], [\"None\"]⟩,\n+ ⟨\"riscv_inst\", [\"# [ cfg ( not ( feature = \\\"aeneas_extract\\\" ) ) ]\"], [\"None\"]⟩,\n ]\n \n",
+        "b632_sha256": "e057d4790aa468823e345bae794bc34183f362f01900c632fbe0e5b0b9dd7dda",
+        "9ca_sha256": "76edf927d705f2d0b8ade119fc44acca4a6ba2f741019cd79ea74806da9e61e5"
+      },
+      "instructionFields": {
+        "exactly_identical": false,
+        "diff": "--- b632/instructionFields\n+++ 9ca/instructionFields\n@@ -18,13 +18,13 @@\n  ⟨\"jmp_offset2\", [], [\"i64\"]⟩,\n  ⟨\"is_external_op\", [], [\"bool\"]⟩,\n  ⟨\"op\", [], [\"u8\"]⟩,\n- ⟨\"func\", [], [\"fn\", \"(\", \"&\", \"mut\", \"InstContext\", \")\", \"-\", \">\", \"(\", \")\"]⟩,\n- ⟨\"op_str\", [], [\"&\", \"'\", \"static\", \"str\"]⟩,\n+ ⟨\"func\", [\"# [ cfg ( not ( feature = \\\"aeneas_extract\\\" ) ) ]\"], [\"fn\", \"(\", \"&\", \"mut\", \"InstContext\", \")\", \"-\", \">\", \"(\", \")\"]⟩,\n+ ⟨\"op_str\", [\"# [ cfg ( not ( feature = \\\"aeneas_extract\\\" ) ) ]\"], [\"&\", \"'\", \"static\", \"str\"]⟩,\n  ⟨\"op_type\", [], [\"ZiskOperationType\"]⟩,\n- ⟨\"verbose\", [], [\"String\"]⟩,\n+ ⟨\"verbose\", [\"# [ cfg ( not ( feature = \\\"aeneas_extract\\\" ) ) ]\"], [\"String\"]⟩,\n  ⟨\"m32\", [], [\"bool\"]⟩,\n  ⟨\"input_size\", [], [\"u64\"]⟩,\n  ⟨\"sorted_pc_list_index\", [], [\"usize\"]⟩,\n- ⟨\"riscv_inst\", [], [\"Option\", \"<\", \"String\", \">\"]⟩,\n+ ⟨\"riscv_inst\", [\"# [ cfg ( not ( feature = \\\"aeneas_extract\\\" ) ) ]\"], [\"Option\", \"<\", \"String\", \">\"]⟩,\n ]\n \n",
+        "b632_sha256": "78369440957307a9faaf900eb00dc54e20ffe8d85233a74d01e176bfdc6cc2ba",
+        "9ca_sha256": "b5f718be77e92a4298aff4ecf99052f12e8c733d763ac3e4f2ff724d24e49950"
+      },
+      "missingTypedSetters": {
+        "exactly_identical": false,
+        "diff": "--- b632/missingTypedSetters\n+++ 9ca/missingTypedSetters\n@@ -1,2 +1,2 @@\n-def missingTypedSetters : List String := [\"src_a_imm\", \"src_b_imm\", \"src_a_reg\", \"src_b_reg\", \"src_b_lastc\", \"src_b_ind\", \"store_reg\", \"store_pc_reg\", \"store_ind\", \"op_zisk\"]\n+def missingTypedSetters : List String := []\n \n",
+        "b632_sha256": "a29eb5e7c467a5a0b4d3b0bf8687f575a2a4651a799df508d43841c0d1cab931",
+        "9ca_sha256": "c961e8f0da7f0fe88262fb6fe32c3f56ee1bc1dde16cf2474e3cc2c1ffbe30b7"
+      },
+      "opcodes": {
+        "exactly_identical": true,
+        "diff": "",
+        "b632_sha256": "a28043a9a0e8d36df142c21b2ec001133b7c8ad783e2cb8dd7027f17c1ffb3ae",
+        "9ca_sha256": "a28043a9a0e8d36df142c21b2ec001133b7c8ad783e2cb8dd7027f17c1ffb3ae"
+      },
+      "operationTypeDeclaration": {
+        "exactly_identical": true,
+        "diff": "",
+        "b632_sha256": "0b2bf551b38874cdfb1465d3ca6459813396ea874ba8cef80b18c14d0f810add",
+        "9ca_sha256": "0b2bf551b38874cdfb1465d3ca6459813396ea874ba8cef80b18c14d0f810add"
+      },
+      "operationTypeValues": {
+        "exactly_identical": true,
+        "diff": "",
+        "b632_sha256": "efcdd6f1c671a1426a853e1d63e62e5e4123d530f4af7e9955dca34b1287b6a0",
+        "9ca_sha256": "efcdd6f1c671a1426a853e1d63e62e5e4123d530f4af7e9955dca34b1287b6a0"
+      },
+      "privateConstants": {
+        "exactly_identical": true,
+        "diff": "",
+        "b632_sha256": "25670268c5d73fbeec8a8c516d433f15d4922c0d974711ea7775630b64c41130",
+        "9ca_sha256": "25670268c5d73fbeec8a8c516d433f15d4922c0d974711ea7775630b64c41130"
+      },
+      "puboutResultArgument": {
+        "exactly_identical": true,
+        "diff": "",
+        "b632_sha256": "ecb917cb86e85b858a5d6b0ff8c356e6ba1ca459c16dffad720445f4c14357be",
+        "9ca_sha256": "ecb917cb86e85b858a5d6b0ff8c356e6ba1ca459c16dffad720445f4c14357be"
+      },
+      "puboutResultFlag": {
+        "exactly_identical": true,
+        "diff": "",
+        "b632_sha256": "f75e693dabbace6a69cfe000dddcabc4e8a60328b4a45cad9916e9124f9a4675",
+        "9ca_sha256": "f75e693dabbace6a69cfe000dddcabc4e8a60328b4a45cad9916e9124f9a4675"
+      },
+      "requiredBuilderMethods": {
+        "exactly_identical": true,
+        "diff": "",
+        "b632_sha256": "8c6fe13ba7174bc02e7ea2f1dc6e5fd28e10b69d8153ceca02010b7700a0ce34",
+        "9ca_sha256": "8c6fe13ba7174bc02e7ea2f1dc6e5fd28e10b69d8153ceca02010b7700a0ce34"
+      },
+      "rowSources": {
+        "exactly_identical": true,
+        "diff": "",
+        "b632_sha256": "ff89d8a335b361749c79ed6d50d5405a263acc6472b301e3656e107881b4dd04",
+        "9ca_sha256": "ff89d8a335b361749c79ed6d50d5405a263acc6472b301e3656e107881b4dd04"
+      }
+    }
+  },
+  "producer": {
+    "tool": "/nix/store/ddshx5f51d7hi0jlv3l5j56448n3qsh6-pil-extract-0.1.0/bin/pil-extract",
+    "nix_derivation": "/nix/store/iljq0ykjrck2065h4c5fl8vm742qyf6b-pil-extract-0.1.0.drv",
+    "source_commit": "8cf6bf06",
+    "command": "pil-extract runtime-source --context-source <same-pin>/core/src/riscv2zisk_context.rs --elf2rom-source <same-pin>/core/src/elf2rom.rs --builder-source <same-pin>/core/src/zisk_inst_builder.rs --operations-source <same-pin>/core/src/zisk_ops.rs --instruction-source <same-pin>/core/src/zisk_inst.rs --rust-output <profile>/RuntimeSource.rs --output <profile>/RuntimeSource.lean",
+    "9ca_source_recipe": "git archive 9ca88b5b182fd7d534343181354f5319528c82d2 core/src/riscv2zisk_context.rs core/src/elf2rom.rs core/src/zisk_inst_builder.rs core/src/zisk_ops.rs core/src/zisk_inst.rs; private files chmod a-w",
+    "b632_generation_exit": 0,
+    "9ca_generation_exit": 0,
+    "b632_rust_sha256": "c06086b04285a26a9e935483493b26f41f6f3a637c5a0bb3d04ce302330ed3a4",
+    "9ca_rust_sha256": "b7f441e53b542aaa388aaae8bd6d4fb19650de54e1574ff782250d2ccfb8a704"
+  },
+  "conclusion": "Selected source subsets are NOT all identical: add_end_and_lib has four cfg-gated assertions in 9ca; generic op delegates to op_zisk in 9ca instead of the b632 assignments (including optxt.contains(\"_w\")); typed setters/variants differ; four non-numeric instruction fields and default initializers are cfg-gated. No whole-default/type, helper-execution or Aeneas correspondence is claimed. Exact common primitive numeric/bool source field+initializer projection matches for 22 fields only.",
+  "unverified": [
+    "Lean compilation of new RuntimeSource metadata (integrator target Extraction.RuntimeSource)",
+    "No whole runtime/Aeneas execution binding or #354 closure",
+    "No new theorem of numeric/bool projection equivalence; source equality report only"
+  ]
+}
