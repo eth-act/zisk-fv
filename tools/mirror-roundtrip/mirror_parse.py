@@ -184,7 +184,8 @@ lane and is kept apart from it.
 (`byte_value_factor` and friends, `MemAlignByte/Spec.lean:52-67`), so the clause
 is not a polynomial until they are inlined. They are inlined by substitution,
 under conditions all of which are checked: the helper is a `def`/`abbrev` in the
-same file or the same directory, every parameter and its result type is `FGL`,
+same file/directory, or a public name explicitly opened from a direct import
+with one matching namespace; every parameter and its result type is `FGL`,
 the argument count equals the parameter count exactly, and the nesting depth is
 bounded. Substitution is capture-free because the parameters are field scalars
 and the grammar has no binders. Anything else raises. This is the same move
@@ -1053,45 +1054,74 @@ _HELPER_SIG = re.compile(
 _HELPER_PARAM = re.compile(r"\(([^():]*):\s*FGL\s*\)")
 
 
-def field_helpers(path: Path, rel: str) -> dict[str, Helper]:
-    """`FGL -> FGL` helpers visible to a mirror in `path`: its file, then its dir.
-
-    A helper qualifies only if every parameter and the result type is exactly
-    `FGL`, and its body is a term this grammar can read. A declaration that looks
-    like a helper but whose body it cannot read is *not* offered as one, so a use
-    site raises "not a field-valued helper in scope" instead of receiving a
-    partially understood body.
-    """
-    directory = path.parent
-    if directory in _HELPER_CACHE:
-        return _HELPER_CACHE[directory]
+def _declared_field_helpers(candidate: Path, public_only: bool = False) -> dict[str, Helper]:
+    """Read the same checked field-helper grammar from one source file."""
+    candidate_rel = (str(candidate.relative_to(REPO_ROOT))
+                     if candidate.is_relative_to(REPO_ROOT) else candidate.name)
+    clean = survey.strip_comments(candidate.read_text().splitlines())
     found: dict[str, Helper] = {}
-    for candidate in sorted(directory.glob("*.lean")):
-        candidate_rel = (str(candidate.relative_to(REPO_ROOT))
-                         if candidate.is_relative_to(REPO_ROOT) else candidate.name)
-        for name, (decl, src) in declaration_slices(candidate, candidate_rel).items():
-            if decl.keyword not in ("def", "abbrev"):
+    for name, (decl, src) in declaration_slices(candidate, candidate_rel).items():
+        if decl.keyword not in ("def", "abbrev"):
+            continue
+        if public_only and re.search(r"\b(private|protected)\b", clean[decl.line - 1]):
+            continue
+        match = _HELPER_SIG.fullmatch(decl.signature)
+        if match is None or match["name"] != name:
+            continue
+        params = tuple(word for group in _HELPER_PARAM.findall(match["params"])
+                       for word in group.split())
+        try:
+            tokens = tokenize(src, f"helper {name} ({candidate_rel}:{decl.line})")
+        except MirrorParseError:
+            continue
+        assign = _find_top_level(tokens, frozenset({":="}))
+        if not assign:
+            continue
+        found[name] = Helper(
+            name, params, tuple(tokens[assign[0] + 1:]), src,
+            f"{candidate_rel}:{decl.line}",
+        )
+    return found
+
+
+def field_helpers(path: Path, rel: str) -> dict[str, Helper]:
+    """Checked field helpers in the local directory or explicitly named opens.
+
+    Imported helpers must come from a directly imported repository module with
+    one explicit matching namespace. Only public, explicitly opened names are
+    admitted, through the same FGL signature/body parser as local helpers.
+    Unsupported bodies still fail at the use site; ambiguity never picks a body.
+    """
+    if path in _HELPER_CACHE:
+        return _HELPER_CACHE[path]
+    found: dict[str, Helper] = {}
+    for candidate in sorted(path.parent.glob("*.lean")):
+        found.update(_declared_field_helpers(candidate))
+    clean = "\n".join(survey.strip_comments(path.read_text().splitlines()))
+    imports = re.findall(r"(?m)^import\s+([A-Za-z_][A-Za-z0-9_.]*)\s*$", clean)
+    opens = re.findall(
+        r"(?m)^open\s+([A-Za-z_][A-Za-z0-9_.]*)\s*\(([A-Za-z0-9_\s]+)\)", clean)
+    imported: dict[str, Helper] = {}
+    for namespace, names in opens:
+        requested = set(names.split())
+        for module in imports:
+            if module != namespace and not module.startswith(namespace + "."):
                 continue
-            match = _HELPER_SIG.fullmatch(decl.signature)
-            if match is None or match["name"] != name:
+            candidate = REPO_ROOT.joinpath(*module.split(".")).with_suffix(".lean")
+            if not candidate.is_file():
                 continue
-            params = tuple(
-                word
-                for group in _HELPER_PARAM.findall(match["params"])
-                for word in group.split()
-            )
-            try:
-                tokens = tokenize(src, f"helper {name} ({candidate_rel}:{decl.line})")
-            except MirrorParseError:
+            source = "\n".join(survey.strip_comments(candidate.read_text().splitlines()))
+            if re.findall(r"(?m)^namespace\s+(\S+)\s*$", source) != [namespace]:
                 continue
-            assign = _find_top_level(tokens, frozenset({":="}))
-            if not assign:
-                continue
-            found[name] = Helper(
-                name, params, tuple(tokens[assign[0] + 1:]), src,
-                f"{candidate_rel}:{decl.line}",
-            )
-    _HELPER_CACHE[directory] = found
+            for name, helper in _declared_field_helpers(candidate, public_only=True).items():
+                if name not in requested or name in found:
+                    continue
+                if name in imported and imported[name].site != helper.site:
+                    raise MirrorParseError(
+                        rel, "ambiguous explicitly opened field helper", name)
+                imported[name] = helper
+    found.update(imported)
+    _HELPER_CACHE[path] = found
     return found
 
 
@@ -1870,8 +1900,6 @@ def parse_mirror_definition(decl: survey.Decl, src: Slice, entry: survey.Entry,
     if len(sig_tokens) < 2 or sig_tokens[0].text not in ("def", "abbrev"):
         out.unparsed.append(f"{where}: not a `def`/`abbrev`")
         return out
-    body_start, opaque = skip_let_chain(src, (assign[0], assign[1] + 2), where)
-    body_tokens = tokenize(src, where, start=body_start)
 
     binders = parse_binders(sig_tokens[2:], where)
     out.carriers = {b.name: (b.kind, b.type_name) for b in binders}
@@ -1880,6 +1908,21 @@ def parse_mirror_definition(decl: survey.Decl, src: Slice, entry: survey.Entry,
     records = {b.type_name for b in binders if b.kind == "row"}
     out.row_record = sorted(records)[0] if len(records) == 1 else (
         "+".join(sorted(records)) if records else None)
+    air = entry.air
+    if air is None and records:
+        # Bind generic declarations through the audited full-row/AIR map.
+        # A partial or multi-AIR row cannot silently become equation-free.
+        record_airs = {record: record_air
+                       for _path, record, record_air in survey.MIRROR_RECORDS
+                       if record in records}
+        targets = set(record_airs.values())
+        if len(targets) != 1 or None in targets:
+            reason = f"row_air_undetermined: no unique audited AIR for {sorted(records)}"
+            out.notes.append(reason)
+            out.unparsed.append(f"{where}: {reason}")
+            return out
+        air = targets.pop()
+        out.air = air
     indexes = [b.name for b in binders if b.kind == "index" and b.name != "_"]
     index_binder = indexes[0] if len(indexes) == 1 else None
 
@@ -1905,11 +1948,21 @@ def parse_mirror_definition(decl: survey.Decl, src: Slice, entry: survey.Entry,
     if entry.cls in ("MIRROR", "MIRROR_MIXED") and len(rows) != 1:
         out.notes.append(f"class {entry.cls} but {len(rows)} row binder(s)")
 
+    # Establish audited row context before reading the body. A body refusal
+    # must not erase a successfully parsed signature and masquerade as an
+    # unsupported (possibly row-bearing) generic signature.
+    try:
+        body_start, opaque = skip_let_chain(src, (assign[0], assign[1] + 2), where)
+        body_tokens = tokenize(src, where, start=body_start)
+    except MirrorParseError as error:
+        out.unparsed.append(str(error))
+        return out
+
     out.opaque_locals = opaque
 
     lane_map = None
-    if entry.air is not None:
-        lane_map = lane_map_for(entry.air)
+    if air is not None:
+        lane_map = lane_map_for(air)
 
     # Carrier-argument helpers are collected only for the out-of-root mirrors,
     # whose directory is outside `ZiskFv/AirsClean`; the AirsClean parse is left
@@ -1918,10 +1971,15 @@ def parse_mirror_definition(decl: survey.Decl, src: Slice, entry: survey.Entry,
     if not rel.startswith(f"{survey.MIRROR_PREFIX}/"):
         carrier_helpers = carrier_field_helpers(REPO_ROOT / rel, rel)
 
+    try:
+        helpers = field_helpers(REPO_ROOT / rel, rel)
+    except MirrorParseError as error:
+        out.unparsed.append(str(error))
+        return out
     ctx = Context(
-        where=where, src=src, air=entry.air, lane_map=lane_map, binders=by_name,
+        where=where, src=src, air=air, lane_map=lane_map, binders=by_name,
         row_deltas=deltas, index_binder=index_binder,
-        helpers=field_helpers(REPO_ROOT / rel, rel),
+        helpers=helpers,
         carrier_helpers=carrier_helpers, opaque_locals=frozenset(opaque),
         row_relation_ok=row_relation_ok,
     )

@@ -65,6 +65,26 @@ implemented twice, off the emitted Lean here and off the pilout operands in
 | `acceptance.py` | the test that the gate works: reproductions, mutations of a COPY, controls |
 | `README.md` | this file |
 
+The WriteByte specialization reuses the actual byte-position helpers through
+its direct `MemAlignByte.Spec` import and explicit named `open`. The helper
+reader admits only public names from a single matching namespace and retains
+the existing all-`FGL` signature, argument-count and body grammar checks.
+Missing, ambiguous or unsupported helpers never become a guessed polynomial.
+The existing `_0`/`[0]` spelling rule resolves its two array-element fields;
+no new field/lane alias is invented.
+
+Source-local finalizer/Direct/padding predicates use the existing protocol or
+raw-data taxonomy with their actual source-weld citations. They are not new
+scope exclusions. Supported full-row signatures are screened in the record's
+audited AIR context; ambiguous or partial row contexts fail. An unsupported
+generic or implicit signature that binds an audited row also fails the screen
+rather than masquerading as equation-free. Body-grammar refusals retain their
+successfully parsed signature context and remain disclosed refusals.
+Acceptance perturbs all seven WriteByte polynomials, smuggles base equations into
+range/protocol/data helpers, tests explicit and implicit row contexts, and retains
+both a genuinely weld-only withdrawal and the now-neutral
+WriteByte redundant-weld withdrawal.
+
 `poly.py`, `check.py`, `lean_parse.py`, `lean_wiring.py`, `pilout_wire.py` and
 `pilout_atoms.py` are imported from `tools/pilout-roundtrip`, never forked, so the
 two tools cannot disagree about what a column, an atom or a canonical form is --
@@ -107,10 +127,11 @@ decided by a fact the tool checks -- a polynomial match against a mirror parsed
 through the SAME `lanes.LaneMap` and parser as the root, a `Bool`/`.val < 2` typing
 fact read from the row struct or the spec, or a generated constraint on the RHS of
 a kernel-checked `Iff.rfl` weld -- never by an index allowlist. A boolean-shaped
-constraint whose column is neither `Bool`-typed nor bounded is not `BOOL_TYPED`;
-`MemAlignWriteByte`'s selector booleans, which have no row record and no bound, are
-the standing witness that the `BOOL_TYPED` recognizer discriminates -- they are
-covered instead by their own `Iff.rfl` weld (`WELD_COVERED`), not by typing.
+constraint whose column is neither `Bool`-typed nor bounded is not `BOOL_TYPED`.
+`MemAlignWriteByte` now supplies its actual fourteen-field row and seven-clause
+`PolynomialSpec`: all seven base equations are compared as `MIRROR`, including
+its three selector booleans. Their kernel welds remain independent fallback
+coverage, not a substitute for comparing the real row equations.
 
 `STRENGTHENING` is a **syntactic** class, and the distinction matters. "No
 generated constraint carries this canonical form" is not the same statement as

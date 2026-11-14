@@ -897,6 +897,7 @@ MAIN_CIRCUIT = "ZiskFv/AirsClean/Main/Circuit.lean"
 BINARY_SPEC = "ZiskFv/AirsClean/Binary/Spec.lean"
 MEMALIGNBYTE_SPEC = "ZiskFv/AirsClean/MemAlignByte/Spec.lean"
 MEM_OUT_OF_ROOT = "ZiskFv/Airs/Mem.lean"
+WRITEBYTE_SPEC = "ZiskFv/AirsClean/MemAlignWriteByte/Spec.lean"
 # The weld files (#296): `MemAlignByteMirrorWeld` welds the three MemAlignByte-family
 # AIRs, `ArithMirrorWeld` the Arith AIR (and carries `gen36`).
 MEMALIGNBYTE_WELD = "ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean"
@@ -1218,22 +1219,18 @@ MUTATIONS: tuple[Mutation, ...] = (
     ),
     Mutation(
         name="WELD_MUTATED_AWAY",
-        lean_file=MEMALIGNBYTE_WELD,
-        target="the two MemAlignWriteByte #0 welds, retargeted off constraint_0",
-        intent="a welded constraint whose weld is mutated away reverts to a gap",
-        # MemAlignWriteByte #0 is WELD_COVERED by BOTH its own
-        # `memAlignWriteByte_boolean_sel_high_4b_weld` and the bundle
-        # `memAlignWriteByte_fOnly_weld`. Retargeting the qualified constraint name
-        # in both -- the only two `Iff.rfl` welds that bind it -- removes #0 from
-        # `weld_parse`'s covered set, so the residual GAP no longer has a weld and
-        # is reported as a gap. The AIR has no mirror at all, so nothing else covers
-        # it. `constraint_777` names no real generated constraint, so the other six
-        # welds are undisturbed.
+        lean_file=MAIN_WELD,
+        target="Main #0's sole exposed-value booleanity weld, retargeted",
+        intent="a genuinely weld-only generated constraint loses its fallback "
+               "when the actual weld is retargeted",
+        # WB now has its real seven-clause PolynomialSpec, so its #0 is MATCHED,
+        # not weld-only. Main #0 still has no row-record mirror: MainExposed is
+        # the actual source carrier and constraint_0_weld is its sole backer.
         apply=replace_all(
-            "MemAlignWriteByte.extraction.constraint_0_every_row",
-            "MemAlignWriteByte.extraction.constraint_777_every_row"),
-        added=(gap("MemAlignWriteByte", 0),),
-        removed=(weld_covered("MemAlignWriteByte", 0),),
+            "Main.extraction.constraint_0_every_row",
+            "Main.extraction.constraint_777_every_row"),
+        added=(gap("Main", 0),),
+        removed=(weld_covered("Main", 0),),
     ),
     Mutation(
         name="WELD_MAIN_ASIDE_MUTATED_AWAY",
@@ -1381,6 +1378,187 @@ MUTATIONS: tuple[Mutation, ...] = (
             "∧ row.rom.addr1 - (row.rom.b_offset_imm0 + row.rom.b_src_ind "
             "* row.core.a_0) = 0"),
         control=True,
+    ),
+)
+
+# Every newly inventoried WB base equation is exercised, not merely counted.
+# Its surviving kernel weld may rescue the generated side, but cannot hide a
+# perturbed MIRROR clause: each mutation must add a real STRENGTHENING.
+WRITEBYTE_POLYNOMIAL_MUTATIONS = (
+    (0, "row.sel_high_4b * (1 - row.sel_high_4b) = 0 ∧",
+     "1 - row.sel_high_4b", "1 - row.sel_high_2b"),
+    (1, "row.sel_high_2b * (1 - row.sel_high_2b) = 0 ∧",
+     "1 - row.sel_high_2b", "1 - row.sel_high_b"),
+    (2, "row.sel_high_b * (1 - row.sel_high_b) = 0 ∧",
+     "1 - row.sel_high_b", "1 - row.sel_high_4b"),
+    (3, "row.byte_value * byte_value_factor row.sel_high_2b row.sel_high_b +",
+     "row.byte_value", "row.written_byte_value"),
+    (4, "row.written_byte_value * byte_value_factor row.sel_high_2b row.sel_high_b +",
+     "row.written_byte_value", "row.byte_value"),
+    (5, "row.sel_high_4b * (row.direct_value - row.written_composed_value) +",
+     "row.sel_high_4b", "row.sel_high_2b"),
+    (6, "row.sel_high_4b * (row.written_composed_value - row.direct_value) + row.direct_value",
+     "+ row.direct_value", "+ row.composed_value"),
+)
+MUTATIONS += tuple(
+    Mutation(
+        name=f"WRITEBYTE_POLYNOMIAL_{index}_PERTURBED",
+        lean_file=WRITEBYTE_SPEC,
+        target=f"PolynomialSpec#{index}, actual MemAlignWriteByte c{index}",
+        intent="the actual fourteen-field source mirror must compare this "
+               "equation even when an independent kernel weld survives",
+        apply=replace_in_line(anchor, before, after),
+        added=(strengthening("MemAlignWriteByte", "PolynomialSpec"),
+               weld_covered("MemAlignWriteByte", index)),
+    )
+    for index, anchor, before, after in WRITEBYTE_POLYNOMIAL_MUTATIONS
+)
+MUTATIONS += (
+    Mutation(
+        name="WRITEBYTE_REDUNDANT_WELD_RETARGETED",
+        lean_file=MEMALIGNBYTE_WELD,
+        target="the older WB #0 welds, redundant with the actual PolynomialSpec",
+        intent="retargeting redundant welds cannot erase an independently "
+               "canonically matched row equation",
+        apply=replace_all(
+            "MemAlignWriteByte.extraction.constraint_0_every_row",
+            "MemAlignWriteByte.extraction.constraint_777_every_row"),
+        control=True,
+    ),
+    Mutation(
+        name="WRITEBYTE_RANGE_EQUATION_SMUGGLED",
+        lean_file=WRITEBYTE_SPEC,
+        target="RangeSpec, a base-row equation hidden among .val bounds",
+        intent="the unchanged near-miss screen must reject a comparable equation "
+               "inside a newly classified range predicate",
+        apply=add_line_after(
+            "row.byte_value.val < 256 ∧ row.value_8b.val < 256",
+            "∧ row.step = 0"),
+        scope_added=("near_miss_screen",),
+    ),
+    Mutation(
+        name="PROTOCOL_HELPER_ROW_EQUATION_SMUGGLED",
+        lean_file="ZiskFv/AirsClean/GsumBoundary/Model.lean",
+        target="generic Closed, a comparable WB row equation added to protocol algebra",
+        intent="a protocol helper with no declared AIR must acquire the actual "
+               "audited row context, not hide the added base equation",
+        apply=chain(
+            add_line_after("import Extraction.LookupWiring",
+                           "import ZiskFv.AirsClean.MemAlignWriteByte.Row"),
+            replace_in_line(
+                "def Closed {F : Type} [Field F] (selector contribution running direct : F) : Prop :=",
+                ": Prop :=", "(row : ZiskFv.AirsClean.MemAlignWriteByte.MemAlignWriteByteRow F) : Prop :="),
+            replace_in_line("selector * (contribution - running - direct) = 0",
+                            "= 0", "= 0 ∧ row.step = 0"),
+        ),
+        scope_added=("near_miss_screen",),
+    ),
+    Mutation(
+        name="DATA_HELPER_ROW_EQUATION_SMUGGLED",
+        lean_file="ZiskFv/AirsClean/GsumBoundary/Model.lean",
+        target="generic Source.Holds, a comparable WB row equation added to raw data",
+        intent="NEAR_DATA is not permission to hide a base-row polynomial",
+        apply=chain(
+            add_line_after("import Extraction.LookupWiring",
+                           "import ZiskFv.AirsClean.MemAlignWriteByte.Row"),
+            replace_in_line(
+                "def Source.Holds {F : Type} [Field F] (source : Source F) (constraint : Expr) : Prop :=",
+                ": Prop :=", "(row : ZiskFv.AirsClean.MemAlignWriteByte.MemAlignWriteByteRow F) : Prop :="),
+            replace_in_line("source.eval constraint = some 0",
+                            "= some 0", "= some 0 ∧ row.step = 0"),
+        ),
+        scope_added=("near_miss_screen",),
+    ),
+    Mutation(
+        name="PROTOCOL_HELPER_AUDITED_ROW_CONTEXT",
+        lean_file="ZiskFv/AirsClean/GsumBoundary/Model.lean",
+        target="Closed becomes a plain equation over the real WB row",
+        intent="supported row syntax must infer its audited AIR and expose the "
+               "comparable equation even though the entry has no declared AIR",
+        apply=chain(
+            add_line_after("import Extraction.LookupWiring",
+                           "import ZiskFv.AirsClean.MemAlignWriteByte.Row"),
+            replace_in_line(
+                "def Closed {F : Type} [Field F] (selector contribution running direct : F) : Prop :=",
+                "def Closed {F : Type} [Field F] (selector contribution running direct : F)",
+                "def Closed (row : ZiskFv.AirsClean.MemAlignWriteByte.MemAlignWriteByteRow Goldilocks.FGL)"),
+            replace_in_line("selector * (contribution - running - direct) = 0",
+                            "selector * (contribution - running - direct)", "row.step"),
+        ),
+        scope_added=("near_miss_screen",),
+    ),
+    Mutation(
+        name="PROTOCOL_HELPER_IMPLICIT_ROW_EQUATION",
+        lean_file="ZiskFv/AirsClean/GsumBoundary/Model.lean",
+        target="generic Closed, a hidden implicit full-row binder",
+        intent="unsupported implicit row syntax is a screen failure, not an "
+               "equation-free protocol predicate",
+        apply=chain(
+            add_line_after("import Extraction.LookupWiring",
+                           "import ZiskFv.AirsClean.MemAlignWriteByte.Row"),
+            replace_in_line(
+                "def Closed {F : Type} [Field F] (selector contribution running direct : F) : Prop :=",
+                ": Prop :=", "{row : ZiskFv.AirsClean.MemAlignWriteByte.MemAlignWriteByteRow F} : Prop :="),
+            replace_in_line("selector * (contribution - running - direct) = 0",
+                            "= 0", "= 0 ∧ row.step = 0"),
+        ),
+        scope_added=("near_miss_screen",),
+    ),
+    Mutation(
+        name="PROTOCOL_HELPER_AMBIGUOUS_ROWS",
+        lean_file="ZiskFv/AirsClean/GsumBoundary/Model.lean",
+        target="generic Closed, two full row records belonging to different AIRs",
+        intent="no single-air context may be guessed for an ambiguous row helper",
+        apply=chain(
+            add_line_after("import Extraction.LookupWiring",
+                           "import ZiskFv.AirsClean.MemAlignWriteByte.Row\n"
+                           "import ZiskFv.AirsClean.MemAlignReadByte.Row"),
+            replace_in_line(
+                "def Closed {F : Type} [Field F] (selector contribution running direct : F) : Prop :=",
+                ": Prop :=",
+                "(row : ZiskFv.AirsClean.MemAlignWriteByte.MemAlignWriteByteRow F) "
+                "(other : ZiskFv.AirsClean.MemAlignReadByte.MemAlignReadByteRow F) : Prop :="),
+        ),
+        scope_added=("near_miss_screen",),
+    ),
+    Mutation(
+        name="PROTOCOL_HELPER_PARTIAL_ROW",
+        lean_file="ZiskFv/AirsClean/GsumBoundary/Model.lean",
+        target="generic Closed, a sub-record with no declared complete AIR layout",
+        intent="a partial record cannot silently supply an invented row/AIR map",
+        apply=chain(
+            add_line_after("import Extraction.LookupWiring", "import ZiskFv.AirsClean.Main.Row"),
+            replace_in_line(
+                "def Closed {F : Type} [Field F] (selector contribution running direct : F) : Prop :=",
+                ": Prop :=", "(row : ZiskFv.AirsClean.Main.MainRow F) : Prop :="),
+        ),
+        scope_added=("near_miss_screen",),
+    ),
+    Mutation(
+        name="WRITEBYTE_FACTOR_OPEN_REMOVED",
+        lean_file=WRITEBYTE_SPEC,
+        target="the explicit import/open of the actual shared byte-position factor",
+        intent="an absent imported factor must fail parsing, never become zero",
+        apply=replace_in_line(
+            "open ZiskFv.AirsClean.MemAlignByte (byte_value_factor value_8b_factor value_16b_factor)",
+            "byte_value_factor ", ""),
+        added=(weld_covered("MemAlignWriteByte", 3), weld_covered("MemAlignWriteByte", 4)),
+        expect_exit=1,
+    ),
+    Mutation(
+        name="WRITEBYTE_FACTOR_OPEN_AMBIGUOUS",
+        lean_file=WRITEBYTE_SPEC,
+        target="two direct imports with the same explicitly opened helper name",
+        intent="ambiguity must reject the helper rather than choose or fabricate a body",
+        apply=chain(
+            add_line_after("import ZiskFv.AirsClean.MemAlignByte.Spec",
+                           "import ZiskFv.AirsClean.MemAlignReadByte.Spec"),
+            add_line_after(
+                "open ZiskFv.AirsClean.MemAlignByte (byte_value_factor value_8b_factor value_16b_factor)",
+                "open ZiskFv.AirsClean.MemAlignReadByte (byte_value_factor)"),
+        ),
+        added=tuple(weld_covered("MemAlignWriteByte", index) for index in range(7)),
+        expect_exit=1,
     ),
 )
 
