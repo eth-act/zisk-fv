@@ -181,15 +181,12 @@ theorem stepStrong_sub
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_static :
-      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
@@ -215,7 +212,8 @@ theorem stepStrong_sub
   have h_matches :
       ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_SUB :=
-    allByteMatchesOfStaticOut64_local h_out
+    allByteMatchesOfStaticOut64_local (row := providerInput)
+      (op := ZiskFv.Airs.Tables.BinaryTable.OP_SUB) h_out
   have h_input_r1_row :
       d.toInputs.sub_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
@@ -330,15 +328,12 @@ theorem stepStrong_and
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_static :
-      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
@@ -364,7 +359,8 @@ theorem stepStrong_and
   have h_matches :
       ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_AND :=
-    allByteMatchesOfStaticOut64_local h_out
+    allByteMatchesOfStaticOut64_local (row := providerInput)
+      (op := ZiskFv.Airs.Tables.BinaryTable.OP_AND) h_out
   have h_input_r1_row :
       d.toInputs.and_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
@@ -479,15 +475,12 @@ theorem stepStrong_or
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_static :
-      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
@@ -513,7 +506,8 @@ theorem stepStrong_or
   have h_matches :
       ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_OR :=
-    allByteMatchesOfStaticOut64_local h_out
+    allByteMatchesOfStaticOut64_local (row := providerInput)
+      (op := ZiskFv.Airs.Tables.BinaryTable.OP_OR) h_out
   have h_input_r1_row :
       d.toInputs.or_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
@@ -628,20 +622,15 @@ theorem stepStrong_xor
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   -- XOR's table op is 16, NOT `< 16`, so it takes the op=16 mode-pin route
   -- (`static_table_logic_mode_pins_of_emit` + `byte_chain_discharge_logic_of_static_row`),
   -- exactly as `construction_xor_sound` does internally.
-  have h_component_spec :
-      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
-        (providerTable.environment providerRow) := by
-    simpa [h_component] using h_table_spec providerRow h_provider_row
-  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
-  obtain ⟨h_row_spec, h_static⟩ := h_component_spec
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
@@ -778,15 +767,12 @@ theorem stepStrong_slt
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_static :
-      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
@@ -812,7 +798,8 @@ theorem stepStrong_slt
   have h_matches :
       ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_LT :=
-    allByteMatchesOfStaticOut64_local h_out
+    allByteMatchesOfStaticOut64_local (row := providerInput)
+      (op := ZiskFv.Airs.Tables.BinaryTable.OP_LT) h_out
   have h_input_r1_row :
       d.toInputs.slt_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
@@ -927,15 +914,12 @@ theorem stepStrong_sltu
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_static :
-      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
@@ -961,7 +945,8 @@ theorem stepStrong_sltu
   have h_matches :
       ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_LTU :=
-    allByteMatchesOfStaticOut64_local h_out
+    allByteMatchesOfStaticOut64_local (row := providerInput)
+      (op := ZiskFv.Airs.Tables.BinaryTable.OP_LTU) h_out
   have h_input_r1_row :
       d.toInputs.sltu_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
@@ -1069,15 +1054,12 @@ theorem stepStrong_andi
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_static :
-      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
@@ -1103,7 +1085,8 @@ theorem stepStrong_andi
   have h_matches :
       ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_AND :=
-    allByteMatchesOfStaticOut64_local h_out
+    allByteMatchesOfStaticOut64_local (row := providerInput)
+      (op := ZiskFv.Airs.Tables.BinaryTable.OP_AND) h_out
   have h_input_r1_row :
       d.toInputs.andi_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
@@ -1214,15 +1197,12 @@ theorem stepStrong_ori
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_static :
-      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
@@ -1248,7 +1228,8 @@ theorem stepStrong_ori
   have h_matches :
       ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_OR :=
-    allByteMatchesOfStaticOut64_local h_out
+    allByteMatchesOfStaticOut64_local (row := providerInput)
+      (op := ZiskFv.Airs.Tables.BinaryTable.OP_OR) h_out
   have h_input_r1_row :
       d.toInputs.ori_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
@@ -1359,17 +1340,12 @@ theorem stepStrong_xori
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_component_spec :
-      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
-        (providerTable.environment providerRow) := by
-    simpa [h_component] using h_table_spec providerRow h_provider_row
-  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_component_spec
-  obtain ⟨h_row_spec, h_static⟩ := h_component_spec
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
@@ -1502,15 +1478,12 @@ theorem stepStrong_slti
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_static :
-      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
@@ -1536,7 +1509,8 @@ theorem stepStrong_slti
   have h_matches :
       ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_LT :=
-    allByteMatchesOfStaticOut64_local h_out
+    allByteMatchesOfStaticOut64_local (row := providerInput)
+      (op := ZiskFv.Airs.Tables.BinaryTable.OP_LT) h_out
   have h_input_r1_row :
       d.toInputs.slti_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
@@ -1640,15 +1614,12 @@ theorem stepStrong_sltiu
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_static :
-      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
@@ -1674,7 +1645,8 @@ theorem stepStrong_sltiu
   have h_matches :
       ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_LTU :=
-    allByteMatchesOfStaticOut64_local h_out
+    allByteMatchesOfStaticOut64_local (row := providerInput)
+      (op := ZiskFv.Airs.Tables.BinaryTable.OP_LTU) h_out
   have h_input_r1_row :
       d.toInputs.sltiu_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
     simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
@@ -1784,19 +1756,23 @@ theorem stepStrong_sll
       m2_as := by rfl,
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
+      (Or.inl (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sll_input.r1_val
-      h_m32_zero h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sll_input.r1_val
+      h_m32_zero h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sll_input.r2_val
-      h_m32_zero h_b_lo h_b_hi d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_0_shift_pin_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sll_input.r2_val
+      h_m32_zero h_b_lo h_b_hi d.toInputs.h_input_r2 h_match h_facts h_b0_range
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sll d.toInputs.sll_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
@@ -1896,19 +1872,23 @@ theorem stepStrong_srl
       m2_as := by rfl,
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      ((fun h => Or.inr (Or.inl h)) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
+      ((fun h => Or.inr (Or.inl h)) (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srl_input.r1_val
-      h_m32_zero h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srl_input.r1_val
+      h_m32_zero h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.srl_input.r2_val
-      h_m32_zero h_b_lo h_b_hi d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_0_shift_pin_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r2) d.toInputs.srl_input.r2_val
+      h_m32_zero h_b_lo h_b_hi d.toInputs.h_input_r2 h_match h_facts h_b0_range
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.srl d.toInputs.srl_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
@@ -2008,19 +1988,23 @@ theorem stepStrong_sra
       m2_as := by rfl,
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      ((fun h => Or.inr (Or.inr (Or.inl h))) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
+      ((fun h => Or.inr (Or.inr (Or.inl h))) (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sra_input.r1_val
-      h_m32_zero h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sra_input.r1_val
+      h_m32_zero h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sra_input.r2_val
-      h_m32_zero h_b_lo h_b_hi d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_0_shift_pin_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sra_input.r2_val
+      h_m32_zero h_b_lo h_b_hi d.toInputs.h_input_r2 h_match h_facts h_b0_range
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sra d.toInputs.sra_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
@@ -2112,24 +2096,28 @@ theorem stepStrong_slli
       m2_as := by rfl,
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
+      (Or.inl (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.slli_input.r1_val
-      h_m32_zero h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r1) d.toInputs.slli_input.r1_val
+      h_m32_zero h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :
       d.toInputs.slli_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow)) := by
     simp only [d.toInputs.h_input_shamt]
-    exact shift_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
-      h_b_lo h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    exact shift_imm_shift_pin_row_of_facts m shiftRow i.val d.toClaim.shamt
+      h_b_lo h_match h_facts h_b0_range h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.slli d.toInputs.slli_input d.toClaim.r1 d.toClaim.rd d.toClaim.shamt providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
@@ -2220,24 +2208,28 @@ theorem stepStrong_srli
       m2_as := by rfl,
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      ((fun h => Or.inr (Or.inl h)) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
+      ((fun h => Or.inr (Or.inl h)) (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srli_input.r1_val
-      h_m32_zero h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srli_input.r1_val
+      h_m32_zero h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :
       d.toInputs.srli_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow)) := by
     simp only [d.toInputs.h_input_shamt]
-    exact shift_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
-      h_b_lo h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    exact shift_imm_shift_pin_row_of_facts m shiftRow i.val d.toClaim.shamt
+      h_b_lo h_match h_facts h_b0_range h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.srli d.toInputs.srli_input d.toClaim.r1 d.toClaim.rd d.toClaim.shamt providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
@@ -2328,24 +2320,28 @@ theorem stepStrong_srai
       m2_as := by rfl,
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_zero : m.m32 i.val = 0 := d.toDecode.h_m32
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      ((fun h => Or.inr (Or.inr (Or.inl h))) (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
+      ((fun h => Or.inr (Or.inr (Or.inl h))) (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, d.toDecode.h_main_op]))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srai_input.r1_val
-      h_m32_zero h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srai_input.r1_val
+      h_m32_zero h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :
       d.toInputs.srai_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow)) := by
     simp only [d.toInputs.h_input_shamt]
-    exact shift_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
-      h_b_lo h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    exact shift_imm_shift_pin_row_of_facts m shiftRow i.val d.toClaim.shamt
+      h_b_lo h_match h_facts h_b0_range h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.srai d.toInputs.srai_input d.toClaim.r1 d.toClaim.rd d.toClaim.shamt providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
@@ -2424,11 +2420,12 @@ theorem stepStrong_subw
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_one : m.m32 i.val = 1 := d.toDecode.h_m32
   have ha0 : (providerInput.aBytes.free_in_a_0).val < 256 := by
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
@@ -2567,11 +2564,12 @@ theorem stepStrong_addw
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_one : m.m32 i.val = 1 := d.toDecode.h_m32
   have ha0 : (providerInput.aBytes.free_in_a_0).val < 256 := by
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
@@ -2704,11 +2702,12 @@ theorem stepStrong_addiw
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_one : m.m32 i.val = 1 := d.toDecode.h_m32
   have ha0 : (providerInput.aBytes.free_in_a_0).val < 256 := by
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
@@ -2858,20 +2857,24 @@ theorem stepStrong_sllw
       m2_as := by rfl,
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_one : m.m32 i.val = 1 := d.toDecode.h_m32
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
       (Or.inr (Or.inr (Or.inr (Or.inl
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op])))))
+        (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, d.toDecode.h_main_op])))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sllw_input.r1_val
-      h_m32_one h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sllw_input.r1_val
+      h_m32_one h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sllw_input.r2_val
-      h_b_lo h_b_hi d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_1_shift_pin_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sllw_input.r2_val
+      h_b_lo h_b_hi d.toInputs.h_input_r2 h_match h_facts h_b0_range
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sllw d.toInputs.sllw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
@@ -2973,20 +2976,24 @@ theorem stepStrong_srlw
       m2_as := by rfl,
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_one : m.m32 i.val = 1 := d.toDecode.h_m32
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
+        (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, d.toDecode.h_main_op]))))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srlw_input.r1_val
-      h_m32_one h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r1) d.toInputs.srlw_input.r1_val
+      h_m32_one h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.srlw_input.r2_val
-      h_b_lo h_b_hi d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_1_shift_pin_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r2) d.toInputs.srlw_input.r2_val
+      h_b_lo h_b_hi d.toInputs.h_input_r2 h_match h_facts h_b0_range
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.srlw d.toInputs.srlw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
@@ -3089,20 +3096,24 @@ theorem stepStrong_sraw
       m2_as := by rfl,
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_one : m.m32 i.val = 1 := d.toDecode.h_m32
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
+        (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, d.toDecode.h_main_op]))))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sraw_input.r1_val
-      h_m32_one h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r1) d.toInputs.sraw_input.r1_val
+      h_m32_one h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sraw_input.r2_val
-      h_b_lo h_b_hi d.toInputs.h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_1_shift_pin_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r2) d.toInputs.sraw_input.r2_val
+      h_b_lo h_b_hi d.toInputs.h_input_r2 h_match h_facts h_b0_range
       h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sraw d.toInputs.sraw_input d.toClaim.r1 d.toClaim.r2 d.toClaim.rd providerTable providerRow bus
@@ -3200,19 +3211,23 @@ theorem stepStrong_slliw
       m2_as := by rfl,
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
       (Or.inr (Or.inr (Or.inr (Or.inl
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op])))))
+        (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, d.toDecode.h_main_op])))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.slliw_input.r1_val
-      d.toDecode.h_m32 h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r1) d.toClaim.slliw_input.r1_val
+      d.toDecode.h_m32 h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.slliw_input.shamt
-      h_b_lo h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    shift_m32_1_imm_shift_pin_row_of_facts m shiftRow i.val d.toClaim.slliw_input.shamt
+      h_b_lo h_match h_facts h_b0_range h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.slliw d.toClaim.slliw_input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
@@ -3303,19 +3318,23 @@ theorem stepStrong_srliw
       m2_as := by rfl,
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
+        (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, d.toDecode.h_main_op]))))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.srliw_input.r1_val
-      d.toDecode.h_m32 h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r1) d.toClaim.srliw_input.r1_val
+      d.toDecode.h_m32 h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.srliw_input.shamt
-      h_b_lo h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    shift_m32_1_imm_shift_pin_row_of_facts m shiftRow i.val d.toClaim.srliw_input.shamt
+      h_b_lo h_match h_facts h_b0_range h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.srliw d.toClaim.srliw_input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
@@ -3407,19 +3426,23 @@ theorem stepStrong_sraiw
       m2_as := by rfl,
       rd_idx := d.toInputs.h_input_rd.trans
         (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
+        (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, d.toDecode.h_main_op]))))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.sraiw_input.r1_val
-      d.toDecode.h_m32 h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin d.toClaim.r1) d.toClaim.sraiw_input.r1_val
+      d.toDecode.h_m32 h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.sraiw_input.shamt
-      h_b_lo h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    shift_m32_1_imm_shift_pin_row_of_facts m shiftRow i.val d.toClaim.sraiw_input.shamt
+      h_b_lo h_match h_facts h_b0_range h_op_is_shift
   let env : OpEnvelope state m i.val :=
     OpEnvelope.sraiw d.toClaim.sraiw_input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
@@ -3526,15 +3549,12 @@ theorem stepStrong_add
   · obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_lookup
     let providerInput :=
-      ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
         (providerTable.environment providerRow)
-    obtain ⟨h_core, h_facts⟩ :=
-      ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-        h_component h_table_spec h_provider_row
-    have h_static :
-        ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-      ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-        h_component h_table_spec h_provider_row
+    obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+    have h_facts :=
+      ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
     have h_emit :
         providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
           (ZiskFv.Airs.Tables.BinaryTable.OP_ADD : FGL) := by
@@ -3559,7 +3579,8 @@ theorem stepStrong_add
     have h_matches :
         ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
           providerInput ZiskFv.Airs.Tables.BinaryTable.OP_ADD :=
-      allByteMatchesOfStaticOut64_local h_out
+      allByteMatchesOfStaticOut64_local (row := providerInput)
+        (op := ZiskFv.Airs.Tables.BinaryTable.OP_ADD) h_out
     have h_input_r1_row :
         d.toInputs.add_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
       simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
@@ -3684,15 +3705,12 @@ theorem stepStrong_addi
   · obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_lookup
     let providerInput :=
-      ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
         (providerTable.environment providerRow)
-    obtain ⟨h_core, h_facts⟩ :=
-      ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-        h_component h_table_spec h_provider_row
-    have h_static :
-        ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-      ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-        h_component h_table_spec h_provider_row
+    obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+    have h_facts :=
+      ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
     have h_emit :
         providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
           (ZiskFv.Airs.Tables.BinaryTable.OP_ADD : FGL) := by
@@ -3717,7 +3735,8 @@ theorem stepStrong_addi
     have h_matches :
         ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
           providerInput ZiskFv.Airs.Tables.BinaryTable.OP_ADD :=
-      allByteMatchesOfStaticOut64_local h_out
+      allByteMatchesOfStaticOut64_local (row := providerInput)
+        (op := ZiskFv.Airs.Tables.BinaryTable.OP_ADD) h_out
     have h_input_r1_row :
         d.toInputs.addi_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
       simpa [ZiskFv.EquivCore.Add.binaryRowA64] using

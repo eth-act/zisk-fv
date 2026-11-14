@@ -205,11 +205,12 @@ theorem construction_subw_sound_claimed_dead
       rd_idx := h_rd_idx }
   -- (a) provider correctness facts; byte ranges (a/b low 4) from `h_facts`.
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_one : m.m32 i.val = 1 := h_m32
   have ha0 : (providerInput.aBytes.free_in_a_0).val < 256 := by
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
@@ -380,11 +381,12 @@ theorem construction_addw_sound_claimed_dead
       m2_as := by rfl
       rd_idx := h_rd_idx }
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_one : m.m32 i.val = 1 := h_m32
   have ha0 : (providerInput.aBytes.free_in_a_0).val < 256 := by
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,
@@ -553,11 +555,12 @@ theorem construction_addiw_sound_claimed_dead
       m2_as := by rfl
       rd_idx := h_rd_idx }
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_one : m.m32 i.val = 1 := h_m32
   have ha0 : (providerInput.aBytes.free_in_a_0).val < 256 := by
     simpa [ZiskFv.Channels.BinaryTable.BinaryTableMessage.toEntry,

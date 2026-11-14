@@ -402,24 +402,36 @@ theorem signedDiv_remainder_bound_witness_of_provider
     signedDiv_remainder_bound_provider trace h_providerTable h_providerRow
       h_component h_providerSpec h_op_provider h_div_by_zero_provider
   set brow :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (binaryTable.environment binaryRow) with h_brow
-  have h_componentSpec :
-      ZiskFv.AirsClean.Binary.staticLookupComponent.Spec
-        (binaryTable.environment binaryRow) := by
-    simpa [h_binaryComponent] using h_binarySpec
-  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_componentSpec
-  change (ZiskFv.AirsClean.Binary.Spec brow
-    ∧ ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts brow) at h_componentSpec
-  rw [ZiskFv.AirsClean.Binary.staticLookupComponent_eval_opBusMessageExpr]
-    at h_binaryMatch
+  have h_binaryFacts :
+      ZiskFv.AirsClean.Binary.Spec brow ∧
+        ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts brow := by
+    simpa only [h_brow] using h_binarySpec
+  have h_binaryEval :
+      eval (binaryTable.environment binaryRow)
+          (ZiskFv.AirsClean.Binary.opBusMessageExpr
+            ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInputVar) =
+        ZiskFv.AirsClean.Binary.opBusMessage
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
+            (binaryTable.environment binaryRow)) := by
+    rw [ZiskFv.AirsClean.Binary.eval_opBusMessageExpr
+      (binaryTable.environment binaryRow)
+      ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInputVar]
+    exact congrArg ZiskFv.AirsClean.Binary.opBusMessage
+      (by
+        simpa only [Air.Flat.Component.rowInput, Air.Flat.Component.rowInputVar] using
+          (eval_varFromOffset_valueFromOffset
+            ZiskFv.AirsClean.Binary.tableConsumerComponent.Input 0
+            (binaryTable.environment binaryRow)))
+  rw [h_binaryEval] at h_binaryMatch
   rw [← h_arow, ← h_brow] at h_binaryMatch
-  exact signedDiv_remainder_bound_witness_of_rows arow brow h_componentSpec
+  exact signedDiv_remainder_bound_witness_of_rows arow brow h_binaryFacts
     h_binaryMatch h_div h_div_by_zero h_nr h_nb
 
 set_option maxHeartbeats 4000000 in
 /-- The balance-selected signed DIV row's active remainder-bound consumer is
-    matched by a concrete sign-selected static Binary chain. -/
+    matched by a concrete sign-selected source-emitting Binary row. -/
 theorem divArow_signed_remainder_bound_witness
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions)

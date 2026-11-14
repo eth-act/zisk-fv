@@ -1914,21 +1914,18 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
       let pins : ZiskFv.Compliance.MainRowPins m r 1 OP_AND :=
         ⟨rd.h_main_active, rd.h_main_op⟩
       -- (b) Binary `OP_AND` provider witnesses for the JALR row (mirrors
-      --     `stepStrong_and`): the static Binary table row backing the masked-AND.
+      --     `stepStrong_and`): the Binary consumer row backing the masked-AND.
       obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
           h_component, h_table_spec, h_match⟩ :=
         main_request_logic_provided_at
           ziskTrace finish rd.h_main_active (Or.inl rd.h_main_op)
       let providerInput :=
-        ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)
-      obtain ⟨h_core, h_facts⟩ :=
-        ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-          h_component h_table_spec h_provider_row
-      have h_static :
-          ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-        ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-          h_component h_table_spec h_provider_row
+      obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+      have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+      have h_facts :=
+        ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
       have h_m32_zero : m.m32 r = 0 := rd.h_m32
       have h_emit :
           providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
@@ -1954,7 +1951,8 @@ theorem stepSound_of_evidence (ziskTrace : AcceptedZiskTrace numInstructions) (s
       have h_matches :
           ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
             providerInput ZiskFv.Airs.Tables.BinaryTable.OP_AND :=
-        allByteMatchesOfStaticOut64_local h_out
+        allByteMatchesOfStaticOut64_local (row := providerInput)
+          (op := ZiskFv.Airs.Tables.BinaryTable.OP_AND) h_out
       -- (c) lane projections: `a = mask`, `b = operand` (committed `b`-lane packing),
       --     and the carry-free `c` lanes (from `flag = 0`).
       have h_a_mask :

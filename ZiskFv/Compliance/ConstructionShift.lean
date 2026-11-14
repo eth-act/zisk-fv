@@ -33,7 +33,7 @@ The shifts are a **separate template instantiation**, not the
    all twelve shifts; it takes the op pin as the 6-way disjunction
    `OP_SLL ∨ OP_SRL ∨ OP_SRA ∨ OP_SLL_W ∨ OP_SRL_W ∨ OP_SRA_W`, here discharged
    by the appropriate disjunct per family). The provider is
-   `shiftStaticLookupComponent` and the match conclusion is in `opBusMessage`
+   `shiftTableConsumerComponent` and the match conclusion is in `opBusMessage`
    (rowInput) form, not the staticBinary `matches_entry` shape.
 
 2. **Bare-execute conclusion (no `writeReg nextPC` prelude).** Unlike SUB/AND,
@@ -97,7 +97,7 @@ set_option maxHeartbeats 2000000
 
 /-- Shared lane→Sail binding for the m32 = 0 shift group, stated against an
     **opaque** `row : BinaryExtensionRow FGL` so that `simp` does not unfold the
-    giant `shiftStaticLookupComponent.rowInput …` provider term. Mirrors the
+    giant `shiftTableConsumerComponent.rowInput …` provider term. Mirrors the
     internal block of `EquivCore.Sll.equiv_SLL_of_static_row`: it converts the
     rowInput-form op-bus match to `v = validOfRow row` form, derives the byte/wf
     facts + `op_is_shift = 1`, then applies the m32 = 0 lane bridge
@@ -440,21 +440,25 @@ theorem construction_sll_sound_claimed_dead
   -- (a) BinaryExtension provider wf/byte facts, recomputed from the table Spec.
   -- Generalize the provider rowInput term to an OPAQUE `row` so the helper
   -- lemmas below (and the final `equiv_SLL` unification) never unfold it.
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_zero : m.m32 i.val = 0 := h_m32
   -- op-is-shift, lane → Sail bindings (m32 = 0 route), via the opaque-`row`
   -- helper lemmas. Op pin selected by `Or.inl` (SLL).
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
+      (Or.inl (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, h_main_op]))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) sll_input.r1_val
-      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin r1) sll_input.r1_val
+      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin r2) sll_input.r2_val
-      h_m32_zero h_b_lo h_b_hi h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_0_shift_pin_row_of_facts m shiftRow i.val (regidx_to_fin r2) sll_input.r2_val
+      h_m32_zero h_b_lo h_b_hi h_input_r2 h_match h_facts h_b0_range
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SLL
     state sll_input r1 r2 rd m
@@ -607,21 +611,25 @@ theorem construction_srl_sound_claimed_dead
   -- (a) BinaryExtension provider wf/byte facts, recomputed from the table Spec.
   -- Generalize the provider rowInput term to an OPAQUE `row` so the helper
   -- lemmas below (and the final `equiv_SRL` unification) never unfold it.
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_zero : m.m32 i.val = 0 := h_m32
   -- op-is-shift, lane → Sail bindings (m32 = 0 route), via the opaque-`row`
   -- helper lemmas. Op pin selected per family (SRL).
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      (Or.inr (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op])))
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
+      (Or.inr (Or.inl (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, h_main_op])))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) srl_input.r1_val
-      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin r1) srl_input.r1_val
+      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin r2) srl_input.r2_val
-      h_m32_zero h_b_lo h_b_hi h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_0_shift_pin_row_of_facts m shiftRow i.val (regidx_to_fin r2) srl_input.r2_val
+      h_m32_zero h_b_lo h_b_hi h_input_r2 h_match h_facts h_b0_range
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRL
     state srl_input r1 r2 rd m
@@ -774,21 +782,25 @@ theorem construction_sra_sound_claimed_dead
   -- (a) BinaryExtension provider wf/byte facts, recomputed from the table Spec.
   -- Generalize the provider rowInput term to an OPAQUE `row` so the helper
   -- lemmas below (and the final `equiv_SRA` unification) never unfold it.
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_zero : m.m32 i.val = 0 := h_m32
   -- op-is-shift, lane → Sail bindings (m32 = 0 route), via the opaque-`row`
   -- helper lemmas. Op pin selected per family (SRA).
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      (Or.inr (Or.inr (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))))
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
+      (Or.inr (Or.inr (Or.inl (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, h_main_op]))))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) sra_input.r1_val
-      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin r1) sra_input.r1_val
+      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_0_shift_pin_row_of_facts m _ i.val (regidx_to_fin r2) sra_input.r2_val
-      h_m32_zero h_b_lo h_b_hi h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_0_shift_pin_row_of_facts m shiftRow i.val (regidx_to_fin r2) sra_input.r2_val
+      h_m32_zero h_b_lo h_b_hi h_input_r2 h_match h_facts h_b0_range
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRA
     state sra_input r1 r2 rd m
@@ -919,24 +931,28 @@ theorem construction_slli_sound_claimed_dead
       m2_mult := by rfl
       m2_as := by rfl
       rd_idx := h_rd_idx }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_zero : m.m32 i.val = 0 := h_m32
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
+      (Or.inl (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, h_main_op]))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) slli_input.r1_val
-      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin r1) slli_input.r1_val
+      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :
       slli_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow)) := by
     rw [h_input_shamt]
-    exact shift_imm_shift_pin_row_of_facts m _ i.val shamt
-      h_b_lo_shamt h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    exact shift_imm_shift_pin_row_of_facts m shiftRow i.val shamt
+      h_b_lo_shamt h_match h_facts h_b0_range h_op_is_shift
   exact ZiskFv.Compliance.equiv_SLLI
     state slli_input r1 rd shamt m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -1066,24 +1082,28 @@ theorem construction_srli_sound_claimed_dead
       m2_mult := by rfl
       m2_as := by rfl
       rd_idx := h_rd_idx }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_zero : m.m32 i.val = 0 := h_m32
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      (Or.inr (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op])))
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
+      (Or.inr (Or.inl (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, h_main_op])))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) srli_input.r1_val
-      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin r1) srli_input.r1_val
+      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :
       srli_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow)) := by
     rw [h_input_shamt]
-    exact shift_imm_shift_pin_row_of_facts m _ i.val shamt
-      h_b_lo_shamt h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    exact shift_imm_shift_pin_row_of_facts m shiftRow i.val shamt
+      h_b_lo_shamt h_match h_facts h_b0_range h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRLI
     state srli_input r1 rd shamt m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -1213,24 +1233,28 @@ theorem construction_srai_sound_claimed_dead
       m2_mult := by rfl
       m2_as := by rfl
       rd_idx := h_rd_idx }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_zero : m.m32 i.val = 0 := h_m32
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
-      (Or.inr (Or.inr (Or.inl (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))))
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
+      (Or.inr (Or.inr (Or.inl (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, h_main_op]))))
   have h_input_r1_row :=
-    shift_m32_0_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) srai_input.r1_val
-      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_0_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin r1) srai_input.r1_val
+      h_m32_zero h_a_lo h_a_hi h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :
       srai_input.shamt.toNat =
         ZiskFv.AirsClean.BinaryExtension.rowShiftAmount
-          (ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rowInput
+          (ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow)) := by
     rw [h_input_shamt]
-    exact shift_imm_shift_pin_row_of_facts m _ i.val shamt
-      h_b_lo_shamt h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    exact shift_imm_shift_pin_row_of_facts m shiftRow i.val shamt
+      h_b_lo_shamt h_match h_facts h_b0_range h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRAI
     state srai_input r1 rd shamt m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -1545,22 +1569,26 @@ theorem construction_sllw_sound_claimed_dead
       m2_as := by rfl
       rd_idx := h_rd_idx }
   -- (a) BinaryExtension provider wf/byte facts, recomputed from the table Spec.
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_one : m.m32 i.val = 1 := h_m32
   -- op-is-shift, lane → Sail bindings (m32 = 1 route), via the opaque-`row`
   -- helper lemmas. Op pin selected by the 4th disjunct (SLL_W).
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
       (Or.inr (Or.inr (Or.inr (Or.inl
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op])))))
+        (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, h_main_op])))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) sllw_input.r1_val
-      h_m32_one h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin r1) sllw_input.r1_val
+      h_m32_one h_a_lo h_a_hi h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin r2) sllw_input.r2_val
-      h_b_lo h_b_hi h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_1_shift_pin_row_of_facts m shiftRow i.val (regidx_to_fin r2) sllw_input.r2_val
+      h_b_lo h_b_hi h_input_r2 h_match h_facts h_b0_range
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SLLW
     state sllw_input r1 r2 rd m
@@ -1688,20 +1716,24 @@ theorem construction_srlw_sound_claimed_dead
       m2_mult := by rfl
       m2_as := by rfl
       rd_idx := h_rd_idx }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_one : m.m32 i.val = 1 := h_m32
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))))))
+        (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, h_main_op]))))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) srlw_input.r1_val
-      h_m32_one h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin r1) srlw_input.r1_val
+      h_m32_one h_a_lo h_a_hi h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin r2) srlw_input.r2_val
-      h_b_lo h_b_hi h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_1_shift_pin_row_of_facts m shiftRow i.val (regidx_to_fin r2) srlw_input.r2_val
+      h_b_lo h_b_hi h_input_r2 h_match h_facts h_b0_range
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRLW
     state srlw_input r1 r2 rd m
@@ -1830,20 +1862,24 @@ theorem construction_sraw_sound_claimed_dead
       m2_mult := by rfl
       m2_as := by rfl
       rd_idx := h_rd_idx }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_m32_one : m.m32 i.val = 1 := h_m32
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))))))
+        (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, h_main_op]))))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) sraw_input.r1_val
-      h_m32_one h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin r1) sraw_input.r1_val
+      h_m32_one h_a_lo h_a_hi h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_shift_pin_row_of_facts m _ i.val (regidx_to_fin r2) sraw_input.r2_val
-      h_b_lo h_b_hi h_input_r2 h_match h_shift_facts.1 h_shift_facts.2
+    shift_m32_1_shift_pin_row_of_facts m shiftRow i.val (regidx_to_fin r2) sraw_input.r2_val
+      h_b_lo h_b_hi h_input_r2 h_match h_facts h_b0_range
       h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRAW
     state sraw_input r1 r2 rd m
@@ -1975,19 +2011,23 @@ theorem construction_slliw_sound_claimed_dead
       m2_mult := by rfl
       m2_as := by rfl
       rd_idx := h_rd_idx }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
       (Or.inr (Or.inr (Or.inr (Or.inl
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op])))))
+        (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, h_main_op])))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) slliw_input.r1_val
-      h_m32 h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin r1) slliw_input.r1_val
+      h_m32 h_a_lo h_a_hi h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val slliw_input.shamt
-      h_b_lo_shamt h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    shift_m32_1_imm_shift_pin_row_of_facts m shiftRow i.val slliw_input.shamt
+      h_b_lo_shamt h_match h_facts h_b0_range h_op_is_shift
   exact ZiskFv.Compliance.equiv_SLLIW
     state slliw_input r1 rd m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -2103,19 +2143,23 @@ theorem construction_srliw_sound_claimed_dead
       m2_mult := by rfl
       m2_as := by rfl
       rd_idx := h_rd_idx }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))))))
+        (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, h_main_op]))))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) srliw_input.r1_val
-      h_m32 h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin r1) srliw_input.r1_val
+      h_m32 h_a_lo h_a_hi h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val srliw_input.shamt
-      h_b_lo_shamt h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    shift_m32_1_imm_shift_pin_row_of_facts m shiftRow i.val srliw_input.shamt
+      h_b_lo_shamt h_match h_facts h_b0_range h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRLIW
     state srliw_input r1 rd m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
@@ -2232,19 +2276,23 @@ theorem construction_sraiw_sound_claimed_dead
       m2_mult := by rfl
       m2_as := by rfl
       rd_idx := h_rd_idx }
-  have h_shift_facts :=
-    ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
-      h_component h_table_spec h_provider_row
+  let shiftRow :=
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rowInput
+      (providerTable.environment providerRow)
+  have h_facts :=
+    ZiskFv.AirsClean.BinaryExtension.static_table_wf_facts_of_spec_facts
+      shiftRow (h_table_spec providerRow h_provider_row).2.1
+  have h_b0_range := (h_table_spec providerRow h_provider_row).2.2
   have h_op_is_shift :=
-    shift_op_is_shift_of_facts m _ i.val h_match h_shift_facts.1
+    shift_op_is_shift_of_facts m shiftRow i.val h_match h_facts
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
-        (by rw [shift_op_pin_eq_of_match m _ i.val h_match, h_main_op]))))))
+        (by rw [shift_op_pin_eq_of_match m shiftRow i.val h_match, h_main_op]))))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin r1) sraiw_input.r1_val
-      h_m32 h_a_lo h_a_hi h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m shiftRow i.val (regidx_to_fin r1) sraiw_input.r1_val
+      h_m32 h_a_lo h_a_hi h_input_r1 h_match h_facts h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val sraiw_input.shamt
-      h_b_lo_shamt h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
+    shift_m32_1_imm_shift_pin_row_of_facts m shiftRow i.val sraiw_input.shamt
+      h_b_lo_shamt h_match h_facts h_b0_range h_op_is_shift
   exact ZiskFv.Compliance.equiv_SRAIW
     state sraiw_input r1 rd m
     ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
