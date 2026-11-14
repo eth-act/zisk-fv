@@ -122,7 +122,7 @@ message GlobalOperand {
 
 message Air {
     optional string name = 1;
-    optional uint32 numRows = 2;            // log2(n), where n is the number of rows
+    optional uint32 numRows = 2;            // physical row count; pinned proto_out.js pushAir serializes Number(rows)
     repeated PeriodicCol periodicCols = 3;
     repeated FixedCol fixedCols = 4;
     repeated uint32 stageWidths = 5;        // stage widths excluding stage 0 (fixed columns)

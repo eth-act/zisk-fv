@@ -9,6 +9,7 @@ generated_dir="$repo_root/build/extraction/Extraction"
 # the compilation check along with it.
 expected_modules=(
   Arith
+  ArithRangeTable
   ArithTable
   Binary
   BinaryAdd
@@ -29,6 +30,7 @@ expected_modules=(
   MemGeneratedArtifact
   MemGeneratedConstraintBridge
   MemoryBuses
+  SourceDimensions
 )
 
 if [[ ! -d "$generated_dir" ]]; then
