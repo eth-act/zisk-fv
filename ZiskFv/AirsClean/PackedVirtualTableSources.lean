@@ -35,6 +35,12 @@ variable {F : Type}
 def project (raw : Witness F) (source : Source) : Fin source.rows → F :=
   fun index => raw (source.location index)
 
+private theorem project_eq_of_apply (raw : Witness F) (source : Source)
+    (values : Fin source.rows → F)
+    (h : ∀ index, raw (source.location index) = values index) :
+    project raw source = values :=
+  funext h
+
 /-- Embed arbitrary target-source multiplicities into the actual eight-column
 physical witness, preserving every unrelated raw cell. Bounds and ownership
 are checked by the intrinsic production map, never a caller equality promise. -/
@@ -71,8 +77,9 @@ private theorem physicalOfLogical_at88 (base : Witness F) (logical : LogicalWitn
 
 theorem project88_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source88 = logical.bus88 :=
-  funext fun index => physicalOfLogical_at88 base logical
-    (source88.location index) index (source88_at index)
+  project_eq_of_apply (physicalOfLogical base logical) source88 logical.bus88
+    (fun index => physicalOfLogical_at88 base logical
+      (source88.location index) index (source88_at index))
 
 private theorem physicalOfLogical_at124 (base : Witness F) (logical : LogicalWitness F)
     (location : Location) (index : Fin source124.rows)
@@ -85,8 +92,9 @@ private theorem physicalOfLogical_at124 (base : Witness F) (logical : LogicalWit
 
 theorem project124_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source124 = logical.bus124 :=
-  funext fun index => physicalOfLogical_at124 base logical
-    (source124.location index) index (source124_at index)
+  project_eq_of_apply (physicalOfLogical base logical) source124 logical.bus124
+    (fun index => physicalOfLogical_at124 base logical
+      (source124.location index) index (source124_at index))
 
 private theorem physicalOfLogical_at125 (base : Witness F) (logical : LogicalWitness F)
     (location : Location) (index : Fin source125.rows)
@@ -100,8 +108,9 @@ private theorem physicalOfLogical_at125 (base : Witness F) (logical : LogicalWit
 
 theorem project125_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source125 = logical.bus125 :=
-  funext fun index => physicalOfLogical_at125 base logical
-    (source125.location index) index (source125_at index)
+  project_eq_of_apply (physicalOfLogical base logical) source125 logical.bus125
+    (fun index => physicalOfLogical_at125 base logical
+      (source125.location index) index (source125_at index))
 
 private theorem physicalOfLogical_at330 (base : Witness F) (logical : LogicalWitness F)
     (location : Location) (index : Fin source330.rows)
@@ -116,8 +125,9 @@ private theorem physicalOfLogical_at330 (base : Witness F) (logical : LogicalWit
 
 theorem project330_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source330 = logical.bus330 :=
-  funext fun index => physicalOfLogical_at330 base logical
-    (source330.location index) index (source330_at index)
+  project_eq_of_apply (physicalOfLogical base logical) source330 logical.bus330
+    (fun index => physicalOfLogical_at330 base logical
+      (source330.location index) index (source330_at index))
 
 private theorem physicalOfLogical_at331 (base : Witness F) (logical : LogicalWitness F)
     (location : Location) (index : Fin source331.rows)
@@ -134,8 +144,9 @@ private theorem physicalOfLogical_at331 (base : Witness F) (logical : LogicalWit
 
 theorem project331_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source331 = logical.bus331 :=
-  funext fun index => physicalOfLogical_at331 base logical
-    (source331.location index) index (source331_at index)
+  project_eq_of_apply (physicalOfLogical base logical) source331 logical.bus331
+    (fun index => physicalOfLogical_at331 base logical
+      (source331.location index) index (source331_at index))
 
 /-- Source indices cannot alias a different table's physical multiplicity cell. -/
 theorem binary_source_locations_disjoint
