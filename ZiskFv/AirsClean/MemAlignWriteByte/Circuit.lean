@@ -50,6 +50,13 @@ def circuit : GeneralFormalCircuit FGL MemAlignWriteByteRow unit where
       , MemBusChannel.pulled (memWriteMessageExpr row)
       , MemBusChannel.pushed (memBusMessageExpr row) ] ++
     expose DualByteChannel [DualByteChannel.pulled (dualByteMessageExpr row)]
+  exposedChannels_eq := by
+    intro input offset exposed h_mem
+    simp only [expose, List.cons_append, List.nil_append, List.mem_cons,
+      List.not_mem_nil, or_false] at h_mem
+    rcases h_mem with rfl | rfl <;>
+      simp [circuit_norm, main, memReadMessageExpr, memWriteMessageExpr,
+        memBusMessageExpr, dualByteMessageExpr, MemBusChannel, DualByteChannel]
   Assumptions := fun _ _ => True
   Spec := fun row _ _ => Spec row
   ProverAssumptions := fun row _ _ =>
@@ -62,19 +69,18 @@ def circuit : GeneralFormalCircuit FGL MemAlignWriteByteRow unit where
     circuit_proof_start
     refine ⟨?_, ?_⟩
     · obtain ⟨hw, h16, hd, h0, h1, h2, hc, hwc, hm0, hm1, _⟩ := h_holds
-      have hd' : input.byte_value.val < 256 ∧ input.value_8b.val < 256 := by
-        simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
-          Table.toRaw, RangeTables.dualByteTable] using hd
-      refine ⟨?_, hw, h16, hd'⟩
-      simp only [PolynomialSpec, byte_value_factor, value_8b_factor, value_16b_factor]
-      refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-      · linear_combination h0
-      · linear_combination h1
-      · linear_combination h2
-      · linear_combination hc
-      · linear_combination hwc
-      · linear_combination hm0
-      · linear_combination hm1
+      refine ⟨?_, hw, h16, ?_⟩
+      · simp only [PolynomialSpec, byte_value_factor, value_8b_factor, value_16b_factor]
+        refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+        · linear_combination h0
+        · linear_combination h1
+        · linear_combination h2
+        · linear_combination hc
+        · linear_combination hwc
+        · linear_combination hm0
+        · linear_combination hm1
+      · simpa [Lookup.Soundness, Table.fromStatic, StaticTable.toTable,
+          Table.toRaw, RangeTables.dualByteTable, h_input] using hd
     · intro _
       simp [MemBusChannel, DualByteChannel]
   completeness := by
@@ -106,7 +112,7 @@ theorem component_interactionsWith_memBus :
   change ⟨MemBusChannel.toRaw, _⟩ ∈ component.exposedChannels
   simp only [component, circuit, Component.exposedChannels, expose,
     List.mem_append, List.mem_singleton, List.map_cons, List.map_nil]
-  exact Or.inl rfl
+  exact Or.inl trivial
 
 theorem component_interactionsWith_dualByte :
     component.operations.interactionsWith DualByteChannel.toRaw =
@@ -115,7 +121,7 @@ theorem component_interactionsWith_dualByte :
   change ⟨DualByteChannel.toRaw, _⟩ ∈ component.exposedChannels
   simp only [component, circuit, Component.exposedChannels, expose,
     List.mem_append, List.mem_singleton, List.map_cons, List.map_nil]
-  exact Or.inr rfl
+  exact Or.inr trivial
 
 set_option maxHeartbeats 1000000 in
 /-- Derive the complete local Spec from actual compiled row operations. All

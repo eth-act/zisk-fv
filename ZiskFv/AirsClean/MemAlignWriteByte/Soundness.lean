@@ -41,9 +41,7 @@ theorem selectors_boolean (row : MemAlignWriteByteRow FGL) (h : PolynomialSpec r
       ∃ b : Bool, x = boolF b := by
     rcases mul_eq_zero.mp hx with hzero | hone
     · exact ⟨false, by simpa [boolF] using hzero⟩
-    · refine ⟨true, ?_⟩
-      simp only [boolF]
-      linear_combination -hone
+    · exact ⟨true, by simpa [boolF] using (sub_eq_zero.mp hone).symm⟩
   obtain ⟨high4, h4⟩ := boolean _ h.1
   obtain ⟨high2, h2⟩ := boolean _ h.2.1
   obtain ⟨high1, h1⟩ := boolean _ h.2.2.1

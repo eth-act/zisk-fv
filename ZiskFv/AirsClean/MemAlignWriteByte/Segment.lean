@@ -72,11 +72,24 @@ theorem paddingRow_messages (env : Environment FGL) :
       ProvableType.eval env paddingAlignedStoreMessage ∧
     ProvableType.eval env (memBusMessageExpr (ProvableType.const paddingRow)) =
       ProvableType.eval env paddingSelectedStoreMessage := by
-  simp [circuit_norm, memReadMessageExpr, memWriteMessageExpr, memBusMessageExpr,
+  have h_row := ProvableType.eval_const (env := env) (x := paddingRow)
+  have h4 := congrArg MemAlignWriteByteRow.sel_high_4b h_row
+  have h2 := congrArg MemAlignWriteByteRow.sel_high_2b h_row
+  have h1 := congrArg MemAlignWriteByteRow.sel_high_b h_row
+  have hd := congrArg MemAlignWriteByteRow.direct_value h_row
+  have hc := congrArg MemAlignWriteByteRow.composed_value h_row
+  have hw := congrArg MemAlignWriteByteRow.written_byte_value h_row
+  have ha := congrArg MemAlignWriteByteRow.addr_w h_row
+  have hs := congrArg MemAlignWriteByteRow.step h_row
+  have hm0 := congrArg MemAlignWriteByteRow.mem_write_values_0 h_row
+  have hm1 := congrArg MemAlignWriteByteRow.mem_write_values_1 h_row
+  simp only [circuit_norm] at h4 h2 h1 hd hc hw ha hs hm0 hm1
+  simp only [← CircuitType.eval_expression]
+  simp only [circuit_norm, memReadMessageExpr, memWriteMessageExpr, memBusMessageExpr,
     paddingLoadMessage, paddingAlignedStoreMessage, paddingSelectedStoreMessage,
-    paddingRow, rowOf, composedValueOf, boolF, ProvableType.const,
-    MemAlignByte.byte_value_factor, MemAlignByte.value_8b_factor,
-    MemAlignByte.value_16b_factor]
+    h4, h2, h1, hd, hc, hw, ha, hs, hm0, hm1]
+  simp [paddingRow, rowOf, composedValueOf, boolF, MemAlignByte.byte_value_factor,
+    MemAlignByte.value_8b_factor, MemAlignByte.value_16b_factor]
 
 /-- The same three typed memory operations exposed by the live row component,
 specialized to the source zero padding row. -/
