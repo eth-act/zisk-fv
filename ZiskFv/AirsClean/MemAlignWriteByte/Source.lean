@@ -81,6 +81,6 @@ theorem extracted_of_main_constraints (c : SourceTrace FGL FGL) (r offset : ℕ)
     ExtractedPolynomials c r := by
   apply extracted_of_component_spec c r
   have hspec := spec_of_main_constraints offset env (ProvableType.const (c.rows r)) h_holds
-  simpa only [circuit_norm] using hspec
+  simpa only [ProvableType.eval_const] using hspec
 
 end ZiskFv.AirsClean.MemAlignWriteByte
