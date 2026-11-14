@@ -1525,8 +1525,8 @@ private theorem sdLdWitness_rangeInteractions :
   have h_extension :
       (sdLdTableWithData sdLdBinaryExtensionTable).interactionsWith
           SpecifiedRangesSliceChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    change SpecifiedRangesSliceChannel.toRaw ∉ [OpBusChannel.toRaw, ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw]
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := sdLdTableWithData sdLdBinaryExtensionTable) SpecifiedRangesSliceChannel.toRaw
     decide
   have h_binaryAdd :
       (sdLdTableWithData sdLdBinaryAddTable).interactionsWith
