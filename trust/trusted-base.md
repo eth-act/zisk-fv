@@ -551,6 +551,26 @@ whole-state floor" property is a property of the `LoadMemoryTimelineCoherenceEvi
 cursor, so the earlier `witnessStore_nondegenerate` regs/cycleCount side-claim was
 dropped as describing a cursor the evidence no longer uses.)
 
+### Canonical ALU input derivation — #360 partial
+
+`TraceLevelExport.PureInputs.pureInputsOfRegAgree` reconstructs 27 simple ALU
+input families from decoded operands and the **current** register-agreement
+invariant. Architectural x0 is the specified zero register; other values come
+from the register file. Both the induction step and final `root_soundness`
+call consume this constructor. It does not assume future step soundness.
+
+This slice retains the existing PC-presence equality and passes the other 36
+families through unchanged. The public input records and aggregate
+`InputsAgreeCore` premise are **not removed**. Memory, architectural/physical
+row placement, boot/platform invariants and the remaining family-specific
+obligations still need their actual derivations.
+
+Separately, the seven signed-M environment builders derive their nine literal
+bus-shape facts instead of projecting those proofs from promises; their four
+Sail-input equalities remain. The 28 R-type concat/layout facts now use symbolic
+kernel proofs. Neither change establishes #172's consumed committed-word/state
+encoding claim or repairs the existing M/Zmmul domain predicate.
+
 ### The PC premises (`SegmentPcChain` + `StepRowsAligned`) — #330
 
 **Before (pre-#330).** `h_pc_bridge` was a field of **all 63** `Inputs_<op>`
