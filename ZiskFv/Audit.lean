@@ -212,19 +212,13 @@ info: 'ZiskFv.Compliance.root_soundness' depends on axioms: [cancel_reservation,
 /--
 info: 'ZiskFv.Completeness.sail_executable_within_supported_decode_shape' depends on axioms: [propext,
  Classical.choice,
- Lean.ofReduceBool,
- Lean.trustCompiler,
  Quot.sound]
 -/
 #guard_msgs (whitespace := lax) in
 #print axioms ZiskFv.Completeness.sail_executable_within_supported_decode_shape
 
 /--
-info: 'ZiskFv.Completeness.skeletal_root_completeness' depends on axioms: [propext,
- Classical.choice,
- Lean.ofReduceBool,
- Lean.trustCompiler,
- Quot.sound]
+info: 'ZiskFv.Completeness.skeletal_root_completeness' depends on axioms: [propext, Classical.choice, Quot.sound]
 -/
 #guard_msgs (whitespace := lax) in
 #print axioms ZiskFv.Completeness.skeletal_root_completeness

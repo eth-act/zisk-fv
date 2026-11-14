@@ -1043,7 +1043,7 @@ theorem sail_load_executable_contained_in :
     exact sail_encode_rawIType_contained_in_load_shape_in h_encode
       (sail_encodes_to_in_of_pure
         (sail_encode_lb_eq_rawIType imm rs1 rd) state)
-      (by native_decide)
+      (by decide)
       (List.mem_range.mpr (regidx_to_fin rd).isLt)
       (List.mem_range.mpr (regidx_to_fin rs1).isLt)
       imm.isLt
@@ -1051,7 +1051,7 @@ theorem sail_load_executable_contained_in :
     exact sail_encode_rawIType_contained_in_load_shape_in h_encode
       (sail_encodes_to_in_of_pure
         (sail_encode_lh_eq_rawIType imm rs1 rd) state)
-      (by native_decide)
+      (by decide)
       (List.mem_range.mpr (regidx_to_fin rd).isLt)
       (List.mem_range.mpr (regidx_to_fin rs1).isLt)
       imm.isLt
@@ -1059,7 +1059,7 @@ theorem sail_load_executable_contained_in :
     exact sail_encode_rawIType_contained_in_load_shape_in h_encode
       (sail_encodes_to_in_of_pure
         (sail_encode_lw_eq_rawIType imm rs1 rd) state)
-      (by native_decide)
+      (by decide)
       (List.mem_range.mpr (regidx_to_fin rd).isLt)
       (List.mem_range.mpr (regidx_to_fin rs1).isLt)
       imm.isLt
@@ -1067,7 +1067,7 @@ theorem sail_load_executable_contained_in :
     exact sail_encode_rawIType_contained_in_load_shape_in h_encode
       (sail_encodes_to_in_of_pure
         (sail_encode_ld_eq_rawIType imm rs1 rd) state)
-      (by native_decide)
+      (by decide)
       (List.mem_range.mpr (regidx_to_fin rd).isLt)
       (List.mem_range.mpr (regidx_to_fin rs1).isLt)
       imm.isLt
@@ -1075,7 +1075,7 @@ theorem sail_load_executable_contained_in :
     exact sail_encode_rawIType_contained_in_load_shape_in h_encode
       (sail_encodes_to_in_of_pure
         (sail_encode_lbu_eq_rawIType imm rs1 rd) state)
-      (by native_decide)
+      (by decide)
       (List.mem_range.mpr (regidx_to_fin rd).isLt)
       (List.mem_range.mpr (regidx_to_fin rs1).isLt)
       imm.isLt
@@ -1083,7 +1083,7 @@ theorem sail_load_executable_contained_in :
     exact sail_encode_rawIType_contained_in_load_shape_in h_encode
       (sail_encodes_to_in_of_pure
         (sail_encode_lhu_eq_rawIType imm rs1 rd) state)
-      (by native_decide)
+      (by decide)
       (List.mem_range.mpr (regidx_to_fin rd).isLt)
       (List.mem_range.mpr (regidx_to_fin rs1).isLt)
       imm.isLt
@@ -1091,7 +1091,7 @@ theorem sail_load_executable_contained_in :
     exact sail_encode_rawIType_contained_in_load_shape_in h_encode
       (sail_encodes_to_in_of_pure
         (sail_encode_lwu_eq_rawIType imm rs1 rd) state)
-      (by native_decide)
+      (by decide)
       (List.mem_range.mpr (regidx_to_fin rd).isLt)
       (List.mem_range.mpr (regidx_to_fin rs1).isLt)
       imm.isLt
@@ -1112,7 +1112,7 @@ theorem sail_store_executable_contained_in :
     exact sail_encode_rawSType_contained_in_store_shape_in h_encode
       (sail_encodes_to_in_of_pure
         (sail_encode_sb_eq_rawSType imm rs2 rs1) state)
-      (by native_decide)
+      (by decide)
       (List.mem_range.mpr (regidx_to_fin rs1).isLt)
       (List.mem_range.mpr (regidx_to_fin rs2).isLt)
       imm.isLt
@@ -1120,7 +1120,7 @@ theorem sail_store_executable_contained_in :
     exact sail_encode_rawSType_contained_in_store_shape_in h_encode
       (sail_encodes_to_in_of_pure
         (sail_encode_sh_eq_rawSType imm rs2 rs1) state)
-      (by native_decide)
+      (by decide)
       (List.mem_range.mpr (regidx_to_fin rs1).isLt)
       (List.mem_range.mpr (regidx_to_fin rs2).isLt)
       imm.isLt
@@ -1128,7 +1128,7 @@ theorem sail_store_executable_contained_in :
     exact sail_encode_rawSType_contained_in_store_shape_in h_encode
       (sail_encodes_to_in_of_pure
         (sail_encode_sw_eq_rawSType imm rs2 rs1) state)
-      (by native_decide)
+      (by decide)
       (List.mem_range.mpr (regidx_to_fin rs1).isLt)
       (List.mem_range.mpr (regidx_to_fin rs2).isLt)
       imm.isLt
@@ -1136,7 +1136,7 @@ theorem sail_store_executable_contained_in :
     exact sail_encode_rawSType_contained_in_store_shape_in h_encode
       (sail_encodes_to_in_of_pure
         (sail_encode_sd_eq_rawSType imm rs2 rs1) state)
-      (by native_decide)
+      (by decide)
       (List.mem_range.mpr (regidx_to_fin rs1).isLt)
       (List.mem_range.mpr (regidx_to_fin rs2).isLt)
       imm.isLt
@@ -1158,7 +1158,7 @@ theorem sail_upper_jump_executable_contained_in_supported_decode :
       (sail_encode_rawUType_contained_in_upper_shape_in h_encode
         (sail_encodes_to_in_of_pure
           (sail_encode_utype_eq_rawUType imm rd uop.LUI) state)
-        (by native_decide)
+        (by decide)
         (List.mem_range.mpr (regidx_to_fin rd).isLt)
         (sail_utype_shift_toNat_lt imm)
         (sail_utype_shift_toNat_mod_4096 imm))
@@ -1167,7 +1167,7 @@ theorem sail_upper_jump_executable_contained_in_supported_decode :
       (sail_encode_rawUType_contained_in_upper_shape_in h_encode
         (sail_encodes_to_in_of_pure
           (sail_encode_utype_eq_rawUType imm rd uop.AUIPC) state)
-        (by native_decide)
+        (by decide)
         (List.mem_range.mpr (regidx_to_fin rd).isLt)
         (sail_utype_shift_toNat_lt imm)
         (sail_utype_shift_toNat_mod_4096 imm))
@@ -1281,5 +1281,30 @@ theorem sail_rv64im_executable_contained_in_supported_decode_in :
   · exact sail_supported_fence_executable_contained_in_supported_decode
       state raw inst h_decode h_encode h_fence
 
+
+/-- Bounded MUL/DIV encoder witnesses on the actual MISA.M-enabled state.
+The shape bridge consumes the successful generated encoder results. -/
+theorem mEnabledState_mul_div_contained (rs2 rs1 rd : regidx) :
+    Rv64imShapes.RTypeRegisterShape
+      (Rv64imShapes.rawRType 1 (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val 0 (regidx_to_fin rd).val 0x33) ∧
+    Rv64imShapes.RTypeRegisterShape
+      (Rv64imShapes.rawRType 1 (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val 4 (regidx_to_fin rd).val 0x33) := by
+  have h_mul := sail_encode_mul_eq_rawRType_in
+    mEnabledState mEnabledState_isaExtensionsEnabled rs2 rs1 rd
+  have h_div := sail_encode_div_eq_rawRType_in
+    mEnabledState mEnabledState_isaExtensionsEnabled rs2 rs1 rd
+  constructor
+  · exact sail_encode_rawRType_contained_in_rtype_shape_in h_mul h_mul
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
+  · exact sail_encode_rawRType_contained_in_rtype_shape_in h_div h_div
+      (by simp [Rv64imShapes.allRTypeOpcodeShapes])
+      (List.mem_range.mpr (regidx_to_fin rd).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs1).isLt)
+      (List.mem_range.mpr (regidx_to_fin rs2).isLt)
 
 end ZiskFv.Completeness.SailDecode

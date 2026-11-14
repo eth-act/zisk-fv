@@ -63,16 +63,16 @@ decoder/encoder (`LeanRV64D.Functions.ext_decode` / `encdec_forwards`).
 
 * `state` / `raw` — a Sail machine state (the decoder consults extension state)
   and the 32-bit word.
-* premise `IsaExtensionsEnabled state` — `state` has `M` enabled, `Zmmul`
-  disabled.
+* premise `IsaExtensionsEnabled state` — the actual Sail `M` guard succeeds.
+  `Zmmul` enablement follows from `M`; standalone Zmmul support remains disabled.
 * premise `SailRv64imExecutableRawIn state raw` — `raw` round-trips through Sail
   to one of the eleven enumerated RV64IM instruction classes.
 * conclusion `SupportedDecodeShape raw` — `raw` matches one of the seven shape
   families.
 
-The proof evaluates the Sail functions via `native_decide`-style reduction
-(eth-act/zisk-fv#75 tracks removing `native_decide`; eth-act/zisk-fv#77 tracks
-validating the Sail spec itself against the reference emulator).
+The encoder word identities and containment proofs are kernel-checked, without
+native/compiler proof axioms. This does not validate the Sail specification or
+its extraction against the reference emulator (eth-act/zisk-fv#77).
 
 Caveat: `SupportedDecodeShape` is a hand-written predicate (`Rv64im/Shapes.lean`),
 NOT ZisK's decoder — this says nothing about ZisK. -/

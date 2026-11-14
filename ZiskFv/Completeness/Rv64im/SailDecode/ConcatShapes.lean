@@ -6,8 +6,9 @@ import ZiskFv.Completeness.Rv64im.SailDecode.Domain
 This part holds the `sail_*_concat_eq_raw*` bit-concatenation bridges that
 relate Sail's generated encoder concatenations to the `Rv64imShapes.raw*`
 constructors, together with their per-field `*_component_eq` helper lemmas and
-the alignment / shift side lemmas.  It is part of the split
-`ZiskFv.Completeness.Rv64im.SailDecode` module.
+the alignment / shift side lemmas. Layout identities are proved symbolically
+by bit extensionality, without compiler-trusted evaluation. It is part of the
+split `ZiskFv.Completeness.Rv64im.SailDecode` module.
 -/
 
 namespace ZiskFv.Completeness.SailDecode
@@ -628,27 +629,53 @@ theorem sail_remuw_concat_eq_rawRType (rs2 rs1 rd : regidx) :
 theorem sail_itype_imm_component_eq (imm : BitVec 12) :
     BitVec.ofNat 32 ((imm.toNat % 4096) <<< 20) =
       (imm ++ 0#20 : BitVec 32) := by
-  native_decide +revert
+  rw [Nat.mod_eq_of_lt imm.isLt]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      Nat.testBit_shiftLeft, BitVec.testBit_toNat] <;>
+    simp
 
 theorem sail_itype_rs1_component_eq (rs : BitVec 5) :
     BitVec.ofNat 32 (rs.toNat <<< 15) =
       (0#12 ++ (rs ++ 0#15) : BitVec 32) := by
-  native_decide +revert
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      Nat.testBit_shiftLeft, BitVec.testBit_toNat] <;>
+    simp
 
 theorem sail_itype_funct3_component_eq (funct3 : BitVec 3) :
     BitVec.ofNat 32 (funct3.toNat <<< 12) =
       (0#17 ++ (funct3 ++ 0#12) : BitVec 32) := by
-  native_decide +revert
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      Nat.testBit_shiftLeft, BitVec.testBit_toNat] <;>
+    simp
 
 theorem sail_itype_rd_component_eq (rd : BitVec 5) :
     BitVec.ofNat 32 (rd.toNat <<< 7) =
       (0#20 ++ (rd ++ 0#7) : BitVec 32) := by
-  native_decide +revert
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      Nat.testBit_shiftLeft, BitVec.testBit_toNat] <;>
+    simp
 
 theorem sail_itype_opcode_component_eq (opcode : BitVec 7) :
     BitVec.ofNat 32 opcode.toNat =
       (0#25 ++ opcode : BitVec 32) := by
-  native_decide +revert
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      BitVec.testBit_toNat] <;>
+    simp
 
 theorem sail_itype_bitvec_concat_eq_rawIType
     (imm : BitVec 12) (rs1 : BitVec 5) (funct3 : BitVec 3)
@@ -660,7 +687,13 @@ theorem sail_itype_bitvec_concat_eq_rawIType
   rw [sail_itype_imm_component_eq, sail_itype_rs1_component_eq,
     sail_itype_funct3_component_eq, sail_itype_rd_component_eq,
     sail_itype_opcode_component_eq]
-  bv_decide
+  simp only [HAppend.hAppend, BitVec.append]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeftZeroExtend,
+      BitVec.getLsbD_setWidth', BitVec.getLsbD_ofNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_itype_parts_bitvec_concat_eq_rawIType
     (imm : BitVec 12) (rs1 : BitVec 5) (is_unsigned : BitVec 1)
@@ -677,7 +710,13 @@ theorem sail_itype_parts_bitvec_concat_eq_rawIType
   rw [sail_itype_imm_component_eq, sail_itype_rs1_component_eq,
     sail_itype_funct3_component_eq, sail_itype_rd_component_eq,
     sail_itype_opcode_component_eq]
-  bv_decide
+  simp only [HAppend.hAppend, BitVec.append]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeftZeroExtend,
+      BitVec.getLsbD_setWidth', BitVec.getLsbD_ofNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_itype_concat_eq_rawIType
     (imm : BitVec 12) (rs1 rd : regidx) (funct3 : BitVec 3) :
@@ -739,31 +778,50 @@ theorem sail_load_parts_concat_eq_rawIType
 theorem sail_stype_imm_hi_component_eq (imm : BitVec 12) :
     BitVec.ofNat 32 (((imm.toNat % 4096) >>> 5) <<< 25) =
       (BitVec.extractLsb 11 5 imm ++ 0#25 : BitVec 32) := by
-  native_decide +revert
+  rw [Nat.mod_eq_of_lt imm.isLt]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      BitVec.getLsbD_extractLsb, Nat.testBit_shiftLeft,
+      Nat.testBit_shiftRight, BitVec.testBit_toNat] <;>
+    simp
 
 theorem sail_stype_rs2_component_eq (rs : BitVec 5) :
     BitVec.ofNat 32 (rs.toNat <<< 20) =
       (0#7 ++ (rs ++ 0#20) : BitVec 32) := by
-  native_decide +revert
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      Nat.testBit_shiftLeft, BitVec.testBit_toNat] <;>
+    simp
 
 theorem sail_stype_rs1_component_eq (rs : BitVec 5) :
     BitVec.ofNat 32 (rs.toNat <<< 15) =
       (0#12 ++ (rs ++ 0#15) : BitVec 32) := by
-  native_decide +revert
+  exact sail_itype_rs1_component_eq rs
 
 theorem sail_stype_funct3_component_eq (funct3 : BitVec 3) :
     BitVec.ofNat 32 (funct3.toNat <<< 12) =
       (0#17 ++ (funct3 ++ 0#12) : BitVec 32) := by
-  native_decide +revert
+  exact sail_itype_funct3_component_eq funct3
 
 theorem sail_stype_imm_lo_component_eq (imm : BitVec 12) :
     BitVec.ofNat 32 (((imm.toNat % 4096) &&& 0x1f) <<< 7) =
       (0#20 ++ (BitVec.extractLsb 4 0 imm ++ 0#7) : BitVec 32) := by
-  native_decide +revert
+  rw [Nat.mod_eq_of_lt imm.isLt]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      BitVec.getLsbD_extractLsb, Nat.testBit_shiftLeft,
+      Nat.testBit_and, BitVec.testBit_toNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_stype_opcode_component_eq :
     BitVec.ofNat 32 0x23 = (0#25 ++ 0b0100011#7 : BitVec 32) := by
-  native_decide
+  rfl
 
 theorem sail_store_parts_bitvec_concat_eq_rawSType
     (imm : BitVec 12) (rs2 rs1 : BitVec 5) (funct3 : BitVec 3) :
@@ -780,7 +838,14 @@ theorem sail_store_parts_bitvec_concat_eq_rawSType
   rw [sail_stype_imm_hi_component_eq, sail_stype_rs2_component_eq,
     sail_stype_rs1_component_eq, sail_stype_funct3_component_eq,
     sail_stype_imm_lo_component_eq, sail_stype_opcode_component_eq]
-  bv_decide
+  simp only [HAppend.hAppend, BitVec.append]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeftZeroExtend,
+      BitVec.getLsbD_setWidth', BitVec.getLsbD_extractLsb,
+      BitVec.getLsbD_ofNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_store_parts_split_bitvec_concat_eq_rawSType
     (imm : BitVec 12) (rs2 rs1 : BitVec 5) (width : BitVec 2) :
@@ -799,7 +864,14 @@ theorem sail_store_parts_split_bitvec_concat_eq_rawSType
   rw [sail_stype_imm_hi_component_eq, sail_stype_rs2_component_eq,
     sail_stype_rs1_component_eq, sail_stype_funct3_component_eq,
     sail_stype_imm_lo_component_eq, sail_stype_opcode_component_eq]
-  bv_decide
+  simp only [HAppend.hAppend, BitVec.append]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeftZeroExtend,
+      BitVec.getLsbD_setWidth', BitVec.getLsbD_extractLsb,
+      BitVec.getLsbD_ofNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_store_parts_concat_eq_rawSType
     (imm : BitVec 12) (rs2 rs1 : regidx) (width : BitVec 2) :
@@ -824,17 +896,22 @@ theorem sail_store_parts_concat_eq_rawSType
 theorem sail_utype_imm_component_eq (imm : BitVec 20) :
     BitVec.ofNat 32 ((imm.toNat <<< 12) &&& 0xfffff000) =
       (imm ++ 0#12 : BitVec 32) := by
-  native_decide +revert
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      Nat.testBit_and, Nat.testBit_shiftLeft, BitVec.testBit_toNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_utype_rd_component_eq (rd : BitVec 5) :
     BitVec.ofNat 32 (rd.toNat <<< 7) =
       (0#20 ++ (rd ++ 0#7) : BitVec 32) := by
-  native_decide +revert
+  exact sail_itype_rd_component_eq rd
 
 theorem sail_utype_opcode_component_eq (opcode : BitVec 7) :
     BitVec.ofNat 32 opcode.toNat =
       (0#25 ++ opcode : BitVec 32) := by
-  native_decide +revert
+  exact sail_itype_opcode_component_eq opcode
 
 theorem sail_utype_bitvec_concat_eq_rawUType
     (imm : BitVec 20) (rd : BitVec 5) (opcode : BitVec 7) :
@@ -844,7 +921,13 @@ theorem sail_utype_bitvec_concat_eq_rawUType
   rw [BitVec.ofNat_or, BitVec.ofNat_or]
   rw [sail_utype_imm_component_eq, sail_utype_rd_component_eq,
     sail_utype_opcode_component_eq]
-  bv_decide
+  simp only [HAppend.hAppend, BitVec.append]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeftZeroExtend,
+      BitVec.getLsbD_setWidth', BitVec.getLsbD_ofNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_utype_concat_eq_rawUType
     (imm : BitVec 20) (rd : regidx) (opcode : BitVec 7) :
@@ -879,16 +962,26 @@ theorem sail_jalr_concat_eq_rawIType
 theorem sail_fence_pred_component_eq (pred : BitVec 4) :
     BitVec.ofNat 32 (pred.toNat <<< 24) =
       (0#4 ++ (pred ++ 0#24) : BitVec 32) := by
-  native_decide +revert
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      Nat.testBit_shiftLeft, BitVec.testBit_toNat] <;>
+    simp
 
 theorem sail_fence_succ_component_eq (succ : BitVec 4) :
     BitVec.ofNat 32 (succ.toNat <<< 20) =
       (0#8 ++ (succ ++ 0#20) : BitVec 32) := by
-  native_decide +revert
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      Nat.testBit_shiftLeft, BitVec.testBit_toNat] <;>
+    simp
 
 theorem sail_fence_opcode_component_eq :
     BitVec.ofNat 32 0x0f = (0#25 ++ 0b0001111#7 : BitVec 32) := by
-  native_decide
+  rfl
 
 theorem sail_fence_bitvec_concat_eq_rawSupportedFence
     (pred succ : BitVec 4) :
@@ -903,7 +996,13 @@ theorem sail_fence_bitvec_concat_eq_rawSupportedFence
   rw [BitVec.ofNat_or, BitVec.ofNat_or]
   rw [sail_fence_pred_component_eq, sail_fence_succ_component_eq,
     sail_fence_opcode_component_eq]
-  bv_decide
+  simp only [HAppend.hAppend, BitVec.append]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeftZeroExtend,
+      BitVec.getLsbD_setWidth', BitVec.getLsbD_ofNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_fence_concat_eq_rawSupportedFence
     (pred succ : BitVec 4) :
@@ -923,12 +1022,17 @@ theorem sail_jal_align_toNat_mod_two
     (imm : BitVec 21)
     (h_align : (Sail.BitVec.extractLsb imm 0 0 == (0#1 : BitVec 1)) = true) :
     imm.toNat % 2 = 0 := by
-  native_decide +revert
+  have h := congrArg (fun x : BitVec 1 => x.getLsbD 0)
+    (beq_iff_eq.mp h_align)
+  have hbit : imm.getLsbD 0 = false := by
+    simpa [Sail.BitVec.extractLsb] using h
+  exact Nat.mod_two_eq_zero_iff_testBit_zero.mpr
+    (by rw [BitVec.testBit_toNat]; exact hbit)
 
 theorem sail_utype_shift_toNat_lt (imm : BitVec 20) :
     imm.toNat <<< 12 < 2 ^ 32 := by
   rw [Nat.shiftLeft_eq]
-  have h := Nat.mul_lt_mul_of_pos_right imm.isLt (by native_decide : 0 < 2 ^ 12)
+  have h := Nat.mul_lt_mul_of_pos_right imm.isLt (by decide : 0 < 2 ^ 12)
   simpa using h
 
 theorem sail_utype_shift_toNat_mod_4096 (imm : BitVec 20) :
@@ -939,27 +1043,55 @@ theorem sail_utype_shift_toNat_mod_4096 (imm : BitVec 20) :
 theorem sail_jal_rd_component_eq (rd : BitVec 5) :
     BitVec.ofNat 32 (rd.toNat <<< 7) =
       (0#20 ++ (rd ++ 0#7) : BitVec 32) := by
-  native_decide +revert
+  exact sail_itype_rd_component_eq rd
 
 theorem sail_jal_imm20_component_eq (imm : BitVec 21) :
     BitVec.ofNat 32 ((((imm.toNat % 2097152) >>> 20) &&& 1) <<< 31) =
       (BitVec.extractLsb 20 20 imm ++ 0#31 : BitVec 32) := by
-  native_decide +revert
+  rw [Nat.mod_eq_of_lt imm.isLt]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      BitVec.getLsbD_extractLsb, Nat.testBit_shiftLeft,
+      Nat.testBit_shiftRight, Nat.testBit_and, BitVec.testBit_toNat] <;>
+    simp
 
 theorem sail_jal_imm10_1_component_eq (imm : BitVec 21) :
     BitVec.ofNat 32 ((((imm.toNat % 2097152) >>> 1) &&& 1023) <<< 21) =
       (0#1 ++ (BitVec.extractLsb 10 1 imm ++ 0#21) : BitVec 32) := by
-  native_decide +revert
+  rw [Nat.mod_eq_of_lt imm.isLt]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      BitVec.getLsbD_extractLsb, Nat.testBit_shiftLeft,
+      Nat.testBit_shiftRight, Nat.testBit_and, BitVec.testBit_toNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_jal_imm11_component_eq (imm : BitVec 21) :
     BitVec.ofNat 32 ((((imm.toNat % 2097152) >>> 11) &&& 1) <<< 20) =
       (0#11 ++ (BitVec.extractLsb 11 11 imm ++ 0#20) : BitVec 32) := by
-  native_decide +revert
+  rw [Nat.mod_eq_of_lt imm.isLt]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      BitVec.getLsbD_extractLsb, Nat.testBit_shiftLeft,
+      Nat.testBit_shiftRight, Nat.testBit_and, BitVec.testBit_toNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_jal_imm19_12_component_eq (imm : BitVec 21) :
     BitVec.ofNat 32 ((((imm.toNat % 2097152) >>> 12) &&& 255) <<< 12) =
       (0#12 ++ (BitVec.extractLsb 19 12 imm ++ 0#12) : BitVec 32) := by
-  native_decide +revert
+  rw [Nat.mod_eq_of_lt imm.isLt]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      BitVec.getLsbD_extractLsb, Nat.testBit_shiftLeft,
+      Nat.testBit_shiftRight, Nat.testBit_and, BitVec.testBit_toNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_jal_encImm_concat_eq_direct
     (imm : BitVec 21) (rd : BitVec 5) :
@@ -975,7 +1107,12 @@ theorem sail_jal_encImm_concat_eq_direct
           (BitVec.extractLsb 19 12 imm ++
             (rd ++ 0b1101111#7))))) : RawInstruction)) := by
   simp only [Sail.BitVec.extractLsb]
-  bv_decide
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb,
+      BitVec.getLsbD_ofNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_jal_direct_bitvec_concat_eq_rawJType
     (imm : BitVec 21) (rd : BitVec 5) :
@@ -991,7 +1128,14 @@ theorem sail_jal_direct_bitvec_concat_eq_rawJType
   rw [sail_jal_imm20_component_eq, sail_jal_imm10_1_component_eq,
     sail_jal_imm11_component_eq, sail_jal_imm19_12_component_eq,
     sail_jal_rd_component_eq]
-  bv_decide
+  simp only [HAppend.hAppend, BitVec.append]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeftZeroExtend,
+      BitVec.getLsbD_setWidth', BitVec.getLsbD_extractLsb,
+      BitVec.getLsbD_ofNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_jal_concat_eq_rawJType
     (imm : BitVec 21) (rd : regidx) :
@@ -1024,7 +1168,15 @@ theorem sail_slli_concat_eq_rawIType
         0x13 := by
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  have h := sail_itype_bitvec_concat_eq_rawIType
+    (0#6 ++ shamt) rs1 1#3 rd 0x13#7
+  have h_imm : (0#6 ++ shamt).toNat = shamt.toNat := by
+    simp only [BitVec.toNat_append, BitVec.toNat_ofNat, Nat.zero_mod,
+      Nat.zero_shiftLeft, Nat.zero_or]
+  rw [h_imm] at h
+  rw [BitVec.append_assoc' (w₁ := 6) (w₂ := 6) (w₃ := 20)]
+  simpa only [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin,
+    zero_extend, Sail.BitVec.zeroExtend, BitVec.zeroExtend] using h
 
 theorem sail_srli_concat_eq_rawIType
     (shamt : BitVec 6) (rs1 rd : regidx) :
@@ -1041,7 +1193,15 @@ theorem sail_srli_concat_eq_rawIType
         0x13 := by
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  have h := sail_itype_bitvec_concat_eq_rawIType
+    (0#6 ++ shamt) rs1 5#3 rd 0x13#7
+  have h_imm : (0#6 ++ shamt).toNat = shamt.toNat := by
+    simp only [BitVec.toNat_append, BitVec.toNat_ofNat, Nat.zero_mod,
+      Nat.zero_shiftLeft, Nat.zero_or]
+  rw [h_imm] at h
+  rw [BitVec.append_assoc' (w₁ := 6) (w₂ := 6) (w₃ := 20)]
+  simpa only [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin,
+    zero_extend, Sail.BitVec.zeroExtend, BitVec.zeroExtend] using h
 
 theorem sail_srai_concat_eq_rawIType
     (shamt : BitVec 6) (rs1 rd : regidx) :
@@ -1058,7 +1218,10 @@ theorem sail_srai_concat_eq_rawIType
         0x13 := by
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, BitVec.toNat_append,
+    BitVec.append_assoc' (w₁ := 6) (w₂ := 6) (w₃ := 20)] using
+    sail_itype_bitvec_concat_eq_rawIType (16#6 ++ shamt) rs1 5#3 rd 0x13#7
 
 theorem sail_addiw_concat_eq_rawIType
     (imm : BitVec 12) (rs1 rd : regidx) :
@@ -1074,7 +1237,9 @@ theorem sail_addiw_concat_eq_rawIType
         0x1b := by
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend] using
+    sail_itype_bitvec_concat_eq_rawIType imm rs1 0#3 rd 0x1b#7
 
 theorem sail_slliw_concat_eq_rawIType
     (shamt : BitVec 5) (rs1 rd : regidx) :
@@ -1091,7 +1256,15 @@ theorem sail_slliw_concat_eq_rawIType
         0x1b := by
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  have h := sail_itype_bitvec_concat_eq_rawIType
+    (0#7 ++ shamt) rs1 1#3 rd 0x1b#7
+  have h_imm : (0#7 ++ shamt).toNat = shamt.toNat := by
+    simp only [BitVec.toNat_append, BitVec.toNat_ofNat, Nat.zero_mod,
+      Nat.zero_shiftLeft, Nat.zero_or]
+  rw [h_imm] at h
+  rw [BitVec.append_assoc' (w₁ := 7) (w₂ := 5) (w₃ := 20)]
+  simpa only [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin,
+    zero_extend, Sail.BitVec.zeroExtend, BitVec.zeroExtend] using h
 
 theorem sail_srliw_concat_eq_rawIType
     (shamt : BitVec 5) (rs1 rd : regidx) :
@@ -1108,7 +1281,15 @@ theorem sail_srliw_concat_eq_rawIType
         0x1b := by
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  have h := sail_itype_bitvec_concat_eq_rawIType
+    (0#7 ++ shamt) rs1 5#3 rd 0x1b#7
+  have h_imm : (0#7 ++ shamt).toNat = shamt.toNat := by
+    simp only [BitVec.toNat_append, BitVec.toNat_ofNat, Nat.zero_mod,
+      Nat.zero_shiftLeft, Nat.zero_or]
+  rw [h_imm] at h
+  rw [BitVec.append_assoc' (w₁ := 7) (w₂ := 5) (w₃ := 20)]
+  simpa only [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin,
+    zero_extend, Sail.BitVec.zeroExtend, BitVec.zeroExtend] using h
 
 theorem sail_sraiw_concat_eq_rawIType
     (shamt : BitVec 5) (rs1 rd : regidx) :
@@ -1125,48 +1306,84 @@ theorem sail_sraiw_concat_eq_rawIType
         0x1b := by
   cases rs1 with | Regidx rs1 =>
   cases rd with | Regidx rd =>
-  native_decide +revert
+  simpa [LeanRV64D.Functions.encdec_reg_forwards, regidx_to_fin, zero_extend,
+    Sail.BitVec.zeroExtend, BitVec.zeroExtend, BitVec.toNat_append,
+    BitVec.append_assoc' (w₁ := 7) (w₂ := 5) (w₃ := 20)] using
+    sail_itype_bitvec_concat_eq_rawIType (32#7 ++ shamt) rs1 5#3 rd 0x1b#7
 
 theorem sail_btype_align_toNat_mod_two
     (imm : BitVec 13)
     (h_align : (Sail.BitVec.extractLsb imm 0 0 == (0#1 : BitVec 1)) = true) :
     imm.toNat % 2 = 0 := by
-  native_decide +revert
+  have h := congrArg (fun x : BitVec 1 => x.getLsbD 0)
+    (beq_iff_eq.mp h_align)
+  have hbit : imm.getLsbD 0 = false := by
+    simpa [Sail.BitVec.extractLsb] using h
+  exact Nat.mod_two_eq_zero_iff_testBit_zero.mpr
+    (by rw [BitVec.testBit_toNat]; exact hbit)
 
 theorem sail_btype_rs2_component_eq (rs : BitVec 5) :
     BitVec.ofNat 32 (rs.toNat <<< 20) =
       (0#7 ++ (rs ++ 0#20) : BitVec 32) := by
-  native_decide +revert
+  exact sail_stype_rs2_component_eq rs
 
 theorem sail_btype_rs1_component_eq (rs : BitVec 5) :
     BitVec.ofNat 32 (rs.toNat <<< 15) =
       (0#12 ++ (rs ++ 0#15) : BitVec 32) := by
-  native_decide +revert
+  exact sail_itype_rs1_component_eq rs
 
 theorem sail_btype_funct3_component_eq (funct3 : BitVec 3) :
     BitVec.ofNat 32 (funct3.toNat <<< 12) =
       (0#17 ++ (funct3 ++ 0#12) : BitVec 32) := by
-  native_decide +revert
+  exact sail_itype_funct3_component_eq funct3
 
 theorem sail_btype_imm12_component_eq (imm : BitVec 13) :
     BitVec.ofNat 32 ((((imm.toNat % 8192) >>> 12) &&& 1) <<< 31) =
       (BitVec.extractLsb 12 12 imm ++ 0#31 : BitVec 32) := by
-  native_decide +revert
+  rw [Nat.mod_eq_of_lt imm.isLt]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      BitVec.getLsbD_extractLsb, Nat.testBit_shiftLeft,
+      Nat.testBit_shiftRight, Nat.testBit_and, BitVec.testBit_toNat] <;>
+    simp
 
 theorem sail_btype_imm10_5_component_eq (imm : BitVec 13) :
     BitVec.ofNat 32 ((((imm.toNat % 8192) >>> 5) &&& 63) <<< 25) =
       (0#1 ++ (BitVec.extractLsb 10 5 imm ++ 0#25) : BitVec 32) := by
-  native_decide +revert
+  rw [Nat.mod_eq_of_lt imm.isLt]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      BitVec.getLsbD_extractLsb, Nat.testBit_shiftLeft,
+      Nat.testBit_shiftRight, Nat.testBit_and, BitVec.testBit_toNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_btype_imm4_1_component_eq (imm : BitVec 13) :
     BitVec.ofNat 32 ((((imm.toNat % 8192) >>> 1) &&& 15) <<< 8) =
       (0#20 ++ (BitVec.extractLsb 4 1 imm ++ 0#8) : BitVec 32) := by
-  native_decide +revert
+  rw [Nat.mod_eq_of_lt imm.isLt]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      BitVec.getLsbD_extractLsb, Nat.testBit_shiftLeft,
+      Nat.testBit_shiftRight, Nat.testBit_and, BitVec.testBit_toNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_btype_imm11_component_eq (imm : BitVec 13) :
     BitVec.ofNat 32 ((((imm.toNat % 8192) >>> 11) &&& 1) <<< 7) =
       (0#24 ++ (BitVec.extractLsb 11 11 imm ++ 0#7) : BitVec 32) := by
-  native_decide +revert
+  rw [Nat.mod_eq_of_lt imm.isLt]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_ofNat, BitVec.getLsbD_append,
+      BitVec.getLsbD_extractLsb, Nat.testBit_shiftLeft,
+      Nat.testBit_shiftRight, Nat.testBit_and, BitVec.testBit_toNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_btype_encImm_concat_eq_direct
     (imm : BitVec 13) (rs2 rs1 : BitVec 5) (funct3 : BitVec 3) :
@@ -1188,7 +1405,12 @@ theorem sail_btype_encImm_concat_eq_direct
                 (BitVec.extractLsb 11 11 imm ++
                   0b1100011#7))))))) : RawInstruction) := by
   simp only [Sail.BitVec.extractLsb]
-  bv_decide
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb,
+      BitVec.getLsbD_ofNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_btype_direct_bitvec_concat_eq_rawBType
     (imm : BitVec 13) (rs2 rs1 : BitVec 5) (funct3 : BitVec 3) :
@@ -1208,7 +1430,14 @@ theorem sail_btype_direct_bitvec_concat_eq_rawBType
     sail_btype_rs2_component_eq, sail_btype_rs1_component_eq,
     sail_btype_funct3_component_eq, sail_btype_imm4_1_component_eq,
     sail_btype_imm11_component_eq]
-  bv_decide
+  simp only [HAppend.hAppend, BitVec.append]
+  apply BitVec.eq_of_getLsbD_eq
+  intro i hi
+  interval_cases i <;>
+    simp only [BitVec.getLsbD_or, BitVec.getLsbD_shiftLeftZeroExtend,
+      BitVec.getLsbD_setWidth', BitVec.getLsbD_extractLsb,
+      BitVec.getLsbD_ofNat] <;>
+    simp [Nat.testBit]
 
 theorem sail_btype_direct_concat_eq_rawBType
     (imm : BitVec 13) (rs2 rs1 : regidx) (funct3 : BitVec 3) :

@@ -20,35 +20,19 @@ abbrev SailState := PreSail.SequentialState RegisterType Sail.trivialChoiceSourc
 def SailReturns {α : Type} (action : SailM α) (state : SailState) (value : α) : Prop :=
   action state = EStateM.Result.ok value state
 
-/-- The targeted ISA-extension configuration of a Sail state: `M` enabled and
-`Zmmul` disabled.
+/-- The targeted ISA-extension configuration: the generated Sail `M` guard
+returns true in this state.
 
-`Zmmul` is RISC-V's *multiply-only* subset of `M` (MUL/MULH* but no DIV/REM); we
-want full RV64IM, so we enable `M`. We additionally pin `Zmmul = false` to keep
-the Sail decode of the multiply opcodes on the `M` path rather than the mul-only
-subset.
+In the pinned model, `currentlyEnabled Zmmul` includes `M` even though
+`hartSupports Zmmul` is false. Thus M-enabled states also have Zmmul enabled;
+standalone multiply-only support is not requested. `IsaState` proves these
+source-derived facts and constructs an actual MISA.M-enabled state.
 
-NOTE: it is not yet verified whether the `Zmmul = false` conjunct is strictly
-load-bearing for the containment proofs, or whether `M` enabled alone already
-pins those decodes — Sail's `encdec`/`currentlyEnabled` guards for the M opcodes
-would need to be checked; the conjunct is kept conservatively for now.
-
-Named generically (`IsaExtensionsEnabled`, not `Rv64imEnabled…`) to future-proof
-for enabling further extensions (e.g. Zicclsm) without renaming.
-
-NOTE: this predicate takes the whole `SailState` even though it logically depends
-only on a couple of CSR bits. That is inherited from the Sail model + the
-Sail→Lean extraction: `SailState` (`PreSail.SequentialState …`) is monolithic and
-`currentlyEnabled` is a generated function over the full state. Our wrapper layer
-sits on top of those generated functions, so it cannot slim the state without
-either patching/forking the extraction (which would move the trust anchor) or
-proving a separate "only these CSR bits matter" projection lemma. It is whole-state
-for fidelity to the extracted API, not because it needs all of it. -/
+This predicate uses the existing generated whole-state API. It does not add an
+independent Zmmul promise, a boot-state assumption, or a per-step ISA oracle. -/
 def IsaExtensionsEnabled (state : SailState) : Prop :=
   LeanRV64D.Functions.currentlyEnabled extension.Ext_M state =
-    EStateM.Result.ok true state ∧
-  LeanRV64D.Functions.currentlyEnabled extension.Ext_Zmmul state =
-    EStateM.Result.ok false state
+    EStateM.Result.ok true state
 
 /-- Sail raw decode, from the generated Sail `ext_decode` entrypoint. -/
 def SailDecodesTo (raw : RawInstruction) (inst : instruction) : Prop :=

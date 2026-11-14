@@ -326,4 +326,36 @@ theorem zisk_decoder_classifies_matches_sail (state : SailState) (raw : RawInstr
   obtain ⟨d, hd, hop⟩ := matches_of_instruction h_state h_encode h_inst
   exact ⟨inst, d, h_decode, hd, hop⟩
 
+/-- The concrete M-enabled encoder witnesses are consumed by both containment
+and the existing instruction-classification theorem, without decode premises. -/
+theorem mEnabledState_mul_div_classifies (rs2 rs1 rd : regidx) :
+    (Rv64imShapes.RTypeRegisterShape
+      (rawRType 1 (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val 0 (regidx_to_fin rd).val 0x33) ∧
+    Rv64imShapes.RTypeRegisterShape
+      (rawRType 1 (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val 4 (regidx_to_fin rd).val 0x33)) ∧
+    (∃ d, decode_32_core
+      (toU32 (rawRType 1 (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val 0 (regidx_to_fin rd).val 0x33)) = ok d ∧
+      d.opcode = RiscvOpcode.Mul) ∧
+    (∃ d, decode_32_core
+      (toU32 (rawRType 1 (regidx_to_fin rs2).val
+        (regidx_to_fin rs1).val 4 (regidx_to_fin rd).val 0x33)) = ok d ∧
+      d.opcode = RiscvOpcode.Div) := by
+  refine ⟨mEnabledState_mul_div_contained rs2 rs1 rd, ?_, ?_⟩
+  · have h_mul := sail_encode_mul_eq_rawRType_in
+      mEnabledState mEnabledState_isaExtensionsEnabled rs2 rs1 rd
+    have h_class := matches_of_instruction mEnabledState_isaExtensionsEnabled h_mul
+      (by exact Or.inr (Or.inr (Or.inl (Or.inl ⟨rs2, rs1, rd, rfl⟩))))
+    simpa only [riscvOpcodeOfSailInstr] using h_class
+  · have h_div := sail_encode_div_eq_rawRType_in
+      mEnabledState mEnabledState_isaExtensionsEnabled rs2 rs1 rd
+    have h_class := matches_of_instruction mEnabledState_isaExtensionsEnabled h_div
+      (by
+        refine Or.inr (Or.inr (Or.inl ?_))
+        exact Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
+          (Or.inl ⟨rs2, rs1, rd, rfl⟩))))))
+    simpa only [riscvOpcodeOfSailInstr] using h_class
+
 end ZiskFv.Completeness.SailDecode
