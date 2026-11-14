@@ -58,29 +58,37 @@ def physicalOfLogical (base : Witness F) (logical : LogicalWitness F) : Witness 
 theorem project88_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source88 = logical.bus88 := by
   funext index
-  simp [project, physicalOfLogical, source88_at, source88, index.isLt]
+  dsimp only [project, physicalOfLogical]
+  rewrite [source88_at]
+  simp [source88, index.isLt]
 
 theorem project124_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source124 = logical.bus124 := by
   funext index
-  simp [project, physicalOfLogical, source124_at, source88, source124, index.isLt]
+  dsimp only [project, physicalOfLogical]
+  rewrite [source124_at]
+  simp [source88, source124, index.isLt]
 
 theorem project125_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source125 = logical.bus125 := by
   funext index
-  simp [project, physicalOfLogical, source125_at, source88, source124, source125, index.isLt]
+  dsimp only [project, physicalOfLogical]
+  rewrite [source125_at]
+  simp [source88, source124, source125, index.isLt]
 
 theorem project330_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source330 = logical.bus330 := by
   funext index
-  simp [project, physicalOfLogical, source330_at,
-    source88, source124, source125, source330, index.isLt]
+  dsimp only [project, physicalOfLogical]
+  rewrite [source330_at]
+  simp [source88, source124, source125, source330, index.isLt]
 
 theorem project331_physicalOfLogical (base : Witness F) (logical : LogicalWitness F) :
     project (physicalOfLogical base logical) source331 = logical.bus331 := by
   funext index
-  simp [project, physicalOfLogical, source331_at,
-    source88, source124, source125, source330, source331, index.isLt]
+  dsimp only [project, physicalOfLogical]
+  rewrite [source331_at]
+  simp [source88, source124, source125, source330, source331, index.isLt]
 
 /-- Source indices cannot alias a different table's physical multiplicity cell. -/
 theorem binary_source_locations_disjoint

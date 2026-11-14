@@ -784,3 +784,5 @@ cell before inspecting its layout, avoiding simplification over the array's
 generating function.
 Canonical provider projection proofs use a generic fixed-schema rewrite and
 symbolic `List.ofFn` length/index laws, rather than reducing full source lists.
+Logical-witness projection rewrites the generated `sourceBUS_at` identity
+before simplifying source metadata; the packed `sourceAt` map stays opaque.
