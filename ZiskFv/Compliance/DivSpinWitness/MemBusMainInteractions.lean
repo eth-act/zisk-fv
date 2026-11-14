@@ -88,8 +88,8 @@ theorem divSpinWitness_memBusInteractions :
     simpa using h_ne
   have h_remainder :
       divSpinRemainderBoundTable.interactionsWith MemBusChannel.toRaw = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    change MemBusChannel.toRaw ∉ [OpBusChannel.toRaw, ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw]
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := divSpinRemainderBoundTable) MemBusChannel.toRaw
     decide
   have h_binaryAdd :
       divSpinBinaryAddTable.interactionsWith MemBusChannel.toRaw = [] := by
