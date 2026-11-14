@@ -14,6 +14,8 @@ import ZiskFv.AirsClean.MemAlignRangeSlice
 import ZiskFv.AirsClean.MemAlignByte.Circuit
 import ZiskFv.AirsClean.MemAlignReadByte.Circuit
 import ZiskFv.AirsClean.Main.Wiring
+import ZiskFv.AirsClean.BinaryTableSlice
+import ZiskFv.AirsClean.BinaryExtensionTableSlice
 import Clean.Air.Vm
 
 /-!
@@ -49,6 +51,8 @@ open ZiskFv.Channels.MemoryBus (MemBusChannel)
 open ZiskFv.Channels.SpecifiedRanges (SpecifiedRangesSliceChannel RegisterStepRangeChannel)
 open ZiskFv.Channels.MemAlignRom (MemAlignRomChannel)
 open ZiskFv.Channels.MemAlignRanges (MemAlignRangeChannel)
+open ZiskFv.Channels.BinaryTable (BinaryTableChannel)
+open ZiskFv.Channels.BinaryExtensionTable (BinaryExtensionTableChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
 
 private theorem specifiedRangesSliceChannel_ne_memBus :
@@ -96,22 +100,35 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
           ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus,
           ZiskFv.AirsClean.Main.circuitWithRomMemAndOpBus,
           ZiskFv.AirsClean.Main.mainWithRomMemAndOpBusElaborated])
-    |>.addTable ZiskFv.AirsClean.BinaryAdd.component
-        (by simp [circuit_norm, ZiskFv.AirsClean.BinaryAdd.component,
-          ZiskFv.AirsClean.BinaryAdd.circuit])
-        (by simp [circuit_norm, ZiskFv.AirsClean.BinaryAdd.component,
-          ZiskFv.AirsClean.BinaryAdd.circuit])
-    |>.addTable ZiskFv.AirsClean.Binary.staticLookupComponent
+    |>.addTable ZiskFv.AirsClean.BinaryTableSlice.sourceComponent
         (by
           change ([] : List (RawChannel FGL)) ⊆ _
           simp)
         (by
           intro channel h
           simp [circuit_norm] at h)
-    |>.addTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+    |>.addTable ZiskFv.AirsClean.BinaryExtensionTableSlice.sourceComponent
         (by
           change ([] : List (RawChannel FGL)) ⊆ _
           simp)
+        (by
+          intro channel h
+          simp [circuit_norm] at h)
+    |>.addTable ZiskFv.AirsClean.BinaryAdd.component
+        (by simp [circuit_norm, ZiskFv.AirsClean.BinaryAdd.component,
+          ZiskFv.AirsClean.BinaryAdd.circuit])
+        (by simp [circuit_norm, ZiskFv.AirsClean.BinaryAdd.component,
+          ZiskFv.AirsClean.BinaryAdd.circuit])
+    |>.addTable ZiskFv.AirsClean.Binary.tableConsumerComponent
+        (by simp [circuit_norm, ZiskFv.AirsClean.Binary.tableConsumerComponent,
+          ZiskFv.AirsClean.Binary.tableConsumerCircuit])
+        (by
+          intro channel h
+          simp [circuit_norm] at h)
+    |>.addTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
+        (by simp [circuit_norm,
+          ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent,
+          ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerCircuit])
         (by
           intro channel h
           simp [circuit_norm] at h)
@@ -197,17 +214,19 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
           · exact specifiedRangesSliceChannel_ne_memAlignRange h_channel)
     |>.addFinishedChannel MemAlignRomChannel.toRaw
     |>.addTable ZiskFv.AirsClean.MemAlignByte.component
-        (by simp [circuit_norm, ZiskFv.AirsClean.MemAlignByte.component,
-          ZiskFv.AirsClean.MemAlignByte.circuit])
+        (by
+          change ([] : List (RawChannel FGL)) ⊆ _
+          simp)
         (by
           intro channel h_finished h_memBus
           have h_finished_list : channel ∈ [MemAlignRomChannel.toRaw,
               SpecifiedRangesSliceChannel.toRaw] := by
-            simpa [circuit_norm, ZiskFv.AirsClean.MemAlignByte.component,
-              ZiskFv.AirsClean.MemAlignByte.circuit] using h_finished
+            change channel ∈ [MemAlignRomChannel.toRaw,
+              SpecifiedRangesSliceChannel.toRaw] at h_finished
+            exact h_finished
           have h_memBus_list : channel ∈ [MemBusChannel.toRaw] := by
-            simpa [circuit_norm, ZiskFv.AirsClean.MemAlignByte.component,
-              ZiskFv.AirsClean.MemAlignByte.circuit] using h_memBus
+            change channel ∈ [MemBusChannel.toRaw] at h_memBus
+            exact h_memBus
           have h_finished' : channel = MemAlignRomChannel.toRaw ∨
               channel = SpecifiedRangesSliceChannel.toRaw := by
             simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_finished_list
@@ -218,17 +237,19 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
           · exact memAlignRomChannel_ne_memBus h_finished.symm
           · exact specifiedRangesSliceChannel_ne_memBus h_finished.symm)
     |>.addTable ZiskFv.AirsClean.MemAlignReadByte.component
-        (by simp [circuit_norm, ZiskFv.AirsClean.MemAlignReadByte.component,
-          ZiskFv.AirsClean.MemAlignReadByte.circuit])
+        (by
+          change ([] : List (RawChannel FGL)) ⊆ _
+          simp)
         (by
           intro channel h_finished h_memBus
           have h_finished_list : channel ∈ [MemAlignRomChannel.toRaw,
               SpecifiedRangesSliceChannel.toRaw] := by
-            simpa [circuit_norm, ZiskFv.AirsClean.MemAlignReadByte.component,
-              ZiskFv.AirsClean.MemAlignReadByte.circuit] using h_finished
+            change channel ∈ [MemAlignRomChannel.toRaw,
+              SpecifiedRangesSliceChannel.toRaw] at h_finished
+            exact h_finished
           have h_memBus_list : channel ∈ [MemBusChannel.toRaw] := by
-            simpa [circuit_norm, ZiskFv.AirsClean.MemAlignReadByte.component,
-              ZiskFv.AirsClean.MemAlignReadByte.circuit] using h_memBus
+            change channel ∈ [MemBusChannel.toRaw] at h_memBus
+            exact h_memBus
           have h_finished' : channel = MemAlignRomChannel.toRaw ∨
               channel = SpecifiedRangesSliceChannel.toRaw := by
             simpa only [List.mem_cons, List.not_mem_nil, or_false] using h_finished_list
@@ -268,6 +289,8 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
     |>.addFinishedChannel MemBusChannel.toRaw
     |>.addFinishedChannel MemAlignRangeChannel.toRaw
     |>.addFinishedChannel RegisterStepRangeChannel.toRaw
+    |>.addFinishedChannel BinaryTableChannel.toRaw
+    |>.addFinishedChannel BinaryExtensionTableChannel.toRaw
 
 /-- Per-table assumptions discharge for the full ensemble: each migrated
     component's per-row `Assumptions` reduce to `True`, so the ensemble-level
@@ -280,7 +303,7 @@ theorem fullRv64imSoundEnsemble_assumptionsConsistency (length : ℕ) (program :
   clear h_mem
   simp only [fullRv64imSoundEnsemble, circuit_norm, Ensemble.allTables] at h
   rcases h with
-    h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;>
+    h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;>
     (rw [h]
      trivial)
 

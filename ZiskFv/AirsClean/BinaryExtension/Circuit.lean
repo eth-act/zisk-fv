@@ -167,8 +167,7 @@ def shiftTableConsumerCircuit : GeneralFormalCircuit FGL BinaryExtensionRow unit
   soundness := by
     circuit_proof_start
     refine ⟨?_, ?_⟩
-    · refine ⟨trivial, ?_⟩
-      simpa only [Table.fromStatic, StaticTable.toTable] using h_holds
+    · simpa only [Table.fromStatic, StaticTable.toTable] using h_holds
     · intro _
       simp [OpBusChannel, BinaryExtensionTableChannel]
   completeness := by
@@ -184,9 +183,16 @@ theorem shiftTableConsumerComponent_interactionsWith
     shiftTableConsumerComponent.operations.interactionsWith channel =
       tableConsumerComponent.operations.interactionsWith channel := by
   rw [Component.interactionsWith_eq, Component.interactionsWith_eq]
-  simp only [shiftTableConsumerComponent, tableConsumerComponent,
-    Component.rowOperations, shiftTableConsumerCircuit, tableConsumerCircuit,
-    mainWithBinaryExtensionTableAndShiftRange, circuit_norm]
+  change ((mainWithBinaryExtensionTableAndShiftRange
+      (varFromOffset BinaryExtensionRow 0)).operations (size BinaryExtensionRow)).interactionsWith channel =
+    ((mainWithBinaryExtensionTable
+      (varFromOffset BinaryExtensionRow 0)).operations (size BinaryExtensionRow)).interactionsWith channel
+  cases h_main : mainWithBinaryExtensionTable
+      (varFromOffset BinaryExtensionRow 0) (size BinaryExtensionRow) with
+  | mk output operations =>
+    simp only [mainWithBinaryExtensionTableAndShiftRange, Circuit.bind_def,
+      Circuit.operations, Circuit.lookup, h_main, Operations.interactionsWith_append,
+      Operations.interactionsWith_lookup, Operations.interactionsWith_nil, List.append_nil]
 
 theorem component_interactionsWith_opBus :
     component.operations.interactionsWith OpBusChannel.toRaw =

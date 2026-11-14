@@ -1,3 +1,4 @@
+import ZiskFv.AirsClean.FullEnsemble.Balance.BinaryTableWitnessConstruction
 import ZiskFv.Compliance.SdLdMemTable
 import ZiskFv.Compliance.AddAddiSpinWitness
 import ZiskFv.AirsClean.BinaryExtension.StaticCircuit
@@ -730,6 +731,59 @@ def sdLdSlliBinaryExtensionRow :
     (sdLdSlliIndex 5 0 (by decide) (by decide))
     (sdLdSlliIndex 6 0 (by decide) (by decide))
     (sdLdSlliIndex 7 0 (by decide) (by decide)) 0 0
+
+/-- Exact production source indices for all eight shift-table routes. -/
+def sdLdExtensionSourceRequests :
+    Fin 8 → ZiskFv.AirsClean.BinaryExtension.BinaryExtensionTableIndex
+  | ⟨0, _⟩ => sdLdSlliIndex 0 160 (by decide) (by decide)
+  | ⟨1, _⟩ => sdLdSlliIndex 1 0 (by decide) (by decide)
+  | ⟨2, _⟩ => sdLdSlliIndex 2 0 (by decide) (by decide)
+  | ⟨3, _⟩ => sdLdSlliIndex 3 0 (by decide) (by decide)
+  | ⟨4, _⟩ => sdLdSlliIndex 4 0 (by decide) (by decide)
+  | ⟨5, _⟩ => sdLdSlliIndex 5 0 (by decide) (by decide)
+  | ⟨6, _⟩ => sdLdSlliIndex 6 0 (by decide) (by decide)
+  | ⟨7, _⟩ => sdLdSlliIndex 7 0 (by decide) (by decide)
+
+theorem sdLdExtensionSourceRequests_weld (index : Fin 8) :
+    ZiskFv.AirsClean.BinaryExtensionTable.rowOfIndex (sdLdExtensionSourceRequests index).val =
+      ZiskFv.AirsClean.BinaryTableBalance.extensionMessageRow
+        sdLdSlliBinaryExtensionRow index := by
+  have h_elements :
+      toElements (ZiskFv.AirsClean.BinaryExtensionTable.rowOfIndex
+          (sdLdExtensionSourceRequests index).val) =
+        toElements (ZiskFv.AirsClean.BinaryTableBalance.extensionMessageRow
+          sdLdSlliBinaryExtensionRow index) := by
+    fin_cases index <;> decide
+  simpa only [ProvableType.fromElements_toElements] using
+    congrArg (fun elements =>
+      (fromElements elements :
+        ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableMessage FGL)) h_elements
+
+/-- One actual physical multiplicity witness supplies both source tables,
+and preserves all unrelated packed-source cells of its chosen base. -/
+def sdLdPackedSources : ZiskFv.AirsClean.PackedVirtualTableSources.Witness FGL :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.physicalOfRequests (fun _ => 0) []
+    (List.ofFn sdLdExtensionSourceRequests)
+
+def sdLdBinarySourceTable : Table FGL :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable
+    sdLdPackedSources sdLdMemData
+
+def sdLdExtensionSourceTable : Table FGL :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable
+    sdLdPackedSources sdLdMemData
+
+theorem sdLdExtensionSource_actual_consumer_balanced :
+    BalancedInteractions
+      (sdLdExtensionSourceTable.interactionsWith
+          ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw ++
+        ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.operations.interactionValuesWith
+          ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+          (Environment.fromInput sdLdSlliBinaryExtensionRow sdLdMemData)) := by
+  rw [ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_interactionsWith]
+  exact ZiskFv.AirsClean.FullEnsemble.extension_actual_row_requests_balanced
+    (fun _ => 0) sdLdMemData sdLdSlliBinaryExtensionRow []
+    sdLdExtensionSourceRequests sdLdExtensionSourceRequests_weld
 
 theorem sdLdSlliBinaryExtension_proverAssumptions :
     ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupCircuit.ProverAssumptions

@@ -1,5 +1,6 @@
 import ZiskFv.Compliance.AddSpinWitness
 import ZiskFv.AirsClean.Binary.Circuit
+import ZiskFv.AirsClean.FullEnsemble.Balance.BinaryTableWitnessConstruction
 
 /-!
 # Concrete unaligned JALR lowering witness
@@ -341,6 +342,50 @@ def jalrBinaryAndRow : ZiskFv.AirsClean.Binary.BinaryRow FGL :=
     jalrAndMiddleIndex jalrAndMiddleIndex jalrAndMiddleIndex
     jalrAndMiddleIndex jalrAndMiddleIndex jalrAndMiddleIndex
     jalrAndLastIndex
+
+/-- The eight actual bus-125 requests use the same source indices as the
+honest row constructor, including the final-byte position and six repeated
+middle-byte rows. -/
+def jalrBinarySourceRequests : Fin 8 → ZiskFv.AirsClean.Binary.BinaryTableIndex
+  | ⟨0, _⟩ => jalrAndByte0Index
+  | ⟨7, _⟩ => jalrAndLastIndex
+  | _ => jalrAndMiddleIndex
+
+theorem jalrBinarySourceRequests_weld (index : Fin 8) :
+    ZiskFv.AirsClean.BinaryTable.rowOfIndex (jalrBinarySourceRequests index).val =
+      ZiskFv.AirsClean.BinaryTableBalance.binaryMessageRow jalrBinaryAndRow index := by
+  have h_elements :
+      toElements
+          (ZiskFv.AirsClean.BinaryTable.rowOfIndex (jalrBinarySourceRequests index).val) =
+        toElements
+          (ZiskFv.AirsClean.BinaryTableBalance.binaryMessageRow jalrBinaryAndRow index) := by
+    fin_cases index <;> decide
+  simpa only [ProvableType.fromElements_toElements] using
+    congrArg (fun elements =>
+      (fromElements elements : ZiskFv.Channels.BinaryTable.BinaryTableMessage FGL)) h_elements
+
+/-- Both real source providers are projections of this one physical packed
+witness. Unrelated source cells retain the chosen zero base witness. -/
+def jalrPackedSources : ZiskFv.AirsClean.PackedVirtualTableSources.Witness FGL :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.physicalOfRequests (fun _ => 0)
+    (List.ofFn jalrBinarySourceRequests) []
+
+def jalrBinarySourceTable : Table FGL :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable jalrPackedSources emptyData
+
+def jalrExtensionSourceTable : Table FGL :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable jalrPackedSources emptyData
+
+theorem jalrBinarySource_actual_consumer_balanced :
+    BalancedInteractions
+      (jalrBinarySourceTable.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw ++
+        ZiskFv.AirsClean.Binary.tableConsumerComponent.operations.interactionValuesWith
+          ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+          (Environment.fromInput jalrBinaryAndRow emptyData)) := by
+  rw [ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_interactionsWith]
+  exact ZiskFv.AirsClean.FullEnsemble.binary_actual_row_requests_balanced
+    (fun _ => 0) emptyData jalrBinaryAndRow jalrBinarySourceRequests []
+    jalrBinarySourceRequests_weld
 
 def jalrBinaryAndTable : Table FGL :=
   binarySingleRowTable jalrBinaryAndRow
