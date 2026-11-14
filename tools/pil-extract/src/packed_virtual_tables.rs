@@ -80,43 +80,64 @@ pub fn render(source_json: &str) -> Result<String> {
     let mut out = String::from("import Mathlib\n\nnamespace Extraction.PackedVirtualTables\n\n");
     out.push_str("/- Production compiler observations, not a reimplementation of pack_tables.\n\
         Only buses 88/124/125/330/331 are projected; no unrelated fixed value is invented. -/\n");
-    out.push_str("def physicalRows : Nat := 2097152\n\n\
-        structure Location where\n  air : Fin 2\n  lane : Fin 8\n  row : Fin physicalRows\n\
-        deriving DecidableEq\n\n\
-        def Location.offset (location : Location) : Nat :=\n  location.lane.val * physicalRows + location.row.val\n\n\
-        structure Source where\n  tableId : Nat\n  busId : Nat\n  width : Nat\n  rows : Nat\n  air : Fin 2\n  start : Nat\n  domain : start + rows ≤ 8 * physicalRows\n\n\
-        def Source.location (source : Source) (index : Fin source.rows) : Location :=\n\
-          { air := source.air\n\
-            lane := ⟨(source.start + index.val) / physicalRows, by\n\
-              have h := source.domain\n\
-              have hi := index.isLt\n\
-              dsimp [physicalRows] at *\n\
-              omega⟩\n\
-            row := ⟨(source.start + index.val) % physicalRows, Nat.mod_lt _ (by decide)⟩ }\n\n\
-        theorem location_offset (source : Source) (index : Fin source.rows) :\n\
-            (source.location index).offset = source.start + index.val := by\n\
-          simp only [Source.location, Location.offset]\n\
-          omega\n\n\
-        theorem location_injective (source : Source) : Function.Injective source.location := by\n\
-          intro i j h\n\
-          have he := congrArg Location.offset h\n\
-          rw [location_offset, location_offset] at he\n\
-          apply Fin.ext\n\
-          omega\n\n");
-    out.push_str("theorem Location.eq_of_air_offset {left right : Location}\n\
-          (hair : left.air = right.air) (hoffset : left.offset = right.offset) : left = right := by\n\
-          have hl := left.row.isLt\n\
-          have hr := right.row.isLt\n\
-          have hlane : left.lane.val = right.lane.val := by\n\
-            simp only [Location.offset, physicalRows] at hoffset\n\
-            simp only [physicalRows] at hl hr\n\
-            omega\n\
-          have hrow : left.row.val = right.row.val := by\n\
-            simp only [Location.offset] at hoffset\n\
-            omega\n\
-          cases left\n\
-          cases right\n\
-          simp_all only [Location.mk.injEq, Fin.ext_iff, and_self]\n\n");
+    out.push_str(r#"def physicalRows : Nat := 2097152
+
+structure Location where
+  air : Fin 2
+  lane : Fin 8
+  row : Fin physicalRows
+  deriving DecidableEq
+
+def Location.offset (location : Location) : Nat :=
+  location.lane.val * physicalRows + location.row.val
+
+structure Source where
+  tableId : Nat
+  busId : Nat
+  width : Nat
+  rows : Nat
+  air : Fin 2
+  start : Nat
+  domain : start + rows ≤ 8 * physicalRows
+
+def Source.location (source : Source) (index : Fin source.rows) : Location :=
+  { air := source.air
+    lane := ⟨(source.start + index.val) / physicalRows, by
+      have h := source.domain
+      have hi := index.isLt
+      dsimp [physicalRows] at *
+      omega⟩
+    row := ⟨(source.start + index.val) % physicalRows, Nat.mod_lt _ (by decide)⟩ }
+
+theorem location_offset (source : Source) (index : Fin source.rows) :
+    (source.location index).offset = source.start + index.val := by
+  simp only [Source.location, Location.offset, physicalRows]
+  omega
+
+theorem location_injective (source : Source) : Function.Injective source.location := by
+  intro i j h
+  have he := congrArg Location.offset h
+  rw [location_offset, location_offset] at he
+  apply Fin.ext
+  omega
+
+theorem Location.eq_of_air_offset {left right : Location}
+    (hair : left.air = right.air) (hoffset : left.offset = right.offset) : left = right := by
+  have hl := left.row.isLt
+  have hr := right.row.isLt
+  have hlane : left.lane.val = right.lane.val := by
+    simp only [Location.offset, physicalRows] at hoffset
+    simp only [physicalRows] at hl hr
+    omega
+  have hrow : left.row.val = right.row.val := by
+    simp only [Location.offset] at hoffset
+    rw [hlane] at hoffset
+    omega
+  cases left
+  cases right
+  simp_all only [Location.mk.injEq, Fin.ext_iff, and_self]
+
+"#);
     for source in &sources {
         writeln!(out, "def source{} : Source :=", source.bus)?;
         writeln!(out, "  {{ tableId := {}, busId := {}, width := {}, rows := {},", source.table, source.bus, source.width, source.rows)?;
@@ -133,8 +154,8 @@ pub fn render(source_json: &str) -> Result<String> {
         writeln!(out, "    sourceAt (source{}.location index) = some ({}, index.val) := by", source.bus, source.table)?;
         writeln!(out, "  have hi := index.isLt\n  simp only [source{}] at hi", source.bus)?;
         // Simplifying the observed interval chain leaves only linear arithmetic.
-        writeln!(out, "  simp only [sourceAt, location_offset, Source.location, source{}]", source.bus)?;
-        out.push_str("  split_ifs <;> simp_all only [Option.some.injEq, Prod.mk.injEq] <;> omega\n\n");
+        writeln!(out, "  simp only [sourceAt, location_offset]\n  simp only [Source.location, source{}]", source.bus)?;
+        out.push_str("  split_ifs\n  all_goals try simp_all\n  all_goals omega\n\n");
         writeln!(out, "theorem source{}_of_at (location : Location) (index : Nat)", source.bus)?;
         writeln!(out, "    (h : sourceAt location = some (source{}.tableId, index)) :", source.bus)?;
         writeln!(out, "    ∃ sourceIndex : Fin source{}.rows, sourceIndex.val = index ∧", source.bus)?;
@@ -142,23 +163,26 @@ pub fn render(source_json: &str) -> Result<String> {
         writeln!(out, "  have hf : index < source{}.rows ∧ location.air = source{}.air ∧", source.bus, source.bus)?;
         writeln!(out, "      location.offset = source{}.start + index := by", source.bus)?;
         writeln!(out, "    simp only [sourceAt, source{}] at h ⊢", source.bus)?;
-        out.push_str("    split_ifs at h <;> simp_all only [Option.some.injEq, Prod.mk.injEq]\n\
-            all_goals first | omega | (refine ⟨by omega, Fin.ext (by omega), by omega⟩)\n");
-        out.push_str("  obtain ⟨hi, hair, hoffset⟩ := hf\n\
-          refine ⟨⟨index, hi⟩, rfl, ?_⟩\n\
-          apply Location.eq_of_air_offset\n\
-          · exact hair.symm\n\
-          · rw [location_offset]\n\
-            exact hoffset.symm\n\n");
+        out.push_str(r#"    split_ifs at h <;> simp_all
+    all_goals omega
+  obtain ⟨hi, hair, hoffset⟩ := hf
+  refine ⟨⟨index, hi⟩, rfl, ?_⟩
+  apply Location.eq_of_air_offset
+  · exact hair.symm
+  · rw [location_offset]
+    exact hoffset.symm
+
+"#);
         writeln!(out, "def source{}Locations : List Location := List.ofFn source{}.location\n", source.bus, source.bus)?;
         writeln!(out, "theorem source{}Locations_nodup : source{}Locations.Nodup :=", source.bus, source.bus)?;
         writeln!(out, "  List.nodup_ofFn_ofInjective (location_injective source{})\n", source.bus)?;
         writeln!(out, "theorem source{}Locations_complete (location : Location) :", source.bus)?;
         writeln!(out, "    location ∈ source{}Locations ↔", source.bus)?;
         writeln!(out, "      ∃ index, sourceAt location = some (source{}.tableId, index) := by", source.bus)?;
-        out.push_str("  constructor\n\
-          · intro h\n\
-            obtain ⟨index, rfl⟩ := List.mem_ofFn.mp h\n");
+        out.push_str(r#"  constructor
+  · intro h
+    obtain ⟨index, rfl⟩ := List.mem_ofFn.mp h
+"#);
         writeln!(out, "    exact ⟨index.val, source{}_at index⟩", source.bus)?;
         out.push_str("  · rintro ⟨index, h⟩\n");
         writeln!(out, "    obtain ⟨sourceIndex, _, he⟩ := source{}_of_at location index h", source.bus)?;
