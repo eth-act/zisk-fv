@@ -51,6 +51,11 @@ the flags themselves.
 - `lookup-wiring`: emit a closed typed syntax manifest for all pilout AIRs.
   A hint tuple is retained only when a generated Lean `rfl` check links it to
   a standard direct or two-hint-cluster accumulator template.
+  Its additive `SourceSchema` catalogs actual fixed/witness/AIR/group-value
+  declarations from that same pilout object, retaining source scope, names,
+  optional stages, indices and array shapes independently of operand syntax.
+  Maintained finalizer theorems pin the complete protocol-cell/name roster;
+  this does not change `Extraction.Circuit` or establish logUp balance.
 - `arith-table`: emit the extracted arithmetic lookup table from upstream
   Rust source.
 - `arith-range-table`: emit source-derived `RANGES`, `OFFSETS`, row-mapping
