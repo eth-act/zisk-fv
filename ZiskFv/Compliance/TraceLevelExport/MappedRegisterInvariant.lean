@@ -65,7 +65,7 @@ theorem mappedZiskRegFile_eq_fold (j : Nat) (h : j ≤ m) :
         (fun regs i => mappedRegWriteAction
           (stepChannelOutput (physicalStart L i) (steps i) (decoded i)) regs)
         (fun _ => 0) := by
-  induction j generalizing h with
+  induction j with
   | zero => rfl
   | succ j ih =>
       simp only [mappedZiskRegFile, mappedRegPrefix, List.foldl_append,
@@ -163,7 +163,7 @@ theorem mappedRegAgree_prefix
       StepSound trace (mappedSailTrace L steps init)
         (physicalStart L i) (steps i) (decoded i)) :
     mappedRegAgree L steps decoded init j h := by
-  induction j generalizing h sounds with
+  induction j with
   | zero => exact mappedRegAgree_zero L steps decoded init regBoot
   | succ j ih =>
       have hj : j < m := by omega

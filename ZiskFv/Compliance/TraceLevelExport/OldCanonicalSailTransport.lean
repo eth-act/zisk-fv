@@ -54,7 +54,11 @@ theorem mappedSailStates_eq_chainedSailStates
           rw [instruction_eq ⟨j, hlt⟩, ih (Nat.le_of_lt hlt)]
         _ = chainedSailStates oldSteps init (j + 1) := by
           symm
-          rw [chainedSailStates, dif_pos hlt]
+          rw [chainedSailStates]
+          split
+          · rfl
+          · rename_i outside
+            exact False.elim (outside hlt)
 
 /-- Actual source starts carry exactly the old architectural pre-states. This
 is equality of the entire Sail state, not merely its PC or register projection. -/

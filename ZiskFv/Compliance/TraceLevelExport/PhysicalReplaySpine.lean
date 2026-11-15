@@ -91,7 +91,7 @@ theorem sourcePhysicalPrefix_succ {α : Type u}
 theorem sourcePhysicalPrefix_length {α : Type u}
     (rows : Fin m → List α) (j : Nat) (h : j ≤ m) :
     (sourcePhysicalPrefix L rows j h).length = rowPrefix (sourceWidth L) j := by
-  induction j generalizing h with
+  induction j with
   | zero => simp
   | succ j ih =>
       have hj : j < m := by omega
@@ -178,8 +178,8 @@ theorem sourcePhysicalSlots_get_at_offset {α : Type u}
     omega
   have afterPrefix : (sourcePhysicalPrefix L rows i.val (Nat.le_of_lt i.isLt)).length ≤
       sourceStart L i + offset := by rw [preLength]; omega
-  rw [split, List.getElem_append_left inside, List.getElem_append_right afterPrefix]
-  simpa only [preLength, Nat.add_sub_cancel_left]
+  simp only [split, List.getElem_append_left inside, List.getElem_append_right afterPrefix,
+    preLength, Nat.add_sub_cancel_left]
 
 /-- A width-two interior slot is empty because it is the first SOURCE row,
 not because an extra architectural instruction was inserted and ignored. -/
@@ -256,7 +256,7 @@ theorem sourcePhysicalRowsOf_replay_prefix
       ((List.range (rowPrefix (sourceWidth L) j)).flatMap (sourcePhysicalRowsOf L rowsOf)) =
       replayMemoryAfterBusRows memInit
         (((List.finRange m).take j).flatMap (fun i => rowsOf i.val)) := by
-  rw [sourcePhysicalRowsOf_prefix]
+  rw [sourcePhysicalRowsOf_prefix L rowsOf j h]
 
 /-- Recount only the unchanged accepted witness. The finite count bound is
 derived from actual source/decode bounds at the old-domain call site below.
