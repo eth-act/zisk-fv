@@ -95,6 +95,7 @@ theorem expanded_auxiliary_physical_state_stutter
         using projected
     have atOption : (actualMainMutablePhysicalSlots trace)[p.val]? = some [] := by
       rw [List.getElem?_eq_getElem hp, atSlot]
+    dsimp only [p] at atOption
     simp only [List.take_succ, atOption, Option.toList_some, List.flatten_append,
       List.flatten_cons, List.flatten_nil, List.nil_append, List.append_nil]
   · rw [actualPhysicalRegFile_succ]
@@ -177,6 +178,8 @@ theorem old_root_actual_canonical_physical_state
     have startEq : (physicalStart lowering i).val = i.val := starts i
     change (lowering i).width = stepProducerRow i (oldSteps i) (oldDecoded i) + 1 - i.val
       at oldWidth
+    change stepProducerRow (physicalStart lowering i) (steps i) (decoded i) + 1 =
+      (physicalStart lowering i).val + (lowering i).width at actualStop
     change stepProducerRow (physicalStart lowering i) (steps i) (copiedDecoded i) =
       stepProducerRow i (oldSteps i) (oldDecoded i) at copiedProducer
     omega
@@ -199,6 +202,6 @@ theorem old_root_actual_canonical_physical_state
   intro j hj
   have actual := canonical_physical_state_at_source_cut rawProgram selected lowering trace
     start addr newBinding steps newRaw atPc init regBoot j hj (fun i _ => sound i)
-  simpa only [states j hj] using actual
+  simpa only [steps, trace, states j hj] using actual
 
 end ZiskFv.Compliance.SerializedExecutionRows
