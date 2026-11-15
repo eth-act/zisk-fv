@@ -275,25 +275,31 @@ private theorem weakShape_insert {reads writes : Bool}
       WeakMutableSourceShape reads writes actual.i :=
   ⟨z, insert_inst_extract self address z result source, shape⟩
 
--- Source-indexed implications follow successful primitive calls. Scalar discharge uses
--- only the actual source decoder's register bounds and zero-offset results.
-local macro "prove_source_shape" sourceName:ident : tactic => `(tactic|
-  aesop (config := { terminal := true, maxRuleApplications := 10000, enableSimp := false })
-    (add safe forward (immediate := [$sourceName]) [i64_add_zero_eq, u64_add_zero_eq])
-    (add safe forward (immediate := [$sourceName]) [weakShape_insert, weakShape_new_for, weakShape_new,
-      weakShape_a_imm, weakShape_a_reg, weakShape_b_imm, weakShape_b_reg,
-      weakShape_b_lastc, weakShape_b_ind, weakShape_ind_width, weakShape_op,
-      weakShape_store_reg, weakShape_store_ind, weakShape_j, weakShape_build,
-      weakShape_set_pc])
-    (add safe (by apply_assumption))
-    (add safe (by
-      first
-      | guard_target = (_ : Int) ≤ _
-      | guard_target = (_ : Int) < _
-      | guard_target = (_ : Nat) ≤ _
-      | guard_target = (_ : Nat) < _
-      | guard_target = False
-      solve | (simp only [cast_u32_u64_val, hcast_u32_i64_val]; first | omega | decide))))
+attribute [local aesop safe forward (immediate := [source])]
+  i64_add_zero_eq u64_add_zero_eq
+  weakShape_insert weakShape_new_for weakShape_new
+  weakShape_a_imm weakShape_a_reg weakShape_b_imm weakShape_b_reg
+  weakShape_b_lastc weakShape_b_ind weakShape_ind_width weakShape_op
+  weakShape_store_reg weakShape_store_ind weakShape_j weakShape_build weakShape_set_pc
+
+-- First collect only actual successful source calls. Backward application then
+-- runs against that fixed context, without creating implications during search.
+local macro "prove_source_shape" : tactic => `(tactic|
+  (simp_all only [Result.ok.injEq]; saturate;
+   aesop (config := { terminal := true, maxRuleApplications := 10000, enableSimp := false })
+     (erase i64_add_zero_eq, u64_add_zero_eq, weakShape_insert, weakShape_new_for,
+       weakShape_new, weakShape_a_imm, weakShape_a_reg, weakShape_b_imm, weakShape_b_reg,
+       weakShape_b_lastc, weakShape_b_ind, weakShape_ind_width, weakShape_op,
+       weakShape_store_reg, weakShape_store_ind, weakShape_j, weakShape_build, weakShape_set_pc)
+     (add safe tactic Aesop.BuiltinRules.applyHyps)
+     (add safe (by
+       first
+       | guard_target = (_ : Int) ≤ _
+       | guard_target = (_ : Int) < _
+       | guard_target = (_ : Nat) ≤ _
+       | guard_target = (_ : Nat) < _
+       | guard_target = False
+       solve | (simp only [cast_u32_u64_val, hcast_u32_i64_val]; first | omega | decide)))))
 
 -- Match the explicit extracted bind head after the typeclass projection is unfolded.
 private theorem source_bind_assoc {α β γ : Type}
@@ -357,11 +363,14 @@ private theorem lower_source_weak_mutable_shape
   all_goals
     simp only [sourceReads, sourceWrites]
     repeat' first
+    | contradiction
+    | (dsimp only [Function.uncurry] at source)
     | (guard_hyp source : Aeneas.Std.bind (Aeneas.Std.bind _ _) _ = Result.ok ctx
        simp only [source_bind_assoc] at source)
     | (guard_hyp source : Result.ok _ = Result.ok ctx
        cases Result.ok.inj source
-       prove_source_shape source)
+       prove_source_shape)
+    | (split at source)
     | (split_ifs at source)
     | (guard_hyp source : Aeneas.Std.bind _ _ = Result.ok ctx
        replace source := bind_eq_ok_imp source
@@ -485,11 +494,126 @@ local macro "finish_source_core" core:ident lower:ident : tactic => `(tactic|
       have _ := fence_lowering_opcode _ _ _ $core $lower)
    | cases Result.ok.inj $core
    all_goals clear $core
-   all_goals simp_all [sourceRegisterBounds, sourceReads, sourceWrites,
-     aeneas_extract.lowering_opcode,
+   all_goals simp_all only [aeneas_extract.lowering_opcode,
      aeneas_extract.rv64im_decode.DecodedRv64im.reserved,
      aeneas_extract.rv64im_decode.DecodedRv64im.unsupported,
-     aeneas_extract.rv64im_decode.DecodedRv64im.new]))
+     aeneas_extract.rv64im_decode.DecodedRv64im.new,
+     Result.ok.injEq, Option.some.injEq]
+   all_goals subst_vars
+   all_goals simp_all [sourceRegisterBounds, sourceReads, sourceWrites]
+   all_goals decide))
+
+private def sourceCoreControlResult
+    (raw : Std.U32) (decoded : aeneas_extract.rv64im_decode.DecodedRv64im)
+    (opcode : riscv2zisk_single_row.Rv64imSingleRowOpcode) : Prop :=
+  sourceRegisterBounds opcode
+      { rom_address := 0#u64, rd := decoded.rd, rs1 := decoded.rs1,
+        rs2 := decoded.rs2, imm := decoded.imm } ∧
+    sourceReads opcode = decide ((raw &&& 127#u32) = 3#u32) ∧
+    sourceWrites opcode = decide ((raw &&& 127#u32) = 35#u32)
+
+local macro "prove_source_core_tree" core:ident lower:ident : tactic => `(tactic|
+  (repeat' first
+   | contradiction
+   | (dsimp only at $core:ident)
+   | (guard_hyp $core : Aeneas.Std.bind _ _ = Result.ok _
+      replace $core := bind_eq_ok_imp $core
+      rcases ($core:ident) with ⟨_, _, $core:ident⟩)
+   | (first
+      | guard_hyp $core : aeneas_extract.rv64im_decode.decode_r _ _ = Result.ok _
+      | guard_hyp $core : aeneas_extract.rv64im_decode.decode_i _ _ _ = Result.ok _
+      | guard_hyp $core : aeneas_extract.rv64im_decode.decode_s _ _ = Result.ok _
+      | guard_hyp $core : aeneas_extract.rv64im_decode.decode_b _ _ = Result.ok _
+      | guard_hyp $core : aeneas_extract.rv64im_decode.decode_u _ _ = Result.ok _
+      | guard_hyp $core : aeneas_extract.rv64im_decode.decode_j _ _ = Result.ok _
+      | guard_hyp $core : aeneas_extract.rv64im_decode.decode_fence _ = Result.ok _
+      | guard_hyp $core : aeneas_extract.rv64im_decode.DecodedRv64im.reserved = Result.ok _
+      | guard_hyp $core : aeneas_extract.rv64im_decode.DecodedRv64im.unsupported = Result.ok _
+      | guard_hyp $core : Result.ok _ = Result.ok _
+      finish_source_core $core $lower)
+   | (split at $core:ident)))
+
+-- Each source major-opcode family is checked separately. All families are used
+-- below; the final arm proves rejection of every other major opcode.
+private theorem source_core_controls_memory
+    (raw : Std.U32) (decoded : aeneas_extract.rv64im_decode.DecodedRv64im)
+    (opcode : riscv2zisk_single_row.Rv64imSingleRowOpcode)
+    (core : aeneas_extract.rv64im_decode.decode_32_core raw = .ok decoded)
+    (lower : aeneas_extract.lowering_opcode decoded.opcode = .ok (some opcode))
+    (tag : (raw &&& 127#u32) = 3#u32 ∨ (raw &&& 127#u32) = 35#u32) :
+    sourceCoreControlResult raw decoded opcode := by
+  unfold sourceCoreControlResult
+  rcases tag with tag | tag
+  all_goals
+    unfold aeneas_extract.rv64im_decode.decode_32_core at core
+    simp only [lift, Bind.bind, bind_ok, tag] at core
+    prove_source_core_tree core lower
+
+private theorem source_core_controls_immediate
+    (raw : Std.U32) (decoded : aeneas_extract.rv64im_decode.DecodedRv64im)
+    (opcode : riscv2zisk_single_row.Rv64imSingleRowOpcode)
+    (core : aeneas_extract.rv64im_decode.decode_32_core raw = .ok decoded)
+    (lower : aeneas_extract.lowering_opcode decoded.opcode = .ok (some opcode))
+    (tag : (raw &&& 127#u32) = 19#u32 ∨ (raw &&& 127#u32) = 27#u32) :
+    sourceCoreControlResult raw decoded opcode := by
+  unfold sourceCoreControlResult
+  rcases tag with tag | tag
+  all_goals
+    unfold aeneas_extract.rv64im_decode.decode_32_core at core
+    simp only [lift, Bind.bind, bind_ok, tag] at core
+    prove_source_core_tree core lower
+
+private theorem source_core_controls_register
+    (raw : Std.U32) (decoded : aeneas_extract.rv64im_decode.DecodedRv64im)
+    (opcode : riscv2zisk_single_row.Rv64imSingleRowOpcode)
+    (core : aeneas_extract.rv64im_decode.decode_32_core raw = .ok decoded)
+    (lower : aeneas_extract.lowering_opcode decoded.opcode = .ok (some opcode))
+    (tag : (raw &&& 127#u32) = 51#u32) :
+    sourceCoreControlResult raw decoded opcode := by
+  unfold sourceCoreControlResult
+  unfold aeneas_extract.rv64im_decode.decode_32_core at core
+  simp only [lift, Bind.bind, bind_ok, tag] at core
+  prove_source_core_tree core lower
+
+private theorem source_core_controls_register_word
+    (raw : Std.U32) (decoded : aeneas_extract.rv64im_decode.DecodedRv64im)
+    (opcode : riscv2zisk_single_row.Rv64imSingleRowOpcode)
+    (core : aeneas_extract.rv64im_decode.decode_32_core raw = .ok decoded)
+    (lower : aeneas_extract.lowering_opcode decoded.opcode = .ok (some opcode))
+    (tag : (raw &&& 127#u32) = 59#u32) :
+    sourceCoreControlResult raw decoded opcode := by
+  unfold sourceCoreControlResult
+  unfold aeneas_extract.rv64im_decode.decode_32_core at core
+  simp only [lift, Bind.bind, bind_ok, tag] at core
+  prove_source_core_tree core lower
+
+private theorem source_core_controls_branch
+    (raw : Std.U32) (decoded : aeneas_extract.rv64im_decode.DecodedRv64im)
+    (opcode : riscv2zisk_single_row.Rv64imSingleRowOpcode)
+    (core : aeneas_extract.rv64im_decode.decode_32_core raw = .ok decoded)
+    (lower : aeneas_extract.lowering_opcode decoded.opcode = .ok (some opcode))
+    (tag : (raw &&& 127#u32) = 99#u32) :
+    sourceCoreControlResult raw decoded opcode := by
+  unfold sourceCoreControlResult
+  unfold aeneas_extract.rv64im_decode.decode_32_core at core
+  simp only [lift, Bind.bind, bind_ok, tag] at core
+  prove_source_core_tree core lower
+
+private theorem source_core_controls_control
+    (raw : Std.U32) (decoded : aeneas_extract.rv64im_decode.DecodedRv64im)
+    (opcode : riscv2zisk_single_row.Rv64imSingleRowOpcode)
+    (core : aeneas_extract.rv64im_decode.decode_32_core raw = .ok decoded)
+    (lower : aeneas_extract.lowering_opcode decoded.opcode = .ok (some opcode))
+    (tag : (raw &&& 127#u32) = 15#u32 ∨ (raw &&& 127#u32) = 23#u32 ∨
+      (raw &&& 127#u32) = 55#u32 ∨ (raw &&& 127#u32) = 103#u32 ∨
+      (raw &&& 127#u32) = 111#u32) :
+    sourceCoreControlResult raw decoded opcode := by
+  unfold sourceCoreControlResult
+  rcases tag with tag | tag | tag | tag | tag
+  all_goals
+    unfold aeneas_extract.rv64im_decode.decode_32_core at core
+    simp only [lift, Bind.bind, bind_ok, tag] at core
+    prove_source_core_tree core lower
 
 private theorem source_core_controls
     (raw : Std.U32) (decoded : aeneas_extract.rv64im_decode.DecodedRv64im)
@@ -501,23 +625,37 @@ private theorem source_core_controls
           rs2 := decoded.rs2, imm := decoded.imm } ∧
       sourceReads opcode = decide ((raw &&& 127#u32) = 3#u32) ∧
       sourceWrites opcode = decide ((raw &&& 127#u32) = 35#u32) := by
+  change sourceCoreControlResult raw decoded opcode
+  by_cases h3 : (raw &&& 127#u32) = 3#u32
+  · exact source_core_controls_memory raw decoded opcode core lower (Or.inl h3)
+  by_cases h35 : (raw &&& 127#u32) = 35#u32
+  · exact source_core_controls_memory raw decoded opcode core lower (Or.inr h35)
+  by_cases h19 : (raw &&& 127#u32) = 19#u32
+  · exact source_core_controls_immediate raw decoded opcode core lower (Or.inl h19)
+  by_cases h27 : (raw &&& 127#u32) = 27#u32
+  · exact source_core_controls_immediate raw decoded opcode core lower (Or.inr h27)
+  by_cases h51 : (raw &&& 127#u32) = 51#u32
+  · exact source_core_controls_register raw decoded opcode core lower h51
+  by_cases h59 : (raw &&& 127#u32) = 59#u32
+  · exact source_core_controls_register_word raw decoded opcode core lower h59
+  by_cases h99 : (raw &&& 127#u32) = 99#u32
+  · exact source_core_controls_branch raw decoded opcode core lower h99
+  by_cases h15 : (raw &&& 127#u32) = 15#u32
+  · exact source_core_controls_control raw decoded opcode core lower (Or.inl h15)
+  by_cases h23 : (raw &&& 127#u32) = 23#u32
+  · exact source_core_controls_control raw decoded opcode core lower (Or.inr (Or.inl h23))
+  by_cases h55 : (raw &&& 127#u32) = 55#u32
+  · exact source_core_controls_control raw decoded opcode core lower (Or.inr (Or.inr (Or.inl h55)))
+  by_cases h103 : (raw &&& 127#u32) = 103#u32
+  · exact source_core_controls_control raw decoded opcode core lower (Or.inr (Or.inr (Or.inr (Or.inl h103))))
+  by_cases h111 : (raw &&& 127#u32) = 111#u32
+  · exact source_core_controls_control raw decoded opcode core lower (Or.inr (Or.inr (Or.inr (Or.inr h111))))
   unfold aeneas_extract.rv64im_decode.decode_32_core at core
   simp only [lift, Bind.bind, bind_ok] at core
-  repeat' first
-  | (guard_hyp core : Aeneas.Std.bind _ _ = Result.ok decoded
-     replace core := bind_eq_ok_imp core
-     rcases core with ⟨_, _, core⟩)
-  | (first
-     | guard_hyp core : aeneas_extract.rv64im_decode.decode_r raw _ = Result.ok decoded
-     | guard_hyp core : aeneas_extract.rv64im_decode.decode_i raw _ _ = Result.ok decoded
-     | guard_hyp core : aeneas_extract.rv64im_decode.decode_s raw _ = Result.ok decoded
-     | guard_hyp core : aeneas_extract.rv64im_decode.decode_b raw _ = Result.ok decoded
-     | guard_hyp core : aeneas_extract.rv64im_decode.decode_u raw _ = Result.ok decoded
-     | guard_hyp core : aeneas_extract.rv64im_decode.decode_j raw _ = Result.ok decoded
-     | guard_hyp core : aeneas_extract.rv64im_decode.decode_fence raw = Result.ok decoded
-     | guard_hyp core : Result.ok _ = Result.ok decoded
-     finish_source_core core lower)
-  | (split at core)
+  split at core
+  all_goals first
+  | contradiction
+  | finish_source_core core lower
 
 /-- Weak all63 classification of the actual successful terminal production
 row. In particular, every load (including rs1=x0) has no A mutable request.
