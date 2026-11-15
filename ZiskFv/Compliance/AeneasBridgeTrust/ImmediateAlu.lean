@@ -19,22 +19,24 @@ def OpEnvelope.andiOfExtractedShape
     (providerTable : Air.Flat.Table FGL)
     (providerRow : Array FGL)
     (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
+      providerTable.component = ZiskFv.AirsClean.Binary.tableConsumerComponent)
+    (h_table_spec : ∀ row ∈ providerTable.table,
+      ZiskFv.AirsClean.Binary.Spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)) ∧
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)))
     (h_provider_row : providerRow ∈ providerTable.table)
     (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_input_r1_row : andi_input.r1_val =
       ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_input_imm_row : BitVec.signExtend 64 andi_input.imm =
       ZiskFv.EquivCore.Add.binaryRowB64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_andi_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
       m r_main andi_input.imm)
@@ -60,22 +62,24 @@ theorem OpEnvelope.aeneasBridgeTrust_andiOfExtractedShape
     (providerTable : Air.Flat.Table FGL)
     (providerRow : Array FGL)
     (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
+      providerTable.component = ZiskFv.AirsClean.Binary.tableConsumerComponent)
+    (h_table_spec : ∀ row ∈ providerTable.table,
+      ZiskFv.AirsClean.Binary.Spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)) ∧
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)))
     (h_provider_row : providerRow ∈ providerTable.table)
     (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_input_r1_row : andi_input.r1_val =
       ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_input_imm_row : BitVec.signExtend 64 andi_input.imm =
       ZiskFv.EquivCore.Add.binaryRowB64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_andi_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
       m r_main andi_input.imm)
@@ -102,22 +106,24 @@ def OpEnvelope.oriOfExtractedShape
     (providerTable : Air.Flat.Table FGL)
     (providerRow : Array FGL)
     (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
+      providerTable.component = ZiskFv.AirsClean.Binary.tableConsumerComponent)
+    (h_table_spec : ∀ row ∈ providerTable.table,
+      ZiskFv.AirsClean.Binary.Spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)) ∧
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)))
     (h_provider_row : providerRow ∈ providerTable.table)
     (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_input_r1_row : ori_input.r1_val =
       ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_input_imm_row : BitVec.signExtend 64 ori_input.imm =
       ZiskFv.EquivCore.Add.binaryRowB64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_ori_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
       m r_main ori_input.imm)
@@ -143,22 +149,24 @@ theorem OpEnvelope.aeneasBridgeTrust_oriOfExtractedShape
     (providerTable : Air.Flat.Table FGL)
     (providerRow : Array FGL)
     (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
+      providerTable.component = ZiskFv.AirsClean.Binary.tableConsumerComponent)
+    (h_table_spec : ∀ row ∈ providerTable.table,
+      ZiskFv.AirsClean.Binary.Spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)) ∧
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)))
     (h_provider_row : providerRow ∈ providerTable.table)
     (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_input_r1_row : ori_input.r1_val =
       ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_input_imm_row : BitVec.signExtend 64 ori_input.imm =
       ZiskFv.EquivCore.Add.binaryRowB64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_ori_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
       m r_main ori_input.imm)
@@ -185,22 +193,24 @@ def OpEnvelope.xoriOfExtractedShape
     (providerTable : Air.Flat.Table FGL)
     (providerRow : Array FGL)
     (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
+      providerTable.component = ZiskFv.AirsClean.Binary.tableConsumerComponent)
+    (h_table_spec : ∀ row ∈ providerTable.table,
+      ZiskFv.AirsClean.Binary.Spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)) ∧
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)))
     (h_provider_row : providerRow ∈ providerTable.table)
     (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_input_r1_row : xori_input.r1_val =
       ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_input_imm_row : BitVec.signExtend 64 xori_input.imm =
       ZiskFv.EquivCore.Add.binaryRowB64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_xori_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
       m r_main xori_input.imm)
@@ -226,22 +236,24 @@ theorem OpEnvelope.aeneasBridgeTrust_xoriOfExtractedShape
     (providerTable : Air.Flat.Table FGL)
     (providerRow : Array FGL)
     (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
+      providerTable.component = ZiskFv.AirsClean.Binary.tableConsumerComponent)
+    (h_table_spec : ∀ row ∈ providerTable.table,
+      ZiskFv.AirsClean.Binary.Spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)) ∧
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)))
     (h_provider_row : providerRow ∈ providerTable.table)
     (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_input_r1_row : xori_input.r1_val =
       ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_input_imm_row : BitVec.signExtend 64 xori_input.imm =
       ZiskFv.EquivCore.Add.binaryRowB64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_xori_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
       m r_main xori_input.imm)
@@ -269,18 +281,20 @@ def OpEnvelope.sltiOfExtractedShape
     (providerTable : Air.Flat.Table FGL)
     (providerRow : Array FGL)
     (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
+      providerTable.component = ZiskFv.AirsClean.Binary.tableConsumerComponent)
+    (h_table_spec : ∀ row ∈ providerTable.table,
+      ZiskFv.AirsClean.Binary.Spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)) ∧
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)))
     (h_provider_row : providerRow ∈ providerTable.table)
     (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_input_r1_row : slti_input.r1_val =
       ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_slti_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
       m r_main slti_input.imm)
@@ -308,18 +322,20 @@ theorem OpEnvelope.aeneasBridgeTrust_sltiOfExtractedShape
     (providerTable : Air.Flat.Table FGL)
     (providerRow : Array FGL)
     (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
+      providerTable.component = ZiskFv.AirsClean.Binary.tableConsumerComponent)
+    (h_table_spec : ∀ row ∈ providerTable.table,
+      ZiskFv.AirsClean.Binary.Spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)) ∧
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)))
     (h_provider_row : providerRow ∈ providerTable.table)
     (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_input_r1_row : slti_input.r1_val =
       ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_slti_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
       m r_main slti_input.imm)
@@ -348,18 +364,20 @@ def OpEnvelope.sltiuOfExtractedShape
     (providerTable : Air.Flat.Table FGL)
     (providerRow : Array FGL)
     (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
+      providerTable.component = ZiskFv.AirsClean.Binary.tableConsumerComponent)
+    (h_table_spec : ∀ row ∈ providerTable.table,
+      ZiskFv.AirsClean.Binary.Spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)) ∧
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)))
     (h_provider_row : providerRow ∈ providerTable.table)
     (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_input_r1_row : sltiu_input.r1_val =
       ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_sltiu_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
       m r_main sltiu_input.imm)
@@ -387,18 +405,20 @@ theorem OpEnvelope.aeneasBridgeTrust_sltiuOfExtractedShape
     (providerTable : Air.Flat.Table FGL)
     (providerRow : Array FGL)
     (h_component :
-      providerTable.component = ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_table_spec : providerTable.Spec)
+      providerTable.component = ZiskFv.AirsClean.Binary.tableConsumerComponent)
+    (h_table_spec : ∀ row ∈ providerTable.table,
+      ZiskFv.AirsClean.Binary.Spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)) ∧
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (providerTable.environment row)))
     (h_provider_row : providerRow ∈ providerTable.table)
     (h_match_static : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main m r_main)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_input_r1_row : sltiu_input.r1_val =
       ZiskFv.EquivCore.Add.binaryRowA64
-        (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
           (providerTable.environment providerRow)))
     (h_sltiu_subset : ZiskFv.Tactics.ALUITypeArchetype.itype_imm_subset_holds_main
       m r_main sltiu_input.imm)
