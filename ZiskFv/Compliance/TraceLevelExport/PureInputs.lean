@@ -1,37 +1,20 @@
 import ZiskFv.Compliance.TraceLevelExport.RegisterFileAgreement
+import ZiskFv.Compliance.TraceLevelExport.PureMMulInputs
+import ZiskFv.Compliance.TraceLevelExport.PureMDivInputs
 
 namespace ZiskFv.Compliance
 
 variable {n : ℕ}
 
-/-- Architectural x0 is constant; all other values come from the ZisK register file. -/
-private noncomputable def pureInputRegValue {trace : AcceptedZiskTrace n}
-    (steps : ∀ i, ZiskStep trace i)
-    (rowDecodes : ∀ i, RowDecode trace i (steps i)) (j : ℕ) (k : Fin 32) : BitVec 64 :=
-  if k = 0 then 0 else ziskRegFile steps rowDecodes j k
+/-- Reconstruct43 pure ALU inputs from decoded operands and current register/PC
+agreement, not caller operand values or operand proofs. The13 M-extension
+factories preserve the complete old runtime input and all provider, range,
+remainder, forge and ISA facts. Four store families and seven loads reconstruct
+successful-read witnesses from this same induction invariant and consume
+complete-old-domain constructors AND whole-input equality certificates.
+Existing facts are retained on the unchanged opcode-predicate domain.
 
-private theorem read_pureInputRegValue {trace : AcceptedZiskTrace n}
-    (steps : ∀ i, ZiskStep trace i)
-    (rowDecodes : ∀ i, RowDecode trace i (steps i))
-    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
-    (i : Fin n) (h_reg : RegAgree steps rowDecodes init i.val) (k : Fin 32) :
-    read_xreg k (chainedSailTrace steps init i) =
-      EStateM.Result.ok (pureInputRegValue steps rowDecodes i.val k)
-        (chainedSailTrace steps init i) := by
-  by_cases hk : k = 0
-  · subst k
-    simp [pureInputRegValue, read_xreg]
-  · simpa [pureInputRegValue, hk, chainedSailTrace] using
-      read_xreg_of_regAgree steps rowDecodes init i.val k hk h_reg
-
-/-- Reconstruct30 pure ALU inputs from decoded operands and current register/PC
-agreement, not caller operand values or operand proofs. Four store families and
-seven loads reconstruct successful-read witnesses from this same induction
-invariant and consume complete-old-domain constructors AND whole-input equality
-certificates. Existing byte, range/alignment, lane, provider and platform facts
-are retained on the unchanged opcode-predicate domain.
-
-No public aggregate premise is removed here. The other22 families pass through
+No public aggregate premise is removed here. The other9 families pass through
 unchanged. The construction uses current, never all-step, soundness. -/
 noncomputable def pureInputsOfRegAgree {trace : AcceptedZiskTrace n}
     (steps : ∀ i, ZiskStep trace i)
@@ -302,19 +285,32 @@ noncomputable def pureInputsOfRegAgree {trace : AcceptedZiskTrace n}
   | .sraiw c, _ => {
       h_input_r1 := ⟨_, read_pureInputRegValue steps rowDecodes init i h_reg _⟩
       h_input_pc := ⟨pc, hpc⟩ }
-  | .mul _, ia => ia
-  | .mulh _, ia => ia
-  | .mulhsu _, ia => ia
-  | .mulw _, ia => ia
-  | .mulhu _, ia => ia
-  | .div _, ia => ia
-  | .rem _, ia => ia
-  | .divw _, ia => ia
-  | .remw _, ia => ia
-  | .divu _, ia => ia
-  | .divuw _, ia => ia
-  | .remu _, ia => ia
-  | .remuw _, ia => ia
+  | .mul c, ia =>
+      canonicalMulInputsCore steps rowDecodes init i h_reg c pc hpc ia
+  | .mulh c, ia =>
+      canonicalMulhInputsCore steps rowDecodes init i h_reg c pc hpc ia
+  | .mulhsu c, ia =>
+      canonicalMulhsuInputsCore steps rowDecodes init i h_reg c pc hpc ia
+  | .mulw c, ia =>
+      canonicalMulwInputsCore steps rowDecodes init i h_reg c pc hpc ia
+  | .mulhu c, ia =>
+      canonicalMulhuInputsCore steps rowDecodes init i h_reg c pc hpc ia
+  | .div c, ia =>
+      divInputsCoreOfRegAgree steps rowDecodes init i h_reg pc hpc c ia
+  | .rem c, ia =>
+      remInputsCoreOfRegAgree steps rowDecodes init i h_reg pc hpc c ia
+  | .divw c, ia =>
+      divwInputsCoreOfRegAgree steps rowDecodes init i h_reg pc hpc c ia
+  | .remw c, ia =>
+      remwInputsCoreOfRegAgree steps rowDecodes init i h_reg pc hpc c ia
+  | .divu c, ia =>
+      divuInputsCoreOfRegAgree steps rowDecodes init i h_reg pc hpc c ia
+  | .divuw c, ia =>
+      divuwInputsCoreOfRegAgree steps rowDecodes init i h_reg pc hpc c ia
+  | .remu c, ia =>
+      remuInputsCoreOfRegAgree steps rowDecodes init i h_reg pc hpc c ia
+  | .remuw c, ia =>
+      remuwInputsCoreOfRegAgree steps rowDecodes init i h_reg pc hpc c ia
   | .beq _, ia => ia
   | .bne _, ia => ia
   | .blt _, ia => ia
