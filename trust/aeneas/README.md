@@ -46,3 +46,9 @@ Lake. Its namespace isolation renames only the additive Lean enum identifier
 global discriminant-instance collision in the pinned Aeneas runtime. The
 recipe checks all 20 qualified occurrences, preserves the actual method body
 byte-for-byte, and records both raw and alpha-isolated output hashes.
+
+The complete, unfiltered type-and-value axiom audit for both additive modules
+(including constructor, private and compiler declarations) is reproducible with
+`lake env lean tools/check-rom-producer-axioms.lean`. It cross-checks every
+root against `Lean.collectAxioms` and writes the union and full dependency
+paths to `build/rom-flags-all-roots-raw.json`; it applies no axiom allowlist.
