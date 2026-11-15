@@ -1,6 +1,8 @@
 import ZiskFv.Compliance.TraceLevelExport.AuxiliaryReplayNeutrality
 import ZiskFv.Compliance.TraceLevelExport.MappedRegisterInvariant
 
+set_option maxRecDepth 10000
+
 /-!
 # Actual physical C-register replay
 
@@ -66,7 +68,6 @@ private theorem cRequestMult {n : Nat} (trace : AcceptedZiskTrace n)
   rw [mainCMemInteractionAt, cRequestEvalMult,
     ← ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
       trace.program trace.mainTable row]
-  rfl
 
 /-- The three store flags are decoded from ONE source enum. In particular,
 register writes cannot coexist with a mutable-memory store selector. This
@@ -147,6 +148,7 @@ private theorem nonzero_stepWrite_storeReg_one {n : Nat} {trace : AcceptedZiskTr
       simp [Transpiler.ind]
     rw [← eRdAt_rd_idx_of_decode decoded.h_store_ind off, hz]
   | _ =>
+    simp only [stepProducerRow] at address ⊢
     rw [decoded.h_store_reg]
     have addr := address.2.2.1
     rw [decoded.h_store_ind, decoded.h_store_offset] at addr
@@ -197,6 +199,8 @@ local notation "D" => (fun i => rowDecode_of_programDecode trace (physicalStart 
 variable (atPc : ∀ i, (mainOfTable trace.program trace.mainTable).pc
   (physicalStart L i).val = addr (selected i))
 
+include binding atPc
+
 /-- Source-producer correspondence places this actual C request at the terminal
 physical slot. The conclusion excludes precisely the original RegAgree x0. -/
 theorem source_terminal_actualCRegisterAction (i : Fin m)
@@ -217,6 +221,7 @@ theorem source_terminal_actualCRegisterAction (i : Fin m)
     (canonical_span_room rawProgram selected L trace i) (atPc i) offset
   have terminal : (physicalStart L i).val + offset.val =
       stepProducerRow (physicalStart L i) (steps i) (D i) := by
+    change sourceStart L i + offset.val = _
     dsimp [offset]
     omega
   rw [terminal] at span
@@ -237,12 +242,15 @@ theorem source_terminal_actualCRegisterAction (i : Fin m)
     simp [hn, row, zero]
   · rw [hs]
     by_cases active : (mainTableRowAtOrZero trace.program trace.mainTable row.val).rom.store_reg = 1
-    · simp [active]
+    · simp [active, row]
     · have zero : Transpiler.wrap_to_regidx
           ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable row.val)).toEntry 1 1).ptr = 0 := by
         by_contra nz
         exact active (nonzero_stepWrite_storeReg_one (physicalStart L i)
           (steps i) (D i) _ hs nz)
+      change Transpiler.wrap_to_regidx
+        (mainTableRowAtOrZero trace.program trace.mainTable row.val).rom.addr2 = 0 at zero
+      dsimp only [row] at active zero ⊢
       simp [active, zero, Ne.symm hk]
 
 /-- The expanded first request is genuinely inactive, including its RAW
@@ -263,22 +271,22 @@ theorem mappedZiskRegFile_eq_actualPhysicalRegFile (j : Nat) (h : j ≤ m)
     mappedZiskRegFile L steps D j h k =
       actualPhysicalRegFile trace (rowPrefix (sourceWidth L) j)
         (prefix_mono (sourceWidth L) h) k := by
-  induction j generalizing h with
+  induction j with
   | zero => simp
   | succ j ih =>
     have hj : j < m := by omega
     let i : Fin m := ⟨j, hj⟩
     have stop := mapped_producer_successor_eq_source_stop rawProgram selected L trace
       start addr binding steps rawDecodes atPc i
-    have prefix := prefix_succ (sourceWidth L) i
+    have cutSucc := prefix_succ (sourceWidth L) i
     have endBound := prefix_mono (sourceWidth L) (Nat.succ_le_of_lt i.isLt)
     change rowPrefix (sourceWidth L) (i.val + 1) =
-      sourceStart L i + (L i).width at prefix
-    rw [prefix] at endBound
+      sourceStart L i + (L i).width at cutSucc
+    rw [cutSucc] at endBound
     have terminal := source_terminal_actualCRegisterAction rawProgram selected L trace
       start addr binding steps rawDecodes atPc i
     rw [show j + 1 = i.val + 1 from rfl, mappedZiskRegFile_succ]
-    rw [prefix]
+    rw [cutSucc]
     rcases (L i).count with one | two
     · change (L i).width = 1 at one
       have room : sourceStart L i < sourceEnd L := sourceStart_lt_sourceEnd L i
@@ -308,9 +316,10 @@ theorem mappedZiskRegFile_eq_actualPhysicalRegFile (j : Nat) (h : j ≤ m)
       apply actualCRegisterAction_congr
       exact ih (Nat.le_of_lt hj)
 
+omit binding atPc in
 private theorem mappedRegPrefix_eq_take (j : Nat) (h : j ≤ m) :
     mappedRegPrefix j h = (List.finRange m).take j := by
-  induction j generalizing h with
+  induction j with
   | zero => simp [mappedRegPrefix]
   | succ j ih =>
     have hj : j < m := by omega
