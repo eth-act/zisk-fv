@@ -42,25 +42,17 @@ theorem divInput_eq_canonical
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r1) := by
     have h := ia.promises.input_r1_eq.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r1))
-    injection h with hv
-    exact hv
+    injection h
   have hr2 : ia.div_input.r2_val =
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r2) := by
     have h := ia.promises.input_r2_eq.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r2))
-    injection h with hv
-    exact hv
+    injection h
   have hp : ia.div_input.PC = pc :=
     Option.some.inj (ia.promises.input_pc_eq.symm.trans hpc)
-  calc
-    ia.div_input =
-        { r1_val := ia.div_input.r1_val
-          r2_val := ia.div_input.r2_val
-          rd := ia.div_input.rd
-          PC := ia.div_input.PC } := rfl
-    _ = canonicalDivInput steps rowDecodes i c pc := by
-      unfold canonicalDivInput
-      rw [hr1, hr2, ia.promises.input_rd_eq, hp]
+  have hrd := ia.promises.input_rd_eq
+  cases hinput : ia.div_input
+  simp_all [canonicalDivInput]
 
 /-- Construct a canonical DIV core, retaining every existing arithmetic witness. -/
 noncomputable def divInputsCoreOfRegAgree
@@ -127,25 +119,17 @@ theorem remInput_eq_canonical
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r1) := by
     have h := ia.promises.input_r1_eq.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r1))
-    injection h with hv
-    exact hv
+    injection h
   have hr2 : ia.rem_input.r2_val =
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r2) := by
     have h := ia.promises.input_r2_eq.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r2))
-    injection h with hv
-    exact hv
+    injection h
   have hp : ia.rem_input.PC = pc :=
     Option.some.inj (ia.promises.input_pc_eq.symm.trans hpc)
-  calc
-    ia.rem_input =
-        { r1_val := ia.rem_input.r1_val
-          r2_val := ia.rem_input.r2_val
-          rd := ia.rem_input.rd
-          PC := ia.rem_input.PC } := rfl
-    _ = canonicalRemInput steps rowDecodes i c pc := by
-      unfold canonicalRemInput
-      rw [hr1, hr2, ia.promises.input_rd_eq, hp]
+  have hrd := ia.promises.input_rd_eq
+  cases hinput : ia.rem_input
+  simp_all [canonicalRemInput]
 
 /-- Construct a canonical REM core, retaining every existing arithmetic witness. -/
 noncomputable def remInputsCoreOfRegAgree
@@ -215,25 +199,17 @@ theorem divwInput_eq_canonical
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r1) := by
     have h := ia.promises.input_r1_eq.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r1))
-    injection h with hv
-    exact hv
+    injection h
   have hr2 : ia.divw_input.r2_val =
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r2) := by
     have h := ia.promises.input_r2_eq.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r2))
-    injection h with hv
-    exact hv
+    injection h
   have hp : ia.divw_input.PC = pc :=
     Option.some.inj (ia.promises.input_pc_eq.symm.trans hpc)
-  calc
-    ia.divw_input =
-        { r1_val := ia.divw_input.r1_val
-          r2_val := ia.divw_input.r2_val
-          rd := ia.divw_input.rd
-          PC := ia.divw_input.PC } := rfl
-    _ = canonicalDivwInput steps rowDecodes i c pc := by
-      unfold canonicalDivwInput
-      rw [hr1, hr2, ia.promises.input_rd_eq, hp]
+  have hrd := ia.promises.input_rd_eq
+  cases hinput : ia.divw_input
+  simp_all [canonicalDivwInput]
 
 /-- Construct a canonical DIVW core, retaining every existing arithmetic witness. -/
 noncomputable def divwInputsCoreOfRegAgree
@@ -303,25 +279,17 @@ theorem remwInput_eq_canonical
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r1) := by
     have h := ia.promises.input_r1_eq.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r1))
-    injection h with hv
-    exact hv
+    injection h
   have hr2 : ia.remw_input.r2_val =
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r2) := by
     have h := ia.promises.input_r2_eq.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r2))
-    injection h with hv
-    exact hv
+    injection h
   have hp : ia.remw_input.PC = pc :=
     Option.some.inj (ia.promises.input_pc_eq.symm.trans hpc)
-  calc
-    ia.remw_input =
-        { r1_val := ia.remw_input.r1_val
-          r2_val := ia.remw_input.r2_val
-          rd := ia.remw_input.rd
-          PC := ia.remw_input.PC } := rfl
-    _ = canonicalRemwInput steps rowDecodes i c pc := by
-      unfold canonicalRemwInput
-      rw [hr1, hr2, ia.promises.input_rd_eq, hp]
+  have hrd := ia.promises.input_rd_eq
+  cases hinput : ia.remw_input
+  simp_all [canonicalRemwInput]
 
 /-- Construct a canonical REMW core, retaining every existing arithmetic witness. -/
 noncomputable def remwInputsCoreOfRegAgree
@@ -391,25 +359,17 @@ theorem divuInput_eq_canonical
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r1) := by
     have h := ia.h_input_r1.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r1))
-    injection h with hv
-    exact hv
+    injection h
   have hr2 : ia.divu_input.r2_val =
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r2) := by
     have h := ia.h_input_r2.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r2))
-    injection h with hv
-    exact hv
+    injection h
   have hp : ia.divu_input.PC = pc :=
     Option.some.inj (ia.h_input_pc.symm.trans hpc)
-  calc
-    ia.divu_input =
-        { r1_val := ia.divu_input.r1_val
-          r2_val := ia.divu_input.r2_val
-          rd := ia.divu_input.rd
-          PC := ia.divu_input.PC } := rfl
-    _ = canonicalDivuInput steps rowDecodes i c pc := by
-      unfold canonicalDivuInput
-      rw [hr1, hr2, ia.h_input_rd, hp]
+  have hrd := ia.h_input_rd
+  cases hinput : ia.divu_input
+  simp_all [canonicalDivuInput]
 
 /-- Construct a canonical DIVU core, retaining every existing arithmetic witness. -/
 noncomputable def divuInputsCoreOfRegAgree
@@ -474,25 +434,17 @@ theorem divuwInput_eq_canonical
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r1) := by
     have h := ia.h_input_r1.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r1))
-    injection h with hv
-    exact hv
+    injection h
   have hr2 : ia.divuw_input.r2_val =
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r2) := by
     have h := ia.h_input_r2.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r2))
-    injection h with hv
-    exact hv
+    injection h
   have hp : ia.divuw_input.PC = pc :=
     Option.some.inj (ia.h_input_pc.symm.trans hpc)
-  calc
-    ia.divuw_input =
-        { r1_val := ia.divuw_input.r1_val
-          r2_val := ia.divuw_input.r2_val
-          rd := ia.divuw_input.rd
-          PC := ia.divuw_input.PC } := rfl
-    _ = canonicalDivuwInput steps rowDecodes i c pc := by
-      unfold canonicalDivuwInput
-      rw [hr1, hr2, ia.h_input_rd, hp]
+  have hrd := ia.h_input_rd
+  cases hinput : ia.divuw_input
+  simp_all [canonicalDivuwInput]
 
 /-- Construct a canonical DIVUW core, retaining every existing arithmetic witness. -/
 noncomputable def divuwInputsCoreOfRegAgree
@@ -557,25 +509,17 @@ theorem remuInput_eq_canonical
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r1) := by
     have h := ia.h_input_r1.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r1))
-    injection h with hv
-    exact hv
+    injection h
   have hr2 : ia.remu_input.r2_val =
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r2) := by
     have h := ia.h_input_r2.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r2))
-    injection h with hv
-    exact hv
+    injection h
   have hp : ia.remu_input.PC = pc :=
     Option.some.inj (ia.h_input_pc.symm.trans hpc)
-  calc
-    ia.remu_input =
-        { r1_val := ia.remu_input.r1_val
-          r2_val := ia.remu_input.r2_val
-          rd := ia.remu_input.rd
-          PC := ia.remu_input.PC } := rfl
-    _ = canonicalRemuInput steps rowDecodes i c pc := by
-      unfold canonicalRemuInput
-      rw [hr1, hr2, ia.h_input_rd, hp]
+  have hrd := ia.h_input_rd
+  cases hinput : ia.remu_input
+  simp_all [canonicalRemuInput]
 
 /-- Construct a canonical REMU core, retaining every existing arithmetic witness. -/
 noncomputable def remuInputsCoreOfRegAgree
@@ -640,25 +584,17 @@ theorem remuwInput_eq_canonical
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r1) := by
     have h := ia.h_input_r1.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r1))
-    injection h with hv
-    exact hv
+    injection h
   have hr2 : ia.remuw_input.r2_val =
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r2) := by
     have h := ia.h_input_r2.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r2))
-    injection h with hv
-    exact hv
+    injection h
   have hp : ia.remuw_input.PC = pc :=
     Option.some.inj (ia.h_input_pc.symm.trans hpc)
-  calc
-    ia.remuw_input =
-        { r1_val := ia.remuw_input.r1_val
-          r2_val := ia.remuw_input.r2_val
-          rd := ia.remuw_input.rd
-          PC := ia.remuw_input.PC } := rfl
-    _ = canonicalRemuwInput steps rowDecodes i c pc := by
-      unfold canonicalRemuwInput
-      rw [hr1, hr2, ia.h_input_rd, hp]
+  have hrd := ia.h_input_rd
+  cases hinput : ia.remuw_input
+  simp_all [canonicalRemuwInput]
 
 /-- Construct a canonical REMUW core, retaining every existing arithmetic witness. -/
 noncomputable def remuwInputsCoreOfRegAgree
