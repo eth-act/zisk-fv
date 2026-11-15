@@ -24,6 +24,10 @@ pil-extract arith-range-table --rust-source <path> [--output <path>]
 
 pil-extract source-dimensions --pilout <path> [--output <path>]
 
+pil-extract packed-virtual-tables --compiled-json <path> [--output <path>]
+
+pil-extract public-io --pilout <path> [--output <path>]
+
 pil-extract clean-component --pilout <path> --air <needle>
                  [--row-output <path>] [--constraints-output <path>]
                  [--bus-id <N>] [--channel op-bus|mem-align-bus]
@@ -69,6 +73,27 @@ the flags themselves.
   protobuf comment calling it `log2(n)` is stale. Missing metadata fails rather
   than inventing a default capacity. Normal-build kernel identities pin Main,
   Mem and MemAlign's live fixed-column capacities to these actual counts.
+- `packed-virtual-tables`: emit `Extraction.PackedVirtualTables` from the actual
+  production compiler's retained packed-table observations, including exact
+  physical placement and converse source ownership for buses 88/124/125/330/331.
+  `export-packed-tables.cjs` compares every target fixed cell and UID with its
+  retained pre-lowering source; it does not reimplement the packing algorithm or
+  invent unrelated fixed values. Normal generation copies the real Rust-generated
+  external fixed payloads into a private source tree, retains
+  `PackedVirtualTables.json`, and emits the Lean location/source certificates.
+  The byte-table observer and checker also retain the actual packed producer
+  stream and raw multiplicity schema, alongside their original virtual-table
+  block observations.
+- `public-io`: emit `Extraction.PublicIo` from the compiled GLOBAL expression
+  graph and cleared sum. Hints identify tuples, but every operation-bus tuple is
+  linked to an actual denominator and positive-unit numerator term; generated
+  `source_operation_emissions_complete` accounts for all operation-bus terms.
+  GLOBAL proof/public/AIR-group/table cells remain distinct. Physical Main hints
+  supply only operation arity, not a GLOBAL expression namespace. Unsupported
+  operands, malformed references and missing source data fail rather than
+  defaulting to zero. Normal Nix production, populate, explicit Lake targets and
+  both closed output inventories include the module; this is not a claim of
+  public-I/O provider composition, verifier authentication or new logUp algebra.
 - `clean-component`: emit Clean `Row.lean` / `Constraints.lean` source for
   one AIR and one supported channel shape.
 - `mem-air-facts`: emit a Markdown source report for the Mem generated AIR
