@@ -1,0 +1,178 @@
+⚠ [1670/1672] Built Extraction.RomSource (2.9s)
+warning: build/extraction/Extraction/RomSource.lean:38:11: unused variable `source`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: build/extraction/Extraction/RomSource.lean:38:40: unused variable `row`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: build/extraction/Extraction/RomSource.lean:41:18: unused variable `source`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: build/extraction/Extraction/RomSource.lean:41:47: unused variable `row`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+✔ [1671/1672] Built ZiskFv.AirsClean.ZiskInstructionRomImage (18s)
+✖ [1672/1672] Building ZiskFv.AirsClean.ZiskInstructionRomSource (11s)
+trace: .> LEAN_PATH=/tmp/closure-rom-bounded-packet/.lake/packages/Cli/.lake/build/lib/lean:/tmp/closure-rom-bounded-packet/.lake/packages/batteries/.lake/build/lib/lean:/tmp/closure-rom-bounded-packet/.lake/packages/Qq/.lake/build/lib/lean:/tmp/closure-rom-bounded-packet/.lake/packages/aesop/.lake/build/lib/lean:/tmp/closure-rom-bounded-packet/.lake/packages/proofwidgets/.lake/build/lib/lean:/tmp/closure-rom-bounded-packet/.lake/packages/importGraph/.lake/build/lib/lean:/tmp/closure-rom-bounded-packet/.lake/packages/LeanSearchClient/.lake/build/lib/lean:/tmp/closure-rom-bounded-packet/.lake/packages/plausible/.lake/build/lib/lean:/tmp/closure-rom-bounded-packet/.lake/packages/mathlib/.lake/build/lib/lean:/tmp/closure-rom-bounded-packet/build/sail-lean/.lake/build/lib/lean:/tmp/closure-rom-bounded-packet/build/clean-lean/.lake/build/lib/lean:/tmp/closure-rom-bounded-packet/build/aeneas-lean/.lake/build/lib/lean:/tmp/closure-rom-bounded-packet/.lake/packages/repl/.lake/build/lib/lean:/tmp/closure-rom-bounded-packet/.lake/build/lib/lean /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean --tstack=400000 /tmp/closure-rom-bounded-packet/ZiskFv/AirsClean/ZiskInstructionRomSource.lean -o /tmp/closure-rom-bounded-packet/.lake/build/lib/lean/ZiskFv/AirsClean/ZiskInstructionRomSource.olean -i /tmp/closure-rom-bounded-packet/.lake/build/lib/lean/ZiskFv/AirsClean/ZiskInstructionRomSource.ilean -c /tmp/closure-rom-bounded-packet/.lake/build/ir/ZiskFv/AirsClean/ZiskInstructionRomSource.c --setup /tmp/closure-rom-bounded-packet/.lake/build/ir/ZiskFv/AirsClean/ZiskInstructionRomSource.setup.json --json
+info: ZiskFv/AirsClean/ZiskInstructionRomSource.lean:175:29: Try this:
+  [apply] ring_nf
+  
+  The `ring` tactic failed to close the goal. Use `ring_nf` to obtain a normal form.
+    
+  Note that `ring` works primarily in *commutative* rings. If you have a noncommutative ring, abelian group or module, consider using `noncomm_ring`, `abel` or `module` instead.
+error: ZiskFv/AirsClean/ZiskInstructionRomSource.lean:173:60: unsolved goals
+image : PhysicalImage
+multiplicities : Fin physicalCapacity → Fin 18446744069414584321
+ambient : CommittedSource (Fin 18446744069414584321)
+index : Fin physicalCapacity
+⊢ ambient.witness 2 0 (↑↑index) 0 * 7890 +
+                                                                    ambient.witness 2 0 (↑↑index) 0 *
+                                                                        (image index).flags *
+                                                                      ambient.challenge 2 0 ^ 11 +
+                                                                  ambient.witness 2 0 (↑↑index) 0 *
+                                                                      ambient.challenge 2 0 *
+                                                                    (image index).line +
+                                                                ambient.witness 2 0 (↑↑index) 0 *
+                                                                    ambient.challenge 2 0 ^ 2 *
+                                                                  (image index).a_offset_imm0 +
+                                                              ambient.witness 2 0 (↑↑index) 0 *
+                                                                  ambient.challenge 2 0 ^ 3 *
+                                                                (image index).a_imm1 +
+                                                            ambient.witness 2 0 (↑↑index) 0 *
+                                                                ambient.challenge 2 0 ^ 4 *
+                                                              (image index).b_offset_imm0 +
+                                                          ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 5 *
+                                                            (image index).b_imm1 +
+                                                        ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 6 *
+                                                          (image index).ind_width +
+                                                      ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 7 *
+                                                        (image index).op +
+                                                    ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 8 *
+                                                      (image index).store_offset +
+                                                  ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 9 *
+                                                    (image index).jmp_offset1 +
+                                                ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 10 *
+                                                  (image index).jmp_offset2 +
+                                              (ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 1 -
+                                                ambient.witness 2 0 (↑↑index) (-1) * 7890) +
+                                            ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 * 7890 +
+                                          ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                              (image index).flags *
+                                            ambient.challenge 2 0 ^ 11 +
+                                        ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                            ambient.challenge 2 0 *
+                                          (image index).line +
+                                      ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                          ambient.challenge 2 0 ^ 2 *
+                                        (image index).a_offset_imm0 +
+                                    ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                        ambient.challenge 2 0 ^ 3 *
+                                      (image index).a_imm1 +
+                                  ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                      ambient.challenge 2 0 ^ 4 *
+                                    (image index).b_offset_imm0 +
+                                ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                    ambient.challenge 2 0 ^ 5 *
+                                  (image index).b_imm1 +
+                              ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                  ambient.challenge 2 0 ^ 6 *
+                                (image index).ind_width +
+                            ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                ambient.challenge 2 0 ^ 7 *
+                              (image index).op +
+                          ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 8 *
+                            (image index).store_offset +
+                        ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 9 *
+                          (image index).jmp_offset1 +
+                      ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 10 *
+                        (image index).jmp_offset2 +
+                    ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 * ambient.challenge 2 1 +
+                  (-(ambient.witness 2 0 (↑↑index) (-1) * (image index).flags * ambient.challenge 2 0 ^ 11) -
+                    ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 * (image index).line) +
+                (-(ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 2 * (image index).a_offset_imm0) -
+                  ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 3 * (image index).a_imm1) +
+              (-(ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 4 * (image index).b_offset_imm0) -
+                ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 5 * (image index).b_imm1) +
+            (-(ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 6 * (image index).ind_width) -
+              ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 7 * (image index).op) +
+          (-(ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 8 * (image index).store_offset) -
+            ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 9 * (image index).jmp_offset1) +
+        (-(ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 10 * (image index).jmp_offset2) -
+          ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 1) +
+      multiplicities index =
+    ambient.witness 2 0 (↑↑index) 0 * 7890 +
+                                                                  ambient.witness 2 0 (↑↑index) 0 *
+                                                                      (image index).flags *
+                                                                    ambient.challenge 2 0 ^ 11 +
+                                                                ambient.witness 2 0 (↑↑index) 0 *
+                                                                    ambient.challenge 2 0 *
+                                                                  (image index).line +
+                                                              ambient.witness 2 0 (↑↑index) 0 *
+                                                                  ambient.challenge 2 0 ^ 2 *
+                                                                (image index).a_offset_imm0 +
+                                                            ambient.witness 2 0 (↑↑index) 0 *
+                                                                ambient.challenge 2 0 ^ 3 *
+                                                              (image index).a_imm1 +
+                                                          ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 4 *
+                                                            (image index).b_offset_imm0 +
+                                                        ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 5 *
+                                                          (image index).b_imm1 +
+                                                      ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 6 *
+                                                        (image index).ind_width +
+                                                    ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 7 *
+                                                      (image index).op +
+                                                  ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 8 *
+                                                    (image index).store_offset +
+                                                ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 9 *
+                                                  (image index).jmp_offset1 +
+                                              ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 10 *
+                                                (image index).jmp_offset2 +
+                                            (ambient.witness 2 0 (↑↑index) 0 * ambient.challenge 2 1 -
+                                              ambient.witness 2 0 (↑↑index) (-1) * 7890) +
+                                          ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 * 7890 +
+                                        ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                            (image index).flags *
+                                          ambient.challenge 2 0 ^ 11 +
+                                      ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                          ambient.challenge 2 0 *
+                                        (image index).line +
+                                    ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                        ambient.challenge 2 0 ^ 2 *
+                                      (image index).a_offset_imm0 +
+                                  ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                      ambient.challenge 2 0 ^ 3 *
+                                    (image index).a_imm1 +
+                                ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                    ambient.challenge 2 0 ^ 4 *
+                                  (image index).b_offset_imm0 +
+                              ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                  ambient.challenge 2 0 ^ 5 *
+                                (image index).b_imm1 +
+                            ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 *
+                                ambient.challenge 2 0 ^ 6 *
+                              (image index).ind_width +
+                          ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 7 *
+                            (image index).op +
+                        ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 8 *
+                          (image index).store_offset +
+                      ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 9 *
+                        (image index).jmp_offset1 +
+                    ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 * ambient.challenge 2 0 ^ 10 *
+                      (image index).jmp_offset2 +
+                  (ambient.witness 2 0 (↑↑index) (-1) * ambient.fixed 0 (↑↑index) 0 * ambient.challenge 2 1 -
+                    ambient.witness 2 0 (↑↑index) (-1) * (image index).flags * ambient.challenge 2 0 ^ 11) +
+                (-(ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 * (image index).line) -
+                  ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 2 * (image index).a_offset_imm0) +
+              (-(ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 3 * (image index).a_imm1) -
+                ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 4 * (image index).b_offset_imm0) +
+            (-(ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 5 * (image index).b_imm1) -
+              ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 6 * (image index).ind_width) +
+          (-(ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 7 * (image index).op) -
+            ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 8 * (image index).store_offset) +
+        (-(ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 9 * (image index).jmp_offset1) -
+          ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 0 ^ 10 * (image index).jmp_offset2) +
+      (-(ambient.witness 2 0 (↑↑index) (-1) * ambient.challenge 2 1) - multiplicities index)
+error: Lean exited with code 1
+Some required targets logged failures:
+- ZiskFv.AirsClean.ZiskInstructionRomSource
+error: build failed

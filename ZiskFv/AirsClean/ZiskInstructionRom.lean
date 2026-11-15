@@ -12,10 +12,10 @@ static providers (whose row content is a deterministic function of the
 row index), the ZisK ROM is **program-parameterised**: a different
 program produces a different table.
 
-This module exposes the ROM as a Clean `StaticTable` parameterised by
-an abstract program (`Program := Fin n → ZiskRomMessage FGL`). The
-verification target — `zisk_riscv_compliant_program_bus` — is universal
-over the program, so the `Program` parameter flows through unchanged.
+This module exposes an abstract decoded-row sequence as a Clean `StaticTable`
+(`Program := Fin n → ZiskRomMessage FGL`). Membership does not establish that
+the sequence is the producer's final image, opens public `rom_root`, or comes
+from the intended binary. The parameter remains abstract.
 
 The `Spec` is exact decoded-row membership and `contains_iff` is
 definitional, matching the large-ROM pattern from
@@ -27,13 +27,11 @@ No axioms. The membership predicate is exact decoded-row membership;
 the program-specific *contents* of the ROM flow through as an opaque
 parameter rather than being asserted at the table level.
 
-## Phase T4.0 status
-
-This is the provider-side `StaticTable` only. The Main consumer-side
-lookup (`mainWithRom` in `AirsClean/Main/Constraints.lean`) and the
-extended `MainRow` carrying the 5 ROM-derived offset/store columns plus
-the 15 boolean flags are separate T4.0 deliverables. No axiom retires
-from this commit alone.
+`ZiskInstructionRomImage`, `ZiskInstructionRomProvider`, and
+`ZiskInstructionRomSource` give a separate bounded physical-image construction
+and source-polynomial correspondence. They do not turn arbitrary decoded rows
+into authenticated producer output, or finish a live ROM channel. Main's
+current `mainWithRom` consumer remains an internal static-table lookup.
 -/
 
 namespace ZiskFv.AirsClean.ZiskInstructionRom
@@ -41,12 +39,11 @@ namespace ZiskFv.AirsClean.ZiskInstructionRom
 open Goldilocks
 open ZiskFv.Channels.ZiskRomBus (ZiskRomMessage)
 
-/-- A ZisK lowered program: a finite-length sequence of instructions,
-    each as a `ZiskRomMessage FGL`. The instruction at position `i` is
-    the row Main looks up when `pc = i`.
-
-    The verification quantifies over `Program length` for any
-    `length : ℕ`, so this captures "any compiled ZisK program". -/
+/-- An abstract finite sequence of decoded ROM rows. A sequence index is NOT
+    the instruction's PC: `line` holds that address. The actual producer sorts
+    original u64 map keys before field encoding and pads its final image.
+    This type carries neither those original keys nor a source-history or
+    public-root authentication proof. -/
 @[reducible]
 def Program (length : ℕ) : Type := Fin length → ZiskRomMessage FGL
 
