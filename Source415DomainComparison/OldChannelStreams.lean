@@ -1,8 +1,8 @@
-import ZiskFv.AirsClean.FullEnsemble.DomainComparison.RowCompatibility
+import Source415DomainComparison.RowCompatibility
 import ZiskFv.AirsClean.FullEnsemble.Balance.BinaryTableWitnessConstruction
 
 /-! Exact ordered streams for the actual witness splice. The reference is
-`oldexactsourcecompare`: Old16 freezes 45e618f2cf08bf3fcd47cbc8c74c870cd88bede7,
+`build/source415-domain-evidence/ensemble16to18-source.patch`: Old16 freezes45e618f2cf08bf3fcd47cbc8c74c870cd88bede7,
 whereas the current physical roster is the source415 roster. No interaction is
 filtered by multiplicity: in particular zero-valued raw multiplicities survive.
 -/
@@ -92,15 +92,17 @@ theorem binary_consumer_old_stream (old : OldWitness p program)
       simp only [oldFinishedChannels, List.mem_cons, List.not_mem_nil, or_false] at hc
       rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;>
         first | exact False.elim (hop rfl) | decide
+    have htable : channel.name ≠ BinaryTableChannel.name := by
+      simp only [oldFinishedChannels, List.mem_cons, List.not_mem_nil, or_false] at hc
+      rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     have hnew := silent_of_names (binaryConsumerTable old) channel (by
-      simp [binaryConsumerTable, Binary.tableConsumerComponent,
-        Binary.tableConsumerCircuit, circuit_norm, hn]
-      all_goals
-        simp only [oldFinishedChannels, List.mem_cons, List.not_mem_nil, or_false] at hc
-        rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+      change channel.name ∉ [OpBusChannel.name, BinaryTableChannel.name]
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
+      exact ⟨hn, htable⟩)
     have hold := silent_of_names (oldTable old 12) channel (by
       rw [old_binary_component]
-      simpa [Binary.staticLookupComponent, Binary.staticLookupCircuit, circuit_norm] using hn)
+      change channel.name ∉ [OpBusChannel.name]
+      simpa only [List.mem_cons, List.not_mem_nil, or_false] using hn)
     rw [hnew, hold]
 
 theorem extension_consumer_old_stream (old : OldWitness p program)
@@ -120,16 +122,17 @@ theorem extension_consumer_old_stream (old : OldWitness p program)
       simp only [oldFinishedChannels, List.mem_cons, List.not_mem_nil, or_false] at hc
       rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;>
         first | exact False.elim (hop rfl) | decide
+    have htable : channel.name ≠ BinaryExtensionTableChannel.name := by
+      simp only [oldFinishedChannels, List.mem_cons, List.not_mem_nil, or_false] at hc
+      rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
     have hnew := silent_of_names (extensionConsumerTable old) channel (by
-      simp [extensionConsumerTable, BinaryExtension.shiftTableConsumerComponent,
-        BinaryExtension.shiftTableConsumerCircuit, circuit_norm, hn]
-      all_goals
-        simp only [oldFinishedChannels, List.mem_cons, List.not_mem_nil, or_false] at hc
-        rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+      change channel.name ∉ [OpBusChannel.name, BinaryExtensionTableChannel.name]
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
+      exact ⟨hn, htable⟩)
     have hold := silent_of_names (oldTable old 11) channel (by
       rw [old_extension_component]
-      simpa [BinaryExtension.shiftStaticLookupComponent,
-        BinaryExtension.shiftStaticLookupCircuit, circuit_norm] using hn)
+      change channel.name ∉ [OpBusChannel.name]
+      simpa only [List.mem_cons, List.not_mem_nil, or_false] using hn)
     rw [hnew, hold]
 
 /-- Exact list equality on the actual allTables stream: row order, table order,
@@ -139,13 +142,15 @@ theorem completed_old_channel_stream (old : OldWitness p program)
     (hc : channel ∈ (Legacy45.fullRv64imEnsemble p program).ensemble.channels) :
     (completedWitness old raw).interactionsWith channel = old.interactionsWith channel := by
   rw [old_finished_channels] at hc
-  simp only [EnsembleWitness.interactionsWith, EnsembleWitness.allTables,
-    completedWitness_tables, completedWitness_verifierTable, old_tables_eq,
-    completedTables, List.flatMap_cons, List.flatMap_append, List.flatMap_nil,
+  change ((completedWitness old raw).verifierTable :: completedTables old raw).flatMap
+      (fun table => table.interactionsWith channel) =
+    (old.verifierTable :: old.tables).flatMap (fun table => table.interactionsWith channel)
+  rw [completedWitness_verifierTable, old_tables_eq]
+  simp only [completedTables, List.flatMap_cons, List.flatMap_append, List.flatMap_nil,
     binary_consumer_old_stream old channel hc,
     extension_consumer_old_stream old channel hc,
     binary_provider_old_stream old raw channel hc,
     extension_provider_old_stream old raw channel hc,
-    List.nil_append, List.append_nil]
+    List.nil_append, List.append_nil, List.append_assoc]
 
 end ZiskFv.AirsClean.FullEnsemble.DomainComparison

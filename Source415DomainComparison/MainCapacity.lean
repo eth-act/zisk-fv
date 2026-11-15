@@ -1,4 +1,4 @@
-import ZiskFv.AirsClean.FullEnsemble.DomainComparison.WitnessSplice
+import Source415DomainComparison.WitnessSplice
 
 /-! Intrinsic old-domain capacity. Main already carries the source's fixed
 4194304-row domain; no accepted-trace premise is added here. The unresolved

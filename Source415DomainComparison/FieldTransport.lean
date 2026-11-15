@@ -1,5 +1,5 @@
 import ZiskFv.Compliance.AcceptedZiskTrace
-import ZiskFv.Compliance.AcceptedZiskTrace.DomainComparison.Accepted16
+import Source415DomainComparison.Accepted16
 
 /-!
 # Conditional transport of the actual accepted fields

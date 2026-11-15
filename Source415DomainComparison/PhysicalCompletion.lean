@@ -30,14 +30,14 @@ open ZiskFv.Channels.BinaryExtensionTable (BinaryExtensionTableChannel)
     (binaryProviderTable raw data).table[i.val]'(by
       rw [binary_full_length]; exact i.isLt) =
       (toElements (binaryRow raw i)).toArray := by
-  simp [binaryProviderTable_materialized]
+  simp only [binaryProviderTable_materialized, List.getElem_ofFn]
 
  theorem extension_full_get (raw : Witness FGL) (data : ProverData FGL)
     (i : Fin BinaryExtensionTable.tableSize) :
     (extensionProviderTable raw data).table[i.val]'(by
       rw [extension_full_length]; exact i.isLt) =
       (toElements (extensionRow raw i)).toArray := by
-  simp [extensionProviderTable_materialized]
+  simp only [extensionProviderTable_materialized, List.getElem_ofFn]
 
 /-- The actual component has no adjacent-row predicates beyond its row-local
 lookup. These are its real transition fields, not replacement validators. -/

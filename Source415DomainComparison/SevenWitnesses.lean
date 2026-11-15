@@ -21,11 +21,12 @@ namespace ZiskFv.AirsClean.FullEnsemble.DomainComparison.SevenWitnesses
 open Goldilocks Air.Flat
 open ZiskFv.Compliance.Instantiation
 open ZiskFv.AirsClean.PackedVirtualTableSources
+open ZiskFv.Compliance.RegisterMemBusBalance (addX1Program addX1Row)
 
 /-- Evidence about a concrete existing witness, not a new acceptance contract.
 The provider equalities retain every canonical source row, including zero
 multiplicities; membership ties those providers to the balanced witness. -/
-structure ActualEvidence {ensemble : Ensemble FGL Unit}
+structure ActualEvidence {ensemble : Ensemble FGL unit}
     (witness : EnsembleWitness ensemble) (main binary extension : Table FGL)
     (physical : Witness FGL) (data : ProverData FGL) : Prop where
   constraints : witness.Constraints
@@ -42,12 +43,14 @@ coverage of requested/nonzero keys. -/
 theorem binaryProvider_full_rawRows (physical : Witness FGL) (data : ProverData FGL) :
     (binaryProviderTable physical data).rawRows =
       List.ofFn (fun index : Fin ZiskFv.AirsClean.BinaryTable.tableSize =>
-        #[(binaryRow physical index).multiplicity]) := rfl
+        #[(binaryRow physical index).multiplicity]) := by
+  simp only [binaryProviderTable]
 
 theorem extensionProvider_full_rawRows (physical : Witness FGL) (data : ProverData FGL) :
     (extensionProviderTable physical data).rawRows =
       List.ofFn (fun index : Fin ZiskFv.AirsClean.BinaryExtensionTable.tableSize =>
-        #[(extensionRow physical index).multiplicity]) := rfl
+        #[(extensionRow physical index).multiplicity]) := by
+  simp only [extensionProviderTable]
 
 section
 open ZiskFv.Compliance.SingleAddWitness
@@ -149,9 +152,9 @@ open ZiskFv.Compliance.SdLdSpinWitness
 
 /-- The existing actual `sdLdWitness`, with both complete source providers. -/
 theorem sdLd_actual :
-    ActualEvidence sdLdWitness (sdLdMainTable)
+    ActualEvidence sdLdWitness (sdLdTableWithData sdLdMainTable)
       sdLdBinarySourceTable sdLdExtensionSourceTable
-      sdLdPackedSources sdLdMemData where
+      sdLdPackedSources ZiskFv.Compliance.sdLdMemData where
   constraints := sdLdWitness_constraints
   balanced := sdLdWitness_balancedChannels
   main_mem := by simp [sdLdWitness, sdLdTables]

@@ -1,4 +1,4 @@
-import ZiskFv.AirsClean.FullEnsemble.DomainComparison.RowCompatibility
+import Source415DomainComparison.RowCompatibility
 
 /-! Concrete preservation of the three dependent accepted-field contracts.
 The splice preserves the chosen replay `Table` itself, the exact objective

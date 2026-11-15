@@ -1,5 +1,5 @@
-import ZiskFv.AirsClean.FullEnsemble.DomainComparison.WitnessSplice
-import ZiskFv.AirsClean.FullEnsemble.DomainComparison.PhysicalCompletion
+import Source415DomainComparison.WitnessSplice
+import Source415DomainComparison.PhysicalCompletion
 
 /-! Actual row-local direction for the 16-to-18 comparison. Replacing static
 lookups by channel emissions does not change polynomial constraints. The
@@ -96,15 +96,27 @@ open ZiskFv.AirsClean.ZiskInstructionRom (Program)
   intro table htable
   simp only [EnsembleWitness.allTables, completedWitness_tables,
     completedWitness_verifierTable, completedTables, commonTables,
-    List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at htable
+    List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at htable
   rcases htable with htable | htable | htable | htable | htable | htable |
     htable | htable | htable | htable | htable | htable | htable | htable |
     htable | htable | htable | htable <;> subst table
-  all_goals first
-    | exact h _ (by simp [EnsembleWitness.allTables, old_tables_eq, commonTables])
-    | exact hext
-    | exact hbin
-    | exact hesource
-    | exact hbsource
+  · exact h _ (List.mem_cons_self)
+  · exact h _ (oldTable_mem old 0)
+  · exact h _ (oldTable_mem old 1)
+  · exact h _ (oldTable_mem old 2)
+  · exact h _ (oldTable_mem old 3)
+  · exact h _ (oldTable_mem old 4)
+  · exact h _ (oldTable_mem old 5)
+  · exact h _ (oldTable_mem old 6)
+  · exact h _ (oldTable_mem old 7)
+  · exact h _ (oldTable_mem old 8)
+  · exact h _ (oldTable_mem old 9)
+  · exact h _ (oldTable_mem old 10)
+  · exact hext
+  · exact hbin
+  · exact h _ (oldTable_mem old 13)
+  · exact hesource
+  · exact hbsource
+  · exact h _ (oldTable_mem old 14)
 
 end ZiskFv.AirsClean.FullEnsemble.DomainComparison

@@ -1,6 +1,6 @@
-import ZiskFv.AirsClean.FullEnsemble.DomainComparison.Old16
+import Source415DomainComparison.Old16
 import ZiskFv.AirsClean.PackedVirtualTableSources
-import ZiskFv.Compliance.AcceptedZiskTrace.DomainComparison.FieldTransport
+import Source415DomainComparison.FieldTransport
 
 /-!
 # Concrete old16 to source18 witness splice
@@ -92,19 +92,27 @@ theorem binaryConsumerTable_environment (old : OldWitness p program) (row : Arra
 theorem extensionConsumerTable_environment (old : OldWitness p program) (row : Array FGL) :
     (extensionConsumerTable old).environment row = (oldTable old 11).environment row := rfl
 
+private theorem fixed_none_of_component_eq {component expected : Component FGL}
+    (equal : component = expected) (none : expected.fixedColumns = Option.none) :
+    component.fixedColumns = Option.none := by
+  cases equal
+  exact none
+
 theorem binaryConsumerTable_table (old : OldWitness p program) :
     (binaryConsumerTable old).table = (oldTable old 12).table := by
   change (oldTable old 12).rawRows = (oldTable old 12).table
   unfold Table.table
-  rw [old_binary_component]
-  rfl
+  have hnone : (oldTable old 12).component.fixedColumns = none :=
+    fixed_none_of_component_eq (old_binary_component old) rfl
+  simp only [hnone]
 
 theorem extensionConsumerTable_table (old : OldWitness p program) :
     (extensionConsumerTable old).table = (oldTable old 11).table := by
   change (oldTable old 11).rawRows = (oldTable old 11).table
   unfold Table.table
-  rw [old_extension_component]
-  rfl
+  have hnone : (oldTable old 11).component.fixedColumns = none :=
+    fixed_none_of_component_eq (old_extension_component old) rfl
+  simp only [hnone]
 
 /-- Original shared rows, in their original order; this includes mutable Mem. -/
 def commonTables (old : OldWitness p program) : List (Table FGL) :=
@@ -140,12 +148,12 @@ def completedWitness (old : OldWitness p program) (raw : Witness FGL) :
     intro index hi
     have hindex : index < 17 := by change index < 17 at hi; exact hi
     interval_cases index <;>
-      simp only [completedTables, commonTables, List.getElem_append,
-        List.length_cons, List.length_nil, List.getElem_cons_zero,
-        List.getElem_cons_succ, oldTable_component] <;> rfl
+      simp only [completedTables, commonTables, List.cons_append, List.nil_append,
+        List.getElem_cons_zero, List.getElem_cons_succ] <;>
+      first | rw [oldTable_component]; rfl | rfl
   same_data := by
     intro table ht
-    simp only [completedTables, commonTables, List.mem_append,
+    simp only [completedTables, commonTables, List.cons_append, List.nil_append,
       List.mem_cons, List.not_mem_nil, or_false] at ht
     rcases ht with
       ht | ht | ht | ht | ht | ht | ht | ht | ht | ht | ht |
@@ -223,9 +231,10 @@ theorem completed_component_membership (old : OldWitness p program) (raw : Witne
     [extensionConsumerTable old, binaryConsumerTable old, oldTable old 13,
       extensionProviderTable raw old.data, binaryProviderTable raw old.data]
     [oldTable old 14] removed_other inserted_other table hc
-  simpa only [EnsembleWitness.allTables, completedWitness_tables,
-    completedWitness_verifierTable, old_tables_eq, completedTables,
-    List.cons_append, List.append_assoc, List.cons_append, List.nil_append] using hs
+  change table ∈ old.verifierTable :: old.tables ↔
+    table ∈ (completedWitness old raw).verifierTable :: completedTables old raw
+  rw [completedWitness_verifierTable, old_tables_eq]
+  simpa only [completedTables, List.cons_append, List.append_assoc, List.nil_append] using hs
 
 theorem completed_mem_membership (old : OldWitness p program) (raw : Witness FGL)
     (table : Table FGL) (hc : table.component = Mem.componentWithDualMemBus) :

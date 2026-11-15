@@ -54,8 +54,12 @@ private theorem sum_balanceOf_support (interactions : List (Interaction FGL))
     · simpa only [ringChar.eq FGL GL_prime] using hlength
     · exact False.elim ((by decide : GL_prime ≠ 0)
         ((ringChar.eq FGL GL_prime).symm.trans hchar))
-  exact nat_eq_of_cast_eq
-    (lt_of_le_of_lt (List.countP_le_length _) hlength)
-    (lt_of_le_of_lt (List.countP_le_length _) hlength) hcast
+  have hpush : interactions.countP (fun interaction => decide (interaction.mult = 1)) <
+      GL_prime := lt_of_le_of_lt List.countP_le_length hlength
+  have hpull : interactions.countP (fun interaction => decide (interaction.mult = -1)) <
+      GL_prime := lt_of_le_of_lt List.countP_le_length hlength
+  have hvalue := congrArg Fin.val hcast
+  rwa [Fin.val_natCast, Fin.val_natCast, Nat.mod_eq_of_lt hpush,
+    Nat.mod_eq_of_lt hpull] at hvalue
 
 end ZiskFv.AirsClean.FullEnsemble.DomainComparison
