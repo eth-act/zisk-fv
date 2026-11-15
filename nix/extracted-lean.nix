@@ -136,6 +136,11 @@ stdenv.mkDerivation {
       --pilout ${zisk-pilout} \
       --output $out/SourceDimensions.lean
 
+    # Dedicated typed custom-commit view; does not extend Extraction.Circuit.
+    ${pil-extract}/bin/pil-extract rom-source \
+      --pilout ${zisk-pilout} \
+      --output $out/RomSource.lean
+
     # Reviewed byte-identical Clean component source.  Maintained modules
     # re-export these generated declarations instead of carrying a weld copy.
     mkdir -p $out/Components/BinaryAdd

@@ -1,0 +1,69 @@
+   Compiling proc-macro2 v1.0.106
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.45
+   Compiling anyhow v1.0.102
+   Compiling syn v2.0.117
+   Compiling either v1.15.0
+   Compiling once_cell v1.21.4
+   Compiling itertools v0.14.0
+   Compiling libc v0.2.186
+   Compiling cfg-if v1.0.4
+   Compiling prost-derive v0.13.5
+   Compiling getrandom v0.4.2
+   Compiling rustix v1.1.4
+   Compiling bytes v1.11.1
+   Compiling regex-syntax v0.8.10
+   Compiling equivalent v1.0.2
+   Compiling heck v0.5.0
+   Compiling bitflags v2.11.1
+   Compiling memchr v2.8.0
+   Compiling prettyplease v0.2.37
+   Compiling hashbrown v0.17.0
+   Compiling linux-raw-sys v0.12.1
+   Compiling indexmap v2.14.0
+   Compiling aho-corasick v1.1.4
+   Compiling regex-automata v0.4.14
+   Compiling prost v0.13.5
+   Compiling fastrand v2.4.1
+   Compiling fixedbitset v0.5.7
+   Compiling utf8parse v0.2.2
+   Compiling anstyle-parse v1.0.0
+   Compiling petgraph v0.7.1
+   Compiling regex v1.12.3
+   Compiling tempfile v3.27.0
+   Compiling prost-types v0.13.5
+   Compiling tracing-core v0.1.36
+   Compiling colorchoice v1.0.5
+   Compiling anstyle v1.0.14
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling anstyle-query v1.1.5
+   Compiling log v0.4.29
+   Compiling multimap v0.10.1
+   Compiling anstream v1.0.0
+   Compiling prost-build v0.13.5
+   Compiling tracing-attributes v0.1.31
+   Compiling strsim v0.11.1
+   Compiling pin-project-lite v0.2.17
+   Compiling clap_lex v1.1.0
+   Compiling lazy_static v1.5.0
+   Compiling sharded-slab v0.1.7
+   Compiling clap_builder v4.6.0
+   Compiling tracing-log v0.2.0
+   Compiling tracing v0.1.44
+   Compiling pil-extract v0.1.0 (/tmp/closure-rom-bounded-packet/tools/pil-extract)
+   Compiling matchers v0.2.0
+   Compiling clap_derive v4.6.1
+   Compiling thread_local v1.1.9
+   Compiling smallvec v1.15.1
+   Compiling nu-ansi-term v0.50.3
+   Compiling tracing-subscriber v0.3.23
+   Compiling clap v4.6.1
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.29s
+     Running unittests src/main.rs (tools/pil-extract/target/debug/deps/pil_extract-039a8f32f1a8c91b)
+
+running 2 tests
+test rom_source::tests::cyclic_expression_graph_is_rejected ... ok
+test rom_source::tests::missing_operand_is_rejected_without_fallback ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 107 filtered out; finished in 0.00s
+

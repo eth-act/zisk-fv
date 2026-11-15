@@ -1528,5 +1528,40 @@ witnesses still come from current `RegAgree`; PC presence comes from the
 generated-state invariant. The concrete SD root consumer also uses its complete
 certificate. This is runtime-data canonicalization/domain preservation, not
 removal of the aggregate `InputsAgreeCore` premise or a proof of memory induction.
-Existing PureSpec/per-op/root/validator interfaces and load predicates are
-unchanged; no load-read field or source-word witness is introduced.
+The four-store change alone leaves the existing PureSpec/per-op/root/validator
+interfaces and load predicates unchanged; it introduces no load-read field or
+source-word witness.
+
+## Seven-load canonical runtime inputs
+
+The explicitly approved LD/LBU/LHU/LWU/LB/LH/LW cutover adds exactly three
+proof fields per family: a successful same-state read of decoded r1, presence
+of the current Sail PC, and successful reads of every byte at the EXISTING
+unwrapped address. Claims retain only decoded r1/rd/imm. These twenty-one
+fields are redundant consequences of the complete old opcode predicates,
+not additional execution-domain conditions.
+
+Each `InputsCore_<load>.of_state_assumptions` accepts the whole old surface:
+the original input and unchanged opcode predicate, mode registers, memory
+provider and row, A-lane equality, platform predicate, message equality,
+selection/write tags, and the old unsigned-load alignment witness where
+applicable. It returns the complete new Core AND equality of its WHOLE
+canonical input to the original input, including all bytes. No read, PC,
+mappedness, parse or equality hypothesis is added. Every live load arm of
+`pureInputsOfRegAgree` consumes that equality to transport the entire old
+predicate; the concrete LD root witness consumes its certificate as well.
+
+The load PC defect bounds now use Main.pc. The independent
+`OldLoadDomainComparison.old_root_domain_pc_and_load_avoid` theorem in
+`Soundness.lean` retains the exact old Sail-input-PC comparison domain.
+It and the public root specialize one PRIVATE coupled register/PC induction:
+only after deriving the current step's PC tie does the old specialization
+transport the old exclusion to Main. It never calls the retargeted public
+root to establish that tie. All six narrow-load forge exclusions and all
+non-load exclusions are unchanged.
+
+The public root signature and validators are unchanged. The load predicates'
+unwrapped natural-address semantics, including their negative-immediate
+coverage defect, are unchanged. This is runtime-data canonicalization and
+old-domain preservation, not aggregate premise removal, independent memory
+induction, source-derived load A-slot grounding, or closure of #360/#417/#172.

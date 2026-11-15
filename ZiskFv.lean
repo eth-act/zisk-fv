@@ -14,6 +14,9 @@ import ZiskFv.AirsClean.ArithMul.RangeWiring
 import ZiskFv.AirsClean.ArithMul.ExtractedRow
 import ZiskFv.AirsClean.Main.Wiring
 import ZiskFv.AirsClean.Main.RomWiring
+import ZiskFv.AirsClean.ZiskInstructionRomImage
+import ZiskFv.AirsClean.ZiskInstructionRomProvider
+import ZiskFv.AirsClean.ZiskInstructionRomSource
 import ZiskFv.AirsClean.Main.MemoryWiring
 import ZiskFv.AirsClean.BinaryExtension.ExtractedWiring
 import ZiskFv.AirsClean.MemAlign.ExtractedWiring

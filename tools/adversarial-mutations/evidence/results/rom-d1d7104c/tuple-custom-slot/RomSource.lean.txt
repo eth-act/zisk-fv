@@ -1,0 +1,54 @@
+import Mathlib.Algebra.Field.Defs
+
+/-! Generated from the Rom AIR and its lookup hint. Custom commitment identifiers,
+stages, columns and signed rotations are retained, never decoded from Debug text.
+This view does NOT establish public-root authentication or image-layout binding.
+Signed rotations are interpreted by the source view, without Nat subtraction.
+-/
+namespace Extraction.RomSource
+
+structure CommittedSource (F : Type) where
+  custom : Nat → Nat → Nat → Int → Int → F
+  witness : Nat → Nat → Int → Int → F
+  fixed : Nat → Int → Int → F
+  challenge : Nat → Nat → F
+  airValue : Nat → F
+  airGroupValue : Nat → F
+
+variable {F : Type} [Field F]
+
+def polynomial_0 (source : CommittedSource F) (row : Int) : F :=
+  ((((source.witness 2 0 row (0)) - ((source.witness 2 0 row (-1)) * (1 - (source.fixed 0 row (0))))) * ((((((((((((((((((((((((source.custom 0 0 10 row (0)) * (source.challenge 2 0)) + (source.custom 0 0 9 row (0))) * (source.challenge 2 0)) + (source.custom 0 0 8 row (0))) * (source.challenge 2 0)) + (source.custom 0 0 7 row (0))) * (source.challenge 2 0)) + (source.custom 0 0 6 row (0))) * (source.challenge 2 0)) + (source.custom 0 0 5 row (0))) * (source.challenge 2 0)) + (source.custom 0 0 4 row (0))) * (source.challenge 2 0)) + (source.custom 0 0 2 row (0))) * (source.challenge 2 0)) + (source.custom 0 0 3 row (0))) * (source.challenge 2 0)) + (source.custom 0 0 1 row (0))) * (source.challenge 2 0)) + (source.custom 0 0 0 row (0))) * (source.challenge 2 0)) + 7890) + (source.challenge 2 1))) - (source.witness 1 0 row (0)))
+
+def sourceConstraint_0_every_row (source : CommittedSource F) (row : Int) : Prop :=
+  polynomial_0 source row = 0
+
+def polynomial_1 (source : CommittedSource F) (row : Int) : F :=
+  ((source.fixed 0 row (1)) * ((source.airGroupValue 0) - (source.witness 2 0 row (0))))
+
+def sourceConstraint_1_every_row (source : CommittedSource F) (row : Int) : Prop :=
+  polynomial_1 source row = 0
+
+def constraintDomains : List String := ["every_row", "every_row"]
+
+def numRows : Nat := 4194304
+
+def commitments : List (Nat × List Nat × List Nat) := [(0, [11], [0, 1, 2, 3])]
+
+def busId (source : CommittedSource F) (row : Int) : F :=
+  7890
+
+def providerKind (source : CommittedSource F) (row : Int) : F :=
+  1
+
+def multiplicity (source : CommittedSource F) (row : Int) : F :=
+  ((source.witness 1 0 row (0)) + 0)
+
+def piop : String := "Lookup"
+
+def slotNames : List String := ["line", "a_offset_imm0", "b_offset_imm0", "a_imm1", "b_imm1", "ind_width", "op", "store_offset", "jmp_offset1", "jmp_offset2", "flags"]
+
+def lookupTuple (source : CommittedSource F) (row : Int) : List F :=
+  [((source.custom 0 0 0 row (0)) + 0), ((source.custom 0 0 1 row (0)) + 0), ((source.custom 0 0 3 row (0)) + 0), ((source.custom 0 0 2 row (0)) + 0), ((source.custom 0 0 4 row (0)) + 0), ((source.custom 0 0 5 row (0)) + 0), ((source.custom 0 0 6 row (0)) + 0), ((source.custom 0 0 7 row (0)) + 0), ((source.custom 0 0 8 row (0)) + 0), ((source.custom 0 0 9 row (0)) + 0), ((source.custom 0 0 10 row (0)) + 0)]
+
+end Extraction.RomSource

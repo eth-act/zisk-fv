@@ -1,0 +1,181 @@
+import hashlib,importlib.util,json,os,pathlib,re,subprocess,sys,time
+repo=pathlib.Path('/tmp/closure-rom-bounded-packet')
+work=pathlib.Path('/tmp/closure-rom-bounded-evidence/production-controls')
+zisk=pathlib.Path('/nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source')
+proofman=pathlib.Path('/nix/store/zqhhhzb9rq7gcbv46c1fz4k91pk42yni-source')
+wrapper=pathlib.Path('/nix/store/rxq573nc5scy774b0fx1ckgz8vz8pvd7-compile-mutation/bin/compile-mutation')
+compiler=pathlib.Path('/nix/store/l1qla9chybhkiw893rqfyj75jx61px0j-pil2-compiler-0.9.0/src/pil.js')
+extractor=repo/'tools/pil-extract/target/debug/pil-extract'
+rom_rel=pathlib.Path('state-machines/rom/pil/rom.pil')
+sum_rel=pathlib.Path('pil2-components/lib/std/pil/std_sum.pil')
+fixed=pathlib.Path('/nix/store/14aay7640sy7qaarlja5g72gba45rc7w-zisk-pilout-git-b632745-fixed')
+proof_file=repo/'ZiskFv/AirsClean/ZiskInstructionRomSource.lean'
+work.mkdir(parents=True,exist_ok=False)
+sys.path.insert(0,str(repo/'tools/pilout-roundtrip'))
+import pilout_wire,poly
+spec=importlib.util.spec_from_file_location('rom_semdiff',repo/'tools/adversarial-mutations/semdiff.py')
+semdiff=importlib.util.module_from_spec(spec);sys.modules[spec.name]=semdiff;spec.loader.exec_module(semdiff)
+def digest(path):
+ h=hashlib.sha256()
+ with path.open('rb') as stream:
+  for block in iter(lambda:stream.read(1048576),b''):h.update(block)
+ return h.hexdigest()
+report={'source_commit':subprocess.check_output(['/usr/bin/git','rev-parse','HEAD'],cwd=repo,text=True).strip(),'zisk_revision':'b63274507a040bf9e09d22214df43066e8f80cb7','zisk_source':str(zisk),'proofman_source':str(proofman),'compiler':str(compiler),'wrapper':str(wrapper),'extractor_sha256':digest(extractor),'pinned_pilout_sha256':digest(repo/'build/zisk.pilout'),'stdlib_sha256':digest(proofman/sum_rel),'rom_pil_sha256':digest(zisk/rom_rel),'compiler_sha256':digest(compiler),'wrapper_sha256':digest(wrapper),'commands':[],'cases':{},'complete':False}
+proofs={str(p.relative_to(repo)):digest(p) for p in (repo/'ZiskFv').rglob('*.lean')}
+report['proof_sources']=proofs
+pinned_source_text=(repo/'build/extraction/Extraction/RomSource.lean').read_text()
+report['pinned_generated_source_sha256']=digest(repo/'build/extraction/Extraction/RomSource.lean')
+report['profile_inputs']={str(path.relative_to(repo)):digest(path) for path in [repo/'lakefile.toml',repo/'lake-manifest.json',repo/'lean-toolchain',repo/'tools/pil-extract/Cargo.lock',repo/'tools/pil-extract/src/main.rs',repo/'tools/pil-extract/src/rom_source.rs',repo/'tools/pil-extract/proto/pilout.proto']}
+report['fixed_payloads']={str(p.relative_to(fixed)):digest(p) for p in [fixed/'state-machines/arith/src/arith_frops_fixed.bin',fixed/'state-machines/binary/src/binary_basic_frops_fixed.bin',fixed/'state-machines/binary/src/binary_extension_frops_fixed.bin']}
+def save(): (work/'results.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
+def run(argv,cwd,log):
+ start=time.monotonic()
+ with log.open('w') as output: result=subprocess.run([str(x) for x in argv],cwd=cwd,stdout=output,stderr=subprocess.STDOUT,env={**os.environ,'LEAN_NUM_THREADS':'2','CARGO_BUILD_JOBS':'2'})
+ record={'argv':[str(x) for x in argv],'cwd':str(cwd),'log':str(log),'exit_code':result.returncode,'seconds':round(time.monotonic()-start,3)}
+ report['commands'].append(record);save();return result.returncode
+
+def need(argv,cwd,log):
+ code=run(argv,cwd,log)
+ if code:raise RuntimeError(f'command failed ({code}): {argv}; {log}')
+def frozen():
+ for relative,expected in proofs.items():
+  if digest(repo/relative)!=expected:raise RuntimeError(f'human proof source changed: {relative}')
+def clone(src,dst,log):
+ need(['cp','-r','--reflink=never','--no-preserve=mode',src,dst],repo,log)
+ count=0
+ for original in src.rglob('*'):
+  copied=dst/original.relative_to(src)
+  if original.is_symlink():
+   if not copied.is_symlink() or os.readlink(original)!=os.readlink(copied):raise RuntimeError(f'symlink copy mismatch: {original}')
+  elif original.is_file():subprocess.run(['cmp','--silent',original,copied],check=True);count+=1
+ return count
+
+def snapshot(path):
+ parsed=pilout_wire.load(path)
+ if parsed.unknown_fields():raise RuntimeError(f'unknown pilout schema: {parsed.unknown_fields()}')
+ output={}
+ def tree_hash(tree,cache):
+  identity=id(tree)
+  if identity in cache:return cache[identity]
+  value=tree if tree[0] in ('constant','atom') else (tree[0],tuple(tree_hash(child,cache) for child in tree[1]))
+  hashed=hashlib.sha256(repr(value).encode()).hexdigest();cache[identity]=hashed;return hashed
+ for ref in parsed.airs():
+  air=ref.air; memo={}; active=set(); hashes={}
+  def operand(value):
+   if value.kind=='expression':return expression(value.idx)
+   if value.kind=='constant':return ('constant',value.value%poly.P)
+   return ('atom',value.kind,value.idx,value.stage,value.col_idx,value.row_offset,value.commit_id)
+  def expression(index):
+   if index in memo:return memo[index]
+   if index in active:raise RuntimeError('cyclic source expression')
+   active.add(index);item=air.expressions[index];value=(item.kind,tuple(operand(x) for x in item.operands));active.remove(index);memo[index]=value;return value
+  for index,constraint in enumerate(air.constraints):
+   tree=expression(constraint.expression_idx)
+   output[(ref.airgroup_idx,ref.air_idx,ref.air_name,index)]=(constraint.kind,constraint.offset_min,constraint.offset_max,tree_hash(tree,hashes),tree)
+ return parsed,output
+
+def polynomial(tree,memo):
+ identity=id(tree)
+ if identity in memo:return memo[identity]
+ kind=tree[0]
+ if kind=='constant':value=poly.Poly.const(tree[1])
+ elif kind=='atom':value=poly.Poly.atom(tree[1:])
+ else:
+  operands=[polynomial(x,memo) for x in tree[1]]
+  if kind=='add':value=operands[0]+operands[1]
+  elif kind=='sub':value=operands[0]-operands[1]
+  elif kind=='mul':value=operands[0]*operands[1]
+  elif kind=='neg':value=-operands[0]
+  else:raise RuntimeError(f'unknown source operation {kind}')
+ memo[identity]=value;return value
+
+def compare_all(left_path,right_path):
+ left_meta,left=snapshot(left_path);right_meta,right=snapshot(right_path)
+ metadata=lambda value:[(r.airgroup_idx,r.air_idx,r.air_name,r.air.num_rows,r.air.stage_widths,r.air.custom_commit_names,r.air.air_value_stages,r.air.aggregable) for r in value.airs()]
+ meta_equal=metadata(left_meta)==metadata(right_meta) and (left_meta.base_field_prime,left_meta.num_challenges,left_meta.num_public_values)==(right_meta.base_field_prime,right_meta.num_challenges,right_meta.num_public_values)
+ changed=[];equivalent=[]
+ for key in sorted(set(left)|set(right)):
+  a=left.get(key);b=right.get(key)
+  if a is not None and b is not None and a[:4]==b[:4]:continue
+  if a is None or b is None or a[:3]!=b[:3]:changed.append(list(key));continue
+  if polynomial(a[4],{}).canonical()==polynomial(b[4],{}).canonical():equivalent.append(list(key))
+  else:changed.append(list(key))
+ return {'equal':meta_equal and not changed,'metadata_equal':meta_equal,'constraint_count_left':len(left),'constraint_count_right':len(right),'changed_constraints':changed,'algebraically_equal_changed_trees':equivalent,'custom_col_coordinates_retained':['commit_id','stage','col_idx','row_offset'],'scope':'all AIR polynomial constraints, domains, AIR row/schema metadata, field/challenges/public-count; dedicated RomSource equality additionally pins ROM hint/commit metadata'}
+
+line="    (gsum - 'gsum * (1 - L1) - sum_ims) * direct_den - direct_num === 0;"
+recipes={
+ 'baseline':None,
+ 'harmless-comment':('zisk',rom_rel,'require "std_lookup.pil"','// ROM production neutral control\nrequire "std_lookup.pil"'),
+ 'tuple-custom-slot':('zisk',rom_rel,'[line, a_offset_imm0, a_imm1, b_offset_imm0, b_imm1, ind_width,','[line, a_offset_imm0, b_offset_imm0, a_imm1, b_imm1, ind_width,'),
+ 'provider-weight':('zisk',rom_rel,'mul: multiplicity);','mul: -multiplicity);'),
+ 'c0-direct-sign':('proofman',sum_rel,line,line.replace('- direct_num ===','+ direct_num ===')),
+}
+expected={'tuple-custom-slot':['lookupTuple_sourceOfImage','polynomial_0_sourceOfImage'],'provider-weight':['multiplicity_sourceOfImage','polynomial_0_sourceOfImage'],'c0-direct-sign':['polynomial_0_sourceOfImage']}
+declarations=[]
+for number,text in enumerate(proof_file.read_text().splitlines(),1):
+ match=re.match(r'(?:theorem|def) ([A-Za-z_][A-Za-z0-9_]*)',text)
+ if match:declarations.append((number,match.group(1)))
+def definition(text,name):
+ match=re.search(r'^def '+re.escape(name)+r'\b.*?(?=\n\n|\Z)',text,re.M|re.S)
+ if not match:raise RuntimeError(f'missing generated definition {name}')
+ return match.group(0)
+save()
+try:
+ for name,recipe in recipes.items():
+  print('BEGIN_CASE',name,flush=True)
+  case=work/name;case.mkdir();src=case/'zisk';std=case/'proofman'
+  info={'zisk_regular_files_compared':clone(zisk,src,case/'copy-zisk.log'),'proofman_regular_files_compared':clone(proofman,std,case/'copy-proofman.log')}
+  if recipe:
+   tree,relative,before,after=recipe;path=(src if tree=='zisk' else std)/relative
+   original=path.read_text()
+   if original.count(before)!=1:raise RuntimeError(f'{name}: source anchor count {original.count(before)}')
+   path.write_text(original.replace(before,after));info['source_mutation']={'path':str(relative),'before':before,'after':after,'before_sha256':hashlib.sha256(original.encode()).hexdigest(),'after_sha256':digest(path)}
+  text=wrapper.read_text();old=str(proofman/'pil2-components/lib/std/pil')
+  if text.count(old)!=1:raise RuntimeError('stdlib include anchor differs')
+  text=text.replace(old,str(std/'pil2-components/lib/std/pil')).replace('cp --no-preserve=mode','cp --reflink=never --no-preserve=mode')
+  private=case/'compile-source';private.write_text(text);private.chmod(0o755)
+  info['private_wrapper_sha256']=digest(private);out=case/'zisk.pilout'
+  need([private,src,out],repo,case/'compile.log')
+  info['pilout_sha256']=digest(out)
+  base=repo/'build/zisk.pilout' if name=='baseline' else work/'baseline/zisk.pilout'
+  info['canonical']=compare_all(base,out)
+  info['legacy_declared_air_comparison']=semdiff.compare(base,out)
+  if (name in ('baseline','harmless-comment'))!=info['canonical']['equal']:raise RuntimeError(f'{name}: wrong canonical source disposition')
+  generated=case/'RomSource.lean'
+  need([extractor,'rom-source','--pilout',out,'--output',generated],repo,case/'generate.log')
+  info['generated_sha256']=digest(generated)
+  actual=generated.read_text()
+  if name=='baseline':
+   baseline_text=actual
+   info['generated_equal_initial_pinned_source']=actual==pinned_source_text
+   if actual!=pinned_source_text:raise RuntimeError('fresh baseline dedicated projection differs from initial pinned production projection')
+  elif name=='harmless-comment':
+   if actual!=baseline_text:raise RuntimeError('neutral comment changed dedicated generated source')
+  else:
+   names=['lookupTuple','multiplicity','polynomial_0','polynomial_1','slotNames','constraintDomains','commitments','busId','providerKind','numRows','piop']
+   info['changed_generated_definitions']=[key for key in names if definition(actual,key)!=definition(baseline_text,key)]
+   if 'polynomial_0' not in info['changed_generated_definitions']:raise RuntimeError(f'{name}: intended c0 source expression unchanged')
+   if name=='c0-direct-sign' and info['changed_generated_definitions']!=['polynomial_0']:raise RuntimeError('c0-only control changed hint/schema/finalizer projection')
+  target=repo/'build/extraction/Extraction/RomSource.lean'
+  subprocess.run(['cp','--reflink=never',generated,target],check=True);subprocess.run(['cmp','--silent',generated,target],check=True)
+  frozen();code=run(['lake','build','ZiskFv.AirsClean.ZiskInstructionRomSource'],repo,case/'lean.log');frozen()
+  info['proof_exit_code']=code
+  if name in ('baseline','harmless-comment'):
+   if code:raise RuntimeError(f'{name}: actual unchanged/neutral proof not green')
+  else:
+   log=(case/'lean.log').read_text(errors='replace');hits=[]
+   for record in log.splitlines():
+    match=re.search(r'ZiskFv/AirsClean/ZiskInstructionRomSource\.lean:(\d+):\d+: (?:error: )?(.*)',record)
+    if not match or ('error:' not in record and not record.startswith('error:')):continue
+    number=int(match.group(1));prior=[(n,d) for n,d in declarations if n<=number]
+    if prior:hits.append({'declaration':prior[-1][1],'line':number,'diagnostic':match.group(2)})
+   info['named_rejections']=hits
+   info['missing_named_rejections']=sorted(set(expected[name])-{hit['declaration'] for hit in hits})
+   bad=[word for word in ['timeout','unknown constant','does not exist','unexpected token','unknown module'] if word in log.lower()]
+   info['nonsemantic_failure_markers']=bad
+   if code==0 or info['missing_named_rejections'] or bad:raise RuntimeError(f'{name}: not a named source-proof rejection')
+  report['cases'][name]=info;save();print('END_CASE',name,'exit',code,flush=True)
+ report['complete']=True;report['result']='fresh production baseline and harmless comment green; three genuine source mutations rejected by named ROM source correspondence proofs';save()
+ print(json.dumps({'complete':True,'report':str(work/'results.json')},indent=2),flush=True)
+except Exception as error:
+ report['error']=repr(error);save();raise

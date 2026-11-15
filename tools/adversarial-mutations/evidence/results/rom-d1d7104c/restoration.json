@@ -1,0 +1,10 @@
+{
+  "command": "LEAN_NUM_THREADS=2 lake --rehash build ZiskFv.AirsClean.ZiskInstructionRomSource",
+  "copy_command": "cp --reflink=never followed by cmp --silent",
+  "exit_code": 0,
+  "full_gates_run": false,
+  "generated_source_sha256": "51e310e18b3738381e1215cd8a1a12fc4394724fa0f271ba796ca13c67505f17",
+  "log": "restored-baseline.log",
+  "observed": "Extraction.RomSource and Image built; Source replayed; build completed successfully (1672 jobs).",
+  "restored_from": "production-controls/baseline/RomSource.lean"
+}
