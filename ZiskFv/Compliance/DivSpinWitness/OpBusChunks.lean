@@ -24,10 +24,11 @@ def divSpinOpBusTables1 : List (Table FGL) :=
 def divSpinOpBusTables2 : List (Table FGL) :=
   [emptyComponentTable ZiskFv.AirsClean.ArithDiv.component,
     divSpinArithTable,
-    emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent]
+    emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent]
 
 def divSpinOpBusTables3 : List (Table FGL) :=
-  [divSpinRemainderBoundTable, divSpinBinaryAddTable, divSpinMainTable]
+  [divSpinRemainderBoundTable, divSpinBinaryAddTable,
+    divSpinExtensionSourceTable, divSpinBinarySourceTable, divSpinMainTable]
 
 theorem divSpinTables_opBusChunks :
     divSpinTables =
@@ -66,10 +67,11 @@ theorem divSpinOpBusTables3_flatMap :
       , mainOpBusInteraction divSpinDivRow
       , mainOpBusInteraction (divSpinJalRow 3)
       , mainOpBusInteraction (divSpinJalRow 4) ] := by
-  simp only [divSpinOpBusTables3, List.flatMap_cons, List.flatMap_nil,
+  simp [divSpinOpBusTables3, List.flatMap_cons, List.flatMap_nil,
+    divSpinBinarySourceTable_other_channel OpBusChannel.toRaw (by decide),
+    divSpinExtensionSourceTable_other_channel OpBusChannel.toRaw (by decide),
     List.append_nil, divSpinRemainderBoundTable_opBusInteractions,
     divSpinBinaryAddTable_opBusInteractions, divSpinMainTable_opBusInteractions,
     divSpinBinaryAddRows, divSpinMainRows, List.map_cons, List.map_nil]
-  rfl
 
 end ZiskFv.Compliance.DivSpinWitness

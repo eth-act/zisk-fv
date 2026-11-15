@@ -45,14 +45,13 @@ private theorem divSpinWitness_main_component_cases
     exfalso
     exact not_divSpin_main_component_of_width_ne (by decide) h_component
   · rw [divSpinWitness_tables] at h_table
-    simp [divSpinTables] at h_table
+    simp only [divSpinTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals first
+      | (exfalso; exact not_divSpin_main_component_of_name_ne (by decide) h_component)
       | rfl
-      | exfalso
-        exact not_divSpin_main_component_of_name_ne (by decide) h_component
 
 private theorem divSpinWitness_mutable_mem_component_tables_empty
     (table : Table FGL) (h_table : table ∈ divSpinWitness.allTables)
@@ -65,9 +64,9 @@ private theorem divSpinWitness_mutable_mem_component_tables_empty
     rw [h_verifier, EnsembleWitness.verifierTable_component] at h_component
     exact not_divSpin_mutable_mem_component_of_name_ne (by decide) h_component
   · rw [divSpinWitness_tables] at h_table
-    simp [divSpinTables] at h_table
+    simp only [divSpinTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exfalso
       exact not_divSpin_mutable_mem_component_of_name_ne (by decide) h_component
@@ -84,6 +83,10 @@ private theorem divSpinWitness_mutable_mem_component_tables_empty
     · exfalso
       exact not_divSpin_mutable_mem_component_of_name_ne (by decide) h_component
     · exact emptyComponentTable_table _
+    · exfalso
+      exact not_divSpin_mutable_mem_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_divSpin_mutable_mem_component_of_name_ne (by decide) h_component
     · exfalso
       exact not_divSpin_mutable_mem_component_of_name_ne (by decide) h_component
     · exfalso
