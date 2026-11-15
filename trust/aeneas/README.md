@@ -19,3 +19,22 @@ That command regenerates `build/aeneas-production-extraction/Lean/ProductionM2.l
 and fails unless it is byte-identical to this tracked copy. Temporary LLBC files
 and generated harness modules such as `GeneratedChecks.lean` remain untracked
 under `build/`.
+
+The additive `ProductionM2/RomFlags.lean` module extracts the existing
+`ZiskInst::get_flags` method directly from the same 9ca88b5 source under the
+`aeneas_extract` profile, in a separate namespace. It does not alter
+`ProductionM2.lean` or claim extraction of `RomSM::compute_trace_rom`.
+
+Regenerate only this module from a checkout of that source revision:
+
+```bash
+ZISK_ROM_SOURCE=/path/to/zisk scripts/aeneas-rom-flags-extract.sh --update
+```
+
+Run in the existing Nix development shell for the Cargo/cross-compiler tools.
+The recipe copies the actual tracked source into its private build directory;
+it adds no Rust wrapper or replacement function. Its provenance manifest
+records the exact source contents, root span, profile, LLBC and generated hash.
+`ZiskFv.Compliance.RomProducerFlags` relates the returned flag word to
+`Main.packFlags`; the separate eleven-slot ROM serializer remains a distinct
+producer obligation.
