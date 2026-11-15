@@ -2,8 +2,8 @@ import ZiskFv.Compliance.TraceLevelExport.RegisterFileAgreement
 
 namespace ZiskFv.Compliance
 
-/-- The current input surface already requires a present PC in every arm.
-This extracts that fact without interpreting an absent register as zero. -/
+/-- The input surface requires a present PC in every arm, including the canonical
+load inputs. This extracts presence without interpreting an absent register as zero. -/
 theorem inputsAgreeCore_pc_present {n : Nat} {trace : AcceptedZiskTrace n}
     {binding : SailTrace n} (i : Fin n) (step : ZiskStep trace i)
     (inputs : InputsAgreeCore trace binding i step) :
@@ -13,7 +13,6 @@ theorem inputsAgreeCore_pc_present {n : Nat} {trace : AcceptedZiskTrace n}
     | exact inputs.h_input_pc
     | exact ⟨_, inputs.h_input_pc⟩
     | exact ⟨_, inputs.promises.input_pc_eq⟩
-    | exact ⟨_, inputs.h_opcode_assumptions.1⟩
 
 /-- A successful sound step writes a present nextPC; Sail's existing retire law
 therefore gives PC presence at the successor. This does not require row-index
