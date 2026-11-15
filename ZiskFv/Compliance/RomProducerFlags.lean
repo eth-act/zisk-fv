@@ -25,7 +25,7 @@ open Goldilocks
 open ZiskFv.AirsClean.Main (RomFlagBits)
 
 private def operationType
-    (op : zisk_core.zisk_inst.ZiskOperationType) : zisk_rom_flags.zisk_inst.ZiskOperationType :=
+    (op : zisk_core.zisk_inst.ZiskOperationType) : zisk_rom_flags.zisk_inst.RomFlagsOperationType :=
   match op with
   | .None => .None
   | .Internal => .Internal
@@ -138,8 +138,7 @@ private theorem wordFrom_val (bits : List Bool) (index : Nat) (acc : Std.U64)
     have h_index : index < 64 := by simp only [List.length_cons] at h_width; omega
     have h_next : (acc ||| shiftedBool bit index).val < 2 ^ (index + 1) := by
       rw [UScalar.val_or, shiftedBool_val bit index h_index, append_bit _ _ h_acc]
-      cases bit <;> simp only [Bool.toNat, Nat.mul_zero, Nat.mul_one, Nat.add_zero] <;>
-        rw [Nat.pow_succ] <;> omega
+      cases bit <;> simp [Nat.pow_succ] <;> omega
     simp only [wordFrom, natFrom]
     rw [ih (index + 1) _ h_next (by simp only [List.length_cons] at h_width; omega)]
     rw [UScalar.val_or, shiftedBool_val bit index h_index, append_bit _ _ h_acc]
@@ -152,17 +151,23 @@ private theorem flagNat_cast (bits : RomFlagBits) :
     Nat.cast_add, Nat.cast_mul, Nat.cast_pow, bool_cast]
   norm_num
 
+private theorem checked_shift (x : Std.U64) (shift : Std.I32)
+    (h_nonneg : 0 ≤ shift.val) (h_bound : shift.toNat < 64) :
+    (x <<< shift) = ok (⟨x.bv <<< shift.toNat⟩ : Std.U64) := by
+  change UScalar.shiftLeft_IScalar x shift = _
+  simp only [UScalar.shiftLeft_IScalar, h_nonneg, ↓reduceIte,
+    UScalar.shiftLeft, UScalarTy.U64_numBits_eq, h_bound, ↓reduceIte] <;> rfl
+
 /-- The actual source function is total and returns the ordered bit fold.
 Every fallible shift uses a literal position below 64. -/
 private theorem get_flags_word (i : zisk_rom_flags.zisk_inst.ZiskInst) :
     i.get_flags = ok (wordFrom (bitList (sourceBits i)) 1 1#u64) := by
-  simp [zisk_rom_flags.zisk_inst.ZiskInst.get_flags,
+  simp (disch := decide) only [zisk_rom_flags.zisk_inst.ZiskInst.get_flags,
     zisk_rom_flags.zisk_inst.SRC_IMM, zisk_rom_flags.zisk_inst.SRC_MEM,
     zisk_rom_flags.zisk_inst.SRC_IND, zisk_rom_flags.zisk_inst.SRC_REG,
     zisk_rom_flags.zisk_inst.STORE_MEM, zisk_rom_flags.zisk_inst.STORE_IND,
     zisk_rom_flags.zisk_inst.STORE_REG, sourceBits, bitList, wordFrom, shiftedBool,
-    HShiftLeft.hShiftLeft, UScalar.shiftLeft_IScalar, UScalar.shiftLeft,
-    IScalar.toNat, IScalar.val, UScalarTy.numBits, lift, Bind.bind, bind_ok]
+    checked_shift, lift, Bind.bind, bind_ok] <;> rfl
 
 /-- Genuine producer correspondence: the returned Rust `u64`, embedded in
 Goldilocks, is exactly the existing Main ROM flag packing. This theorem uses

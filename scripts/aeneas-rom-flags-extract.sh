@@ -9,8 +9,8 @@ REVISION=9ca88b5b182fd7d534343181354f5319528c82d2
 UPDATE=0
 case "${1:-}" in
   --update) UPDATE=1 ;;
-  "") ;;
-  *) echo "Usage: ZISK_ROM_SOURCE=/path/to/zisk $0 [--update]" >&2; exit 2 ;;
+  --check|"") ;;
+  *) echo "Usage: ZISK_ROM_SOURCE=/path/to/zisk $0 [--check|--update]" >&2; exit 2 ;;
 esac
 if [[ "$(git -C "$SOURCE" rev-parse HEAD)" != "$REVISION" ]]; then
   echo "ROM producer extraction requires the existing 9ca88b5 source pin" >&2
@@ -75,6 +75,22 @@ if (meta['opacity'] != 'Transparent' or not isinstance(function['body'], dict)
     raise SystemExit('Actual get_flags source body was not preserved')
 if source_file['contents'] != (root / 'source/core/src/zisk_inst.rs').read_text():
     raise SystemExit('LLBC source contents differ from the actual copied source')
+# The pinned discriminant elaborator gives anonymous instances global names.
+# Isolate only this additive enum's Lean identifier, keeping every constructor
+# and attribute and the actual get_flags signature/body byte-identical.
+generated_path = root / 'Lean/RomFlags.lean'
+raw = generated_path.read_text()
+old = 'zisk_inst.ZiskOperationType'
+new = 'zisk_inst.RomFlagsOperationType'
+if new in raw or raw.count(old) != 20:
+    raise SystemExit('Unexpected additive enum alpha-isolation shape')
+raw_path = root / 'Lean/RomFlags.raw.lean'
+raw_path.write_text(raw)
+renamed = raw.replace(old, new)
+method = 'def zisk_inst.ZiskInst.get_flags'
+if raw[raw.index(method):] != renamed[renamed.index(method):]:
+    raise SystemExit('Alpha-isolation changed the actual get_flags body')
+generated_path.write_text(renamed)
 manifest = {
     'sourceRevision': sys.argv[2], 'aeneasFlake': sys.argv[3],
     'profile': {'cargoFeatures': ['aeneas_extract'], 'target': 'host'},
@@ -83,6 +99,8 @@ manifest = {
     'functionSourceSha256': hashlib.sha256(meta['source_text'].encode()).hexdigest(),
     'sourceFiles': {p: sha(root / 'source' / p) for p in files},
     'llbcSha256': sha(root / 'rom_flags.llbc'),
+    'rawGeneratedSha256': sha(raw_path),
+    'alphaIsolation': {'from': old, 'to': new, 'qualifiedIdentifierOccurrences': 20},
     'generatedSha256': sha(root / 'Lean/RomFlags.lean'),
 }
 (root / 'provenance.json').write_text(json.dumps(manifest, indent=2) + '\n')

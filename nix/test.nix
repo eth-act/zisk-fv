@@ -1,5 +1,5 @@
 { writeShellApplication, elan, cargo, rustc, protobuf, python3, jq, git
-, clang, libclang, gcc, gnumake, nasm, gmp, nix, pkgsCross, aeneas, virtual-table-check }:
+, clang, libclang, gcc, gnumake, gnutar, nasm, gmp, nix, pkgsCross, aeneas, virtual-table-check }:
 
 # Top-level test entry point. Single source of truth for "is the
 # project green?" Runs every check in dependency order so a clean
@@ -32,6 +32,7 @@ writeShellApplication {
     libclang.lib
     gcc
     gnumake
+    gnutar
     nasm
     nix
     pkgsCross.riscv64-embedded.stdenv.cc
@@ -181,6 +182,10 @@ LEAN
     # CI; temporary generated harness files remain under build/.
     run_unless_skipped ZISK_FV_TEST_SKIP_AENEAS "5/10 Aeneas production extraction harness" bash -c '
       AENEAS_FLAKE="${aeneas}" AENEAS_CHECK_RV_COMPLETENESS=1 scripts/aeneas-production-extract.sh
+    '
+
+    run "Rust ROM get_flags fresh extraction correspondence" bash -c '
+      AENEAS_FLAKE="${aeneas}" scripts/aeneas-rom-flags-extract.sh --check
     '
 
     # 6. Lake build — the FV check. Every theorem typechecks. This is

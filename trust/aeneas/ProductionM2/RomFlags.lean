@@ -50,25 +50,25 @@ namespace zisk_rom_flags
     Source: 'core/src/zisk_inst.rs', lines 74:0-95:1
     Visibility: public -/
 @[discriminant u32]
-inductive zisk_inst.ZiskOperationType where
-| None : zisk_inst.ZiskOperationType
-| Internal : zisk_inst.ZiskOperationType
-| Arith : zisk_inst.ZiskOperationType
-| Binary : zisk_inst.ZiskOperationType
-| BinaryE : zisk_inst.ZiskOperationType
-| Keccak : zisk_inst.ZiskOperationType
-| Sha256 : zisk_inst.ZiskOperationType
-| Poseidon2 : zisk_inst.ZiskOperationType
-| Blake2 : zisk_inst.ZiskOperationType
-| PubOut : zisk_inst.ZiskOperationType
-| ArithEq : zisk_inst.ZiskOperationType
-| ArithEq384 : zisk_inst.ZiskOperationType
-| BigInt : zisk_inst.ZiskOperationType
-| Dma : zisk_inst.ZiskOperationType
-| FcallParam : zisk_inst.ZiskOperationType
-| Fcall : zisk_inst.ZiskOperationType
-| FcallGet : zisk_inst.ZiskOperationType
-| Profile : zisk_inst.ZiskOperationType
+inductive zisk_inst.RomFlagsOperationType where
+| None : zisk_inst.RomFlagsOperationType
+| Internal : zisk_inst.RomFlagsOperationType
+| Arith : zisk_inst.RomFlagsOperationType
+| Binary : zisk_inst.RomFlagsOperationType
+| BinaryE : zisk_inst.RomFlagsOperationType
+| Keccak : zisk_inst.RomFlagsOperationType
+| Sha256 : zisk_inst.RomFlagsOperationType
+| Poseidon2 : zisk_inst.RomFlagsOperationType
+| Blake2 : zisk_inst.RomFlagsOperationType
+| PubOut : zisk_inst.RomFlagsOperationType
+| ArithEq : zisk_inst.RomFlagsOperationType
+| ArithEq384 : zisk_inst.RomFlagsOperationType
+| BigInt : zisk_inst.RomFlagsOperationType
+| Dma : zisk_inst.RomFlagsOperationType
+| FcallParam : zisk_inst.RomFlagsOperationType
+| Fcall : zisk_inst.RomFlagsOperationType
+| FcallGet : zisk_inst.RomFlagsOperationType
+| Profile : zisk_inst.RomFlagsOperationType
 
 /-- [zisk_core::zisk_inst::ZiskInst]
     Source: 'core/src/zisk_inst.rs', lines 122:0-158:1
@@ -93,7 +93,7 @@ structure zisk_inst.ZiskInst where
   jmp_offset2 : Std.I64
   is_external_op : Bool
   op : Std.U8
-  op_type : zisk_inst.ZiskOperationType
+  op_type : zisk_inst.RomFlagsOperationType
   m32 : Bool
   input_size : Std.U64
   sorted_pc_list_index : Std.Usize

@@ -38,3 +38,11 @@ records the exact source contents, root span, profile, LLBC and generated hash.
 `ZiskFv.Compliance.RomProducerFlags` relates the returned flag word to
 `Main.packFlags`; the separate eleven-slot ROM serializer remains a distinct
 producer obligation.
+
+`nix run .#aeneas-rom-flags-extract-check-tracked` regenerates and compares
+this new snapshot; the ordinary test entry point also runs that check before
+Lake. Its namespace isolation renames only the additive Lean enum identifier
+`zisk_inst.ZiskOperationType` to `zisk_inst.RomFlagsOperationType`, avoiding a
+global discriminant-instance collision in the pinned Aeneas runtime. The
+recipe checks all 20 qualified occurrences, preserves the actual method body
+byte-for-byte, and records both raw and alpha-isolated output hashes.
