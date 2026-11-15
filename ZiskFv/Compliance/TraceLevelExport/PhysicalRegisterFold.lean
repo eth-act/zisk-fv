@@ -35,7 +35,8 @@ theorem actualCRegisterAction_of_none {n : Nat} (trace : AcceptedZiskTrace n)
     (none : actualCRegisterWriteAt trace row = Option.none)
     (regs : Fin 32 → BitVec 64) : actualCRegisterAction trace row regs = regs := by
   funext k
-  simp [actualCRegisterAction, none]
+  unfold actualCRegisterAction
+  rw [none]
 
 private theorem actualCRegisterAction_congr {n : Nat} (trace : AcceptedZiskTrace n)
     (row : Fin trace.mainTable.table.length) (a b : Fin 32 → BitVec 64)
@@ -158,7 +159,7 @@ private theorem nonzero_stepWrite_storeReg_one {n : Nat} {trace : AcceptedZiskTr
       from congrArg (·.ptr) he.symm] at nonzero
     rw [addr, Transpiler.wrap_to_regidx_ind] at nonzero
     try simp only [Transpiler.regidxOfBitVec5, ne_eq, Fin.ext_iff, Fin.val_zero] at nonzero
-    simp [nonzero, fin32_ne_zero_of_val_ne_zero]
+    simp [ZiskFv.AirsClean.boolF, Fin.ext_iff, nonzero, Transpiler.regidxOfBitVec5]
 
 /-- The physical recurrence has no step, output, or fallback outside its finite
 accepted Main domain. Auxiliary rows are visited just like all other rows. -/
@@ -222,6 +223,7 @@ theorem source_terminal_actualCRegisterAction (i : Fin m)
   have terminal : (physicalStart L i).val + offset.val =
       stepProducerRow (physicalStart L i) (steps i) (D i) := by
     change sourceStart L i + offset.val = _
+    simp only [physicalStart_val] at stop
     dsimp [offset]
     omega
   rw [terminal] at span
@@ -285,8 +287,9 @@ theorem mappedZiskRegFile_eq_actualPhysicalRegFile (j : Nat) (h : j ≤ m)
     rw [cutSucc] at endBound
     have terminal := source_terminal_actualCRegisterAction rawProgram selected L trace
       start addr binding steps rawDecodes atPc i
-    rw [show j + 1 = i.val + 1 from rfl, mappedZiskRegFile_succ]
-    rw [cutSucc]
+    change mappedZiskRegFile L steps D (i.val + 1) h k = _
+    rw [mappedZiskRegFile_succ]
+    simp only [cutSucc]
     rcases (L i).count with one | two
     · change (L i).width = 1 at one
       have room : sourceStart L i < sourceEnd L := sourceStart_lt_sourceEnd L i

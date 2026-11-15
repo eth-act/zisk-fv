@@ -38,6 +38,8 @@ local notation "D" => (fun i => rowDecode_of_programDecode trace (physicalStart 
   (programDecode_of_rawProgramDecode trace (physicalStart L i) (steps i)
     start addr rawProgram binding (rawDecodes i)))
 
+include binding atPc
+
 /-- Simultaneous agreement with ACTUAL physical memory replay and ACTUAL
 physical C-register writeback. Only preceding real architectural soundness is
 used; this is an internal inductive consequence, not a new root premise. -/

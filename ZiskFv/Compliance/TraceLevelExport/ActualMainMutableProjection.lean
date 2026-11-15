@@ -899,6 +899,8 @@ variable (rawDecodes : ∀ i, RawProgramDecode trace (physicalStart L i) (steps 
 variable (atPc : ∀ i, (mainOfTable trace.program trace.mainTable).pc
   (physicalStart L i).val = addr (selected i))
 
+include binding atPc
+
 /-- Every interior physical source slot is a genuine auxiliary with empty
 mutable projection, by exclusion of all SIX actual source messages. -/
 theorem actual_main_interior_mutable_projection
@@ -918,6 +920,8 @@ theorem actual_main_interior_mutable_projection
   exact expanded_main_first_mutable_replay_rows_nil trace start addr rawProgram binding
     (selected i) (L i) widthTwo
     ⟨(physicalStart L i).val, trace.mainTable_index (physicalStart L i)⟩ (atPc i)
+
+include rawDecodes
 
 private theorem actual_main_span_slots (i : Fin m) :
     ((List.finRange (sourceEnd L)).take (sourceStart L i + (L i).width)).map
@@ -966,7 +970,7 @@ theorem actual_main_mutable_prefix_eq_sourcePhysicalPrefix
         (physicalMainMutableReplayRowsAt trace) =
       sourcePhysicalPrefix L
         (fun i => memoryRowsOfStep trace (physicalStart L i) (steps i)) j bound := by
-  induction j generalizing bound with
+  induction j with
   | zero => simp
   | succ j previous =>
       have before : j < m := by omega
@@ -987,12 +991,12 @@ theorem actual_main_mutable_slots_eq_sourcePhysicalSlots :
     actualMainMutablePhysicalSlots trace =
       sourcePhysicalSlots L
         (fun i => memoryRowsOfStep trace (physicalStart L i) (steps i)) := by
-  have prefix := actual_main_mutable_prefix_eq_sourcePhysicalPrefix rawProgram selected L trace
+  have wholePrefix := actual_main_mutable_prefix_eq_sourcePhysicalPrefix rawProgram selected L trace
     start addr binding steps rawDecodes atPc m (Nat.le_refl m)
   change ((List.finRange (sourceEnd L)).take (sourceEnd L)).map
-    (physicalMainMutableReplayRowsAt trace) = _ at prefix
+    (physicalMainMutableReplayRowsAt trace) = _ at wholePrefix
   simpa only [List.length_finRange, List.take_length, sourcePhysicalPrefix_end,
-    actualMainMutablePhysicalSlots] using prefix
+    actualMainMutablePhysicalSlots] using wholePrefix
 
 /-- Exact ordered physical prefix equality in the full-slot vocabulary. -/
 theorem actual_main_mutable_slots_take_cut
