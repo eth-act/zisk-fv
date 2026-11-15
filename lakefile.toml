@@ -36,7 +36,7 @@ globs = ["Extraction.Circuit", "Extraction.Mem", "Extraction.MemGeneratedArtifac
   "Extraction.MemAlignByte", "Extraction.MemAlignReadByte", "Extraction.MemAlignWriteByte",
   "Extraction.Binary", "Extraction.BinaryAdd", "Extraction.BinaryExtension",
   "Extraction.Buses", "Extraction.MemoryBuses",
-  "Extraction.ArithRangeTable", "Extraction.SourceDimensions",
+  "Extraction.ArithRangeTable", "Extraction.SourceDimensions", "Extraction.RomSource",
   "Extraction.Components.BinaryAdd.Row", "Extraction.Components.BinaryAdd.Constraints",
   "Extraction.Components.BinaryAdd.Manifest"]
 
@@ -65,6 +65,7 @@ rev = "v4.28.0"
 [[lean_lib]]
 name = "ZiskFv"
 roots = ["ZiskFv"]
+globs = ["ZiskFv.AirsClean.ZiskInstructionRomSource"]
 
 # The REAL Aeneas-extracted ZisK lowerer (`trust/aeneas/ProductionM2.lean`,
 # `import Aeneas`). Imported by ZiskFv/Compliance/AeneasBridgeTrust/Extraction.lean

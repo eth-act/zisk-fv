@@ -63,6 +63,7 @@
     {"kind": "lean", "path": "Extraction/MemGeneratedConstraintBridge.lean"},
     {"kind": "lean", "path": "Extraction/MemoryBuses.lean"},
     {"kind": "lean", "path": "Extraction/SourceDimensions.lean"},
+    {"kind": "lean", "path": "Extraction/RomSource.lean"},
     {"kind": "report", "path": "MemAirFacts.md"},
     {"kind": "source_table", "path": "MemAlignRom.tsv"}
   ],
