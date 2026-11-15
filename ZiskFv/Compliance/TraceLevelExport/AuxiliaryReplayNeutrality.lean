@@ -31,12 +31,13 @@ def mainTypedMemRoster {n : Nat} (trace : AcceptedZiskTrace n) :
    (v.rom.store_reg, cRegPreMessageExpr v),
    (-(v.rom.store_mem + v.rom.store_ind + v.rom.store_reg), cMemMessageExpr v)]
 
+set_option maxRecDepth 10000 in
 theorem mainTypedMemRoster_exact {n : Nat} (trace : AcceptedZiskTrace n) :
     (mainTypedMemRoster trace).map (fun pair =>
       (MemBusChannel.emitted pair.1 pair.2).toRaw) =
       trace.mainTable.component.operations.interactionsWith MemBusChannel.toRaw := by
   rw [trace.mainTable_component, componentWithRomMemAndOpBus_interactionsWith_memBus]
-  rfl
+  simp only [mainTypedMemRoster, List.map_cons, List.map_nil]
 
 /-- This is an explicit mutable-memory projection, not a RAW parser/default.
 Activity is the actual request multiplicity; read/write legacy signs are fixed

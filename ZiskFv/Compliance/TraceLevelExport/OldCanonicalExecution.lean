@@ -88,6 +88,8 @@ variable (room : sourceEnd L ≤ trace.mainTable.table.length)
 variable (starts : ∀ i, sourceStart L i = i.val)
 variable (steps : ∀ i : Fin n, ZiskStep trace i)
 
+include starts
+
 /-- This equality is available ONLY on the old supported placement domain. -/
 theorem oldCanonicalIndexEq (i : Fin n) :
     recountIndex (architecturalCount_le_sourceEnd L) i = physicalStart L i :=
