@@ -84,6 +84,12 @@ the flags themselves.
   The byte-table observer and checker also retain the actual packed producer
   stream and raw multiplicity schema, alongside their original virtual-table
   block observations.
+  JSON numeric metadata supports only exact integers in
+  `[-(2^53 - 1), 2^53 - 1]`; unsupported identities fail before matching.
+  This representation limit is not an AIR or witness range assumption:
+  full-field payloads and unrelated producer UIDs retain exact `BigInt` values.
+  Generated source locations alone do not establish live provider composition
+  or an unchanged accepted-witness domain.
 - `public-io`: emit `Extraction.PublicIo` from the compiled GLOBAL expression
   graph and cleared sum. Hints identify tuples, but every operation-bus tuple is
   linked to an actual denominator and positive-unit numerator term; generated
