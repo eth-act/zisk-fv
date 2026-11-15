@@ -1,0 +1,21 @@
+⚠ [102/187] Replayed Extraction.RomSource
+warning: build/extraction/Extraction/RomSource.lean:38:11: unused variable `source`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: build/extraction/Extraction/RomSource.lean:38:40: unused variable `row`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: build/extraction/Extraction/RomSource.lean:41:18: unused variable `source`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+warning: build/extraction/Extraction/RomSource.lean:41:47: unused variable `row`
+
+Note: This linter can be disabled with `set_option linter.unusedVariables false`
+⚠ [1672/1672] Replayed ZiskFv.AirsClean.ZiskInstructionRomSource
+warning: ZiskFv/AirsClean/ZiskInstructionRomSource.lean:175:29: 'ring' tactic does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+warning: ZiskFv/AirsClean/ZiskInstructionRomSource.lean:175:29: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+Build completed successfully (1672 jobs).

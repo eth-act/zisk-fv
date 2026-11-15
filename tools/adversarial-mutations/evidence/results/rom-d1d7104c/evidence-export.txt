@@ -1,0 +1,39 @@
+import hashlib,json,pathlib,subprocess
+root=pathlib.Path('/tmp/closure-rom-bounded-evidence')
+repo=pathlib.Path('/tmp/closure-rom-bounded-packet')
+controls=root/'production-controls'
+report=json.loads((controls/'results.json').read_text())
+if not report.get('complete'):raise RuntimeError('production controls are not complete')
+def digest(path):
+ h=hashlib.sha256()
+ with path.open('rb') as stream:
+  for block in iter(lambda:stream.read(1048576),b''):h.update(block)
+ return h.hexdigest()
+fixed=pathlib.Path('/nix/store/14aay7640sy7qaarlja5g72gba45rc7w-zisk-pilout-git-b632745-fixed')
+verified=[]
+for name in report['cases']:
+ for relative,expected in report['fixed_payloads'].items():
+  copied=controls/name/'zisk'/relative
+  subprocess.run(['cmp','--silent',fixed/relative,copied],check=True)
+  if digest(copied)!=expected:raise RuntimeError(f'fixed payload differs: {copied}')
+  verified.append({'case':name,'relative':relative,'sha256':expected})
+report['used_fixed_payload_copies_verified']=verified
+(root/'production-results-verified.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
+destination=repo/'tools/adversarial-mutations/evidence/results/rom-d1d7104c'
+destination.mkdir(parents=True,exist_ok=False)
+for source,name in [(root/'production-results-verified.json','production-results.json'),(root/'initial-checks.json','initial-checks.json'),(root/'cache-provenance.json','cache-provenance.json'),(root/'production_controls.py','harness.txt'),(root/'setup.py','cache-setup.txt')]:
+ subprocess.run(['cp','--reflink=never',source,destination/name],check=True)
+ subprocess.run(['cmp','--silent',source,destination/name],check=True)
+for name in report['cases']:
+ target=destination/name;target.mkdir()
+ for filename in ['compile.log','generate.log','lean.log','RomSource.lean']:
+  source=controls/name/filename
+  copied=target/('RomSource.lean.txt' if filename=='RomSource.lean' else filename)
+  subprocess.run(['cp','--reflink=never',source,copied],check=True)
+  subprocess.run(['cmp','--silent',source,copied],check=True)
+for filename in ['cargo-rom-source-tests.log','cargo-rom-source-binary.log','initial-generation.log','initial-four-targets.log','four-targets-attempt2.log']:
+ subprocess.run(['cp','--reflink=never',root/filename,destination/filename],check=True)
+ subprocess.run(['cmp','--silent',root/filename,destination/filename],check=True)
+manifest={str(path.relative_to(destination)):digest(path) for path in destination.rglob('*') if path.is_file()}
+(destination/'evidence-sha256.json').write_text(json.dumps(manifest,indent=2,sort_keys=True)+'\n')
+print(json.dumps({'destination':str(destination),'case_count':len(report['cases']),'fixed_payload_copies_verified':len(verified),'evidence_file_count':len(manifest)},indent=2))
