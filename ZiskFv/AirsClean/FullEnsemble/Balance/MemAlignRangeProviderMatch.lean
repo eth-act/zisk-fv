@@ -154,7 +154,8 @@ theorem exists_memAlignRangeSlice_provider_of_memAlign_interaction
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_providerTable
   rcases component_mem_fullRv64im_cases h_component_mem with
     h_verifier | h_boundary | h_alignRead | h_alignByte | h_align | h_range | h_rom | h_mem |
-      h_ranges | h_regRange | h_div | h_mul | h_extension | h_binary | h_binaryAdd | h_main
+      h_ranges | h_regRange | h_div | h_mul | h_extension | h_binary | h_binaryAdd |
+      h_extensionSource | h_binarySource | h_main
   · have h_nil : providerTable.interactionsWith MemAlignRangeChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
       rw [h_verifier]
@@ -255,6 +256,12 @@ theorem exists_memAlignRangeSlice_provider_of_memAlign_interaction
       change MemAlignRangeChannel.toRaw ∉ [OpBusChannel.toRaw]
       simp only [List.mem_singleton]
       exact memAlignRangeChannel_ne_opBus
+    simp [h_nil] at h_providerInteraction
+  · have h_nil := extensionTableSource_interactionsWith_nil_of_name
+      h_extensionSource MemAlignRangeChannel.toRaw (by decide)
+    simp [h_nil] at h_providerInteraction
+  · have h_nil := binaryTableSource_interactionsWith_nil_of_name
+      h_binarySource MemAlignRangeChannel.toRaw (by decide)
     simp [h_nil] at h_providerInteraction
   · have h_nil : providerTable.interactionsWith MemAlignRangeChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
