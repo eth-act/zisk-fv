@@ -56,8 +56,13 @@ the flags themselves.
   optional stages, indices and array shapes independently of operand syntax.
   Maintained finalizer theorems pin the complete protocol-cell/name roster;
   this does not change `Extraction.Circuit` or establish logUp balance.
-- `arith-table`: emit the extracted arithmetic lookup table from upstream
-  Rust source.
+- `arith-table`: emit both the exact four-field source bus-331 rows
+  (`packed_table`: opcode, packed flags, range_ab, range_cd) and the existing
+  decoded arithmetic lookup table from upstream Rust source. The generated
+  `decodePackedRow` decodes the twelve flag bits, and kernel-checked
+  `packed_table_decodes` and `packed_table_length` relate the actual source rows
+  to that unchanged decoded table and its source length. This is the populated
+  source table, not the separate production 128-row padding/layout observation.
 - `arith-range-table`: emit source-derived `RANGES`, `OFFSETS`, row-mapping
   functions and kernel-checked inverse certificates from
   `state-machines/arith/src/arith_range_table_helpers.rs`. This supplies source
