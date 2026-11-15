@@ -3032,7 +3032,9 @@ def toRowData_sd {trace : AcceptedZiskTrace numInstructions} {binding : SailTrac
   toInputs := ia
 
 structure Claim_ld (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
-  ld_input : PureSpec.LdInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
 
 structure Decode_ld (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_ld trace i) : Type where
@@ -3066,24 +3068,55 @@ structure Decode_ld (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomLd trace i).rom.store_reg =
-      if c.ld_input.rd.toNat = 0 then 0 else 1
+      if (storeRegBits c.rd).toNat = 0 then 0 else 1
   h_b_src_ind :
     (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
-    (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.ld_input.rd)
+    (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 (storeRegBits c.rd))
   h_b_offset_imm0 :
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-      ((BitVec.signExtend 64 c.ld_input.imm).toInt : FGL)
+      ((BitVec.signExtend 64 c.imm).toInt : FGL)
+
+/-- Read the exact current-domain address; no default bytes or predicate repair. -/
+noncomputable def loadInput_ld
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1 rd : regidx) (imm : BitVec 12)
+    (h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r1) state = EStateM.Result.ok value state)
+    (h_pc : ∃ pc : BitVec 64, state.regs.get? Register.PC = some pc)
+    (h_bytes : ∀ k : Fin 8, ∃ byte : BitVec 8,
+      state.mem[(Classical.choose h_r1).toNat + (BitVec.signExtend 64 imm).toNat + k.val]? =
+        some byte) : PureSpec.LdInput where
+  r1 := storeRegBits r1
+  rd := storeRegBits rd
+  imm := imm
+  r1_val := Classical.choose h_r1
+  PC := Classical.choose h_pc
+  data0 := Classical.choose (h_bytes ⟨0, by decide⟩)
+  data1 := Classical.choose (h_bytes ⟨1, by decide⟩)
+  data2 := Classical.choose (h_bytes ⟨2, by decide⟩)
+  data3 := Classical.choose (h_bytes ⟨3, by decide⟩)
+  data4 := Classical.choose (h_bytes ⟨4, by decide⟩)
+  data5 := Classical.choose (h_bytes ⟨5, by decide⟩)
+  data6 := Classical.choose (h_bytes ⟨6, by decide⟩)
+  data7 := Classical.choose (h_bytes ⟨7, by decide⟩)
 
 structure InputsCore_ld (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_ld trace i) : Type where
+  h_input_r1 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r1) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc
+  h_input_bytes : ∀ k : Fin 8, ∃ byte : BitVec 8,
+    (binding i).mem[(Classical.choose h_input_r1).toNat +
+      (BitVec.signExtend 64 c.imm).toNat + k.val]? = some byte
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
   r_mem : ℕ
-  h_opcode_assumptions : PureSpec.ld_state_assumptions c.ld_input (binding i)
+  h_opcode_assumptions : PureSpec.ld_state_assumptions
+    (loadInput_ld (binding i) c.r1 c.rd c.imm h_input_r1 h_input_pc h_input_bytes) (binding i)
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo c.ld_input.r1_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r1)
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_msg :
@@ -3091,6 +3124,119 @@ structure InputsCore_ld (trace : AcceptedZiskTrace numInstructions) (binding : S
       loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
+
+noncomputable def InputsCore_ld.input
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_ld trace i}
+    (inputs : InputsCore_ld trace binding i c) : PureSpec.LdInput :=
+  loadInput_ld (binding i) c.r1 c.rd c.imm
+    inputs.h_input_r1 inputs.h_input_pc inputs.h_input_bytes
+
+theorem InputsCore_ld.input_pc_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_ld trace i}
+    (inputs : InputsCore_ld trace binding i c) :
+    (binding i).regs.get? Register.PC = some inputs.input.PC :=
+  Classical.choose_spec inputs.h_input_pc
+
+/-- Exact complete old load surface constructs the new record and the SAME input.
+In particular no read/mappedness, PC, parse or equality premise is added, and the
+unchanged unwrapped-address opcode predicate is transported in full. -/
+def InputsCore_ld.of_state_assumptions
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    (i : Fin trace.numInstructions) (input : PureSpec.LdInput)
+    (regs : ModeRegsFull) (mem : Valid_Mem FGL FGL) (r_mem : ℕ)
+    (h_opcode : PureSpec.ld_state_assumptions input (binding i))
+    (h_a0 : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r1_val)
+    (h_platform : RISC_V_assumptions (binding i)
+      regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
+    (h_msg : loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
+      loadMainMsg (mainRowWithRomLd trace i))
+    (h_sel : mem.sel r_mem = 1) (h_wr : mem.wr r_mem = 0) :
+    { core : InputsCore_ld trace binding i
+      { r1 := regidx.Regidx input.r1, rd := regidx.Regidx input.rd, imm := input.imm } //
+      core.input = input } := by
+  have h_read : read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+      EStateM.Result.ok input.r1_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r1)
+      (regidx_to_fin (regidx.Regidx input.r1)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.1
+  let h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r1_val, h_read⟩
+  let h_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc :=
+    ⟨input.PC, h_opcode.1⟩
+  have h_value : Classical.choose h_r1 = input.r1_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r1).symm.trans h_read)).1
+  have h_pc_value : Classical.choose h_pc = input.PC :=
+    Option.some.inj ((Classical.choose_spec h_pc).symm.trans h_opcode.1)
+  let h_bytes : ∀ k : Fin 8, ∃ byte : BitVec 8,
+      (binding i).mem[(Classical.choose h_r1).toNat +
+        (BitVec.signExtend 64 input.imm).toNat + k.val]? = some byte := by
+    intro k
+    fin_cases k
+    · exact ⟨input.data0, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.1⟩
+    · exact ⟨input.data1, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.1⟩
+    · exact ⟨input.data2, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.1⟩
+    · exact ⟨input.data3, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.2.1⟩
+    · exact ⟨input.data4, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.2.2.1⟩
+    · exact ⟨input.data5, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.2.2.2.1⟩
+    · exact ⟨input.data6, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.2.2.2.2.1⟩
+    · exact ⟨input.data7, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.2.2.2.2.2.1⟩
+  have h_data0 : Classical.choose (h_bytes ⟨0, by decide⟩) = input.data0 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨0, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.1)
+  have h_data1 : Classical.choose (h_bytes ⟨1, by decide⟩) = input.data1 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨1, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.1)
+  have h_data2 : Classical.choose (h_bytes ⟨2, by decide⟩) = input.data2 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨2, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.1)
+  have h_data3 : Classical.choose (h_bytes ⟨3, by decide⟩) = input.data3 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨3, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.2.1)
+  have h_data4 : Classical.choose (h_bytes ⟨4, by decide⟩) = input.data4 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨4, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.2.2.1)
+  have h_data5 : Classical.choose (h_bytes ⟨5, by decide⟩) = input.data5 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨5, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.2.2.2.1)
+  have h_data6 : Classical.choose (h_bytes ⟨6, by decide⟩) = input.data6 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨6, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.2.2.2.2.1)
+  have h_data7 : Classical.choose (h_bytes ⟨7, by decide⟩) = input.data7 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨7, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.2.2.2.2.2.1)
+  have h_input : loadInput_ld (binding i) (regidx.Regidx input.r1)
+      (regidx.Regidx input.rd) input.imm h_r1 h_pc h_bytes = input := by
+    cases input
+    dsimp only [loadInput_ld, storeRegBits]
+    congr 1
+  refine ⟨{
+    h_input_r1 := h_r1
+    h_input_pc := h_pc
+    h_input_bytes := h_bytes
+    regs := regs
+    mem := mem
+    r_mem := r_mem
+    h_opcode_assumptions := ?_
+    h_a0_value := ?_
+    h_risc_v_assumptions := h_platform
+    h_msg := h_msg
+    h_mem_sel := h_sel
+    h_mem_wr := h_wr }, ?_⟩
+  · simpa only [h_input] using h_opcode
+  · simpa only [h_value] using h_a0
+  · exact h_input
 
 /-- The PC agreement `Inputs_ld` carries on top of `InputsCore_ld`.
 
@@ -3102,7 +3248,7 @@ structure Inputs_ld (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     (i : Fin trace.numInstructions) (c : Claim_ld trace i) : Type extends InputsCore_ld trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.ld_input.PC.toNat
+      = (Classical.choose h_input_pc).toNat
 
 /-- Per-op residual bundle for the `ld` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_ld` bundles them. -/
@@ -3121,7 +3267,9 @@ def toRowData_ld {trace : AcceptedZiskTrace numInstructions} {binding : SailTrac
   toInputs := ia
 
 structure Claim_lbu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
-  lbu_input : PureSpec.LbuInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
 
 structure Decode_lbu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lbu trace i) : Type where
@@ -3155,27 +3303,51 @@ structure Decode_lbu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomLd trace i).rom.store_reg =
-      if c.lbu_input.rd.toNat = 0 then 0 else 1
+      if (storeRegBits c.rd).toNat = 0 then 0 else 1
   h_b_src_ind :
     (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
-    (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lbu_input.rd)
+    (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 (storeRegBits c.rd))
   h_b_offset_imm0 :
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-      ((BitVec.signExtend 64 c.lbu_input.imm).toInt : FGL)
+      ((BitVec.signExtend 64 c.imm).toInt : FGL)
+
+/-- Read the exact current-domain address; no default bytes or predicate repair. -/
+noncomputable def loadInput_lbu
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1 rd : regidx) (imm : BitVec 12)
+    (h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r1) state = EStateM.Result.ok value state)
+    (h_pc : ∃ pc : BitVec 64, state.regs.get? Register.PC = some pc)
+    (h_bytes : ∀ k : Fin 1, ∃ byte : BitVec 8,
+      state.mem[(Classical.choose h_r1).toNat + (BitVec.signExtend 64 imm).toNat + k.val]? =
+        some byte) : PureSpec.LbuInput where
+  r1 := storeRegBits r1
+  rd := storeRegBits rd
+  imm := imm
+  r1_val := Classical.choose h_r1
+  PC := Classical.choose h_pc
+  data0 := Classical.choose (h_bytes ⟨0, by decide⟩)
 
 structure InputsCore_lbu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lbu trace i) : Type where
+  h_input_r1 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r1) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc
+  h_input_bytes : ∀ k : Fin 1, ∃ byte : BitVec 8,
+    (binding i).mem[(Classical.choose h_input_r1).toNat +
+      (BitVec.signExtend 64 c.imm).toNat + k.val]? = some byte
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
   r_mem : ℕ
   align : ZiskFv.Compliance.MemAlignWitness
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val (busLd trace i (Pilot.execRowOf trace i)).e1
-  h_opcode_assumptions : PureSpec.lbu_state_assumptions c.lbu_input (binding i)
+  h_opcode_assumptions : PureSpec.lbu_state_assumptions
+    (loadInput_lbu (binding i) c.r1 c.rd c.imm h_input_r1 h_input_pc h_input_bytes) (binding i)
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo c.lbu_input.r1_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r1)
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_msg :
@@ -3183,6 +3355,87 @@ structure InputsCore_lbu (trace : AcceptedZiskTrace numInstructions) (binding : 
       loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
+
+noncomputable def InputsCore_lbu.input
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_lbu trace i}
+    (inputs : InputsCore_lbu trace binding i c) : PureSpec.LbuInput :=
+  loadInput_lbu (binding i) c.r1 c.rd c.imm
+    inputs.h_input_r1 inputs.h_input_pc inputs.h_input_bytes
+
+theorem InputsCore_lbu.input_pc_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_lbu trace i}
+    (inputs : InputsCore_lbu trace binding i c) :
+    (binding i).regs.get? Register.PC = some inputs.input.PC :=
+  Classical.choose_spec inputs.h_input_pc
+
+/-- Exact complete old load surface constructs the new record and the SAME input.
+In particular no read/mappedness, PC, parse or equality premise is added, and the
+unchanged unwrapped-address opcode predicate is transported in full. -/
+def InputsCore_lbu.of_state_assumptions
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    (i : Fin trace.numInstructions) (input : PureSpec.LbuInput)
+    (regs : ModeRegsFull) (mem : Valid_Mem FGL FGL) (r_mem : ℕ)
+    (align : MemAlignWitness (mainOfTable trace.program trace.mainTable)
+      i.val (busLd trace i (Pilot.execRowOf trace i)).e1)
+    (h_opcode : PureSpec.lbu_state_assumptions input (binding i))
+    (h_a0 : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r1_val)
+    (h_platform : RISC_V_assumptions (binding i)
+      regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
+    (h_msg : loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
+      loadMainMsg (mainRowWithRomLd trace i))
+    (h_sel : mem.sel r_mem = 1) (h_wr : mem.wr r_mem = 0) :
+    { core : InputsCore_lbu trace binding i
+      { r1 := regidx.Regidx input.r1, rd := regidx.Regidx input.rd, imm := input.imm } //
+      core.input = input } := by
+  have h_read : read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+      EStateM.Result.ok input.r1_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r1)
+      (regidx_to_fin (regidx.Regidx input.r1)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.1
+  let h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r1_val, h_read⟩
+  let h_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc :=
+    ⟨input.PC, h_opcode.1⟩
+  have h_value : Classical.choose h_r1 = input.r1_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r1).symm.trans h_read)).1
+  have h_pc_value : Classical.choose h_pc = input.PC :=
+    Option.some.inj ((Classical.choose_spec h_pc).symm.trans h_opcode.1)
+  let h_bytes : ∀ k : Fin 1, ∃ byte : BitVec 8,
+      (binding i).mem[(Classical.choose h_r1).toNat +
+        (BitVec.signExtend 64 input.imm).toNat + k.val]? = some byte := by
+    intro k
+    fin_cases k
+    · exact ⟨input.data0, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.1⟩
+  have h_data0 : Classical.choose (h_bytes ⟨0, by decide⟩) = input.data0 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨0, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.1)
+  have h_input : loadInput_lbu (binding i) (regidx.Regidx input.r1)
+      (regidx.Regidx input.rd) input.imm h_r1 h_pc h_bytes = input := by
+    cases input
+    dsimp only [loadInput_lbu, storeRegBits]
+    congr 1
+  refine ⟨{
+    h_input_r1 := h_r1
+    h_input_pc := h_pc
+    h_input_bytes := h_bytes
+    regs := regs
+    mem := mem
+    r_mem := r_mem
+    align := align
+    h_opcode_assumptions := ?_
+    h_a0_value := ?_
+    h_risc_v_assumptions := h_platform
+    h_msg := h_msg
+    h_mem_sel := h_sel
+    h_mem_wr := h_wr }, ?_⟩
+  · simpa only [h_input] using h_opcode
+  · simpa only [h_value] using h_a0
+  · exact h_input
 
 /-- The PC agreement `Inputs_lbu` carries on top of `InputsCore_lbu`.
 
@@ -3194,7 +3447,7 @@ structure Inputs_lbu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
     (i : Fin trace.numInstructions) (c : Claim_lbu trace i) : Type extends InputsCore_lbu trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.lbu_input.PC.toNat
+      = (Classical.choose h_input_pc).toNat
 
 /-- Per-op residual bundle for the `lbu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_lbu` bundles them. -/
@@ -3213,7 +3466,9 @@ def toRowData_lbu {trace : AcceptedZiskTrace numInstructions} {binding : SailTra
   toInputs := ia
 
 structure Claim_lhu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
-  lhu_input : PureSpec.LhuInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
 
 structure Decode_lhu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lhu trace i) : Type where
@@ -3247,27 +3502,52 @@ structure Decode_lhu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomLd trace i).rom.store_reg =
-      if c.lhu_input.rd.toNat = 0 then 0 else 1
+      if (storeRegBits c.rd).toNat = 0 then 0 else 1
   h_b_src_ind :
     (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
-    (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lhu_input.rd)
+    (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 (storeRegBits c.rd))
   h_b_offset_imm0 :
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-      ((BitVec.signExtend 64 c.lhu_input.imm).toInt : FGL)
+      ((BitVec.signExtend 64 c.imm).toInt : FGL)
+
+/-- Read the exact current-domain address; no default bytes or predicate repair. -/
+noncomputable def loadInput_lhu
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1 rd : regidx) (imm : BitVec 12)
+    (h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r1) state = EStateM.Result.ok value state)
+    (h_pc : ∃ pc : BitVec 64, state.regs.get? Register.PC = some pc)
+    (h_bytes : ∀ k : Fin 2, ∃ byte : BitVec 8,
+      state.mem[(Classical.choose h_r1).toNat + (BitVec.signExtend 64 imm).toNat + k.val]? =
+        some byte) : PureSpec.LhuInput where
+  r1 := storeRegBits r1
+  rd := storeRegBits rd
+  imm := imm
+  r1_val := Classical.choose h_r1
+  PC := Classical.choose h_pc
+  data0 := Classical.choose (h_bytes ⟨0, by decide⟩)
+  data1 := Classical.choose (h_bytes ⟨1, by decide⟩)
 
 structure InputsCore_lhu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lhu trace i) : Type where
+  h_input_r1 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r1) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc
+  h_input_bytes : ∀ k : Fin 2, ∃ byte : BitVec 8,
+    (binding i).mem[(Classical.choose h_input_r1).toNat +
+      (BitVec.signExtend 64 c.imm).toNat + k.val]? = some byte
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
   r_mem : ℕ
   align : ZiskFv.Compliance.MemAlignWitness
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val (busLd trace i (Pilot.execRowOf trace i)).e1
-  h_opcode_assumptions : PureSpec.lhu_state_assumptions c.lhu_input (binding i)
+  h_opcode_assumptions : PureSpec.lhu_state_assumptions
+    (loadInput_lhu (binding i) c.r1 c.rd c.imm h_input_r1 h_input_pc h_input_bytes) (binding i)
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo c.lhu_input.r1_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r1)
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_msg :
@@ -3275,6 +3555,92 @@ structure InputsCore_lhu (trace : AcceptedZiskTrace numInstructions) (binding : 
       loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
+
+noncomputable def InputsCore_lhu.input
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_lhu trace i}
+    (inputs : InputsCore_lhu trace binding i c) : PureSpec.LhuInput :=
+  loadInput_lhu (binding i) c.r1 c.rd c.imm
+    inputs.h_input_r1 inputs.h_input_pc inputs.h_input_bytes
+
+theorem InputsCore_lhu.input_pc_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_lhu trace i}
+    (inputs : InputsCore_lhu trace binding i c) :
+    (binding i).regs.get? Register.PC = some inputs.input.PC :=
+  Classical.choose_spec inputs.h_input_pc
+
+/-- Exact complete old load surface constructs the new record and the SAME input.
+In particular no read/mappedness, PC, parse or equality premise is added, and the
+unchanged unwrapped-address opcode predicate is transported in full. -/
+def InputsCore_lhu.of_state_assumptions
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    (i : Fin trace.numInstructions) (input : PureSpec.LhuInput)
+    (regs : ModeRegsFull) (mem : Valid_Mem FGL FGL) (r_mem : ℕ)
+    (align : MemAlignWitness (mainOfTable trace.program trace.mainTable)
+      i.val (busLd trace i (Pilot.execRowOf trace i)).e1)
+    (h_opcode : PureSpec.lhu_state_assumptions input (binding i))
+    (h_a0 : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r1_val)
+    (h_platform : RISC_V_assumptions (binding i)
+      regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
+    (h_msg : loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
+      loadMainMsg (mainRowWithRomLd trace i))
+    (h_sel : mem.sel r_mem = 1) (h_wr : mem.wr r_mem = 0) :
+    { core : InputsCore_lhu trace binding i
+      { r1 := regidx.Regidx input.r1, rd := regidx.Regidx input.rd, imm := input.imm } //
+      core.input = input } := by
+  have h_read : read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+      EStateM.Result.ok input.r1_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r1)
+      (regidx_to_fin (regidx.Regidx input.r1)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.1
+  let h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r1_val, h_read⟩
+  let h_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc :=
+    ⟨input.PC, h_opcode.1⟩
+  have h_value : Classical.choose h_r1 = input.r1_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r1).symm.trans h_read)).1
+  have h_pc_value : Classical.choose h_pc = input.PC :=
+    Option.some.inj ((Classical.choose_spec h_pc).symm.trans h_opcode.1)
+  let h_bytes : ∀ k : Fin 2, ∃ byte : BitVec 8,
+      (binding i).mem[(Classical.choose h_r1).toNat +
+        (BitVec.signExtend 64 input.imm).toNat + k.val]? = some byte := by
+    intro k
+    fin_cases k
+    · exact ⟨input.data0, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.1⟩
+    · exact ⟨input.data1, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.1⟩
+  have h_data0 : Classical.choose (h_bytes ⟨0, by decide⟩) = input.data0 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨0, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.1)
+  have h_data1 : Classical.choose (h_bytes ⟨1, by decide⟩) = input.data1 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨1, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.1)
+  have h_input : loadInput_lhu (binding i) (regidx.Regidx input.r1)
+      (regidx.Regidx input.rd) input.imm h_r1 h_pc h_bytes = input := by
+    cases input
+    dsimp only [loadInput_lhu, storeRegBits]
+    congr 1
+  refine ⟨{
+    h_input_r1 := h_r1
+    h_input_pc := h_pc
+    h_input_bytes := h_bytes
+    regs := regs
+    mem := mem
+    r_mem := r_mem
+    align := align
+    h_opcode_assumptions := ?_
+    h_a0_value := ?_
+    h_risc_v_assumptions := h_platform
+    h_msg := h_msg
+    h_mem_sel := h_sel
+    h_mem_wr := h_wr }, ?_⟩
+  · simpa only [h_input] using h_opcode
+  · simpa only [h_value] using h_a0
+  · exact h_input
 
 /-- The PC agreement `Inputs_lhu` carries on top of `InputsCore_lhu`.
 
@@ -3286,7 +3652,7 @@ structure Inputs_lhu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
     (i : Fin trace.numInstructions) (c : Claim_lhu trace i) : Type extends InputsCore_lhu trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.lhu_input.PC.toNat
+      = (Classical.choose h_input_pc).toNat
 
 /-- Per-op residual bundle for the `lhu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_lhu` bundles them. -/
@@ -3305,7 +3671,9 @@ def toRowData_lhu {trace : AcceptedZiskTrace numInstructions} {binding : SailTra
   toInputs := ia
 
 structure Claim_lwu (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
-  lwu_input : PureSpec.LwuInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
 
 structure Decode_lwu (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lwu trace i) : Type where
@@ -3339,27 +3707,54 @@ structure Decode_lwu (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomLd trace i).rom.store_reg =
-      if c.lwu_input.rd.toNat = 0 then 0 else 1
+      if (storeRegBits c.rd).toNat = 0 then 0 else 1
   h_b_src_ind :
     (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
-    (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lwu_input.rd)
+    (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 (storeRegBits c.rd))
   h_b_offset_imm0 :
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-      ((BitVec.signExtend 64 c.lwu_input.imm).toInt : FGL)
+      ((BitVec.signExtend 64 c.imm).toInt : FGL)
+
+/-- Read the exact current-domain address; no default bytes or predicate repair. -/
+noncomputable def loadInput_lwu
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1 rd : regidx) (imm : BitVec 12)
+    (h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r1) state = EStateM.Result.ok value state)
+    (h_pc : ∃ pc : BitVec 64, state.regs.get? Register.PC = some pc)
+    (h_bytes : ∀ k : Fin 4, ∃ byte : BitVec 8,
+      state.mem[(Classical.choose h_r1).toNat + (BitVec.signExtend 64 imm).toNat + k.val]? =
+        some byte) : PureSpec.LwuInput where
+  r1 := storeRegBits r1
+  rd := storeRegBits rd
+  imm := imm
+  r1_val := Classical.choose h_r1
+  PC := Classical.choose h_pc
+  data0 := Classical.choose (h_bytes ⟨0, by decide⟩)
+  data1 := Classical.choose (h_bytes ⟨1, by decide⟩)
+  data2 := Classical.choose (h_bytes ⟨2, by decide⟩)
+  data3 := Classical.choose (h_bytes ⟨3, by decide⟩)
 
 structure InputsCore_lwu (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lwu trace i) : Type where
+  h_input_r1 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r1) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc
+  h_input_bytes : ∀ k : Fin 4, ∃ byte : BitVec 8,
+    (binding i).mem[(Classical.choose h_input_r1).toNat +
+      (BitVec.signExtend 64 c.imm).toNat + k.val]? = some byte
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
   r_mem : ℕ
   align : ZiskFv.Compliance.MemAlignWitness
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable)
     i.val (busLd trace i (Pilot.execRowOf trace i)).e1
-  h_opcode_assumptions : PureSpec.lwu_state_assumptions c.lwu_input (binding i)
+  h_opcode_assumptions : PureSpec.lwu_state_assumptions
+    (loadInput_lwu (binding i) c.r1 c.rd c.imm h_input_r1 h_input_pc h_input_bytes) (binding i)
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo c.lwu_input.r1_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r1)
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_msg :
@@ -3367,6 +3762,102 @@ structure InputsCore_lwu (trace : AcceptedZiskTrace numInstructions) (binding : 
       loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
+
+noncomputable def InputsCore_lwu.input
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_lwu trace i}
+    (inputs : InputsCore_lwu trace binding i c) : PureSpec.LwuInput :=
+  loadInput_lwu (binding i) c.r1 c.rd c.imm
+    inputs.h_input_r1 inputs.h_input_pc inputs.h_input_bytes
+
+theorem InputsCore_lwu.input_pc_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_lwu trace i}
+    (inputs : InputsCore_lwu trace binding i c) :
+    (binding i).regs.get? Register.PC = some inputs.input.PC :=
+  Classical.choose_spec inputs.h_input_pc
+
+/-- Exact complete old load surface constructs the new record and the SAME input.
+In particular no read/mappedness, PC, parse or equality premise is added, and the
+unchanged unwrapped-address opcode predicate is transported in full. -/
+def InputsCore_lwu.of_state_assumptions
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    (i : Fin trace.numInstructions) (input : PureSpec.LwuInput)
+    (regs : ModeRegsFull) (mem : Valid_Mem FGL FGL) (r_mem : ℕ)
+    (align : MemAlignWitness (mainOfTable trace.program trace.mainTable)
+      i.val (busLd trace i (Pilot.execRowOf trace i)).e1)
+    (h_opcode : PureSpec.lwu_state_assumptions input (binding i))
+    (h_a0 : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r1_val)
+    (h_platform : RISC_V_assumptions (binding i)
+      regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
+    (h_msg : loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
+      loadMainMsg (mainRowWithRomLd trace i))
+    (h_sel : mem.sel r_mem = 1) (h_wr : mem.wr r_mem = 0) :
+    { core : InputsCore_lwu trace binding i
+      { r1 := regidx.Regidx input.r1, rd := regidx.Regidx input.rd, imm := input.imm } //
+      core.input = input } := by
+  have h_read : read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+      EStateM.Result.ok input.r1_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r1)
+      (regidx_to_fin (regidx.Regidx input.r1)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.1
+  let h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r1_val, h_read⟩
+  let h_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc :=
+    ⟨input.PC, h_opcode.1⟩
+  have h_value : Classical.choose h_r1 = input.r1_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r1).symm.trans h_read)).1
+  have h_pc_value : Classical.choose h_pc = input.PC :=
+    Option.some.inj ((Classical.choose_spec h_pc).symm.trans h_opcode.1)
+  let h_bytes : ∀ k : Fin 4, ∃ byte : BitVec 8,
+      (binding i).mem[(Classical.choose h_r1).toNat +
+        (BitVec.signExtend 64 input.imm).toNat + k.val]? = some byte := by
+    intro k
+    fin_cases k
+    · exact ⟨input.data0, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.1⟩
+    · exact ⟨input.data1, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.1⟩
+    · exact ⟨input.data2, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.1⟩
+    · exact ⟨input.data3, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.2.1⟩
+  have h_data0 : Classical.choose (h_bytes ⟨0, by decide⟩) = input.data0 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨0, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.1)
+  have h_data1 : Classical.choose (h_bytes ⟨1, by decide⟩) = input.data1 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨1, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.1)
+  have h_data2 : Classical.choose (h_bytes ⟨2, by decide⟩) = input.data2 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨2, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.1)
+  have h_data3 : Classical.choose (h_bytes ⟨3, by decide⟩) = input.data3 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨3, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.2.1)
+  have h_input : loadInput_lwu (binding i) (regidx.Regidx input.r1)
+      (regidx.Regidx input.rd) input.imm h_r1 h_pc h_bytes = input := by
+    cases input
+    dsimp only [loadInput_lwu, storeRegBits]
+    congr 1
+  refine ⟨{
+    h_input_r1 := h_r1
+    h_input_pc := h_pc
+    h_input_bytes := h_bytes
+    regs := regs
+    mem := mem
+    r_mem := r_mem
+    align := align
+    h_opcode_assumptions := ?_
+    h_a0_value := ?_
+    h_risc_v_assumptions := h_platform
+    h_msg := h_msg
+    h_mem_sel := h_sel
+    h_mem_wr := h_wr }, ?_⟩
+  · simpa only [h_input] using h_opcode
+  · simpa only [h_value] using h_a0
+  · exact h_input
 
 /-- The PC agreement `Inputs_lwu` carries on top of `InputsCore_lwu`.
 
@@ -3378,7 +3869,7 @@ structure Inputs_lwu (trace : AcceptedZiskTrace numInstructions) (binding : Sail
     (i : Fin trace.numInstructions) (c : Claim_lwu trace i) : Type extends InputsCore_lwu trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.lwu_input.PC.toNat
+      = (Classical.choose h_input_pc).toNat
 
 /-- Per-op residual bundle for the `lwu` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_lwu` bundles them. -/
@@ -3397,7 +3888,9 @@ def toRowData_lwu {trace : AcceptedZiskTrace numInstructions} {binding : SailTra
   toInputs := ia
 
 structure Claim_lb (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
-  lb_input : PureSpec.LbInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
 
 structure Decode_lb (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lb trace i) : Type where
@@ -3442,24 +3935,48 @@ structure Decode_lb (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomLd trace i).rom.store_reg =
-      if c.lb_input.rd.toNat = 0 then 0 else 1
+      if (storeRegBits c.rd).toNat = 0 then 0 else 1
   h_b_src_ind :
     (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
-    (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lb_input.rd)
+    (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 (storeRegBits c.rd))
   h_b_offset_imm0 :
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-      ((BitVec.signExtend 64 c.lb_input.imm).toInt : FGL)
+      ((BitVec.signExtend 64 c.imm).toInt : FGL)
+
+/-- Read the exact current-domain address; no default bytes or predicate repair. -/
+noncomputable def loadInput_lb
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1 rd : regidx) (imm : BitVec 12)
+    (h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r1) state = EStateM.Result.ok value state)
+    (h_pc : ∃ pc : BitVec 64, state.regs.get? Register.PC = some pc)
+    (h_bytes : ∀ k : Fin 1, ∃ byte : BitVec 8,
+      state.mem[(Classical.choose h_r1).toNat + (BitVec.signExtend 64 imm).toNat + k.val]? =
+        some byte) : PureSpec.LbInput where
+  r1 := storeRegBits r1
+  rd := storeRegBits rd
+  imm := imm
+  r1_val := Classical.choose h_r1
+  PC := Classical.choose h_pc
+  data0 := Classical.choose (h_bytes ⟨0, by decide⟩)
 
 structure InputsCore_lb (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lb trace i) : Type where
+  h_input_r1 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r1) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc
+  h_input_bytes : ∀ k : Fin 1, ∃ byte : BitVec 8,
+    (binding i).mem[(Classical.choose h_input_r1).toNat +
+      (BitVec.signExtend 64 c.imm).toNat + k.val]? = some byte
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
   r_mem : ℕ
-  h_opcode_assumptions : PureSpec.lb_state_assumptions c.lb_input (binding i)
+  h_opcode_assumptions : PureSpec.lb_state_assumptions
+    (loadInput_lb (binding i) c.r1 c.rd c.imm h_input_r1 h_input_pc h_input_bytes) (binding i)
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo c.lb_input.r1_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r1)
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_msg :
@@ -3467,6 +3984,84 @@ structure InputsCore_lb (trace : AcceptedZiskTrace numInstructions) (binding : S
       loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
+
+noncomputable def InputsCore_lb.input
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_lb trace i}
+    (inputs : InputsCore_lb trace binding i c) : PureSpec.LbInput :=
+  loadInput_lb (binding i) c.r1 c.rd c.imm
+    inputs.h_input_r1 inputs.h_input_pc inputs.h_input_bytes
+
+theorem InputsCore_lb.input_pc_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_lb trace i}
+    (inputs : InputsCore_lb trace binding i c) :
+    (binding i).regs.get? Register.PC = some inputs.input.PC :=
+  Classical.choose_spec inputs.h_input_pc
+
+/-- Exact complete old load surface constructs the new record and the SAME input.
+In particular no read/mappedness, PC, parse or equality premise is added, and the
+unchanged unwrapped-address opcode predicate is transported in full. -/
+def InputsCore_lb.of_state_assumptions
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    (i : Fin trace.numInstructions) (input : PureSpec.LbInput)
+    (regs : ModeRegsFull) (mem : Valid_Mem FGL FGL) (r_mem : ℕ)
+    (h_opcode : PureSpec.lb_state_assumptions input (binding i))
+    (h_a0 : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r1_val)
+    (h_platform : RISC_V_assumptions (binding i)
+      regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
+    (h_msg : loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
+      loadMainMsg (mainRowWithRomLd trace i))
+    (h_sel : mem.sel r_mem = 1) (h_wr : mem.wr r_mem = 0) :
+    { core : InputsCore_lb trace binding i
+      { r1 := regidx.Regidx input.r1, rd := regidx.Regidx input.rd, imm := input.imm } //
+      core.input = input } := by
+  have h_read : read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+      EStateM.Result.ok input.r1_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r1)
+      (regidx_to_fin (regidx.Regidx input.r1)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.1
+  let h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r1_val, h_read⟩
+  let h_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc :=
+    ⟨input.PC, h_opcode.1⟩
+  have h_value : Classical.choose h_r1 = input.r1_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r1).symm.trans h_read)).1
+  have h_pc_value : Classical.choose h_pc = input.PC :=
+    Option.some.inj ((Classical.choose_spec h_pc).symm.trans h_opcode.1)
+  let h_bytes : ∀ k : Fin 1, ∃ byte : BitVec 8,
+      (binding i).mem[(Classical.choose h_r1).toNat +
+        (BitVec.signExtend 64 input.imm).toNat + k.val]? = some byte := by
+    intro k
+    fin_cases k
+    · exact ⟨input.data0, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.1⟩
+  have h_data0 : Classical.choose (h_bytes ⟨0, by decide⟩) = input.data0 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨0, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.1)
+  have h_input : loadInput_lb (binding i) (regidx.Regidx input.r1)
+      (regidx.Regidx input.rd) input.imm h_r1 h_pc h_bytes = input := by
+    cases input
+    dsimp only [loadInput_lb, storeRegBits]
+    congr 1
+  refine ⟨{
+    h_input_r1 := h_r1
+    h_input_pc := h_pc
+    h_input_bytes := h_bytes
+    regs := regs
+    mem := mem
+    r_mem := r_mem
+    h_opcode_assumptions := ?_
+    h_a0_value := ?_
+    h_risc_v_assumptions := h_platform
+    h_msg := h_msg
+    h_mem_sel := h_sel
+    h_mem_wr := h_wr }, ?_⟩
+  · simpa only [h_input] using h_opcode
+  · simpa only [h_value] using h_a0
+  · exact h_input
 
 /-- The PC agreement `Inputs_lb` carries on top of `InputsCore_lb`.
 
@@ -3478,7 +4073,7 @@ structure Inputs_lb (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     (i : Fin trace.numInstructions) (c : Claim_lb trace i) : Type extends InputsCore_lb trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.lb_input.PC.toNat
+      = (Classical.choose h_input_pc).toNat
 
 /-- Per-op residual bundle for the `lb` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_lb` bundles them. -/
@@ -3497,7 +4092,9 @@ def toRowData_lb {trace : AcceptedZiskTrace numInstructions} {binding : SailTrac
   toInputs := ia
 
 structure Claim_lh (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
-  lh_input : PureSpec.LhInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
 
 structure Decode_lh (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lh trace i) : Type where
@@ -3542,24 +4139,49 @@ structure Decode_lh (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomLd trace i).rom.store_reg =
-      if c.lh_input.rd.toNat = 0 then 0 else 1
+      if (storeRegBits c.rd).toNat = 0 then 0 else 1
   h_b_src_ind :
     (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
-    (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lh_input.rd)
+    (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 (storeRegBits c.rd))
   h_b_offset_imm0 :
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-      ((BitVec.signExtend 64 c.lh_input.imm).toInt : FGL)
+      ((BitVec.signExtend 64 c.imm).toInt : FGL)
+
+/-- Read the exact current-domain address; no default bytes or predicate repair. -/
+noncomputable def loadInput_lh
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1 rd : regidx) (imm : BitVec 12)
+    (h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r1) state = EStateM.Result.ok value state)
+    (h_pc : ∃ pc : BitVec 64, state.regs.get? Register.PC = some pc)
+    (h_bytes : ∀ k : Fin 2, ∃ byte : BitVec 8,
+      state.mem[(Classical.choose h_r1).toNat + (BitVec.signExtend 64 imm).toNat + k.val]? =
+        some byte) : PureSpec.LhInput where
+  r1 := storeRegBits r1
+  rd := storeRegBits rd
+  imm := imm
+  r1_val := Classical.choose h_r1
+  PC := Classical.choose h_pc
+  data0 := Classical.choose (h_bytes ⟨0, by decide⟩)
+  data1 := Classical.choose (h_bytes ⟨1, by decide⟩)
 
 structure InputsCore_lh (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lh trace i) : Type where
+  h_input_r1 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r1) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc
+  h_input_bytes : ∀ k : Fin 2, ∃ byte : BitVec 8,
+    (binding i).mem[(Classical.choose h_input_r1).toNat +
+      (BitVec.signExtend 64 c.imm).toNat + k.val]? = some byte
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
   r_mem : ℕ
-  h_opcode_assumptions : PureSpec.lh_state_assumptions c.lh_input (binding i)
+  h_opcode_assumptions : PureSpec.lh_state_assumptions
+    (loadInput_lh (binding i) c.r1 c.rd c.imm h_input_r1 h_input_pc h_input_bytes) (binding i)
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo c.lh_input.r1_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r1)
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_msg :
@@ -3567,6 +4189,89 @@ structure InputsCore_lh (trace : AcceptedZiskTrace numInstructions) (binding : S
       loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
+
+noncomputable def InputsCore_lh.input
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_lh trace i}
+    (inputs : InputsCore_lh trace binding i c) : PureSpec.LhInput :=
+  loadInput_lh (binding i) c.r1 c.rd c.imm
+    inputs.h_input_r1 inputs.h_input_pc inputs.h_input_bytes
+
+theorem InputsCore_lh.input_pc_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_lh trace i}
+    (inputs : InputsCore_lh trace binding i c) :
+    (binding i).regs.get? Register.PC = some inputs.input.PC :=
+  Classical.choose_spec inputs.h_input_pc
+
+/-- Exact complete old load surface constructs the new record and the SAME input.
+In particular no read/mappedness, PC, parse or equality premise is added, and the
+unchanged unwrapped-address opcode predicate is transported in full. -/
+def InputsCore_lh.of_state_assumptions
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    (i : Fin trace.numInstructions) (input : PureSpec.LhInput)
+    (regs : ModeRegsFull) (mem : Valid_Mem FGL FGL) (r_mem : ℕ)
+    (h_opcode : PureSpec.lh_state_assumptions input (binding i))
+    (h_a0 : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r1_val)
+    (h_platform : RISC_V_assumptions (binding i)
+      regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
+    (h_msg : loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
+      loadMainMsg (mainRowWithRomLd trace i))
+    (h_sel : mem.sel r_mem = 1) (h_wr : mem.wr r_mem = 0) :
+    { core : InputsCore_lh trace binding i
+      { r1 := regidx.Regidx input.r1, rd := regidx.Regidx input.rd, imm := input.imm } //
+      core.input = input } := by
+  have h_read : read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+      EStateM.Result.ok input.r1_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r1)
+      (regidx_to_fin (regidx.Regidx input.r1)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.1
+  let h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r1_val, h_read⟩
+  let h_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc :=
+    ⟨input.PC, h_opcode.1⟩
+  have h_value : Classical.choose h_r1 = input.r1_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r1).symm.trans h_read)).1
+  have h_pc_value : Classical.choose h_pc = input.PC :=
+    Option.some.inj ((Classical.choose_spec h_pc).symm.trans h_opcode.1)
+  let h_bytes : ∀ k : Fin 2, ∃ byte : BitVec 8,
+      (binding i).mem[(Classical.choose h_r1).toNat +
+        (BitVec.signExtend 64 input.imm).toNat + k.val]? = some byte := by
+    intro k
+    fin_cases k
+    · exact ⟨input.data0, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.1⟩
+    · exact ⟨input.data1, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.1⟩
+  have h_data0 : Classical.choose (h_bytes ⟨0, by decide⟩) = input.data0 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨0, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.1)
+  have h_data1 : Classical.choose (h_bytes ⟨1, by decide⟩) = input.data1 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨1, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.1)
+  have h_input : loadInput_lh (binding i) (regidx.Regidx input.r1)
+      (regidx.Regidx input.rd) input.imm h_r1 h_pc h_bytes = input := by
+    cases input
+    dsimp only [loadInput_lh, storeRegBits]
+    congr 1
+  refine ⟨{
+    h_input_r1 := h_r1
+    h_input_pc := h_pc
+    h_input_bytes := h_bytes
+    regs := regs
+    mem := mem
+    r_mem := r_mem
+    h_opcode_assumptions := ?_
+    h_a0_value := ?_
+    h_risc_v_assumptions := h_platform
+    h_msg := h_msg
+    h_mem_sel := h_sel
+    h_mem_wr := h_wr }, ?_⟩
+  · simpa only [h_input] using h_opcode
+  · simpa only [h_value] using h_a0
+  · exact h_input
 
 /-- The PC agreement `Inputs_lh` carries on top of `InputsCore_lh`.
 
@@ -3578,7 +4283,7 @@ structure Inputs_lh (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     (i : Fin trace.numInstructions) (c : Claim_lh trace i) : Type extends InputsCore_lh trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.lh_input.PC.toNat
+      = (Classical.choose h_input_pc).toNat
 
 /-- Per-op residual bundle for the `lh` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_lh` bundles them. -/
@@ -3597,7 +4302,9 @@ def toRowData_lh {trace : AcceptedZiskTrace numInstructions} {binding : SailTrac
   toInputs := ia
 
 structure Claim_lw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
-  lw_input : PureSpec.LwInput
+  r1 : regidx
+  rd : regidx
+  imm : BitVec 12
 
 structure Decode_lw (trace : AcceptedZiskTrace numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lw trace i) : Type where
@@ -3642,24 +4349,51 @@ structure Decode_lw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomLd trace i).rom.store_ind = 0
   h_store_reg :
     (mainRowWithRomLd trace i).rom.store_reg =
-      if c.lw_input.rd.toNat = 0 then 0 else 1
+      if (storeRegBits c.rd).toNat = 0 then 0 else 1
   h_b_src_ind :
     (mainRowWithRomLd trace i).rom.b_src_ind = 1
   h_store_offset :
-    (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 c.lw_input.rd)
+    (mainRowWithRomLd trace i).rom.store_offset = Transpiler.ind (Transpiler.regidxOfBitVec5 (storeRegBits c.rd))
   h_b_offset_imm0 :
     (mainRowWithRomLd trace i).rom.b_offset_imm0 =
-      ((BitVec.signExtend 64 c.lw_input.imm).toInt : FGL)
+      ((BitVec.signExtend 64 c.imm).toInt : FGL)
+
+/-- Read the exact current-domain address; no default bytes or predicate repair. -/
+noncomputable def loadInput_lw
+    (state : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (r1 rd : regidx) (imm : BitVec 12)
+    (h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin r1) state = EStateM.Result.ok value state)
+    (h_pc : ∃ pc : BitVec 64, state.regs.get? Register.PC = some pc)
+    (h_bytes : ∀ k : Fin 4, ∃ byte : BitVec 8,
+      state.mem[(Classical.choose h_r1).toNat + (BitVec.signExtend 64 imm).toNat + k.val]? =
+        some byte) : PureSpec.LwInput where
+  r1 := storeRegBits r1
+  rd := storeRegBits rd
+  imm := imm
+  r1_val := Classical.choose h_r1
+  PC := Classical.choose h_pc
+  data0 := Classical.choose (h_bytes ⟨0, by decide⟩)
+  data1 := Classical.choose (h_bytes ⟨1, by decide⟩)
+  data2 := Classical.choose (h_bytes ⟨2, by decide⟩)
+  data3 := Classical.choose (h_bytes ⟨3, by decide⟩)
 
 structure InputsCore_lw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_lw trace i) : Type where
+  h_input_r1 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r1) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc
+  h_input_bytes : ∀ k : Fin 4, ∃ byte : BitVec 8,
+    (binding i).mem[(Classical.choose h_input_r1).toNat +
+      (BitVec.signExtend 64 c.imm).toNat + k.val]? = some byte
   regs : ZiskFv.Compliance.ModeRegsFull
   mem : Valid_Mem FGL FGL
   r_mem : ℕ
-  h_opcode_assumptions : PureSpec.lw_state_assumptions c.lw_input (binding i)
+  h_opcode_assumptions : PureSpec.lw_state_assumptions
+    (loadInput_lw (binding i) c.r1 c.rd c.imm h_input_r1 h_input_pc h_input_bytes) (binding i)
   h_a0_value :
     (ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).a_0 i.val =
-      ZiskFv.Trusted.lane_lo c.lw_input.r1_val
+      ZiskFv.Trusted.lane_lo (Classical.choose h_input_r1)
   h_risc_v_assumptions :
     RISC_V_assumptions (binding i) regs.mstatus regs.pmaRegion regs.misa regs.mseccfg
   h_msg :
@@ -3667,6 +4401,99 @@ structure InputsCore_lw (trace : AcceptedZiskTrace numInstructions) (binding : S
       loadMainMsg (mainRowWithRomLd trace i)
   h_mem_sel : mem.sel r_mem = 1
   h_mem_wr : mem.wr r_mem = 0
+
+noncomputable def InputsCore_lw.input
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_lw trace i}
+    (inputs : InputsCore_lw trace binding i c) : PureSpec.LwInput :=
+  loadInput_lw (binding i) c.r1 c.rd c.imm
+    inputs.h_input_r1 inputs.h_input_pc inputs.h_input_bytes
+
+theorem InputsCore_lw.input_pc_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_lw trace i}
+    (inputs : InputsCore_lw trace binding i c) :
+    (binding i).regs.get? Register.PC = some inputs.input.PC :=
+  Classical.choose_spec inputs.h_input_pc
+
+/-- Exact complete old load surface constructs the new record and the SAME input.
+In particular no read/mappedness, PC, parse or equality premise is added, and the
+unchanged unwrapped-address opcode predicate is transported in full. -/
+def InputsCore_lw.of_state_assumptions
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    (i : Fin trace.numInstructions) (input : PureSpec.LwInput)
+    (regs : ModeRegsFull) (mem : Valid_Mem FGL FGL) (r_mem : ℕ)
+    (h_opcode : PureSpec.lw_state_assumptions input (binding i))
+    (h_a0 : (mainOfTable trace.program trace.mainTable).a_0 i.val =
+      ZiskFv.Trusted.lane_lo input.r1_val)
+    (h_platform : RISC_V_assumptions (binding i)
+      regs.mstatus regs.pmaRegion regs.misa regs.mseccfg)
+    (h_msg : loadMemMsg (ZiskFv.AirsClean.Mem.rowAt mem r_mem) =
+      loadMainMsg (mainRowWithRomLd trace i))
+    (h_sel : mem.sel r_mem = 1) (h_wr : mem.wr r_mem = 0) :
+    { core : InputsCore_lw trace binding i
+      { r1 := regidx.Regidx input.r1, rd := regidx.Regidx input.rd, imm := input.imm } //
+      core.input = input } := by
+  have h_read : read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+      EStateM.Result.ok input.r1_val (binding i) := by
+    rw [← rX_read_xreg_equiv (binding i) (regidx.Regidx input.r1)
+      (regidx_to_fin (regidx.Regidx input.r1)) (by simp [regidx_to_fin])]
+    exact h_opcode.2.1
+  let h_r1 : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin (regidx.Regidx input.r1)) (binding i) =
+        EStateM.Result.ok value (binding i) := ⟨input.r1_val, h_read⟩
+  let h_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc :=
+    ⟨input.PC, h_opcode.1⟩
+  have h_value : Classical.choose h_r1 = input.r1_val :=
+    (EStateM.Result.ok.inj ((Classical.choose_spec h_r1).symm.trans h_read)).1
+  have h_pc_value : Classical.choose h_pc = input.PC :=
+    Option.some.inj ((Classical.choose_spec h_pc).symm.trans h_opcode.1)
+  let h_bytes : ∀ k : Fin 4, ∃ byte : BitVec 8,
+      (binding i).mem[(Classical.choose h_r1).toNat +
+        (BitVec.signExtend 64 input.imm).toNat + k.val]? = some byte := by
+    intro k
+    fin_cases k
+    · exact ⟨input.data0, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.1⟩
+    · exact ⟨input.data1, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.1⟩
+    · exact ⟨input.data2, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.1⟩
+    · exact ⟨input.data3, by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.2.1⟩
+  have h_data0 : Classical.choose (h_bytes ⟨0, by decide⟩) = input.data0 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨0, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.1)
+  have h_data1 : Classical.choose (h_bytes ⟨1, by decide⟩) = input.data1 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨1, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.1)
+  have h_data2 : Classical.choose (h_bytes ⟨2, by decide⟩) = input.data2 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨2, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.1)
+  have h_data3 : Classical.choose (h_bytes ⟨3, by decide⟩) = input.data3 := by
+    apply Option.some.inj
+    exact (Classical.choose_spec (h_bytes ⟨3, by decide⟩)).symm.trans
+      (by simpa only [h_value, Nat.add_zero] using h_opcode.2.2.2.2.2.1)
+  have h_input : loadInput_lw (binding i) (regidx.Regidx input.r1)
+      (regidx.Regidx input.rd) input.imm h_r1 h_pc h_bytes = input := by
+    cases input
+    dsimp only [loadInput_lw, storeRegBits]
+    congr 1
+  refine ⟨{
+    h_input_r1 := h_r1
+    h_input_pc := h_pc
+    h_input_bytes := h_bytes
+    regs := regs
+    mem := mem
+    r_mem := r_mem
+    h_opcode_assumptions := ?_
+    h_a0_value := ?_
+    h_risc_v_assumptions := h_platform
+    h_msg := h_msg
+    h_mem_sel := h_sel
+    h_mem_wr := h_wr }, ?_⟩
+  · simpa only [h_input] using h_opcode
+  · simpa only [h_value] using h_a0
+  · exact h_input
 
 /-- The PC agreement `Inputs_lw` carries on top of `InputsCore_lw`.
 
@@ -3678,7 +4505,7 @@ structure Inputs_lw (trace : AcceptedZiskTrace numInstructions) (binding : SailT
     (i : Fin trace.numInstructions) (c : Claim_lw trace i) : Type extends InputsCore_lw trace binding i c where
   h_pc_bridge :
     ((mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.lw_input.PC.toNat
+      = (Classical.choose h_input_pc).toNat
 
 /-- Per-op residual bundle for the `lw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_lw` bundles them. -/
