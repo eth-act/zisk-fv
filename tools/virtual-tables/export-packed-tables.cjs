@@ -7,6 +7,23 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 
 const TARGETS = new Set([88, 124, 125, 330, 331]);
+const TARGET_UIDS = new Map([...TARGETS].map(bus => [BigInt(bus), bus]));
+
+// JSON numeric metadata supports integers only in [-(2^53 - 1), 2^53 - 1].
+// This is a representation boundary, not a bound on PIL field values.
+// Preserve exact identities or reject unsupported numeric metadata.
+function metadataInteger(value) {
+    if (typeof value !== 'bigint' && typeof value !== 'number') {
+        throw new TypeError('packed JSON metadata integer requires bigint or number');
+    }
+    const number = Number(value);
+    if (!Number.isSafeInteger(number) ||
+        (typeof value === 'bigint' && BigInt(number) !== value)) {
+        throw new RangeError(
+            `packed JSON metadata integer cannot be represented exactly as a safe integer: ${value}`);
+    }
+    return number;
+}
 
 function exportPacked(compilerRoot, ziskRoot, proofmanRoot, output) {
     const compile = require(path.join(compilerRoot, 'src/compiler.js'));
@@ -21,7 +38,7 @@ function exportPacked(compilerRoot, ziskRoot, proofmanRoot, output) {
     const airs = [];
     const placements = [];
     const ref = (name, indexes = []) => Context.references.getItem(name, indexes);
-    const integer = expression => Number(expression.asInt());
+    const integer = expression => metadataInteger(expression.asInt());
     function canonical(value) {
         const reduced = ((value % prime) + prime) % prime;
         return (reduced > prime / 2n ? reduced - prime : reduced).toString();
@@ -39,7 +56,7 @@ function exportPacked(compilerRoot, ziskRoot, proofmanRoot, output) {
                 const rows = integer(ref('airgroup.std.vt.inner_height', [table, inner]));
                 const columns = Array.from({ length: width }, (_, slot) =>
                     alone(ref('airgroup.std.vt.columns', [table, inner, slot]), FixedCol));
-                if (columns.some(column => Number(column.getRowCount()) !== rows)) {
+                if (columns.some(column => metadataInteger(column.getRowCount()) !== rows)) {
                     throw new Error(`source table ${tableId} has inconsistent physical domain`);
                 }
                 sources.set(tableId, { tableId, busId, rows, width, columns });
@@ -53,7 +70,7 @@ function exportPacked(compilerRoot, ziskRoot, proofmanRoot, output) {
         }
         if (!/^VirtualTable[01]$/.test(processor.currentAir.name)) return;
         const air = Number(processor.currentAir.name.slice('VirtualTable'.length));
-        const rows = Number(processor.currentAir.rows);
+        const rows = metadataInteger(processor.currentAir.rows);
         const hints = [...processor.hints];
         const metadata = hints.filter(hint => hint.name === 'virtual_table_data');
         if (metadata.length !== 1) throw new Error('missing/duplicate packed table metadata');
@@ -116,8 +133,10 @@ function exportPacked(compilerRoot, ziskRoot, proofmanRoot, output) {
         // unique source interval, even if its multiplicity happens to be zero.
         for (let lane = 0; lane < lanes.length; lane++) {
             for (let row = 0; row < rows; row++) {
-                const busId = Number(lanes[lane].uid.getValue(row));
-                if (!TARGETS.has(busId)) continue;
+                const uid = lanes[lane].uid.getValue(row);
+                if (typeof uid !== 'bigint') throw new TypeError('packed producer UID is not a bigint');
+                const busId = TARGET_UIDS.get(uid);
+                if (busId === undefined) continue;
                 const offset = lane * rows + row;
                 const owners = placements.filter(source => source.air === air &&
                     source.start <= offset && offset < source.start + source.rows);
@@ -158,4 +177,4 @@ if (require.main === module) {
         catch (error) { console.error(error.stack); process.exitCode = 1; }
     }
 }
-module.exports = { exportPacked };
+module.exports = { exportPacked, metadataInteger };
