@@ -35,13 +35,11 @@ theorem mulInput_eq_canonical
     have h := ia.promises.input_r1_eq.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r1))
     injection h with hval
-    exact hval
   have hr2 : ia.mul_input.r2_val =
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r2) := by
     have h := ia.promises.input_r2_eq.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r2))
     injection h with hval
-    exact hval
   have hrd : ia.mul_input.rd = regidx_to_fin c.rd := ia.promises.input_rd_eq
   have hPC : ia.mul_input.PC = pc := by
     exact Option.some.inj (ia.promises.input_pc_eq.symm.trans hpc)
@@ -129,13 +127,11 @@ theorem mulhInput_eq_canonical
     have h := ia.promises.input_r1_eq.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r1))
     injection h with hval
-    exact hval
   have hr2 : ia.mulh_input.r2_val =
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r2) := by
     have h := ia.promises.input_r2_eq.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r2))
     injection h with hval
-    exact hval
   have hrd : ia.mulh_input.rd = regidx_to_fin c.rd := ia.promises.input_rd_eq
   have hPC : ia.mulh_input.PC = pc := by
     exact Option.some.inj (ia.promises.input_pc_eq.symm.trans hpc)
@@ -223,13 +219,11 @@ theorem mulhsuInput_eq_canonical
     have h := ia.promises.input_r1_eq.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r1))
     injection h with hval
-    exact hval
   have hr2 : ia.mulhsu_input.r2_val =
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r2) := by
     have h := ia.promises.input_r2_eq.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r2))
     injection h with hval
-    exact hval
   have hrd : ia.mulhsu_input.rd = regidx_to_fin c.rd := ia.promises.input_rd_eq
   have hPC : ia.mulhsu_input.PC = pc := by
     exact Option.some.inj (ia.promises.input_pc_eq.symm.trans hpc)
@@ -317,13 +311,11 @@ theorem mulhuInput_eq_canonical
     have h := ia.h_input_r1.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r1))
     injection h with hval
-    exact hval
   have hr2 : ia.mulhu_input.r2_val =
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r2) := by
     have h := ia.h_input_r2.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r2))
     injection h with hval
-    exact hval
   have hrd : ia.mulhu_input.rd = regidx_to_fin c.rd := ia.h_input_rd
   have hPC : ia.mulhu_input.PC = pc := by
     exact Option.some.inj (ia.h_input_pc.symm.trans hpc)
@@ -406,13 +398,11 @@ theorem mulwInput_eq_canonical
     have h := ia.h_input_r1.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r1))
     injection h with hval
-    exact hval
   have hr2 : ia.mulw_input.r2_val =
       pureInputRegValue steps rowDecodes i.val (regidx_to_fin c.r2) := by
     have h := ia.h_input_r2.symm.trans
       (read_pureInputRegValue steps rowDecodes init i h_reg (regidx_to_fin c.r2))
     injection h with hval
-    exact hval
   have hrd : ia.mulw_input.rd = regidx_to_fin c.rd := ia.h_input_rd
   have hPC : ia.mulw_input.PC = pc := by
     exact Option.some.inj (ia.h_input_pc.symm.trans hpc)
