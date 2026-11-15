@@ -18,7 +18,7 @@ open ZiskFv.Channels.SpecifiedRanges (SpecifiedRangesSliceChannel)
 open ZiskFv.Channels.MemAlignRom (MemAlignRomChannel)
 open ZiskFv.Channels.MemAlignRanges (MemAlignRangeChannel)
 open ZiskFv.AirsClean.ZiskInstructionRom (Program)
-open ZiskFv.AirsClean.BinaryExtension (shiftStaticLookupComponent)
+open ZiskFv.AirsClean.BinaryExtension (shiftTableConsumerComponent)
 
 /-- The lookup-aware ArithMul provider component used by the full ensemble. -/
 @[reducible]
@@ -44,9 +44,11 @@ theorem component_mem_fullRv64im_cases
       ∨ component = ZiskFv.AirsClean.RegisterStepRangeSlice.component
       ∨ component = ZiskFv.AirsClean.ArithDiv.component
       ∨ component = arithMulProviderComponent
-      ∨ component = shiftStaticLookupComponent
-      ∨ component = ZiskFv.AirsClean.Binary.staticLookupComponent
+      ∨ component = shiftTableConsumerComponent
+      ∨ component = ZiskFv.AirsClean.Binary.tableConsumerComponent
       ∨ component = ZiskFv.AirsClean.BinaryAdd.component
+      ∨ component = ZiskFv.AirsClean.BinaryExtensionTableSlice.sourceComponent
+      ∨ component = ZiskFv.AirsClean.BinaryTableSlice.sourceComponent
       ∨ component =
         ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus length program := by
   simp [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
@@ -107,14 +109,14 @@ theorem exists_binary_table_of_fullRv64im_witness
     {length : ℕ} {program : Program length}
     (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) :
     ∃ table ∈ witness.allTables,
-      table.component = ZiskFv.AirsClean.Binary.staticLookupComponent := by
+      table.component = ZiskFv.AirsClean.Binary.tableConsumerComponent := by
   have h_component_mem :
-      ZiskFv.AirsClean.Binary.staticLookupComponent ∈
+      ZiskFv.AirsClean.Binary.tableConsumerComponent ∈
         (fullRv64imEnsemble length program).ensemble.allTables := by
     simp [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
       SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
   have h_in_map :
-      ZiskFv.AirsClean.Binary.staticLookupComponent ∈
+      ZiskFv.AirsClean.Binary.tableConsumerComponent ∈
         witness.allTables.map (·.component) := by
     rw [witness.allTables_map_component]
     exact h_component_mem
@@ -129,14 +131,14 @@ theorem exists_binaryExtension_table_of_fullRv64im_witness
     (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble) :
     ∃ table ∈ witness.allTables,
       table.component =
-        shiftStaticLookupComponent := by
+        shiftTableConsumerComponent := by
   have h_component_mem :
-      shiftStaticLookupComponent ∈
+      shiftTableConsumerComponent ∈
         (fullRv64imEnsemble length program).ensemble.allTables := by
     simp [fullRv64imEnsemble, fullRv64imSoundEnsemble, SoundEnsemble.toFormal, Ensemble.allTables,
       SoundEnsemble.addTable_tables, SoundEnsemble.addFinishedChannel_tables]
   have h_in_map :
-      shiftStaticLookupComponent ∈
+      shiftTableConsumerComponent ∈
         witness.allTables.map (·.component) := by
     rw [witness.allTables_map_component]
     exact h_component_mem
@@ -367,19 +369,21 @@ theorem binaryAdd_table_interactionsWith_memBus_nil
 theorem staticBinary_table_interactionsWith_memBus_nil
     {table : Table FGL}
     (h_component :
-      table.component = ZiskFv.AirsClean.Binary.staticLookupComponent) :
+      table.component = ZiskFv.AirsClean.Binary.tableConsumerComponent) :
     table.interactionsWith MemBusChannel.toRaw = [] := by
-  have h_not :
-      MemBusChannel.toRaw ∉
-        ZiskFv.AirsClean.Binary.staticLookupComponent.circuit.channels := by
-    change MemBusChannel.toRaw ∉ [OpBusChannel.toRaw]
-    simp only [List.mem_singleton]
-    intro h
-    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
-    simp [OpBusChannel, MemBusChannel, Channel.toRaw] at h_name
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
-  exact h_not
+  intro h
+  have h_name := List.mem_map_of_mem (f := fun channel : RawChannel FGL => channel.name) h
+  simp [circuit_norm, ZiskFv.AirsClean.Binary.tableConsumerComponent,
+    ZiskFv.AirsClean.Binary.tableConsumerCircuit,
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent,
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerCircuit,
+    ZiskFv.AirsClean.BinaryExtension.tableConsumerCircuit,
+    ZiskFv.Channels.BinaryTable.BinaryTableChannel,
+    ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel,
+    OpBusChannel, MemBusChannel, MemAlignRomChannel,
+    ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, Channel.toRaw] at h_name
 
 /-- A table whose component is lookup-aware BinaryExtension has no memory-bus
     interactions. -/
@@ -387,19 +391,21 @@ theorem staticBinaryExtension_table_interactionsWith_memBus_nil
     {table : Table FGL}
     (h_component :
       table.component =
-        shiftStaticLookupComponent) :
+        shiftTableConsumerComponent) :
     table.interactionsWith MemBusChannel.toRaw = [] := by
-  have h_not :
-      MemBusChannel.toRaw ∉
-        shiftStaticLookupComponent.circuit.channels := by
-    change MemBusChannel.toRaw ∉ [OpBusChannel.toRaw]
-    simp only [List.mem_singleton]
-    intro h
-    have h_name := congrArg (fun c : RawChannel FGL => c.name) h
-    simp [OpBusChannel, MemBusChannel, Channel.toRaw] at h_name
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
-  exact h_not
+  intro h
+  have h_name := List.mem_map_of_mem (f := fun channel : RawChannel FGL => channel.name) h
+  simp [circuit_norm, ZiskFv.AirsClean.Binary.tableConsumerComponent,
+    ZiskFv.AirsClean.Binary.tableConsumerCircuit,
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent,
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerCircuit,
+    ZiskFv.AirsClean.BinaryExtension.tableConsumerCircuit,
+    ZiskFv.Channels.BinaryTable.BinaryTableChannel,
+    ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel,
+    OpBusChannel, MemBusChannel, MemAlignRomChannel,
+    ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, Channel.toRaw] at h_name
 
 /-- A table whose component is ArithMul has no memory-bus interactions. -/
 theorem arithMul_table_interactionsWith_memBus_nil
@@ -612,23 +618,39 @@ theorem arithMul_table_interactionsWith_memAlignRom_nil
 
 theorem staticBinaryExtension_table_interactionsWith_memAlignRom_nil
     {table : Table FGL}
-    (h_component : table.component = shiftStaticLookupComponent) :
+    (h_component : table.component = shiftTableConsumerComponent) :
     table.interactionsWith MemAlignRomChannel.toRaw = [] := by
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
-  change MemAlignRomChannel.toRaw ∉ [OpBusChannel.toRaw]
-  simp only [List.mem_singleton]
-  exact memAlignRomChannel_ne_opBus
+  intro h
+  have h_name := List.mem_map_of_mem (f := fun channel : RawChannel FGL => channel.name) h
+  simp [circuit_norm, ZiskFv.AirsClean.Binary.tableConsumerComponent,
+    ZiskFv.AirsClean.Binary.tableConsumerCircuit,
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent,
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerCircuit,
+    ZiskFv.AirsClean.BinaryExtension.tableConsumerCircuit,
+    ZiskFv.Channels.BinaryTable.BinaryTableChannel,
+    ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel,
+    OpBusChannel, MemBusChannel, MemAlignRomChannel,
+    ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, Channel.toRaw] at h_name
 
 theorem staticBinary_table_interactionsWith_memAlignRom_nil
     {table : Table FGL}
-    (h_component : table.component = ZiskFv.AirsClean.Binary.staticLookupComponent) :
+    (h_component : table.component = ZiskFv.AirsClean.Binary.tableConsumerComponent) :
     table.interactionsWith MemAlignRomChannel.toRaw = [] := by
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
-  change MemAlignRomChannel.toRaw ∉ [OpBusChannel.toRaw]
-  simp only [List.mem_singleton]
-  exact memAlignRomChannel_ne_opBus
+  intro h
+  have h_name := List.mem_map_of_mem (f := fun channel : RawChannel FGL => channel.name) h
+  simp [circuit_norm, ZiskFv.AirsClean.Binary.tableConsumerComponent,
+    ZiskFv.AirsClean.Binary.tableConsumerCircuit,
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent,
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerCircuit,
+    ZiskFv.AirsClean.BinaryExtension.tableConsumerCircuit,
+    ZiskFv.Channels.BinaryTable.BinaryTableChannel,
+    ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel,
+    OpBusChannel, MemBusChannel, MemAlignRomChannel,
+    ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, Channel.toRaw] at h_name
 
 theorem binaryAdd_table_interactionsWith_memAlignRom_nil
     {table : Table FGL}
@@ -745,17 +767,22 @@ theorem registerBoundary_registerStepRange_mult
     operation bus. -/
 theorem staticBinary_table_interactionsWith_registerStepRange_nil
     {table : Table FGL}
-    (h_component : table.component = ZiskFv.AirsClean.Binary.staticLookupComponent) :
+    (h_component : table.component = ZiskFv.AirsClean.Binary.tableConsumerComponent) :
     table.interactionsWith
       ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] := by
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
-  change ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉ [OpBusChannel.toRaw]
-  simp only [List.mem_singleton]
   intro h
-  have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h
-  change "SpecifiedRangesSlice102" = "OperationBus" at h_name
-  simp at h_name
+  have h_name := List.mem_map_of_mem (f := fun channel : RawChannel FGL => channel.name) h
+  simp [circuit_norm, ZiskFv.AirsClean.Binary.tableConsumerComponent,
+    ZiskFv.AirsClean.Binary.tableConsumerCircuit,
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent,
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerCircuit,
+    ZiskFv.AirsClean.BinaryExtension.tableConsumerCircuit,
+    ZiskFv.Channels.BinaryTable.BinaryTableChannel,
+    ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel,
+    OpBusChannel, MemBusChannel, MemAlignRomChannel,
+    ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, Channel.toRaw] at h_name
 
 /-- `MemAlignReadByte` carries no bus-102 interactions. -/
 theorem memAlignReadByte_table_interactionsWith_registerStepRange_nil
@@ -905,17 +932,22 @@ theorem mem_table_interactionsWith_registerStepRange_nil
 theorem staticBinaryExtension_table_interactionsWith_registerStepRange_nil
     {table : Table FGL}
     (h_component :
-      table.component = ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent) :
+      table.component = ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent) :
     table.interactionsWith
       ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw = [] := by
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
-  change ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw ∉ [OpBusChannel.toRaw]
-  simp only [List.mem_singleton]
   intro h
-  have h_name := congrArg (fun raw : RawChannel FGL => raw.name) h
-  change "SpecifiedRangesSlice102" = "OperationBus" at h_name
-  simp at h_name
+  have h_name := List.mem_map_of_mem (f := fun channel : RawChannel FGL => channel.name) h
+  simp [circuit_norm, ZiskFv.AirsClean.Binary.tableConsumerComponent,
+    ZiskFv.AirsClean.Binary.tableConsumerCircuit,
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent,
+    ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerCircuit,
+    ZiskFv.AirsClean.BinaryExtension.tableConsumerCircuit,
+    ZiskFv.Channels.BinaryTable.BinaryTableChannel,
+    ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel,
+    OpBusChannel, MemBusChannel, MemAlignRomChannel,
+    ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel, Channel.toRaw] at h_name
 
 /-- `BinaryAdd` carries no bus-102 interactions. -/
 theorem binaryAdd_table_interactionsWith_registerStepRange_nil
@@ -932,5 +964,32 @@ theorem binaryAdd_table_interactionsWith_registerStepRange_nil
   apply Table.interactionsWith_nil_of_channel_not_mem
   rw [h_component]
   exact h_not
+
+/-- The actual packed bus125 provider has no interaction on any differently named channel. -/
+theorem binaryTableSource_interactionsWith_nil_of_name
+    {table : Table FGL}
+    (h_component : table.component = ZiskFv.AirsClean.BinaryTableSlice.sourceComponent)
+    (channel : RawChannel FGL) (h_name : channel.name ≠ "BinaryTable") :
+    table.interactionsWith channel = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  change channel ∉ [ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw]
+  simp only [List.mem_singleton]
+  intro h
+  exact h_name (congrArg (fun c : RawChannel FGL => c.name) h)
+
+/-- The actual packed bus124 provider has no interaction on any differently named channel. -/
+theorem extensionTableSource_interactionsWith_nil_of_name
+    {table : Table FGL}
+    (h_component : table.component =
+      ZiskFv.AirsClean.BinaryExtensionTableSlice.sourceComponent)
+    (channel : RawChannel FGL) (h_name : channel.name ≠ "BinaryExtensionTable") :
+    table.interactionsWith channel = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  rw [h_component]
+  change channel ∉ [ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw]
+  simp only [List.mem_singleton]
+  intro h
+  exact h_name (congrArg (fun c : RawChannel FGL => c.name) h)
 
 end ZiskFv.AirsClean.FullEnsemble
