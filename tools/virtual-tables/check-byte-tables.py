@@ -34,7 +34,7 @@ ROOT = Path(__file__).resolve().parents[2]
 TABLES = ("BinaryTable", "BinaryExtensionTable")
 
 
-def blocks_from_stream(proc: subprocess.Popen, op_column: int) -> list[dict]:
+def blocks_from_stream(proc: subprocess.Popen, op_column: int, stream_digest) -> list[dict]:
     """Group the streamed rows into opcode blocks, hashing each."""
     blocks: list[dict] = []
     current: dict | None = None
@@ -42,6 +42,7 @@ def blocks_from_stream(proc: subprocess.Popen, op_column: int) -> list[dict]:
     index = 0
     assert proc.stdout is not None
     for raw in proc.stdout:
+        stream_digest.update(raw)
         cells = raw.rstrip(b"\n").split(b"\t")
         if len(cells) != 7:
             raise SystemExit(f"malformed streamed row at index {index}: {raw!r}")
@@ -90,13 +91,20 @@ def main() -> None:
                         help="directory holding <Air>.json from export-byte-tables.cjs")
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()
+    packed_path = args.export_dir.parent / "PackedVirtualTables.json"
+    if not packed_path.exists():
+        raise SystemExit(f"missing production packed export {packed_path}")
+    packed = json.loads(packed_path.read_text())
+    packed_sources = {source["busId"]: source for source in packed["sources"]}
 
     # Build current model oleans, not a native executable for Mathlib's entire
     # import closure. The interpreter evaluates the same maintained rowOfIndex.
     if not args.quiet:
         print("building byte-table model modules")
     build = subprocess.run(
-        ["lake", "build", *(f"ZiskFv.AirsClean.{air}" for air in TABLES)],
+        ["lake", "build", "ZiskFv.AirsClean.BinaryTableBalance",
+         "ZiskFv.AirsClean.PackedVirtualTableSources",
+         *(f"ZiskFv.AirsClean.{air}Slice" for air in TABLES)],
         cwd=ROOT, stdout=subprocess.DEVNULL)
     if build.returncode != 0:
         raise SystemExit("lake build byte-table model modules failed")
@@ -111,12 +119,46 @@ def main() -> None:
         proc = subprocess.Popen(
             ["lake", "env", "lean", "--run", "bin/ByteTableStream/Main.lean", air],
             cwd=ROOT, stdout=subprocess.PIPE)
-        actual = blocks_from_stream(proc, op_column)
+        stream_digest = hashlib.sha256()
+        actual = blocks_from_stream(proc, op_column, stream_digest)
         if proc.wait() != 0:
             raise SystemExit(f"{air}: Lean byte-table producer exited {proc.returncode}")
         problems.extend(compare(air, expected, actual))
+        if expected["producer"]["multiplicity"] != "raw-witness":
+            raise SystemExit(f"{air}: packed producer is not raw multiplicity")
+        problems.extend(compare(f"{air} packed producer", expected["producer"], actual))
+        bus = 125 if air == "BinaryTable" else 124
+        source = packed_sources.get(bus)
+        if source is None or source["rows"] != expected["rows"]:
+            problems.append(f"{air}: production packed source domain differs")
+        elif source["sha256"] != stream_digest.hexdigest():
+            problems.append(f"{air}: production packed fixed tuple differs from provider")
         if not args.quiet:
             print(f"{air}: {len(actual)} opcode blocks, {sum(b['rows'] for b in actual)} rows")
+
+    dual_build = subprocess.run(
+        ["lake", "build", "ZiskFv.AirsClean.DualBytePackedSource"],
+        cwd=ROOT, stdout=subprocess.DEVNULL)
+    if dual_build.returncode != 0:
+        raise SystemExit("lake build DualByte source provider failed")
+    proc = subprocess.Popen(
+        ["lake", "env", "lean", "--run", "bin/DualByteStream/Main.lean"],
+        cwd=ROOT, stdout=subprocess.PIPE)
+    digest = hashlib.sha256()
+    rows = 0
+    assert proc.stdout is not None
+    for raw in proc.stdout:
+        if len(raw.rstrip(b"\n").split(b"\t")) != 2:
+            raise SystemExit(f"malformed DualByte provider row {rows}")
+        digest.update(raw)
+        rows += 1
+    if proc.wait() != 0:
+        raise SystemExit(f"DualByte source producer exited {proc.returncode}")
+    source = packed_sources.get(88)
+    if source is None or rows != 65536 or source["rows"] != rows or source["width"] != 2:
+        problems.append("DualByte: production packed source domain/schema differs")
+    elif source["sha256"] != digest.hexdigest():
+        problems.append("DualByte: production packed fixed tuple differs from provider")
 
     if problems:
         for problem in problems:
