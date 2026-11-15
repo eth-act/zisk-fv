@@ -1,0 +1,18 @@
+   Compiling pil-extract v0.1.0 (/home/cody/zisk-fv-closure-extractor/tools/pil-extract)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.37s
+     Running unittests src/main.rs (tools/pil-extract/target/debug/deps/pil_extract-7f68a2b342855d22)
+
+running 10 tests
+test lookup_wiring::tests::direct_assumes_neg_form_preserves_the_pilout_sign_spelling ... ok
+test lookup_wiring::tests::direct_assumes_neg_form_zero_tail_composes_exactly ... ok
+test lookup_wiring::tests::direct_link_preserves_air_value_without_zero_substitution ... ok
+test lookup_wiring::tests::recognizer_scope_is_per_route_and_air ... ok
+test lookup_wiring::tests::source_schema_rejects_unknown_kinds_and_orphan_scopes ... ok
+test lookup_wiring::tests::two_hint_cluster_requires_the_standard_correction ... ok
+test lookup_wiring::tests::zero_tail_cluster_requires_a_terminal_zero_hint ... ok
+test lookup_wiring::tests::zero_tail_mix_trims_only_terminal_literal_zero_slots ... ok
+test lookup_wiring::tests::validated_link_carries_shape_computed_kernel_equalities ... ok
+test lookup_wiring::tests::reload_range_index_rejects_missing_or_shifted_source_links ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 99 filtered out; finished in 0.00s
+

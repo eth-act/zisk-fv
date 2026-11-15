@@ -153,6 +153,19 @@ leaf-type-heads = ["ℕ"]
 generated = "build/extraction/Extraction/MemAlignWriteByte.lean"
 recording = "trust/generated/weld-columns/mem-align-write-byte.txt"
 
+[air.MemAlignWriteByteSource]
+weld = "ZiskFv/AirsClean/MemAlignWriteByte/SourceMirrorWeld.lean"
+column-map = "sourceMain"
+accessor = "(c.rows row)"
+wrapper = "SourceTrace"
+instance = "sourceCircuit"
+pin = "sourceCircuit_pinned"
+row-type = "MemAlignWriteByteRow"
+row-decl = ["ZiskFv/AirsClean/MemAlignWriteByte/Row.lean"]
+generated = "build/extraction/Extraction/MemAlignWriteByte.lean"
+recording = "trust/generated/weld-columns/mem-align-write-byte.txt"
+note = "The actual local WriteByte source row shares the existing extractor recording; no stage-1 map exemption."
+
 [air.MemRow]
 weld = "ZiskFv/AirsClean/MemMirrorWeld.lean"
 column-map = "rowMainValue"

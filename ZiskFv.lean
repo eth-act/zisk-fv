@@ -290,3 +290,7 @@ import ZiskFv.AirsClean.MemAlignByteMirrorWeld
 -- constraint definitions are all `@[simp]`-tagged, so keeping it out of every
 -- other module's import closure keeps that simp set out of the proofs.
 import ZiskFv.AirsClean.MemMirrorWeld
+import ZiskFv.AirsClean.GsumBoundary
+import ZiskFv.AirsClean.OperationPadding
+import ZiskFv.AirsClean.MemAlignWriteByte.ExtractedWiring
+import ZiskFv.AirsClean.MemAlignWriteByte.DirectWiring
