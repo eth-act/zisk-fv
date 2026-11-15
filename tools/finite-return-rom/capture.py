@@ -102,6 +102,10 @@ def main():
         if failed_log.exists():
             raise ValueError("The initial continuation was already attempted; preserve its outcome")
         (workspace / "native-producer.log").rename(failed_log)
+        for name in ["native-launch-evidence.json", "native-orchestrator.py"]:
+            previous = workspace / name
+            if previous.exists():
+                previous.rename(workspace / name.replace(".", "-initial.", 1))
         initial_failure = {"file": failed_log.name, "sha256": sha(failed_log),
                            "classification": "native linker setup failure; not a source/data/proof kill"}
         for command in commands:
@@ -123,6 +127,9 @@ def main():
                NUM_JOBS="2", RAYON_NUM_THREADS="2", OMP_NUM_THREADS="2", LIBCLANG_PATH=str(args.libclang),
                RUSTC=str(args.rust_toolchain / "bin/rustc"))
     env["PATH"] = ":".join(map(str, [shims, args.cross_cc / "bin", args.rust_toolchain / "bin"])) + ":" + env["PATH"]
+    explicit_env_keys = ["CARGO_HOME", "CARGO_TARGET_DIR", "CARGO_BUILD_JOBS", "MAKEFLAGS",
+                         "CMAKE_BUILD_PARALLEL_LEVEL", "NUM_JOBS", "RAYON_NUM_THREADS",
+                         "OMP_NUM_THREADS", "LIBCLANG_PATH", "RUSTC"]
     openmp = None
     if args.llvm_openmp is not None:
         actual_runtime = args.llvm_openmp.resolve(strict=True)
@@ -147,6 +154,12 @@ def main():
         if capture:
             (workspace / name).write_text(result.stdout)
             return result.stdout.strip()
+    def tool_metadata(command, name):
+        # Finalization reads the original stage's outputs; it never reruns any tool.
+        if args.finalize_only:
+            return (workspace / name).read_text().strip()
+        return run(command, name, capture=True)
+
 
     archive = workspace / "source.tar"
     if not same_inputs:
@@ -211,17 +224,17 @@ serde_json = {{ version = "={version('serde_json')}" }}
         shutil.copyfile(source / "Cargo.lock", driver / "Cargo.lock")
     caller_lock_before = sha(driver / "Cargo.lock")
     gcc = args.cross_cc / "bin/riscv64-none-elf-gcc"
-    gcc_version = run([gcc, "--version"], "gcc-version.log", capture=True)
-    linker = Path(run([gcc, "-print-prog-name=ld"], "linker-path.log", capture=True))
-    linker_version = run([linker, "--version"], "linker-version.log", capture=True) if linker.is_absolute() else None
-    compiler_configuration = run([gcc, "-v"], "gcc-configuration.log", capture=True)
+    gcc_version = tool_metadata([gcc, "--version"], "gcc-version.log")
+    linker = Path(tool_metadata([gcc, "-print-prog-name=ld"], "linker-path.log"))
+    linker_version = tool_metadata([linker, "--version"], "linker-version.log") if linker.is_absolute() else None
+    compiler_configuration = tool_metadata([gcc, "-v"], "gcc-configuration.log")
     wrapper_add_flags = args.cross_cc / "nix-support/add-flags.sh"
     wrapper_flag_source = wrapper_add_flags.read_text()
     wrapper_source = gcc.read_text()
     rustc = args.rust_toolchain / "bin/rustc"
     cargo = args.rust_toolchain / "bin/cargo"
-    rust_version = run([rustc, "-Vv"], "rustc-version.log", capture=True)
-    cargo_version = run([cargo, "--version"], "cargo-version.log", capture=True)
+    rust_version = tool_metadata([rustc, "-Vv"], "rustc-version.log")
+    cargo_version = tool_metadata([cargo, "--version"], "cargo-version.log")
     elf = workspace / "guest.elf"
     if same_inputs:
         previous_elf = json.loads((workspace / "guest-metadata.json").read_text())
@@ -234,8 +247,8 @@ serde_json = {{ version = "={version('serde_json')}" }}
     elf_info = elf_metadata(elf)
     (workspace / "guest-metadata.json").write_text(json.dumps({"sha256": sha(elf), **elf_info}, indent=2) + "\n")
     if openmp is not None:
-        dynamic = run(["readelf", "-d", actual_runtime], "openmp-dynamic.log", capture=True)
-        symbols = run(["nm", "-D", "--defined-only", actual_runtime], "openmp-exports.log", capture=True)
+        dynamic = tool_metadata(["readelf", "-d", actual_runtime], "openmp-dynamic.log")
+        symbols = tool_metadata(["nm", "-D", "--defined-only", actual_runtime], "openmp-exports.log")
         openmp["soname_evidence"] = [line.strip() for line in dynamic.splitlines() if "(SONAME)" in line]
         openmp["required_abi_exports_observed"] = {
             name: any(line.split()[-1].split("@")[0] == name for line in symbols.splitlines() if line.split())
@@ -245,11 +258,32 @@ serde_json = {{ version = "={version('serde_json')}" }}
     raw = workspace / "raw"
     if not args.finalize_only:
         # Actual producer execution, separate from recoverable metadata finalization.
+        # Record the script and selected env argument BEFORE dispatch, not at finalization.
+        native_source = workspace / "native-orchestrator.py"
+        native_source.write_bytes((tool / "capture.py").read_bytes())
+        (workspace / "native-launch-evidence.json").write_text(json.dumps({
+            "status": "UNTRUSTED_NATIVE_STAGE_PROVENANCE",
+            "evidence_kind": "captured_script_bytes_and_selected_subprocess_env_argument_before_spawn",
+            "native_orchestrator_sha256": sha(native_source),
+            "native_orchestrator_snapshot_file": native_source.name,
+            "native_process_environment": {"status": "UNOBSERVED", "values": None},
+            "configured_child_environment_evidence_kind": "captured_selected_env_mapping_passed_to_subprocess_not_proc_dump",
+            "configured_child_environment": {k: env[k] for k in explicit_env_keys},
+            "configured_library_path": env.get("LIBRARY_PATH"),
+            "configured_path": env["PATH"],
+            "unrecorded_inherited_environment": "All variables outside the selected mapping are unrecorded",
+        }, indent=2) + "\n")
         run([cargo, "run", "--offline", "--manifest-path", driver / "Cargo.toml", "--", elf, raw], "native-producer.log")
         (workspace / "native-result.json").write_text(json.dumps({
             "exit_code": 0, "native_log_sha256": sha(workspace / "native-producer.log"),
             "driver_source_sha256": sha(driver / "src/main.rs"), "elf_sha256": sha(elf),
         }, indent=2) + "\n")
+    success = json.loads((workspace / "native-result.json").read_text())
+    native_launch = json.loads((workspace / "native-launch-evidence.json").read_text())
+    shutil.copyfile(workspace / "native-launch-evidence.json", output / "native-launch-evidence.json")
+    snapshot_name = native_launch["native_orchestrator_snapshot_file"]
+    if snapshot_name is not None:
+        shutil.copyfile(workspace / snapshot_name, output / snapshot_name)
     if args.continue_native and sha(driver / "Cargo.lock") != caller_lock_before:
         raise ValueError("Environment-only continuation changed caller dependency resolution")
     if sha(float_path) != float_before or sha(source / "Cargo.lock") != source_lock_before:
@@ -320,10 +354,18 @@ serde_json = {{ version = "={version('serde_json')}" }}
                   "rust_toolchain": str(args.rust_toolchain), "rustc_sha256": sha(rustc), "rustc_version": rust_version,
                   "cargo_sha256": sha(cargo), "cargo_version": cargo_version, "libclang": str(args.libclang),
                   "llvm_openmp": openmp},
-        "environment": {k: env[k] for k in ["CARGO_BUILD_JOBS", "MAKEFLAGS", "CMAKE_BUILD_PARALLEL_LEVEL",
-                        "NUM_JOBS", "RAYON_NUM_THREADS", "OMP_NUM_THREADS", "LIBCLANG_PATH", "RUSTC"]},
-        "library_path": env.get("LIBRARY_PATH"),
-        "tool_sources_sha256": {name: sha(tool / name) for name in ["main.rs", "capture.py", "guest.S", "guest.ld"]},
+        "provenance_schema": 2,
+        "native_stage_provenance": native_launch,
+        "native_rust_driver_source_sha256": success["driver_source_sha256"],
+        "native_input_elf_sha256": success["elf_sha256"],
+        "metadata_finalization": {
+            "stage": "metadata_only_no_native_or_compiler_execution" if args.finalize_only else "post_native_capture",
+            "configured_child_environment": {k: env[k] for k in explicit_env_keys},
+            "configured_library_path": env.get("LIBRARY_PATH"),
+            "scope": "Finalization-stage configuration only; NOT a native-stage environment measurement",
+            "tool_sources_sha256": {name: sha(tool / name) for name in ["main.rs", "capture.py", "guest.S", "guest.ld"]},
+            "tool_identity_evidence": "Preserved tool output logs and immutable files; no new tool execution during metadata-only finalization",
+        },
         "commands": commands, "files": files,
         "native_log_sha256": sha(workspace / "native-producer.log"),
         "initial_native_link_failure": initial_failure,
