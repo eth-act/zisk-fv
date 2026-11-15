@@ -18,7 +18,7 @@ open ZiskFv.AirsClean.Main
 open ZiskFv.AirsClean.FullEnsemble (mainOfTable mainTableRowAtOrZero)
 open RawProgramBinding CanonicalExecutionRows
 open ZiskFv.Compliance.Extraction
-open Spike
+open ZiskFv.ZiskCircuit.MemTrace
 
 set_option maxHeartbeats 8000000
 set_option maxRecDepth 10000
@@ -58,11 +58,16 @@ theorem mainMutableReplayRowsAt_eq_current {n : Nat} (trace : AcceptedZiskTrace 
       project (-(v.rom.a_src_mem + v.rom.a_src_reg)) (aMemMessageExpr v) ++
       project (-(v.rom.b_src_mem + v.rom.b_src_ind + v.rom.b_src_reg)) (bMemMessageExpr v) ++
       project (-(v.rom.store_mem + v.rom.store_ind + v.rom.store_reg)) (cMemMessageExpr v) := by
+  let v := (componentWithRomMemAndOpBus trace.programLength trace.program).rowInputVar
+  let env := trace.mainTable.environment (trace.mainTable.table.get row)
   rw [mainMutableReplayRowsAt_eq_six]
   dsimp only
-  rw [projected_register_pre_nil _ _ (by rw [eval_aRegPreMessageExpr]; rfl),
-    projected_register_pre_nil _ _ (by rw [eval_bRegPreMessageExpr]; rfl),
-    projected_register_pre_nil _ _ (by rw [eval_cRegPreMessageExpr]; rfl)]
+  rw [projected_register_pre_nil _ (eval env (aRegPreMessageExpr v))
+        (by rw [eval_aRegPreMessageExpr]),
+    projected_register_pre_nil _ (eval env (bRegPreMessageExpr v))
+        (by rw [eval_bRegPreMessageExpr]),
+    projected_register_pre_nil _ (eval env (cRegPreMessageExpr v))
+        (by rw [eval_cRegPreMessageExpr])]
   simp only [List.nil_append, List.append_nil]
 
 /-- Source-only mutable-traffic information. No canonical register index, A
@@ -80,6 +85,11 @@ private theorem weakShape_congr {reads writes : Bool} {a b : zisk_inst.ZiskInst}
   rcases shape with ⟨am, bm, bi, cm, ci⟩
   exact ⟨ha.symm ▸ am, hb.symm ▸ bm, hb.symm ▸ bi, hc.symm ▸ cm, hc.symm ▸ ci⟩
 
+local macro "source_selector" : tactic => `(tactic|
+  simp [zisk_inst.SRC_IMM, zisk_inst.SRC_REG, zisk_inst.SRC_MEM,
+    zisk_inst.SRC_IND, zisk_inst.SRC_C, zisk_inst.STORE_REG,
+    zisk_inst.STORE_MEM, zisk_inst.STORE_IND])
+
 private theorem weakShape_new (address : Std.U64) (z : zisk_inst_builder.ZiskInstBuilder)
     (source : zisk_inst_builder.ZiskInstBuilder.new address = .ok z) :
     WeakMutableSourceShape false false z.i := by
@@ -87,7 +97,7 @@ private theorem weakShape_new (address : Std.U64) (z : zisk_inst_builder.ZiskIns
     zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
     zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default, Bind.bind, bind_ok] at source
   cases Result.ok.inj source
-  constructor <;> decide
+  constructor <;> source_selector
 
 private theorem weakShape_new_for (input : riscv2zisk_single_row.Rv64imLoweringInput)
     (z : zisk_inst_builder.ZiskInstBuilder)
@@ -102,9 +112,9 @@ private theorem weakShape_a_imm {reads writes : Bool}
     (shape : WeakMutableSourceShape reads writes self.i) :
     WeakMutableSourceShape reads writes z.i := by
   simp only [zisk_inst_builder.ZiskInstBuilder.src_a_imm, lift, Bind.bind, bind_ok] at source
-  repeat' obtain ⟨_, _, source⟩ := bind_eq_ok_imp source
+  obtain ⟨_, _, source⟩ := bind_eq_ok_imp source
   cases Result.ok.inj source
-  exact ⟨by decide, shape.b_not_mem, shape.b_ind, shape.store_not_mem, shape.store_ind⟩
+  exact ⟨by source_selector, shape.b_not_mem, shape.b_ind, shape.store_not_mem, shape.store_ind⟩
 
 private theorem weakShape_a_reg {reads writes : Bool}
     (self z : zisk_inst_builder.ZiskInstBuilder) (reg : Std.U64)
@@ -119,10 +129,9 @@ private theorem weakShape_a_reg {reads writes : Bool}
     lift, Bind.bind, bind_ok, Bool.false_eq_true, if_false] at source
   split_ifs at source <;>
     first
-    | (repeat' obtain ⟨_, _, source⟩ := bind_eq_ok_imp source
-       cases Result.ok.inj source
-       exact ⟨by decide, shape.b_not_mem, shape.b_ind, shape.store_not_mem, shape.store_ind⟩)
     | (exfalso; scalar_tac)
+    | (cases Result.ok.inj source
+       exact ⟨by source_selector, shape.b_not_mem, shape.b_ind, shape.store_not_mem, shape.store_ind⟩)
 
 private theorem weakShape_b_imm {reads writes : Bool}
     (self z : zisk_inst_builder.ZiskInstBuilder) (value : Std.U64)
@@ -130,9 +139,9 @@ private theorem weakShape_b_imm {reads writes : Bool}
     (shape : WeakMutableSourceShape reads writes self.i) :
     WeakMutableSourceShape false writes z.i := by
   simp only [zisk_inst_builder.ZiskInstBuilder.src_b_imm, lift, Bind.bind, bind_ok] at source
-  repeat' obtain ⟨_, _, source⟩ := bind_eq_ok_imp source
+  obtain ⟨_, _, source⟩ := bind_eq_ok_imp source
   cases Result.ok.inj source
-  exact ⟨shape.a_not_mem, by decide, by decide, shape.store_not_mem, shape.store_ind⟩
+  exact ⟨shape.a_not_mem, by source_selector, by source_selector, shape.store_not_mem, shape.store_ind⟩
 
 private theorem weakShape_b_reg {reads writes : Bool}
     (self z : zisk_inst_builder.ZiskInstBuilder) (reg : Std.U64)
@@ -147,10 +156,9 @@ private theorem weakShape_b_reg {reads writes : Bool}
     lift, Bind.bind, bind_ok, Bool.false_eq_true, if_false] at source
   split_ifs at source <;>
     first
-    | (repeat' obtain ⟨_, _, source⟩ := bind_eq_ok_imp source
-       cases Result.ok.inj source
-       exact ⟨shape.a_not_mem, by decide, by decide, shape.store_not_mem, shape.store_ind⟩)
     | (exfalso; scalar_tac)
+    | (cases Result.ok.inj source
+       exact ⟨shape.a_not_mem, by source_selector, by source_selector, shape.store_not_mem, shape.store_ind⟩)
 
 private theorem weakShape_b_lastc {reads writes : Bool}
     (self z : zisk_inst_builder.ZiskInstBuilder)
@@ -158,7 +166,7 @@ private theorem weakShape_b_lastc {reads writes : Bool}
     (shape : WeakMutableSourceShape reads writes self.i) :
     WeakMutableSourceShape false writes z.i := by
   cases Result.ok.inj source
-  exact ⟨shape.a_not_mem, by decide, by decide, shape.store_not_mem, shape.store_ind⟩
+  exact ⟨shape.a_not_mem, by source_selector, by source_selector, shape.store_not_mem, shape.store_ind⟩
 
 private theorem weakShape_b_ind {reads writes : Bool}
     (self z : zisk_inst_builder.ZiskInstBuilder) (offset : Std.U64)
@@ -167,9 +175,8 @@ private theorem weakShape_b_ind {reads writes : Bool}
     WeakMutableSourceShape true writes z.i := by
   simp only [zisk_inst_builder.ZiskInstBuilder.src_b_ind, lift, Bind.bind, bind_ok,
     Bool.false_eq_true, if_false] at source
-  split_ifs at source <;>
-    (cases Result.ok.inj source
-     exact ⟨shape.a_not_mem, by decide, by decide, shape.store_not_mem, shape.store_ind⟩)
+  cases Result.ok.inj source
+  exact ⟨shape.a_not_mem, by source_selector, by source_selector, shape.store_not_mem, shape.store_ind⟩
 
 private theorem weakShape_ind_width {reads writes : Bool}
     (self z : zisk_inst_builder.ZiskInstBuilder) (width : Std.U64)
@@ -177,9 +184,8 @@ private theorem weakShape_ind_width {reads writes : Bool}
     (shape : WeakMutableSourceShape reads writes self.i) :
     WeakMutableSourceShape reads writes z.i := by
   unfold zisk_inst_builder.ZiskInstBuilder.ind_width at source
-  split at source <;> first
-  | (cases Result.ok.inj source; exact shape)
-  | simp at source
+  split at source <;> cases source
+  all_goals exact weakShape_congr (a := self.i) rfl rfl rfl shape
 
 private theorem weakShape_op {reads writes : Bool}
     (self z : zisk_inst_builder.ZiskInstBuilder) (op : zisk_ops.ZiskOp)
@@ -204,7 +210,7 @@ private theorem weakShape_store_reg {reads : Bool}
     first
     | (cases Result.ok.inj source; exact shape)
     | (cases Result.ok.inj source
-       exact ⟨shape.a_not_mem, shape.b_not_mem, shape.b_ind, by decide, by decide⟩)
+       exact ⟨shape.a_not_mem, shape.b_not_mem, shape.b_ind, by source_selector, by source_selector⟩)
     | (exfalso; scalar_tac)
 
 private theorem weakShape_store_ind {reads writes : Bool}
@@ -213,7 +219,7 @@ private theorem weakShape_store_ind {reads writes : Bool}
     (shape : WeakMutableSourceShape reads writes self.i) :
     WeakMutableSourceShape reads true z.i := by
   cases Result.ok.inj source
-  exact ⟨shape.a_not_mem, shape.b_not_mem, shape.b_ind, by decide, by decide⟩
+  exact ⟨shape.a_not_mem, shape.b_not_mem, shape.b_ind, by source_selector, by source_selector⟩
 
 private theorem weakShape_j {reads writes : Bool}
     (self z : zisk_inst_builder.ZiskInstBuilder) (j1 j2 : Std.I64)
@@ -235,15 +241,17 @@ private theorem weakShape_set_pc {reads writes : Bool}
     (shape : WeakMutableSourceShape reads writes self.i) :
     WeakMutableSourceShape reads writes z.i := by
   cases Result.ok.inj source
-  exact shape
+  exact weakShape_congr (a := self.i) rfl rfl rfl shape
 
-private theorem i64_add_zero_eq (x y : Std.I64) (source : x + 0#i64 = .ok y) : y = x := by
+private theorem i64_add_zero_eq (x y : Std.I64)
+    (source : (x + 0#i64 : Result Std.I64) = .ok y) : y = x := by
   obtain ⟨z, hz, value⟩ := iscalar_add_zero_ok x
   have same := Result.ok.inj (source.symm.trans hz)
   subst z
   exact IScalar.eq_of_val_eq value
 
-private theorem u64_add_zero_eq (x y : Std.U64) (source : x + 0#u64 = .ok y) : y = x := by
+private theorem u64_add_zero_eq (x y : Std.U64)
+    (source : (x + 0#u64 : Result Std.U64) = .ok y) : y = x := by
   obtain ⟨z, hz, value⟩ := uscalar_add_zero_ok x
   have same := Result.ok.inj (source.symm.trans hz)
   subst z
@@ -267,18 +275,32 @@ private theorem weakShape_insert {reads writes : Bool}
       WeakMutableSourceShape reads writes actual.i :=
   ⟨z, insert_inst_extract self address z result source, shape⟩
 
--- Backward rules follow successful primitive calls. Scalar discharge uses
+-- Source-indexed implications follow successful primitive calls. Scalar discharge uses
 -- only the actual source decoder's register bounds and zero-offset results.
-local macro "prove_source_shape" : tactic => `(tactic|
-  aesop (config := { terminal := true, maxRuleApplications := 10000 })
-    (add safe forward [i64_add_zero_eq, u64_add_zero_eq])
-    (add unsafe 90% apply [weakShape_insert, weakShape_new_for, weakShape_new,
+local macro "prove_source_shape" sourceName:ident : tactic => `(tactic|
+  aesop (config := { terminal := true, maxRuleApplications := 10000, enableSimp := false })
+    (add safe forward (immediate := [$sourceName]) [i64_add_zero_eq, u64_add_zero_eq])
+    (add safe forward (immediate := [$sourceName]) [weakShape_insert, weakShape_new_for, weakShape_new,
       weakShape_a_imm, weakShape_a_reg, weakShape_b_imm, weakShape_b_reg,
       weakShape_b_lastc, weakShape_b_ind, weakShape_ind_width, weakShape_op,
       weakShape_store_reg, weakShape_store_ind, weakShape_j, weakShape_build,
       weakShape_set_pc])
+    (add safe (by apply_assumption))
     (add safe (by
-      solve | (simp only [cast_u32_u64_val, hcast_u32_i64_val] at *; scalar_tac))))
+      first
+      | guard_target = (_ : Int) ≤ _
+      | guard_target = (_ : Int) < _
+      | guard_target = (_ : Nat) ≤ _
+      | guard_target = (_ : Nat) < _
+      | guard_target = False
+      solve | (simp only [cast_u32_u64_val, hcast_u32_i64_val]; first | omega | decide))))
+
+-- Match the explicit extracted bind head after the typeclass projection is unfolded.
+private theorem source_bind_assoc {α β γ : Type}
+    (x : Result α) (f : α → Result β) (g : β → Result γ) :
+    Aeneas.Std.bind (Aeneas.Std.bind x f) g =
+      Aeneas.Std.bind x (fun y => Aeneas.Std.bind (f y) g) :=
+  Aeneas.Std.bind_assoc_eq x f g
 
 private def sourceRegisterBounds (opcode : riscv2zisk_single_row.Rv64imSingleRowOpcode)
     (input : riscv2zisk_single_row.Rv64imLoweringInput) : Prop :=
@@ -329,15 +351,21 @@ private theorem lower_source_weak_mutable_shape
       riscv2zisk_context.Riscv2ZiskContext.nop,
       riscv2zisk_context.Riscv2ZiskContext.hint,
       zisk_inst_builder.ZiskInstBuilder.store_pc_reg,
-      lift, Bind.bind, bind_ok, bind_assoc, Bool.false_eq_true, if_false,
+      lift, Bind.bind, bind_ok, source_bind_assoc, Bool.false_eq_true, if_false,
       riscv2zisk_single_row.CSR_DMA_MEMCPY_ADDR,
       riscv2zisk_single_row.CSR_DMA_MEMCMP_ADDR] at source
   all_goals
+    simp only [sourceReads, sourceWrites]
     repeat' first
-    | (obtain ⟨_, _, source⟩ := bind_eq_ok_imp source)
-    | (progress split_ifs at source)
-    cases Result.ok.inj source
-    prove_source_shape
+    | (guard_hyp source : Aeneas.Std.bind (Aeneas.Std.bind _ _) _ = Result.ok ctx
+       simp only [source_bind_assoc] at source)
+    | (guard_hyp source : Result.ok _ = Result.ok ctx
+       cases Result.ok.inj source
+       prove_source_shape source)
+    | (split_ifs at source)
+    | (guard_hyp source : Aeneas.Std.bind _ _ = Result.ok ctx
+       replace source := bind_eq_ok_imp source
+       rcases source with ⟨_, _, source⟩)
 
 end ZiskFv.Compliance.SerializedExecutionRows
 
@@ -350,7 +378,7 @@ open Air.Flat Interaction
 open ZiskFv.AirsClean.Main
 open ZiskFv.AirsClean.FullEnsemble (mainOfTable mainTableRowAtOrZero)
 open ZiskFv.Channels.MemoryBus
-open Spike
+open ZiskFv.ZiskCircuit.MemTrace
 
 private theorem fence_lowering_opcode
     (raw : Std.U32) (decoded : aeneas_extract.rv64im_decode.DecodedRv64im)
@@ -362,14 +390,21 @@ private theorem fence_lowering_opcode
   simp only [aeneas_extract.rv64im_decode.DecodedRv64im.new,
     lift, Bind.bind, bind_ok] at core
   repeat' first
-  | (obtain ⟨_, _, core⟩ := bind_eq_ok_imp core)
+  | (guard_hyp core : Result.ok _ = Result.ok decoded
+     cases Result.ok.inj core
+     simpa [aeneas_extract.lowering_opcode,
+       aeneas_extract.rv64im_decode.DecodedRv64im.new] using lower.symm)
+  | (guard_hyp core : Aeneas.Std.bind _ _ = Result.ok decoded
+     replace core := bind_eq_ok_imp core
+     rcases core with ⟨_, _, core⟩)
   | (split at core)
   all_goals
-    cases Result.ok.inj core
-    simpa [aeneas_extract.lowering_opcode,
-      aeneas_extract.rv64im_decode.DecodedRv64im.reserved,
+    simp only [aeneas_extract.rv64im_decode.DecodedRv64im.reserved,
       aeneas_extract.rv64im_decode.DecodedRv64im.unsupported,
-      aeneas_extract.rv64im_decode.DecodedRv64im.new] using lower.symm
+      aeneas_extract.rv64im_decode.DecodedRv64im.new] at core
+    cases Result.ok.inj core
+    simp [aeneas_extract.lowering_opcode] at lower
+  all_goals exact lower.symm
 
 private theorem core_r_facts
     {raw : Std.U32} {op : aeneas_extract.rv64im_decode.RiscvOpcode}
@@ -432,15 +467,29 @@ private theorem core_j_facts
   exact ⟨opcode, rd⟩
 
 -- Each terminal decoder arm uses its existing successful format decoder.
-local macro "finish_source_core" : tactic => `(tactic|
-  aesop (config := { terminal := true })
-    (add safe forward [core_r_facts, core_i_facts, core_s_facts, core_b_facts,
-      core_u_facts, core_j_facts, fence_lowering_opcode])
-    (add norm simp [sourceRegisterBounds, sourceReads, sourceWrites,
-      aeneas_extract.lowering_opcode,
-      aeneas_extract.rv64im_decode.DecodedRv64im.reserved,
-      aeneas_extract.rv64im_decode.DecodedRv64im.unsupported,
-      aeneas_extract.rv64im_decode.DecodedRv64im.new]))
+local macro "finish_source_core" core:ident lower:ident : tactic => `(tactic|
+  (first
+   | (guard_hyp $core : aeneas_extract.rv64im_decode.decode_r _ _ = Result.ok _
+      obtain ⟨_, _, _, _⟩ := core_r_facts $core)
+   | (guard_hyp $core : aeneas_extract.rv64im_decode.decode_i _ _ _ = Result.ok _
+      obtain ⟨_, _, _⟩ := core_i_facts $core)
+   | (guard_hyp $core : aeneas_extract.rv64im_decode.decode_s _ _ = Result.ok _
+      obtain ⟨_, _, _⟩ := core_s_facts $core)
+   | (guard_hyp $core : aeneas_extract.rv64im_decode.decode_b _ _ = Result.ok _
+      obtain ⟨_, _, _⟩ := core_b_facts $core)
+   | (guard_hyp $core : aeneas_extract.rv64im_decode.decode_u _ _ = Result.ok _
+      obtain ⟨_, _⟩ := core_u_facts $core)
+   | (guard_hyp $core : aeneas_extract.rv64im_decode.decode_j _ _ = Result.ok _
+      obtain ⟨_, _⟩ := core_j_facts $core)
+   | (guard_hyp $core : aeneas_extract.rv64im_decode.decode_fence _ = Result.ok _
+      have _ := fence_lowering_opcode _ _ _ $core $lower)
+   | cases Result.ok.inj $core
+   all_goals clear $core
+   all_goals simp_all [sourceRegisterBounds, sourceReads, sourceWrites,
+     aeneas_extract.lowering_opcode,
+     aeneas_extract.rv64im_decode.DecodedRv64im.reserved,
+     aeneas_extract.rv64im_decode.DecodedRv64im.unsupported,
+     aeneas_extract.rv64im_decode.DecodedRv64im.new]))
 
 private theorem source_core_controls
     (raw : Std.U32) (decoded : aeneas_extract.rv64im_decode.DecodedRv64im)
@@ -455,8 +504,19 @@ private theorem source_core_controls
   unfold aeneas_extract.rv64im_decode.decode_32_core at core
   simp only [lift, Bind.bind, bind_ok] at core
   repeat' first
-  | (solve | finish_source_core)
-  | (obtain ⟨_, _, core⟩ := bind_eq_ok_imp core)
+  | (guard_hyp core : Aeneas.Std.bind _ _ = Result.ok decoded
+     replace core := bind_eq_ok_imp core
+     rcases core with ⟨_, _, core⟩)
+  | (first
+     | guard_hyp core : aeneas_extract.rv64im_decode.decode_r raw _ = Result.ok decoded
+     | guard_hyp core : aeneas_extract.rv64im_decode.decode_i raw _ _ = Result.ok decoded
+     | guard_hyp core : aeneas_extract.rv64im_decode.decode_s raw _ = Result.ok decoded
+     | guard_hyp core : aeneas_extract.rv64im_decode.decode_b raw _ = Result.ok decoded
+     | guard_hyp core : aeneas_extract.rv64im_decode.decode_u raw _ = Result.ok decoded
+     | guard_hyp core : aeneas_extract.rv64im_decode.decode_j raw _ = Result.ok decoded
+     | guard_hyp core : aeneas_extract.rv64im_decode.decode_fence raw = Result.ok decoded
+     | guard_hyp core : Result.ok _ = Result.ok decoded
+     finish_source_core core lower)
   | (split at core)
 
 /-- Weak all63 classification of the actual successful terminal production
@@ -522,7 +582,7 @@ open ZiskFv.AirsClean.Main
 open ZiskFv.AirsClean.FullEnsemble (mainOfTable mainTableRowAtOrZero)
 open ZiskFv.Channels.MemoryBus
 open ZiskFv.Channels.ZiskRomBus (ZiskRomMessage)
-open Spike
+open ZiskFv.ZiskCircuit.MemTrace
 
 private theorem boolean_column (x : FGL) (boolean : x * (1 - x) = 0) :
     ∃ b : Bool, x = ZiskFv.AirsClean.boolF b := by
@@ -542,6 +602,8 @@ private theorem main_a_mem_source_column {n : Nat} (trace : AcceptedZiskTrace n)
     RomDecodeBinding.mainRow_flags_boolean trace row
   obtain ⟨am, amEq⟩ := boolean_column _ amBoolean
   obtain ⟨pre, preEq⟩ := boolean_column _ preBoolean
+  change r.rom.a_src_mem = _ at amEq
+  change r.rom.is_precompiled = _ at preEq
   obtain ⟨ieo, m32, setpc, storepc⟩ :=
     RomDecodeBinding.romFlagColumns_of_romFlags_eq_packFlags r bits
       (RomDecodeBinding.mainRow_flags_boolean trace row) flags
@@ -611,7 +673,6 @@ theorem mainMutableReplayRowsAt_eq_current_values {n : Nat} (trace : AcceptedZis
     eval_aMemMessageExpr, eval_bMemMessageExpr, eval_cMemMessageExpr,
     ← ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
       trace.program trace.mainTable row]
-  rfl
 
 /-- Exact mutable replay at an actual source terminal, before associating its
 raw word with an architectural constructor. This includes EVERY source opcode,
@@ -651,13 +712,13 @@ theorem main_mutable_projection_of_successful_terminal {n : Nat}
   rw [sourceRead] at bInd
   rw [sourceWrite] at cInd
   rw [mainMutableReplayRowsAt_eq_current_values]
-  dsimp only
   by_cases read : (Decode.toU32 raw &&& 127#u32) = 3#u32 <;>
     by_cases write : (Decode.toU32 raw &&& 127#u32) = 35#u32
+  all_goals simp only [Decode.toU32_and127] at read write
   · have impossible : (3#u32 : Std.U32) = 35#u32 := read.symm.trans write
     exact False.elim ((by decide : (3#u32 : Std.U32) ≠ 35#u32) impossible)
   · have sourceInd : lowering.rows.last_row.b_src = zisk_inst.SRC_IND := by
-      simpa only [read, decide_true, decide_eq_true_eq] using sourceRead
+      simpa only [Decode.toU32_and127, read, decide_true, decide_eq_true_eq] using sourceRead
     have bRegZero : (mainRowWithRomAt trace row).rom.b_src_reg = 0 := by
       simpa [romFlagBitsOfExtract, sourceInd, zisk_inst.SRC_IND, zisk_inst.SRC_REG] using bReg
     by_cases ar : lowering.rows.last_row.a_src = zisk_inst.SRC_REG <;>
@@ -666,7 +727,7 @@ theorem main_mutable_projection_of_successful_terminal {n : Nat}
       simp [mutableReplayRowsOfTyped, aMemMessage, bMemMessage, cMemMessage,
         aZero, bZero, cZero, aReg, bRegZero, cReg, bInd, cInd, read, write]
   · have sourceInd : lowering.rows.last_row.store = zisk_inst.STORE_IND := by
-      simpa only [write, decide_true, decide_eq_true_eq] using sourceWrite
+      simpa only [Decode.toU32_and127, write, decide_true, decide_eq_true_eq] using sourceWrite
     have cRegZero : (mainRowWithRomAt trace row).rom.store_reg = 0 := by
       simpa [romFlagBitsOfExtract, sourceInd, zisk_inst.STORE_IND, zisk_inst.STORE_REG] using cReg
     by_cases ar : lowering.rows.last_row.a_src = zisk_inst.SRC_REG <;>
@@ -690,6 +751,13 @@ private def stepWrites {n : Nat} {trace : AcceptedZiskTrace n} {i : Fin trace.nu
     ZiskStep trace i → Bool
   | .sb _ | .sh _ | .sw _ | .sd _ => true
   | _ => false
+
+private theorem mutable_step_producer {n : Nat} {trace : AcceptedZiskTrace n}
+    (i : Fin trace.numInstructions) (step : ZiskStep trace i)
+    (decoded : RowDecode trace i step)
+    (active : stepReads step = true ∨ stepWrites step = true) :
+    stepProducerRow i step decoded = i.val := by
+  cases step <;> simp_all [stepReads, stepWrites, stepProducerRow]
 
 private theorem raw_decode_mutable_tags {n rawLength : Nat} (trace : AcceptedZiskTrace n)
     (i : Fin trace.numInstructions) (step : ZiskStep trace i)
@@ -715,13 +783,13 @@ private theorem raw_decode_mutable_tags {n rawLength : Nat} (trace : AcceptedZis
           have same := selected other address
           subst other
           rw [word, evidence.h_raw]
-          simp [stepReads, stepWrites, Decode.toU32_and127, Decode.rawIType_opcode]
+          simp [stepReads, stepWrites, Decode.toU32_and127, Decode.rawIType_opcode] <;> decide
       | unaligned evidence =>
           obtain ⟨other, _, address, word⟩ := evidence.hLineAdd j atLine
           have same := selected other address
           subst other
           rw [word, evidence.h_raw]
-          simp [stepReads, stepWrites, Decode.toU32_and127, Decode.rawIType_opcode]
+          simp [stepReads, stepWrites, Decode.toU32_and127, Decode.rawIType_opcode] <;> decide
   all_goals
     first
     | (obtain ⟨other, address, word⟩ := rawDecode.down.down.hLine j atLine
@@ -734,6 +802,7 @@ private theorem raw_decode_mutable_tags {n rawLength : Nat} (trace : AcceptedZis
       Decode.rawRType_opcode, Decode.rawIType_opcode, Decode.rawSType_opcode,
       Decode.rawBType_opcode, Decode.rawUType_opcode, Decode.rawJType_opcode,
       Decode.rawSupportedFence_opcode]
+  all_goals decide
 
 /-- A real source terminal is a finite physical row, computed from the same
 width prefix as physicalStart. No old starts=i convention is used. -/
@@ -835,34 +904,27 @@ theorem actual_main_terminal_mutable_projection
     start addr rawProgram binding (rawDecodes i) (selected i) (atPc i)
   have producer := physicalTerminal_eq_actual_producer rawProgram selected L trace
     start addr binding steps rawDecodes atPc i
-  cases stepEq : steps i <;> simp only [stepEq, stepReads, stepWrites] at reads writes
-  all_goals
-    first
-    | (have read : (Decode.toU32 (rawProgram (selected i)) &&& 127#u32) = 3#u32 := by
-        simpa only [decide_eq_true_eq] using reads
-       have notWrite : (Decode.toU32 (rawProgram (selected i)) &&& 127#u32) ≠ 35#u32 := by
-        simpa only [decide_eq_false_iff_not] using writes
-       have terminalStart : (physicalTerminal L i).val = (physicalStart L i).val := by
-        simpa [stepEq, stepProducerRow] using producer
-       simpa [stepEq, read, notWrite, memoryRowsOfStep, busLd,
-        mainRowWithRomLd, mainRowWithRomAt, terminalStart,
-        ← ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
-          trace.program trace.mainTable] using projection)
-    | (have notRead : (Decode.toU32 (rawProgram (selected i)) &&& 127#u32) ≠ 3#u32 := by
-        simpa only [decide_eq_false_iff_not] using reads
-       have write : (Decode.toU32 (rawProgram (selected i)) &&& 127#u32) = 35#u32 := by
-        simpa only [decide_eq_true_eq] using writes
-       have terminalStart : (physicalTerminal L i).val = (physicalStart L i).val := by
-        simpa [stepEq, stepProducerRow] using producer
-       simpa [stepEq, notRead, write, memoryRowsOfStep, busSt, eRdSt,
-        mainRowWithRomSt, mainRowWithRomAt, terminalStart,
-        ← ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
-          trace.program trace.mainTable] using projection)
-    | (have notRead : (Decode.toU32 (rawProgram (selected i)) &&& 127#u32) ≠ 3#u32 := by
-        simpa only [decide_eq_false_iff_not] using reads
-       have notWrite : (Decode.toU32 (rawProgram (selected i)) &&& 127#u32) ≠ 35#u32 := by
-        simpa only [decide_eq_false_iff_not] using writes
-       simpa [stepEq, notRead, notWrite, memoryRowsOfStep] using projection)
+  have terminalAtMutable (active : stepReads (steps i) = true ∨ stepWrites (steps i) = true) :
+      (physicalTerminal L i).val = (physicalStart L i).val :=
+    producer.trans (mutable_step_producer _ _ _ active)
+  have readCondition :
+      (Decode.toU32 (rawProgram (selected i)) &&& 127#u32) = 3#u32 ↔
+        stepReads (steps i) = true := by
+    simp only [← reads, decide_eq_true_eq]
+  have writeCondition :
+      (Decode.toU32 (rawProgram (selected i)) &&& 127#u32) = 35#u32 ↔
+        stepWrites (steps i) = true := by
+    simp only [← writes, decide_eq_true_eq]
+  simp only [readCondition, writeCondition] at projection
+  cases stepEq : steps i <;> simp [stepEq, stepReads, stepWrites] at projection
+  all_goals first
+  | exact projection
+  | (have terminalStart := terminalAtMutable (by simp [stepEq, stepReads, stepWrites])
+     change sourceStart L i + (L i).width - 1 = sourceStart L i at terminalStart
+     simpa [stepEq, memoryRowsOfStep, busLd, busSt, eRdSt,
+       mainRowWithRomLd, mainRowWithRomSt, mainRowWithRomAt, terminalStart,
+       ← ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero_get
+         trace.program trace.mainTable] using projection)
 
 end ZiskFv.Compliance.SerializedExecutionRows
 
@@ -872,7 +934,7 @@ open Aeneas Aeneas.Std Result zisk_core
 open RawProgramBinding CanonicalExecutionRows
 open Air.Flat Interaction
 open ZiskFv.AirsClean.FullEnsemble (mainOfTable)
-open Spike
+open ZiskFv.ZiskCircuit.MemTrace
 
 /-- Inclusion of a finite execution-prefix row into the actual Main table.
 There is no out-of-range default and no RAW interaction is erased. -/
@@ -955,10 +1017,11 @@ private theorem actual_main_span_slots (i : Fin m) :
         start addr binding atPc i (physicalStart L i)
       simp only [physicalStart_val, widthTwo]
       omega
+    simp only [physicalStart_val] at firstNext
     rw [lastVal] at lastNext
     rw [show sourceStart L i + 1 + 1 = sourceStart L i + (L i).width by omega] at lastNext
     rw [lastNext, firstNext]
-    simp only [List.map_append, List.map_singleton, terminal, firstEmpty,
+    simp only [List.map_append, List.map_cons, List.map_nil, terminal, firstEmpty,
       sourceSpanSlots, widthTwo, List.replicate_succ, List.replicate_zero,
       List.cons_append, List.nil_append, List.append_assoc]
 
@@ -982,7 +1045,14 @@ theorem actual_main_mutable_prefix_eq_sourcePhysicalPrefix
       have cut := prefix_succ (sourceWidth L) i
       change rowPrefix (sourceWidth L) (j + 1) =
         sourceStart L i + (L i).width at cut
-      rw [cut, span, previous (by omega)]
+      rw [cut, span]
+      have previousAt := previous (Nat.le_of_lt before)
+      change ((List.finRange (sourceEnd L)).take (sourceStart L i)).map
+          (physicalMainMutableReplayRowsAt trace) =
+        sourcePhysicalPrefix L
+          (fun k => memoryRowsOfStep trace (physicalStart L k) (steps k))
+          i.val (Nat.le_of_lt i.isLt) at previousAt
+      rw [previousAt]
       exact next.symm
 
 /-- The WHOLE actual physical slot list is the source spine of the real
@@ -995,7 +1065,9 @@ theorem actual_main_mutable_slots_eq_sourcePhysicalSlots :
     start addr binding steps rawDecodes atPc m (Nat.le_refl m)
   change ((List.finRange (sourceEnd L)).take (sourceEnd L)).map
     (physicalMainMutableReplayRowsAt trace) = _ at wholePrefix
-  simpa only [List.length_finRange, List.take_length, sourcePhysicalPrefix_end,
+  have fullTake : (List.finRange (sourceEnd L)).take (sourceEnd L) =
+      List.finRange (sourceEnd L) := List.take_of_length_le (by simp)
+  simpa only [fullTake, sourcePhysicalPrefix_end,
     actualMainMutablePhysicalSlots] using wholePrefix
 
 /-- Exact ordered physical prefix equality in the full-slot vocabulary. -/
@@ -1033,13 +1105,7 @@ not the unrelated accepted-root JALR fixture. -/
 theorem nonfinal_jalr_source_mutable_slots {α : Type}
     (rows : Fin 2 → List α) :
     sourcePhysicalSlots nonfinalJalrLowering rows = [[], rows 0, rows 1] := by
-  have width0 : (nonfinalJalrLowering (0 : Fin 2)).width = 2 := sourceJalrTwo_width
-  have width1 : (nonfinalJalrLowering (1 : Fin 2)).width = 1 := sourceAddiOne_width
-  change
-    (List.replicate ((nonfinalJalrLowering (0 : Fin 2)).width - 1) [] ++ [rows 0]) ++
-      (List.replicate ((nonfinalJalrLowering (1 : Fin 2)).width - 1) [] ++ [rows 1]) = _
-  rw [width0, width1]
-  rfl
+  exact nonfinal_jalr_physical_spine_slots rows
 
 /-- The genuine source2/1 example also composes with ACTUAL Main rows and actual
 existing raw-decode-selected steps. No accepted trace or root witness is
