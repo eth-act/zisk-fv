@@ -280,11 +280,11 @@ theorem mappedZiskRegFile_eq_actualPhysicalRegFile (j : Nat) (h : j ≤ m)
     let i : Fin m := ⟨j, hj⟩
     have stop := mapped_producer_successor_eq_source_stop rawProgram selected L trace
       start addr binding steps rawDecodes atPc i
+    simp only [physicalStart_val] at stop
     have cutSucc := prefix_succ (sourceWidth L) i
-    have endBound := prefix_mono (sourceWidth L) (Nat.succ_le_of_lt i.isLt)
-    change rowPrefix (sourceWidth L) (i.val + 1) =
+    have endBound := sourceSpanStop_le_sourceEnd L i
+    change rowPrefix (sourceWidth L) (j + 1) =
       sourceStart L i + (L i).width at cutSucc
-    rw [cutSucc] at endBound
     have terminal := source_terminal_actualCRegisterAction rawProgram selected L trace
       start addr binding steps rawDecodes atPc i
     change mappedZiskRegFile L steps D (i.val + 1) h k = _
@@ -295,10 +295,9 @@ theorem mappedZiskRegFile_eq_actualPhysicalRegFile (j : Nat) (h : j ≤ m)
       have room : sourceStart L i < sourceEnd L := sourceStart_lt_sourceEnd L i
       have producer : stepProducerRow (physicalStart L i) (steps i) (D i) =
           sourceStart L i := by
-        change stepProducerRow (physicalStart L i) (steps i) (D i) + 1 =
-          sourceStart L i + (L i).width at stop
-        omega
-      rw [one, actualPhysicalRegFile_succ trace ⟨sourceStart L i, room⟩]
+        exact Nat.add_right_cancel (by simpa only [one] using stop)
+      simp only [one]
+      rw [actualPhysicalRegFile_succ trace ⟨sourceStart L i, room⟩]
       simp only [producer] at terminal
       rw [← terminal (mappedZiskRegFile L steps D i.val (Nat.le_of_lt i.isLt)) k hk]
       apply actualCRegisterAction_congr
@@ -307,13 +306,16 @@ theorem mappedZiskRegFile_eq_actualPhysicalRegFile (j : Nat) (h : j ≤ m)
       have room : sourceStart L i + 1 < sourceEnd L := by
         omega
       have producer : stepProducerRow (physicalStart L i) (steps i) (D i) =
-          sourceStart L i + 1 := by omega
+          sourceStart L i + 1 := by
+        exact Nat.add_right_cancel (by simpa only [two] using stop)
       simp only [producer] at terminal
       have neutral := source_first_actualCRegisterWriteAt_none rawProgram selected L trace
         start addr binding atPc i two
-      rw [two, show sourceStart L i + 2 = (sourceStart L i + 1) + 1 by omega,
-        actualPhysicalRegFile_succ trace ⟨sourceStart L i + 1, room⟩,
-        actualPhysicalRegFile_succ trace (physicalStart L i),
+      have firstSucc := actualPhysicalRegFile_succ trace (physicalStart L i)
+      simp only [physicalStart_val] at firstSucc neutral
+      simp only [two]
+      rw [actualPhysicalRegFile_succ trace ⟨sourceStart L i + 1, room⟩,
+        firstSucc,
         actualCRegisterAction_of_none trace _ neutral]
       rw [← terminal (mappedZiskRegFile L steps D i.val (Nat.le_of_lt i.isLt)) k hk]
       apply actualCRegisterAction_congr
