@@ -38,6 +38,7 @@ channelsWithRequirements	channelsWithRequirements := [OpBusChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [OpBusChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [RegisterStepRangeChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [SpecifiedRangesSliceChannel.toRaw]
+channelsWithRequirements	channelsWithRequirements := [ZiskRomBusChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := []
 exposedChannels	exposedChannels _ _ := []
 exposedChannels	exposedChannels message _ := expose ArithRangeChannel [ArithRangeChannel.pushed message]
@@ -72,6 +73,7 @@ exposedChannels	exposedChannels row _ := expose OpBusChannel [OpBusChannel.pushe
 exposedChannels	exposedChannels row _ := expose OpBusChannel [OpBusChannel.pushed (primaryOpBusMessageExpr row)]
 exposedChannels	exposedChannels row _ := expose OpBusChannel [OpBusChannel.pushed (secondaryOpBusMessageExpr row)]
 exposedChannels	exposedChannels row _ := expose OpBusChannel [OpBusChannel.pushed (secondaryOpBusMessageExpr row)]
+exposedChannels	exposedChannels row _ := expose ZiskRomBusChannel [ZiskRomBusChannel.emitted row.multiplicity row.message]
 exposedChannels	exposedChannels value _ := expose RegisterStepRangeChannel [RegisterStepRangeChannel.pushed (registerStepMessage value)]
 exposedChannels	exposedChannels value _ := expose SpecifiedRangesSliceChannel [SpecifiedRangesSliceChannel.pushed (memDistanceMessage value)]
-# total declarations: 76
+# total declarations: 78
