@@ -1,0 +1,62 @@
+{
+  "cargo": {
+    "command": "CARGO_BUILD_JOBS=2 cargo test --manifest-path tools/pil-extract/Cargo.toml rom_source::tests",
+    "failed": 0,
+    "filtered_out": 107,
+    "log": "cargo-rom-source-tests.log",
+    "passed": 2
+  },
+  "does_not_establish": [
+    "public-root authentication",
+    "producer-history realization",
+    "live ensemble ROM provider finishing",
+    "whole issue416 closure"
+  ],
+  "generation": {
+    "command": "tools/pil-extract/target/debug/pil-extract rom-source --pilout build/zisk.pilout --output build/extraction/Extraction/RomSource.lean",
+    "exit_code": 0,
+    "log": "initial-generation.log"
+  },
+  "initial_packet_commit": "dfdfac2e",
+  "lean": {
+    "command": "LEAN_NUM_THREADS=2 lake --rehash build Extraction.RomSource ZiskFv.AirsClean.ZiskInstructionRomImage ZiskFv.AirsClean.ZiskInstructionRomProvider ZiskFv.AirsClean.ZiskInstructionRomSource",
+    "exit_code": 0,
+    "log": "four-targets-attempt2.log",
+    "targets": [
+      "Extraction.RomSource",
+      "ZiskFv.AirsClean.ZiskInstructionRomImage",
+      "ZiskFv.AirsClean.ZiskInstructionRomProvider",
+      "ZiskFv.AirsClean.ZiskInstructionRomSource"
+    ]
+  },
+  "logs": {
+    "cargo-rom-source-tests.log": "d7dcfe1381676264493905194dd0418b5294bbaeb31312a2cb7e0e9ca98a1d65",
+    "four-targets-attempt2.log": "ad50cc92bc29980ef75fcc6496316b85ceb652e8d9a433696c1818d824008cfc",
+    "initial-four-targets.log": "f14b394d52432460170dc57a5df6f40eae5cf7ea082f3b1d31446aa2c0a2488b",
+    "initial-generation.log": "28526456344e69f26219602b71a788c3d337f77a259a892dec2c4916264c2d13"
+  },
+  "pilout_sha256": "e816e4fd728fae4b0b55cac6da01312adf72afe152fe22a47da7610cf0338e6f",
+  "repaired_failure": {
+    "commit": "d1d7104c",
+    "diagnostic": "unknown target ZiskFv.AirsClean.ZiskInstructionRomImage",
+    "log": "initial-four-targets.log",
+    "repair": "explicitly register Image and Provider alongside Source in local library globs"
+  },
+  "source_commit": "d1d7104c",
+  "source_profile": {
+    "ZiskFv/AirsClean/ZiskInstructionRomImage.lean": "18241349203736ed790fdfa5dba5721867c40169594b16bd7e8b0bb7ca080704",
+    "ZiskFv/AirsClean/ZiskInstructionRomProvider.lean": "d285dd317e52a63512443a2f80c4c8f1931ae7859ae95fff72f20e38632a4b7f",
+    "ZiskFv/AirsClean/ZiskInstructionRomSource.lean": "9a023abc2a0847991f527ad21f84c210823de82a584c5546377e554daa44e95d",
+    "lake-manifest.json": "354d98ca220a909807af809fe71f5d611ad7db057f554942628ca6cb095bd835",
+    "lakefile.toml": "0d7056e53e3b50d2b90259ae516106f17a68529e21c940c03d5b4834d2ebd2bc",
+    "lean-toolchain": "db7bb24b756d745bbde83fe92718b51bd3625dae3701ba0f598d0eedcd3f3028",
+    "tools/pil-extract/Cargo.lock": "ae99931560d280cbf4eabfce94122e41b93ffd9e0ea785239c6b29e681122390",
+    "tools/pil-extract/src/rom_source.rs": "9acab50e2b0e8b40ab429f8c70593456274ad23a1c7a3509adfd8dec1fc76bc0"
+  },
+  "versions": {
+    "cargo": "cargo 1.97.0 (c980f4866 2026-06-30)",
+    "lean": "Lean (version 4.28.0, x86_64-unknown-linux-gnu, commit 7e01a1bf5c70fc6167d49c345d3bf80596e9a79b, Release)",
+    "production_node": "v20.20.2",
+    "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)"
+  }
+}
