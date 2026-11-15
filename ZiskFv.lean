@@ -22,6 +22,7 @@ import ZiskFv.AirsClean.MemAlignReadByte.ExtractedWiring
 import ZiskFv.AirsClean.BinaryExtension.Wiring
 import ZiskFv.AirsClean.BinaryTableSlice
 import ZiskFv.AirsClean.BinaryExtensionTableSlice
+import ZiskFv.AirsClean.DualBytePackedSource
 import ZiskFv.AirsClean.MemAlignRomSlice
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
