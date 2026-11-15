@@ -26,9 +26,18 @@ surface rather than family-local assembly artefacts.  This module assembles
 the migrated components that currently exist:
 
 * Main's unified ROM + memory-bus + operation-bus consumer component;
-* BinaryAdd plus lookup-aware Binary and BinaryExtension providers;
+* BinaryAdd, actual eight-route Binary/BinaryExtension table consumers, and
+  their fixed-domain source providers (`binary_table.pil:335–336`,
+  `binary_extension_table.pil:204–205`);
 * lookup-aware ArithMul and ArithDiv row components;
 * Mem, MemAlign, MemAlignByte, and MemAlignReadByte memory providers.
+
+The source cutover retains the `Unit` ensemble interface. Its 17 physical
+tables give 18 `allTables` entries including the verifier; Main is at index 17.
+The two source providers have capacities 5,505,024 and 3,151,872, seven fixed
+tuple fields, and one unrestricted actual raw multiplicity cell. Membership
+is derived from accepted constraints and finished bus 125/bus 124 balance,
+not from caller-supplied table facts.
 
 This is still not the final T7 theorem.  The Main row is now coherent across
 the operation and memory channels, but T7.2/T7.3 must still add the
