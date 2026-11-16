@@ -42,12 +42,17 @@ structure Cell where
   origin : Origin
   value : Ext3 FGL
 
-/-- Source AIR1/2 are extension inverses in the AIR buffer, not aux/GROUP. -/
+/-- Source AIR1/2 are extension inverses in the AIR buffer, not aux/GROUP.
+The pinned ff0e `stark_info.cpp:125–150` populates AIR entries with only
+name/stage, in order: `PolMap.dim` is NOT source metadata for this map.
+`airValueWords?` uses the stage-dependent ordered-prefix native addressing;
+`extensionWords?` retains all three bounded words. Compiled operand r.dim
+and PIL symbol-rank correlation remain separate, unproved obligations. -/
 def inverse? (resolved : ResolvedOccurrence source) (index : Fin 2) : Option Cell := do
   let setup ← resolved.setup?
   let id := index.val + 1
   let entry ← setup.airValuesMap[id]?
-  if entry.stage = 2 ∧ entry.dim = 3 then
+  if entry.stage = 2 then
     let value ← extensionWords? (resolved.airValueWords? false id)
     return ⟨⟨.airValue, 2, id, id, entry, valueOffset setup.airValuesMap id⟩, value⟩
   else none
@@ -75,12 +80,13 @@ structure Projection (physical : ByteMemoryPhysicalRows.Rows resolved) where
   alpha : Cell
   gamma : Cell
 
-/-- All needed extension blocks are read, even when raw padding is zero. A
-missing map/word or wrong stage/dim fails rather than supplying a zero cell. -/
+/-- All needed extension blocks are read, even when raw padding is zero.
+Missing maps/words or incorrect stages fail, rather than supplying a zero cell.
+AIR dimensions are not fabricated; challenge stage/id/dim checks are native. -/
 def fromPhysical? (physical : ByteMemoryPhysicalRows.Rows resolved) :
     Option (Projection physical) := do
   let entry ← physical.setup.airValuesMap[0]?
-  if entry.stage = 1 ∧ entry.dim = 1 then
+  if entry.stage = 1 then
     let aligned ← inverse? resolved 0
     let byte ← inverse? resolved 1
     let alpha ← challenge? resolved 0
