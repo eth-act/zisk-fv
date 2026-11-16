@@ -43,8 +43,11 @@ def airBuffer : Array FGL := Array.ofFn fun index : Fin 33 =>
 def groupBuffer : Array FGL := #[groupResult.c0, groupResult.c1, groupResult.c2]
 
 def slot : Instance FGL :=
-  { Constructibility.slot false with trace := traceBuffer,
-    auxTrace := auxiliaryBuffer, airvalues := airBuffer, airgroupValues := groupBuffer }
+  { Constructibility.slot false with
+    trace := traceBuffer,
+    auxTrace := auxiliaryBuffer,
+    airvalues := airBuffer,
+    airgroupValues := groupBuffer }
 
 def source : SourceObject FGL :=
   { Constructibility.source false with slots := #[slot] }
@@ -119,6 +122,7 @@ theorem auxiliary_coordinate (row : Index) (column coordinate : Fin 3) :
     subtract, quotient, remainder]
   fin_cases column <;> fin_cases coordinate <;>
     simp [extensionWitness, running, Stage2.Ext3.ofBase]
+  all_goals rfl
 
 theorem group_selected : NativeValuesLayout.groupWords? .mem (occurrence.params false) =
     some #v[groupResult.c0, groupResult.c1, groupResult.c2] := by
@@ -210,11 +214,23 @@ theorem complete_nonvacuous : (completeFromResolved? occurrence).isSome = true :
       have sameSetup : base.setup = old.base.setup :=
         (Option.some.inj (base.setupSelected.symm.trans actual_setup)).trans oldSetup.symm
       have e0 : auxiliaryEntry? base.setup 0 = some (old.mapId 0, old.mapEntry 0) := by
-        simp [auxiliaryEntry?, sameSetup, bind, (old.selected_map 0).1, (old.selected_map 0).2.1]
+        unfold auxiliaryEntry?
+        rw [sameSetup, (old.selected_map 0).1]
+        simp only [bind, Option.bind_some]
+        rw [(old.selected_map 0).2.1]
+        rfl
       have e1 : auxiliaryEntry? base.setup 1 = some (old.mapId 1, old.mapEntry 1) := by
-        simp [auxiliaryEntry?, sameSetup, bind, (old.selected_map 1).1, (old.selected_map 1).2.1]
+        unfold auxiliaryEntry?
+        rw [sameSetup, (old.selected_map 1).1]
+        simp only [bind, Option.bind_some]
+        rw [(old.selected_map 1).2.1]
+        rfl
       have e2 : auxiliaryEntry? base.setup 2 = some (old.mapId 2, old.mapEntry 2) := by
-        simp [auxiliaryEntry?, sameSetup, bind, (old.selected_map 2).1, (old.selected_map 2).2.1]
+        unfold auxiliaryEntry?
+        rw [sameSetup, (old.selected_map 2).1]
+        simp only [bind, Option.bind_some]
+        rw [(old.selected_map 2).2.1]
+        rfl
       simp only [completeFromResolved?, baseSelected, bind, Option.bind_some]
       split
       · rename_i absent
