@@ -17,6 +17,7 @@ namespace View
       have positive : (0 : Int) < view.count := by exact_mod_cast view.count_pos
       have lower := Int.emod_nonneg ((row.val : Int) + rotation) (ne_of_gt positive)
       have upper := Int.emod_lt_of_pos ((row.val : Int) + rotation) positive
+      change (((row.val : Int) + rotation) % (view.count : Int)).toNat < view.count
       omega⟩
 
 theorem native_rotation (view : View resolved) (row : view.Index) (rotation : Int) :
@@ -29,6 +30,7 @@ theorem native_rotation (view : View resolved) (row : view.Index) (rotation : In
     simpa [rotate] using view.native_current_row row
   · simp [NativeSetup.baseRow?, view.cpu_profile.1, view.cpu_profile.2, within,
       view.setup_rows, rotate, zero]
+    exact row.isLt
 
 @[simp] theorem rotate_zero (view : View resolved) (row : view.Index) :
     view.rotate row 0 = row := by
@@ -53,14 +55,16 @@ theorem native_previous (view : View resolved) (row : view.Index) :
 
 theorem previous_first (view : View resolved) : view.previous view.first = view.last := by
   apply Fin.ext
-  change (((0 : Int) + -1) % (view.count : Int)).toNat = view.count - 1
+  have negative : (-1 : Int) ≠ 0 := by decide
+  simp only [previous, rotate, first, last, if_neg negative]
   have positive := view.count_pos
   omega
 
 theorem previous_of_positive (view : View resolved) (row : view.Index) (positive : 0 < row.val) :
     (view.previous row).val = row.val - 1 := by
   have within : row.val < view.count := row.isLt
-  change (((row.val : Int) + -1) % (view.count : Int)).toNat = row.val - 1
+  have negative : (-1 : Int) ≠ 0 := by decide
+  simp only [previous, rotate, if_neg negative]
   rw [Int.emod_eq_of_lt (by omega) (by omega)]
   omega
 
