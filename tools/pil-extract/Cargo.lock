@@ -333,9 +333,12 @@ dependencies = [
  "anyhow",
  "bytes",
  "clap",
+ "proc-macro2",
  "prost",
  "prost-build",
  "regex",
+ "serde_json",
+ "syn",
  "tracing",
  "tracing-subscriber",
 ]

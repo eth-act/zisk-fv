@@ -1796,5 +1796,167 @@ theorem laneBridge_of_regAgree
     b_column_eq_lane_hi_sail_xreg trace ziskStep rowDecodes init k hk r hr
       h_regAgree h_src h_ptr h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range
 
+/-- Every earlier physical register access to the same boot-pinned register is
+on the actual backward walk. This uses accepted raw Main rows and the existing
+unique boot anchor, not a `ZiskStep` at each physical position. -/
+theorem bootWalk_mem_of_regPre_ptr_wrap_eq_of_timestamp_lt
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    {path : List RegWalkStep} {p last q : RegWalkStep}
+    (head : path.head? = some p) (lastAt : path.getLast? = some last)
+    (sites : ∀ w ∈ path, IsActiveWitnessMainRow trace w)
+    (chain : List.IsChain RegWalkStep.AnswersRegPre path)
+    (boot : BootAnchoredStep trace last)
+    (active : IsActiveWitnessMainRow trace q)
+    (sameRegister : Transpiler.wrap_to_regidx (q.2.regPreMessage q.1).ptr =
+      Transpiler.wrap_to_regidx (p.2.regPreMessage p.1).ptr)
+    (earlier : q.timestamp.val < p.timestamp.val) : q ∈ path := by
+  obtain ⟨index, inTable, rowEq⟩ := isActiveWitnessMainRow_eq_mainTableRow trace active
+  have rowEval : q.1 = eval
+      (trace.mainTable.environment trace.mainTable.table[index])
+      (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
+        trace.programLength trace.program).rowInputVar :=
+    rowEq.trans (mainTableRowAtOrZero_get trace.program trace.mainTable ⟨index, inTable⟩)
+  have selected : q.2.selector q.1 = 1 := by
+    obtain ⟨_, _, _, _, _, _, selected⟩ := active
+    exact selected
+  obtain ⟨other, otherLast, otherHead, otherLastAt, otherSites, otherChain, otherBoot⟩ :=
+    exists_bootWalk trace trace.mainTable_mem trace.mainTable_component
+      (List.getElem_mem inTable) q.2 (by rw [← rowEval]; exact selected)
+  have otherHeadAt : other.head? = some q := by
+    simpa only [← rowEval] using otherHead
+  have lastPtr : (last.2.regPreMessage last.1).ptr = (p.2.regPreMessage p.1).ptr :=
+    regPreMessage_ptr_const_along_chain trace path p head chain sites last
+      (List.mem_of_getLast? lastAt)
+  have otherLastPtr : (otherLast.2.regPreMessage otherLast.1).ptr =
+      (q.2.regPreMessage q.1).ptr :=
+    regPreMessage_ptr_const_along_chain trace other q otherHeadAt otherChain otherSites
+      otherLast (List.mem_of_getLast? otherLastAt)
+  have sameBootPtr : (last.2.regPreMessage last.1).ptr =
+      (otherLast.2.regPreMessage otherLast.1).ptr := by
+    have wrapped : Transpiler.wrap_to_regidx (last.2.regPreMessage last.1).ptr =
+        Transpiler.wrap_to_regidx (otherLast.2.regPreMessage otherLast.1).ptr := by
+      rw [lastPtr, otherLastPtr]
+      exact sameRegister.symm
+    have equalValues := congrArg Fin.val wrapped
+    simp only [Transpiler.wrap_to_regidx, Fin.val_mk,
+      Nat.mod_eq_of_lt (bootAnchoredStep_ptr_val_lt trace boot),
+      Nat.mod_eq_of_lt (bootAnchoredStep_ptr_val_lt trace otherBoot)] at equalValues
+    exact Fin.ext equalValues
+  have sameBoot : last = otherLast :=
+    bootAnchoredStep_unique trace (sites last (List.mem_of_getLast? lastAt))
+      (otherSites otherLast (List.mem_of_getLast? otherLastAt)) boot otherBoot sameBootPtr
+  by_cases shorter : other.length ≤ path.length
+  · exact bootWalk_merge trace sites otherSites chain otherChain
+      (sameBoot ▸ lastAt) otherLastAt shorter otherHeadAt
+  · have headMem : p ∈ other :=
+      bootWalk_merge trace otherSites sites otherChain chain otherLastAt
+        (sameBoot ▸ lastAt) (by omega) head
+    have nonempty : other ≠ [] := List.ne_nil_of_mem headMem
+    have otherHeadEq : other.head nonempty = q := by
+      exact Option.some.inj ((List.head?_eq_some_head nonempty).symm.trans otherHeadAt)
+    have different : p ≠ other.head nonempty := by
+      rw [otherHeadEq]
+      intro same
+      rw [same] at earlier
+      exact (Nat.lt_irrefl _) earlier
+    exact False.elim (not_mem_chain_of_timestamp_ge trace nonempty otherSites otherChain
+      different (by rw [otherHeadEq]; omega) headMem)
+
+/-- The actual C register opcode forces exclusive register mode using accepted
+Main Booleanity. No source-selector promise is needed: `main.pil:323-328` uses
+`2 * (store_mem + store_ind) + 3 * store_reg`. -/
+theorem cMemMessage_reg_selectors_of_memop3
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    (row : Fin trace.mainTable.table.length)
+    (registerOp : (cMemMessage
+      (mainTableRowAtOrZero trace.program trace.mainTable row.val)).mem_op = 3) :
+    (mainTableRowAtOrZero trace.program trace.mainTable row.val).rom.store_reg = 1 ∧
+      (mainTableRowAtOrZero trace.program trace.mainTable row.val).rom.store_mem = 0 ∧
+      (mainTableRowAtOrZero trace.program trace.mainTable row.val).rom.store_ind = 0 := by
+  obtain ⟨_, _, _, _, _, _, _, _, _, memoryBool, indirectBool, _, _, _, registerBool⟩ :=
+    RomDecodeBinding.mainRow_flags_boolean trace row
+  rcases fgl_zero_or_one_of_bool memoryBool with memory | memory <;>
+    rcases fgl_zero_or_one_of_bool indirectBool with indirect | indirect <;>
+    rcases fgl_zero_or_one_of_bool registerBool with register | register
+  all_goals first
+    | exact ⟨register, memory, indirect⟩
+    | (exfalso
+       simp only [memory, indirect, register] at registerOp
+       revert registerOp
+       decide)
+
+/-- A real earlier physical C register pull belongs to the raw read walk from
+either Main operand. Both activation and direct addressing are derived from its
+actual opcode and accepted Main constraints. Auxiliary rows need no fictitious
+architectural decode, and no coverage/range hypothesis is added to a root. -/
+theorem physicalCRegPull_mem_bootWalk
+    {n : Nat} (trace : AcceptedZiskTrace n)
+    (reader writer : Fin trace.mainTable.table.length)
+    (before : writer.val < reader.val)
+    (slot : RegSlot) (operand : slot = .a ∨ slot = .b)
+    {path : List RegWalkStep} {last : RegWalkStep}
+    (head : path.head? = some
+      (mainTableRowAtOrZero trace.program trace.mainTable reader.val, slot))
+    (lastAt : path.getLast? = some last)
+    (sites : ∀ w ∈ path, IsActiveWitnessMainRow trace w)
+    (chain : List.IsChain RegWalkStep.AnswersRegPre path)
+    (boot : BootAnchoredStep trace last)
+    (registerOp : (cMemMessage
+      (mainTableRowAtOrZero trace.program trace.mainTable writer.val)).mem_op = 3)
+    (sameRegister : Transpiler.wrap_to_regidx (cMemMessage
+        (mainTableRowAtOrZero trace.program trace.mainTable writer.val)).ptr =
+      Transpiler.wrap_to_regidx (slot.regPreMessage
+        (mainTableRowAtOrZero trace.program trace.mainTable reader.val)).ptr) :
+    (mainTableRowAtOrZero trace.program trace.mainTable writer.val, RegSlot.c) ∈ path := by
+  obtain ⟨register, _, indirect⟩ :=
+    cMemMessage_reg_selectors_of_memop3 trace writer registerOp
+  have active : IsActiveWitnessMainRow trace
+      (mainTableRowAtOrZero trace.program trace.mainTable writer.val, RegSlot.c) :=
+    ⟨trace.mainTable, trace.mainTable_mem, trace.mainTable_component,
+      writer.val, writer.isLt, rfl, register⟩
+  have sameAddress :
+      (RegSlot.c.regPreMessage
+        (mainTableRowAtOrZero trace.program trace.mainTable writer.val)).ptr =
+      (cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable writer.val)).ptr := by
+    change (mainTableRowAtOrZero trace.program trace.mainTable writer.val).rom.store_offset =
+      (mainTableRowAtOrZero trace.program trace.mainTable writer.val).rom.addr2
+    rw [(RomDecodeBinding.mainAddressSpec_at trace writer).2.2.1,
+      indirect, zero_mul, add_zero]
+  apply bootWalk_mem_of_regPre_ptr_wrap_eq_of_timestamp_lt trace
+    head lastAt sites chain boot active
+  · change Transpiler.wrap_to_regidx (RegSlot.c.regPreMessage
+        (mainTableRowAtOrZero trace.program trace.mainTable writer.val)).ptr = _
+    rw [sameAddress]
+    exact sameRegister
+  · have writerStep := mainRowAt_main_step trace.mainTable_component writer.isLt
+    have readerStep := mainRowAt_main_step trace.mainTable_component reader.isLt
+    have writerCapacity := main_index_lt_mainFixedCapacity trace.mainTable_component writer.isLt
+    have readerCapacity := main_index_lt_mainFixedCapacity trace.mainTable_component reader.isLt
+    have writerTimestamp :
+        (RegSlot.c.readTimestamp
+          (mainTableRowAtOrZero trace.program trace.mainTable writer.val)).val =
+          3 + 4 * writer.val := by
+      simp only [RegSlot.readTimestamp, writerStep]
+      exact slot_timestamp_val (by decide : (3 : Nat) ≤ 3) writerCapacity
+    rcases operand with rfl | rfl
+    · have readerTimestamp :
+          (RegSlot.a.readTimestamp
+            (mainTableRowAtOrZero trace.program trace.mainTable reader.val)).val =
+            1 + 4 * reader.val := by
+        simp only [RegSlot.readTimestamp, readerStep]
+        exact slot_timestamp_val (by decide : (1 : Nat) ≤ 3) readerCapacity
+      change (RegSlot.c.readTimestamp _).val < (RegSlot.a.readTimestamp _).val
+      rw [writerTimestamp, readerTimestamp]
+      omega
+    · have readerTimestamp :
+          (RegSlot.b.readTimestamp
+            (mainTableRowAtOrZero trace.program trace.mainTable reader.val)).val =
+            2 + 4 * reader.val := by
+        simp only [RegSlot.readTimestamp, readerStep]
+        exact slot_timestamp_val (by decide : (2 : Nat) ≤ 3) readerCapacity
+      change (RegSlot.c.readTimestamp _).val < (RegSlot.b.readTimestamp _).val
+      rw [writerTimestamp, readerTimestamp]
+      omega
+
 
 end ZiskFv.Compliance

@@ -84,6 +84,9 @@ EOF
     mkdir -p build/extraction/ByteTables
     cp --no-preserve=mode "${extracted-lean}"/ByteTables/*.json build/extraction/ByteTables/
     chmod u+w build/extraction/ByteTables/*.json
+    cp --reflink=never --no-preserve=mode "${extracted-lean}/PackedVirtualTables.json" \
+      build/extraction/PackedVirtualTables.json
+    chmod u+w build/extraction/PackedVirtualTables.json
     cp --no-preserve=mode "${extracted-lean}/MemAlignRom.tsv" build/extraction/MemAlignRom.tsv
 
     echo "▶ build/clean-lean/ ← ${clean-source}"

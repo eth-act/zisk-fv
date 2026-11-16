@@ -1,5 +1,5 @@
 { writeShellApplication, elan, cargo, rustc, protobuf, python3, jq, git
-, clang, libclang, gcc, gnumake, gnutar, nasm, gmp, nix, pkgsCross, aeneas, virtual-table-check }:
+, clang, libclang, gcc, gnumake, gnutar, nasm, gmp, nix, nodejs_20, pkgsCross, aeneas, virtual-table-check }:
 
 # Top-level test entry point. Single source of truth for "is the
 # project green?" Runs every check in dependency order so a clean
@@ -26,6 +26,7 @@ writeShellApplication {
     rustc
     protobuf
     python3
+    nodejs_20
     jq
     git
     clang

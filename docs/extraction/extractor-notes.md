@@ -24,6 +24,10 @@ pil-extract arith-range-table --rust-source <path> [--output <path>]
 
 pil-extract source-dimensions --pilout <path> [--output <path>]
 
+pil-extract packed-virtual-tables --compiled-json <path> [--output <path>]
+
+pil-extract public-io --pilout <path> [--output <path>]
+
 pil-extract clean-component --pilout <path> --air <needle>
                  [--row-output <path>] [--constraints-output <path>]
                  [--bus-id <N>] [--channel op-bus|mem-align-bus]
@@ -69,6 +73,48 @@ the flags themselves.
   protobuf comment calling it `log2(n)` is stale. Missing metadata fails rather
   than inventing a default capacity. Normal-build kernel identities pin Main,
   Mem and MemAlign's live fixed-column capacities to these actual counts.
+- `packed-virtual-tables`: emit `Extraction.PackedVirtualTables` from the actual
+  production compiler's retained packed-table observations, including exact
+  physical placement and converse source ownership for buses 88/124/125/330/331.
+  `export-packed-tables.cjs` compares every target fixed cell and UID with its
+  retained pre-lowering source; it does not reimplement the packing algorithm or
+  invent unrelated fixed values. Normal generation copies the real Rust-generated
+  external fixed payloads into a private source tree, retains
+  `PackedVirtualTables.json`, and emits the Lean location/source certificates.
+  The byte-table observer and checker also retain the actual packed producer
+  stream and raw multiplicity schema, alongside their original virtual-table
+  block observations.
+  JSON numeric metadata supports only exact integers in
+  `[-(2^53 - 1), 2^53 - 1]`; unsupported identities fail before matching.
+  This representation limit is not an AIR or witness range assumption:
+  full-field payloads and unrelated producer UIDs retain exact `BigInt` values.
+  Generated source locations alone do not establish live provider composition
+  or an unchanged accepted-witness domain.
+  The ordinary byte-table checker additionally materializes the independent
+  canonical Binary/Extension source components and the complete 65,536-row
+  DualByte source component. It compares every tuple column and opcode block
+  with both virtual and packed compiler observations. The streamers retain
+  every physical row even with zero raw multiplicity; local kernel
+  correspondences preserve arbitrary raw multiplicities and source ownership.
+  The standalone
+  `PackedVirtualTableSources` and `DualByteTable`/`DualByteSlice`/
+  `DualBytePackedSource` declarations are local, uncomposed source models.
+  Their materialization, constructibility and interaction correspondences do
+  not install providers into `FullEnsemble`, change the accepted-world witness,
+  or discharge root/channel finishing.
+  Their three source providers deliberately add three channel requirements
+  and three weighted exposures to the declaration snapshot (78 to 84).
+  These local interfaces do not change the accepted ensemble's channel roster.
+- `public-io`: emit `Extraction.PublicIo` from the compiled GLOBAL expression
+  graph and cleared sum. Hints identify tuples, but every operation-bus tuple is
+  linked to an actual denominator and positive-unit numerator term; generated
+  `source_operation_emissions_complete` accounts for all operation-bus terms.
+  GLOBAL proof/public/AIR-group/table cells remain distinct. Physical Main hints
+  supply only operation arity, not a GLOBAL expression namespace. Unsupported
+  operands, malformed references and missing source data fail rather than
+  defaulting to zero. Normal Nix production, populate, explicit Lake targets and
+  both closed output inventories include the module; this is not a claim of
+  public-I/O provider composition, verifier authentication or new logUp algebra.
 - `clean-component`: emit Clean `Row.lean` / `Constraints.lean` source for
   one AIR and one supported channel shape.
 - `mem-air-facts`: emit a Markdown source report for the Mem generated AIR
@@ -759,3 +805,36 @@ The multiplicity is an arbitrary field value, not a positive count.
 Production tuple, weight, and `std_sum` numerator-sign controls, including a
 fresh canonical baseline and harmless-comment control, are preserved under
 `tools/adversarial-mutations/evidence/results/rom-d1d7104c/`.
+
+`tools/finite-return-rom/capture.py` compiles the minimal return guest and calls
+the actual pinned `Riscv2zisk::run` and `RomSM::compute_custom_trace_rom`.
+Its checked-in fixture preserves the final native image, all eleven physical
+columns and the zero tail. One static PUBOUT site is not thirty-two dynamic
+outputs. Provenance schema 2 separates recorded launch configuration from
+unobserved process state; `check-continuation-provenance.py` checks that retry
+snapshots keep their original hashes and paths.
+This is a reproducible construction/data fixture, not universal serializer
+equivalence, a completed guest execution, source-witness correlation, or
+verifier-public-I/O/Sail binding.
+
+## Native value source-profile metadata
+
+`pil-extract runtime-native-values-layout` reads the locked ZisK trace-value
+declarations and the locked proofman's macro, AirInstance and ProofCtx sources.
+The normal extraction derivation emits `Extraction.RuntimeNativeValuesLayout`;
+the closed generated inventory and Lake graph compile it. `NativeValuesLayout`
+checks independent source-profile contracts for Main's eight AIR values, padding
+scalars, separate three-word GROUP values and Mem's six direct extension values.
+All projections select buffers from one registry-authoritative source object.
+Slot metadata labels are retained, not required equal to registry labels.
+
+The supporting source-image/readers are additive mathematical models, not new
+Accepted/Root premises. Native-to-image materialization, compiled-operand/PIL
+identity, machine addresses and actual full physical row coverage remain
+unproved. The primary trace store retains UInt64 bits; only requested unpacked
+words are canonically field-projected. That projection is intentionally
+noninjective and never serves as a packed decoder. Packed stage-one readers
+remain explicitly unsupported, not excluded from Root. No missing word becomes
+zero. The source-profile
+metadata proves neither Rust/C ABI correctness nor final public-I/O/Sail binding,
+once-instance/provider composition, or completion of #371/#372/#413/#418.

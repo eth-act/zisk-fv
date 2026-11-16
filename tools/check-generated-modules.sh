@@ -30,8 +30,11 @@ expected_modules=(
   MemGeneratedArtifact
   MemGeneratedConstraintBridge
   MemoryBuses
+  PackedVirtualTables
+  PublicIo
   SourceDimensions
   RomSource
+  RuntimeNativeValuesLayout
 )
 
 if [[ ! -d "$generated_dir" ]]; then

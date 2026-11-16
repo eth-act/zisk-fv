@@ -25,6 +25,10 @@ import ZiskFv.AirsClean.MemAlignReadByte.ExtractedWiring
 import ZiskFv.AirsClean.BinaryExtension.Wiring
 import ZiskFv.AirsClean.BinaryTableSlice
 import ZiskFv.AirsClean.BinaryExtensionTableSlice
+import ZiskFv.AirsClean.PackedVirtualTableSources
+import ZiskFv.AirsClean.DualByteTable
+import ZiskFv.AirsClean.DualByteSlice
+import ZiskFv.AirsClean.DualBytePackedSource
 import ZiskFv.AirsClean.MemAlignRomSlice
 import ZiskFv.Airs.Main.Main
 import ZiskFv.Airs.OperationBus.OperationBus
@@ -298,3 +302,6 @@ import ZiskFv.AirsClean.GsumBoundary
 import ZiskFv.AirsClean.OperationPadding
 import ZiskFv.AirsClean.MemAlignWriteByte.ExtractedWiring
 import ZiskFv.AirsClean.MemAlignWriteByte.DirectWiring
+import ZiskFv.AirsClean.MemAlignWriteByte.RawByteSource
+import ZiskFv.AirsClean.MemAlignWriteByte.SourceInstance
+import ZiskFv.AirsClean.NativeValuesLayout

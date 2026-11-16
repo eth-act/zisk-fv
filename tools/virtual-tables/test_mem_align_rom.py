@@ -1,6 +1,7 @@
 """Regression controls for the physical-row fidelity comparison."""
 import importlib.util
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 
@@ -31,3 +32,75 @@ class MemAlignRomComparison(unittest.TestCase):
                 path.write_text(text)
                 with self.assertRaises(ValueError):
                     checker.exported_rows(path)
+
+
+class PackedMetadataNumbers(unittest.TestCase):
+    """Execute the actual metadata converter on typed JavaScript values."""
+
+    def assert_numeric_behavior(self, program):
+        module = Path(__file__).with_name("export-packed-tables.cjs")
+        result = subprocess.run(
+            ["node", "-e",
+             "const assert = require('node:assert/strict');\n"
+             "const { metadataInteger } = require(process.argv[1]);\n" + program,
+             str(module)],
+            capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_safe_metadata_integer_roundtrip(self):
+        self.assert_numeric_behavior("""
+const limit = 2n ** 53n - 1n;
+for (const value of [0n, 1n, 88n, 331n, limit, -limit]) {
+    const number = metadataInteger(value);
+    assert(Number.isSafeInteger(number));
+    assert.equal(BigInt(number), value);
+    assert.equal(BigInt(JSON.parse(JSON.stringify(number))), value);
+}
+for (const value of [0, 88, Number.MAX_SAFE_INTEGER, -Number.MAX_SAFE_INTEGER]) {
+    assert.equal(metadataInteger(value), value);
+}
+const identities = new Map([
+    [metadataInteger(limit), 'last-safe'],
+    [metadataInteger(limit - 1n), 'previous-safe'],
+]);
+assert.equal(identities.size, 2);
+""")
+
+    def test_two_to_53_boundary_rejects_before_map_identity(self):
+        self.assert_numeric_behavior("""
+const boundary = 2n ** 53n;
+assert.equal(BigInt(metadataInteger(boundary - 1n)), boundary - 1n);
+const identities = new Map();
+for (const value of [boundary, boundary + 1n, boundary + 2n,
+                     -boundary, -boundary - 1n]) {
+    assert.throws(() => identities.set(metadataInteger(value), value), {
+        name: 'RangeError',
+        message: /packed JSON metadata integer cannot be represented exactly/,
+    });
+}
+assert.equal(identities.size, 0);
+""")
+
+    def test_distinct_large_field_table_ids_are_not_aliased(self):
+        self.assert_numeric_behavior("""
+const prime = 0xffffffff00000001n;
+const ids = [prime - 1n, prime - 2n, 2n ** 53n + 1n, 2n ** 53n + 2n];
+assert.equal(new Set(ids).size, ids.length);
+const identities = new Map();
+for (const id of ids) {
+    assert(id >= 0n && id < prime); // Valid FGL values, unsupported JSON IDs.
+    assert.throws(() => identities.set(metadataInteger(id), id), RangeError);
+}
+assert.equal(identities.size, 0);
+""")
+
+    def test_unsupported_numeric_representations_do_not_coerce(self):
+        self.assert_numeric_behavior("""
+for (const value of ['0', false, true, null, undefined, {}, []]) {
+    assert.throws(() => metadataInteger(value), TypeError);
+}
+for (const value of [1.5, -1.5, NaN, Infinity, -Infinity, 2 ** 53]) {
+    assert.throws(() => metadataInteger(value), RangeError);
+}
+""")

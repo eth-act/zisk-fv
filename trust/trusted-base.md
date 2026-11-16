@@ -553,18 +553,21 @@ dropped as describing a cursor the evidence no longer uses.)
 
 ### Canonical ALU input derivation — #360 partial
 
-`TraceLevelExport.PureInputs.pureInputsOfRegAgree` reconstructs 43 ALU/M
-input families from decoded operands and the **current** register-agreement
-invariant. Architectural x0 is the specified zero register; other values come
+`TraceLevelExport.PureInputs.pureInputsOfRegAgree` reconstructs all63 pure
+runtime input families from decoded operands and the **current** register/PC
+agreement. Architectural x0 is the specified zero register; other values come
 from the register file. Both the induction step and final `root_soundness`
 call consume this constructor. It does not assume future step soundness.
 The 13 M factories retain every existing provider, range, remainder, forge and
 ISA fact and prove equality of the complete old and canonical runtime inputs.
 The common register reader is shared rather than duplicated in the dispatcher.
 
-Four store and seven load families also reconstruct their successful reads;
-the remaining nine families pass through unchanged. The existing current-PC
-equality and aggregate `InputsAgreeCore` premise are **not removed**. Memory,
+Four store and seven load families reconstruct their successful reads. The nine
+control factories now reconstruct all branch, JAL/JALR and FENCE inputs too:
+whole-input uniqueness preserves all original success/misa/privilege/mseccfg
+facts and JALR's genuine source-row rs1 bridge. No new read, input equality,
+layout or domain hypothesis is supplied. The existing current-PC equality and
+aggregate `InputsAgreeCore` premise are **not removed**. Memory,
 architectural/physical row placement, boot/platform invariants and remaining
 family-specific obligations still need their actual derivations.
 
@@ -1569,3 +1572,27 @@ unwrapped natural-address semantics, including their negative-immediate
 coverage defect, are unchanged. This is runtime-data canonicalization and
 old-domain preservation, not aggregate premise removal, independent memory
 induction, source-derived load A-slot grounding, or closure of #360/#417/#172.
+
+## Seven-load source-derived A slots
+
+`LoadOperandBinding` follows each successful ProductionM2 load lowering and the
+existing same-message Main/ROM and raw-program bindings to derive the actual
+A-source selectors and offset. Architectural x0 uses the real immediate-zero
+branch; nonzero registers use the register source. `LoadOperandInputs` combines
+these pins with the current lane bridge and successful Sail read to derive A0.
+Both sites in the shared private Root induction consume this derivation before
+canonical input construction; the public Root and old-domain comparison retain
+their existing statements.
+The redundant Core fields remain: this is proof-source consumption, not numeric
+premise removal, load-predicate repair, new boot evidence, full Sail decode
+grounding, or committed-ROM source-world/provider completion.
+
+## Raw physical register-read coverage
+
+The additive `RegisterCoverageBridge` helpers place an earlier actual Main
+C-register access on the boot-anchored backward A/B read walk. Register mode
+and direct addressing follow from accepted Main Booleanity/address equations;
+timestamp order follows from actual physical row indices and fixed capacity.
+No architectural `ZiskStep`/`RowDecode` is fabricated for auxiliary rows.
+These lemmas do not yet identify the full physical last-write fold with Sail's
+four operand lanes, repair the public row-map interface, or close #417.
