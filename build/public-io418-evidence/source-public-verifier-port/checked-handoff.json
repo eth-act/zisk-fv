@@ -1,0 +1,23 @@
+{
+  "status": "Actual focused three-module narrow and FULL RAW GREEN",
+  "frozen_proof_source_commit": "13d9d01296961e984f73645fd23942547aede8e7",
+  "prospective_base": "622938be281db14470819a9fe752528221a2491d",
+  "context": "Actual proper8/normal34/sharedsix prospective context; not the old private18 world, not an assertion of merged main or completed global Nix gate",
+  "defining_modules": ["ZiskFv.AirsClean.PublicIo", "ZiskFv.AirsClean.PublicIoSource", "ZiskFv.AirsClean.SourcePublicVerifier"],
+  "narrow_seconds": [11.274900433025323, 6.493009255966172, 5.607448277063668],
+  "full_seconds": 163.1793797009159,
+  "all_defining_module_roots": 175,
+  "full_scope": "Unfiltered elaborated types and values, including opaque/private/compiler/constructors, complete axiom paths; every root and union independently match Lean.collectAxioms",
+  "raw_union": ["Classical.choice", "Quot.sound", "propext"],
+  "strict_borrowed_lease_sha256": "85a9b2e0fd5941a87088947d7e0ee6d1c20fdbcdf73310b740b24a5512632a54",
+  "strict_before_and_after": {"tracked_lean_sources":879,"generated_source_modules":34,"all_objects_including_ir_sidecars":87845,"result":"ALL_EXACT"},
+  "object_cache_copies": 0,
+  "foreign_writes": 0,
+  "owned_namespace": "Fresh three outputs; all borrowed dependencies are metadata-only readonly symlinks in the same Lean namespace root, excluding all three owned modules and all their sidecars",
+  "preserved_actual_failure": "prepare1-namespace-root-setup: separate Lean namespace roots hid OperationBus dependency; actual infrastructure failure, NOT a proof rejection. Repaired only owned symlink layout; no theorem/source/hypothesis/expected/cap changes",
+  "lender_release": "Explicitly released to ClosureIntegrator immediately after final strict after verification, with no own jobs remaining. Historical lease is a point-in-time verification record, NOT authority to reuse mutable lender objects after release",
+  "publication_delta": "Same three frozen proof sources and three ordinary aggregate exports; existing README now records this actual fresh175-root result. No proof-source changes after verification",
+  "archives": "Previous76, f37 and 468 remain separate historical evidence, not relabeled as this result; port-contract is the preserved SOURCEONLY-stage contract",
+  "exclusions": "No canonical Unit verifier/PublicIO cutover; no Ensemble/Classification/Runtime/Accepted/Root/Inputs/PureSpec/dispatch/SourceObject-field edits; no Nix, normal registration, pin or upstream changes",
+  "remaining_binding_boundary": "Same typed source-owned Globals/Params buffer and selected setup -> actual compiled GLOBAL/Clean verifier MODEL. Actual native setup/public-map/pointer/opening authentication -> accepted witness, ROM authentication, completion/continuation and whole final-Sail-output binding remain unproved. No354/418 closure claim"
+}

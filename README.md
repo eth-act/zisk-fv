@@ -192,8 +192,11 @@ Its Main38/AIR8/GROUP3 projection uses the existing shared native reader.
 These definitions do **not** retarget the canonical Unit verifier, Accepted
 trace, Root statement or caller inputs. Native setup/public-pointer/opening
 authentication, completion and whole-Sail-output binding remain unproved.
-The prior standalone76-root check is archived as prior-context evidence; this
-port requires a fresh complete three-module check on its prospective base.
+Fresh verification on prospective base `622938be` checked all three defining
+modules:175 roots, unfiltered type/value/opaque dependencies and full axiom
+paths, with independent per-root and union `Lean.collectAxioms` agreement.
+The union is exactly `Classical.choice`, `Quot.sound`, and `propext`; the prior
+standalone76-root evidence remains separately archived, not relabeled.
 
 # Bugs Reported
 The following patches fix bugs that were found in the course of building out zisk-fv:

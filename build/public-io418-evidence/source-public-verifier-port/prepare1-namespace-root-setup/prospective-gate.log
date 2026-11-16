@@ -1,0 +1,14 @@
+{"phase": "before", "status": "ALL_EXACT", "lease_sha256": "85a9b2e0fd5941a87088947d7e0ee6d1c20fdbcdf73310b740b24a5512632a54", "tracked_sources": 879, "generated_sources": 34, "objects_including_ir": 87845, "seconds": 16.789839672972448}
+{"label": "narrow-ZiskFv_AirsClean_PublicIo", "status": 1, "seconds": 0.17883808794431388}
+{"phase": "after", "status": "ALL_EXACT", "lease_sha256": "85a9b2e0fd5941a87088947d7e0ee6d1c20fdbcdf73310b740b24a5512632a54", "tracked_sources": 879, "generated_sources": 34, "objects_including_ir": 87845, "seconds": 8.227804093039595}
+Traceback (most recent call last):
+  File "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/check_prospective.py", line 173, in <module>
+    main()
+    ~~~~^^
+  File "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/check_prospective.py", line 141, in main
+    results.append(run(lease, env, 'narrow-' + module.replace('/', '_'), ROOT / (module + '.lean'), OUT / module))
+                   ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/check_prospective.py", line 118, in run
+    assert result.returncode == 0, label + ' failed; actual diagnostics preserved'
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: narrow-ZiskFv_AirsClean_PublicIo failed; actual diagnostics preserved

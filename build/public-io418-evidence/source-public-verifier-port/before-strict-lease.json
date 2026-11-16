@@ -1,0 +1,9 @@
+{
+  "phase": "before",
+  "status": "ALL_EXACT",
+  "lease_sha256": "85a9b2e0fd5941a87088947d7e0ee6d1c20fdbcdf73310b740b24a5512632a54",
+  "tracked_sources": 879,
+  "generated_sources": 34,
+  "objects_including_ir": 87845,
+  "seconds": 8.976887405966409
+}

@@ -1,0 +1,6 @@
+{
+  "classification": "SETUP_FAILURE_NOT_PROOF_REJECTION",
+  "actual_error": "Lean namespace root selected fresh out/ZiskFv; OperationBus dependency only existed in separate overlay namespace root",
+  "repair": "Merge readonly metadata symlinks into same owned output namespace, excluding exact three new modules and all sidecars; no source/proposition/cap/expected/borrowed object changes",
+  "preservation": "Old output metadata moved under prepare1; original command paths in historical logs are intentionally not rewritten"
+}
