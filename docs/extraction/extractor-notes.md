@@ -334,6 +334,25 @@ every root and each union agree with Lean's collector, with only
 This result uses the frozen `SourceInstance` hash `533894dc…`, not the subsequent
 UInt64-primary trace cutover, and makes no Accepted/Root or full-#371 closure claim.
 
+The subsequent source-owned UInt64-primary trace cutover keeps c33's reader
+generic: `SourceFinalizer.runningCoordinate?` calls `cmAuxWords?`, which reads
+only the selected stage-2 auxiliary block. The concrete FGL `Stage2.Native`
+reader continues to use `cmWords?`; it does not store a second decoded trace or
+introduce a caller-supplied word decoder. Checkpoint `eea4dc86` passed the ten
+cohesive source/caller/module narrow checks and fresh complete opaque-aware RAW
+checks of all seven affected Mem modules. These new-type results are separate
+from the old `533894dc…` evidence; packed-stage coverage and native
+materialization remain unproved.
+
+The changed source package was also independently audited under this worktree's
+unchanged current recipe: 557 roots across `RawSource`, `NativeTraceWords` and
+`SourceInstance`, in addition to the seven Mem modules' 341 roots. All 898 roots
+and module unions agree with the collector and have only the standard three
+axioms. This separate check resolved a documented Lake library-root-list
+metadata difference without changing configuration or silently reusing a
+different recipe. Complete new-type evidence is in
+`tools/adversarial-mutations/evidence/finalizers/mem-sourceword-eea4dc86/`.
+
 `link_Main_reloadRange : Fin 31 → ValidatedLink` indexes c49+3k in source
 order. It is separate from `link_Main_reload`, which indexes the corresponding
 memory reload messages. Both are generated only after exact template checks.
