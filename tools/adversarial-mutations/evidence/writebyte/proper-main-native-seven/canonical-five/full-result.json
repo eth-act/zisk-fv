@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+    "-j2",
+    "--tstack=400000",
+    "build/writebyte-canonical-gate/raw-closure.lean"
+  ],
+  "returncode": 0,
+  "seconds": 191.52726289001293
+}

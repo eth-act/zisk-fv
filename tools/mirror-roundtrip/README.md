@@ -85,6 +85,14 @@ range/protocol/data helpers, tests explicit and implicit row contexts, and retai
 both a genuinely weld-only withdrawal and the now-neutral
 WriteByte redundant-weld withdrawal.
 
+The native row view adds an independent `ResidualsHold` mirror, with a kernel
+equivalence to all seven original indexed residuals. Polynomial mutation cases
+perturb the same equation in **both** actual mirrors and require a strengthening
+naming both plus the original weld-only fallback. Helper-resolution cases instead
+require the exact new `PolynomialSpec` parser diagnostic: an unchanged independent
+native mirror may legitimately retain generated coverage, but may not hide an
+unavailable or ambiguous imported helper. All existing cases and controls remain.
+
 `poly.py`, `check.py`, `lean_parse.py`, `lean_wiring.py`, `pilout_wire.py` and
 `pilout_atoms.py` are imported from `tools/pilout-roundtrip`, never forked, so the
 two tools cannot disagree about what a column, an atom or a canonical form is --
@@ -128,10 +136,10 @@ through the SAME `lanes.LaneMap` and parser as the root, a `Bool`/`.val < 2` typ
 fact read from the row struct or the spec, or a generated constraint on the RHS of
 a kernel-checked `Iff.rfl` weld -- never by an index allowlist. A boolean-shaped
 constraint whose column is neither `Bool`-typed nor bounded is not `BOOL_TYPED`.
-`MemAlignWriteByte` now supplies its actual fourteen-field row and seven-clause
-`PolynomialSpec`: all seven base equations are compared as `MIRROR`, including
-its three selector booleans. Their kernel welds remain independent fallback
-coverage, not a substitute for comparing the real row equations.
+`MemAlignWriteByte` supplies its actual fourteen-field row; `PolynomialSpec` and
+the native `ResidualsHold` compare all seven base equations as `MIRROR`, including
+the three selector booleans. Their kernel welds remain independent fallback
+coverage, not a substitute for comparing either real row-equation surface.
 
 `STRENGTHENING` is a **syntactic** class, and the distinction matters. "No
 generated constraint carries this canonical form" is not the same statement as
