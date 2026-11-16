@@ -108,6 +108,7 @@
           pil2-compiler = self.packages.${system}.pil2-compiler;
           pil-extract = self.packages.${system}.pil-extract;
           zisk-pilout = self.packages.${system}.zisk-pilout;
+          fixed-data = self.packages.${system}.zisk-fixed-data;
         };
 
         packages.zisk-fixed-data = self.packages.${system}.zisk-pilout.fixed;

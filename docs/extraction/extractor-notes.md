@@ -24,6 +24,10 @@ pil-extract arith-range-table --rust-source <path> [--output <path>]
 
 pil-extract source-dimensions --pilout <path> [--output <path>]
 
+pil-extract packed-virtual-tables --compiled-json <path> [--output <path>]
+
+pil-extract public-io --pilout <path> [--output <path>]
+
 pil-extract clean-component --pilout <path> --air <needle>
                  [--row-output <path>] [--constraints-output <path>]
                  [--bus-id <N>] [--channel op-bus|mem-align-bus]
@@ -69,6 +73,48 @@ the flags themselves.
   protobuf comment calling it `log2(n)` is stale. Missing metadata fails rather
   than inventing a default capacity. Normal-build kernel identities pin Main,
   Mem and MemAlign's live fixed-column capacities to these actual counts.
+- `packed-virtual-tables`: emit `Extraction.PackedVirtualTables` from the actual
+  production compiler's retained packed-table observations, including exact
+  physical placement and converse source ownership for buses 88/124/125/330/331.
+  `export-packed-tables.cjs` compares every target fixed cell and UID with its
+  retained pre-lowering source; it does not reimplement the packing algorithm or
+  invent unrelated fixed values. Normal generation copies the real Rust-generated
+  external fixed payloads into a private source tree, retains
+  `PackedVirtualTables.json`, and emits the Lean location/source certificates.
+  The byte-table observer and checker also retain the actual packed producer
+  stream and raw multiplicity schema, alongside their original virtual-table
+  block observations.
+  JSON numeric metadata supports only exact integers in
+  `[-(2^53 - 1), 2^53 - 1]`; unsupported identities fail before matching.
+  This representation limit is not an AIR or witness range assumption:
+  full-field payloads and unrelated producer UIDs retain exact `BigInt` values.
+  Generated source locations alone do not establish live provider composition
+  or an unchanged accepted-witness domain.
+  The ordinary byte-table checker additionally materializes the independent
+  canonical Binary/Extension source components and the complete 65,536-row
+  DualByte source component. It compares every tuple column and opcode block
+  with both virtual and packed compiler observations. The streamers retain
+  every physical row even with zero raw multiplicity; local kernel
+  correspondences preserve arbitrary raw multiplicities and source ownership.
+  The standalone
+  `PackedVirtualTableSources` and `DualByteTable`/`DualByteSlice`/
+  `DualBytePackedSource` declarations are local, uncomposed source models.
+  Their materialization, constructibility and interaction correspondences do
+  not install providers into `FullEnsemble`, change the accepted-world witness,
+  or discharge root/channel finishing.
+  Their three source providers deliberately add three channel requirements
+  and three weighted exposures to the declaration snapshot (78 to 84).
+  These local interfaces do not change the accepted ensemble's channel roster.
+- `public-io`: emit `Extraction.PublicIo` from the compiled GLOBAL expression
+  graph and cleared sum. Hints identify tuples, but every operation-bus tuple is
+  linked to an actual denominator and positive-unit numerator term; generated
+  `source_operation_emissions_complete` accounts for all operation-bus terms.
+  GLOBAL proof/public/AIR-group/table cells remain distinct. Physical Main hints
+  supply only operation arity, not a GLOBAL expression namespace. Unsupported
+  operands, malformed references and missing source data fail rather than
+  defaulting to zero. Normal Nix production, populate, explicit Lake targets and
+  both closed output inventories include the module; this is not a claim of
+  public-I/O provider composition, verifier authentication or new logUp algebra.
 - `clean-component`: emit Clean `Row.lean` / `Constraints.lean` source for
   one AIR and one supported channel shape.
 - `mem-air-facts`: emit a Markdown source report for the Mem generated AIR
