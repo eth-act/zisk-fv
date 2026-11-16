@@ -1594,8 +1594,8 @@ C-register access on the boot-anchored backward A/B read walk. Register mode
 and direct addressing follow from accepted Main Booleanity/address equations;
 timestamp order follows from actual physical row indices and fixed capacity.
 No architectural `ZiskStep`/`RowDecode` is fabricated for auxiliary rows.
-These lemmas do not yet identify the full physical last-write fold with Sail's
-four operand lanes, repair the public row-map interface, or close #417.
+These raw-walk facts feed the internal physical last-write and read-lane proofs
+below. They do not retarget the public row-map interface or close #417.
 
 ## Internal canonical physical-row proofs
 
@@ -1606,10 +1606,28 @@ complete source-span endpoints and physical register/memory folds. The existing
 Root caller schema derives the parser and physical facts for that same lowering;
 no additional parse-success, placement, read or memory-presence promise is added.
 
+The physical register-read modules identify the finite actual C-write prefix
+with the four A/B operand lanes at real source starts. Source-owner and producer
+range proofs cover all63 instruction families, including the actual finish of a
+two-row JALR rather than a legacy START-only range. They retain register boot,
+earlier real StepSounds, InputsAgreeCore and the existing defect conditions.
+No architectural step is assigned to an auxiliary row, and register-boundary
+reload semantics, including segment-zero timestamp0, are unchanged.
+
+The physical platform projection computes actual memory slots with the retained
+tail, ordered source prefixes and whole replay rows. Real-source placements are
+derived while retaining only the original narrow-store RMW primitives.
+The legacy projection constructibly transports the original BootSegmentMemorySeed
+memory initialization, read-soundness, presence and placement facts through the
+canonical recount, including the empty execution and a final two-row expansion.
+These are internal derived conclusions, not new public Root premises or a
+replacement seed at auxiliary rows; no public premise or ledger reduction is
+claimed.
+
 The repeated two-row JALR example in this corpus is conditional on its first
 actual Sail step. It is not a complete Accepted4/provider-world construction.
-The all-row old domain, full physical read-lane identification, completed
-execution/public-I/O relation and public mapped cutover remain separate work.
+The all-row old domain, completed execution/public-I/O relation and public
+mapped cutover remain separate work.
 Existing Root/PureSpec/Accepted/Valid/dispatch statements and InputsAgreeCore are
 unchanged. Any Root-dependent internal lemmas inherit the existing Root trust
 boundary; they are not advertised as standard-three or native-free Root proofs.
