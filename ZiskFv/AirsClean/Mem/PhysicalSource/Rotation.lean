@@ -57,8 +57,7 @@ theorem previous_first (view : View resolved) : view.previous view.first = view.
   apply Fin.ext
   have negative : (-1 : Int) ≠ 0 := by decide
   simp only [previous, rotate, first, last, if_neg negative]
-  have positive := view.count_pos
-  omega
+  norm_num [count, Stage1.SourceColumns.physicalRows, Extraction.SourceDimensions.Mem.rowCount]
 
 theorem previous_of_positive (view : View resolved) (row : view.Index) (positive : 0 < row.val) :
     (view.previous row).val = row.val - 1 := by
