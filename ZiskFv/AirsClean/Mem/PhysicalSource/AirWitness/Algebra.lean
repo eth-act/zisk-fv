@@ -80,7 +80,7 @@ theorem stage2_satisfies (view : View resolved) (row : Index) :
       ← Ext3.ofBase_mul, ← Ext3.ofBase_neg]
     apply congrArg Ext3.ofBase
     by_cases atLast : row.val + 1 = N
-    · simp only [if_pos atLast, atLast, one_mul]
+    · simp only [atLast, ↓reduceIte, one_mul, delta]
       ring
     · simp only [if_neg atLast, zero_mul]
   all_goals
