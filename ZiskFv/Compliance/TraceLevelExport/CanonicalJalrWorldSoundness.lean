@@ -26,13 +26,6 @@ private theorem worldTrace_programLength : worldTrace.programLength = 2 := rfl
 attribute [local simp] worldTrace_numInstructions worldTrace_programLength
   worldAddProgramRow worldAndProgramRow
 
-private theorem worldProgramRaw0 :
-    worldTrace.program ⟨0, by change 0 < 2; decide⟩ = worldAddProgramRow := rfl
-private theorem worldProgramRaw1 :
-    worldTrace.program ⟨1, by change 1 < 2; decide⟩ = worldAndProgramRow := rfl
-
-attribute [local simp] worldProgramRaw0 worldProgramRaw1
-
 /-- Real physical source starts, with no total family of auxiliary ZiskSteps. -/
 def worldSourceIndex (i : Fin 2) : Fin 4 := ⟨2 * i.val, by omega⟩
 
@@ -139,7 +132,7 @@ noncomputable def worldRawDecode (i : Fin 2) :
         (worldTrace.program (worldStart 0)).line := by
       rw [hline]
       fin_cases i <;> simp [worldStart, worldSourceIndex, mainOfTable,
-        worldRow0, worldRow2, worldRow0Template, worldRow2Template, mainRomRowOf]
+        worldRow0, worldRow2, worldRow0Template, worldRow2Template, mainRomRowOf] <;> rfl
     have sameIndex := program_lines_injective_of_programRowsBinding worldProgramRowsBinding sameLine
     subst j
     exact ⟨0, rfl, rfl, rfl⟩
@@ -148,7 +141,7 @@ noncomputable def worldRawDecode (i : Fin 2) :
     have sameLine : (worldTrace.program j).line = (worldTrace.program terminal).line := by
       rw [hline]
       fin_cases i <;> simp [terminal, worldSourceIndex, mainOfTable,
-        worldRow1, worldRow3, worldRow1Template, worldRow3Template, mainRomRowOf]
+        worldRow1, worldRow3, worldRow1Template, worldRow3Template, mainRomRowOf] <;> rfl
     have sameIndex := program_lines_injective_of_programRowsBinding worldProgramRowsBinding sameLine
     subst j
     exact ⟨0, rfl, rfl, rfl⟩
