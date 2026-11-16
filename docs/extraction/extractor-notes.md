@@ -284,6 +284,16 @@ never enables the rotated final-row selector. Neither problem is discharged by
 adding an opaque sidecar, strengthening acceptance, assuming exact table length,
 or treating local source equations as a provider/ensemble contribution proof.
 
+`Mem.SourceFinalizer` projects this partial linear target from one
+`RawSource.Native.SourceObject`/`ResolvedOccurrence`, using the actual selected
+native maps and separate GROUP/AIR/auxiliary/fixed buffers. Missing or wrongly
+sized blocks fail decoding; scalar AIR0 is not reinterpreted as GROUP0.
+The source object's `RawSource.Context` image is computed, not a second supplied
+context. This internal projection still needs actual compiled c33 operand-id
+and opening-index bindings, defined native machine/address arithmetic, and live
+snapshot/ABI materialization. CPU/nonextended native rows are the current reader
+scope; unsupported GPU/verifier layouts are not acceptance exclusions.
+
 `link_Main_reloadRange : Fin 31 → ValidatedLink` indexes c49+3k in source
 order. It is separate from `link_Main_reload`, which indexes the corresponding
 memory reload messages. Both are generated only after exact template checks.
