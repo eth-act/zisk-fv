@@ -159,22 +159,47 @@ theorem decode_polynomial_correspondence (resolved : ResolvedOccurrence source) 
     (equation : Fin 9) :
     evaluate? resolved row (actualNonlinear equation) = some (values.residual equation) := by
   by_cases mem : SourceFinalizer.memOccurrence resolved = true
-  · simp only [decodeRow?, mem, ↓reduceIte, bind, pure, Option.bind_eq_some_iff,
-      Option.some.injEq] at decoded
-    rcases decoded with
-      ⟨addr, haddr, step, hstep, sel, hsel, stepDual, hstepDual, selDual, hselDual,
-       valueLo, hvalueLo, valueHi, hvalueHi, wr, hwr, lowIncrement, hlowIncrement,
-       highIncrement, hhighIncrement, segmentId, hsegmentId, isLastSegment, hisLastSegment,
-       previousValueLo, hpreviousValueLo, previousValueHi, hpreviousValueHi,
-       previousStep, hpreviousStep, previousAddr, hpreviousAddr,
-       lastValueLo, hlastValueLo, lastValueHi, hlastValueHi, lastStep, hlastStep,
-       lastAddr, hlastAddr, distanceBaseLo, hdistanceBaseLo, distanceBaseHi, hdistanceBaseHi,
-       distanceEndLo, hdistanceEndLo, distanceEndHi, hdistanceEndHi,
-       alpha, halpha, gamma, hgamma, running, hrunning, previousRunning, hpreviousRunning,
-       cluster0, hcluster0, cluster1, hcluster1,
-       direct0, hdirect0, direct1, hdirect1, direct2, hdirect2, direct3, hdirect3,
-       direct4, hdirect4, direct5, hdirect5, l1, hl1, nextL1, hnextL1,
-       groupResult, hgroupResult, rfl⟩
+  · simp only [decodeRow?, mem, ↓reduceIte] at decoded
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨addr, haddr, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨step, hstep, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨sel, hsel, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨stepDual, hstepDual, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨selDual, hselDual, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨valueLo, hvalueLo, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨valueHi, hvalueHi, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨wr, hwr, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨lowIncrement, hlowIncrement, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨highIncrement, hhighIncrement, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨segmentId, hsegmentId, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨isLastSegment, hisLastSegment, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨previousValueLo, hpreviousValueLo, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨previousValueHi, hpreviousValueHi, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨previousStep, hpreviousStep, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨previousAddr, hpreviousAddr, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨lastValueLo, hlastValueLo, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨lastValueHi, hlastValueHi, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨lastStep, hlastStep, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨lastAddr, hlastAddr, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨distanceBaseLo, hdistanceBaseLo, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨distanceBaseHi, hdistanceBaseHi, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨distanceEndLo, hdistanceEndLo, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨distanceEndHi, hdistanceEndHi, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨alpha, halpha, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨gamma, hgamma, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨running, hrunning, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨previousRunning, hpreviousRunning, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨cluster0, hcluster0, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨cluster1, hcluster1, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨direct0, hdirect0, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨direct1, hdirect1, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨direct2, hdirect2, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨direct3, hdirect3, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨direct4, hdirect4, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨direct5, hdirect5, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨l1, hl1, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨nextL1, hnextL1, decoded⟩
+    rcases Option.bind_eq_some_iff.mp decoded with ⟨groupResult, hgroupResult, decoded⟩
+    rcases Option.some.inj decoded with rfl
     have wa := witness_from_decoder resolved row 0 addr haddr
     have ws := witness_from_decoder resolved row 1 step hstep
     have wsel := witness_from_decoder resolved row 2 sel hsel
