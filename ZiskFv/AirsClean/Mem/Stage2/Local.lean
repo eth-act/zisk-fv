@@ -70,7 +70,8 @@ def decodeRow? (resolved : ResolvedOccurrence source) (row : Nat) : Option Polyn
     let l1 ← baseFixed? resolved row 0
     let nextL1 ← baseFixed? resolved row 1
     let groupResult ← groupValue? resolved 0
-    return { addr := addr, step := step, sel := sel, stepDual := stepDual, selDual := selDual,
+    return {
+      addr := addr, step := step, sel := sel, stepDual := stepDual, selDual := selDual,
       valueLo := valueLo, valueHi := valueHi, wr := wr,
       lowIncrement := lowIncrement, highIncrement := highIncrement,
       segmentId := segmentId, isLastSegment := isLastSegment,
