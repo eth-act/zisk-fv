@@ -22,12 +22,25 @@ def auxiliaryEntry? (setup : NativeSetup) (column : Nat) : Option (Nat × PolMap
   let entry ← setup.cmPolsMap[id]?
   return (id, entry)
 
+private theorem auxiliaryEntry_selected (setup : NativeSetup) (column : Nat)
+    (entry : Nat × PolMap) (selected : auxiliaryEntry? setup column = some entry) :
+    Stage2.witnessMapId? setup 2 column = some entry.1 ∧
+    setup.cmPolsMap[entry.1]? = some entry.2 := by
+  cases hid : Stage2.witnessMapId? setup 2 column with
+  | none => simp [auxiliaryEntry?, hid, bind] at selected
+  | some id =>
+    cases he : setup.cmPolsMap[id]? with
+    | none => simp [auxiliaryEntry?, hid, he, bind] at selected
+    | some actual =>
+      have equal : (id, actual) = entry := by
+        simpa [auxiliaryEntry?, hid, he, bind] using selected
+      cases equal
+      exact ⟨hid, he⟩
+
 private def auxiliaryGeometry (view : View resolved) (entries : Vector (Nat × PolMap) 3) : Prop :=
   view.setup.mapSectionsN["cm2"]? = some 9 ∧
   view.setup.mapOffsets[("cm2", false)]? = some (13 * view.count) ∧
   (∀ column : Fin 3,
-    Stage2.witnessMapId? view.setup 2 column.val = some entries[column].1 ∧
-    view.setup.cmPolsMap[entries[column].1]? = some entries[column].2 ∧
     entries[column].2.stage = 2 ∧ entries[column].2.dim = 3 ∧
     entries[column].2.stagePos = 3 * column.val) ∧
   22 * view.count ≤ resolved.slotData.auxTrace.size
@@ -41,6 +54,9 @@ structure CompleteView (resolved : ResolvedOccurrence source) where
   private mk ::
   base : View resolved
   private entries : Vector (Nat × PolMap) 3
+  private entriesSelected : ∀ column : Fin 3,
+    Stage2.witnessMapId? base.setup 2 column.val = some entries[column].1 ∧
+    base.setup.cmPolsMap[entries[column].1]? = some entries[column].2
   private auxiliaryChecked : auxiliaryGeometry base entries
   alpha : Stage2.Ext3 FGL
   alphaSelected : Stage2.challenge? resolved 2 0 = some alpha
@@ -50,18 +66,33 @@ structure CompleteView (resolved : ResolvedOccurrence source) where
 /-- Failure remains failure; no cell or extension coefficient is defaulted. -/
 def completeFromResolved? (resolved : ResolvedOccurrence source) : Option (CompleteView resolved) := do
   let base ← fromResolved? resolved
-  let entry0 ← auxiliaryEntry? base.setup 0
-  let entry1 ← auxiliaryEntry? base.setup 1
-  let entry2 ← auxiliaryEntry? base.setup 2
-  let entries := #v[entry0, entry1, entry2]
-  if checked : auxiliaryGeometry base entries then
-    match alphaSelected : Stage2.challenge? resolved 2 0 with
+  match h0 : auxiliaryEntry? base.setup 0 with
+  | none => none
+  | some entry0 =>
+    match h1 : auxiliaryEntry? base.setup 1 with
     | none => none
-    | some alpha =>
-      match gammaSelected : Stage2.challenge? resolved 2 1 with
+    | some entry1 =>
+      match h2 : auxiliaryEntry? base.setup 2 with
       | none => none
-      | some gamma => some ⟨base, entries, checked, alpha, alphaSelected, gamma, gammaSelected⟩
-  else none
+      | some entry2 =>
+        let entries := #v[entry0, entry1, entry2]
+        have selections : ∀ column : Fin 3,
+            Stage2.witnessMapId? base.setup 2 column.val = some entries[column].1 ∧
+            base.setup.cmPolsMap[entries[column].1]? = some entries[column].2 := by
+          intro column
+          fin_cases column
+          · exact auxiliaryEntry_selected base.setup 0 entry0 h0
+          · exact auxiliaryEntry_selected base.setup 1 entry1 h1
+          · exact auxiliaryEntry_selected base.setup 2 entry2 h2
+        if checked : auxiliaryGeometry base entries then
+          match alphaSelected : Stage2.challenge? resolved 2 0 with
+          | none => none
+          | some alpha =>
+            match gammaSelected : Stage2.challenge? resolved 2 1 with
+            | none => none
+            | some gamma =>
+              some ⟨base, entries, selections, checked, alpha, alphaSelected, gamma, gammaSelected⟩
+        else none
 
 namespace CompleteView
 
@@ -85,13 +116,17 @@ theorem selected_map (view : CompleteView resolved) (column : Fin 3) :
     Stage2.witnessMapId? view.base.setup 2 column.val = some (view.mapId column) ∧
     view.base.setup.cmPolsMap[view.mapId column]? = some (view.mapEntry column) ∧
     (view.mapEntry column).stage = 2 ∧ (view.mapEntry column).dim = 3 ∧
-    (view.mapEntry column).stagePos = 3 * column.val := view.auxiliaryChecked.2.2.1 column
+    (view.mapEntry column).stagePos = 3 * column.val :=
+  ⟨(view.entriesSelected column).1, (view.entriesSelected column).2,
+    view.auxiliaryChecked.2.2.1 column⟩
 
 theorem auxiliary_nonempty (view : CompleteView resolved) :
     resolved.slotData.auxTrace.isEmpty = false := by
   have capacity := view.auxiliary_coverage
   have positive := view.base.count_pos
-  simp only [Array.isEmpty_eq_size_eq_zero]
+  apply Bool.eq_false_iff.mpr
+  intro empty
+  have zero := Array.isEmpty_iff_size_eq_zero.mp empty
   omega
 
 theorem same_auxiliary_buffer (view : CompleteView resolved) :
@@ -104,7 +139,8 @@ def auxiliaryAddress (view : CompleteView resolved) (row : view.Index) (column :
     (rotation : Int) (coordinate : Fin 3) : Fin resolved.slotData.auxTrace.size :=
   ⟨13 * view.base.count + 9 * (view.base.rotate row rotation).val +
     3 * column.val + coordinate.val, by
-    have within := (view.base.rotate row rotation).isLt
+    have within : (view.base.rotate row rotation).val < view.base.count :=
+      (view.base.rotate row rotation).isLt
     have coverage := view.auxiliary_coverage
     have col := column.isLt
     have coord := coordinate.isLt
@@ -144,16 +180,21 @@ theorem auxiliary_source (view : CompleteView resolved) (row : view.Index) (colu
   have bound :
       (13 * view.base.count + (view.base.rotate row rotation).val * 9 + 3 * column.val) + 3 ≤
         resolved.slotData.auxTrace.size := by
-    have within := (view.base.rotate row rotation).isLt
+    have within : (view.base.rotate row rotation).val < view.base.count :=
+      (view.base.rotate row rotation).isLt
     have capacity := view.auxiliary_coverage
     have col := column.isLt
     omega
-  simp only [Stage2.witness?, supported, ↓reduceIte, view.base.setupSelected,
-    Option.bind_some, chosen.1, chosen.2.1]
-  simp only [ResolvedOccurrence.cmWords?, view.base.setupSelected, Option.bind_some,
-    chosen.2.1, chosen.2.2.1, ↓reduceIte]
-  simp only [cmAuxAt?, view.base.native_rotation row rotation, Option.bind_some,
-    view.auxiliary_width, view.auxiliary_offset, chosen.2.2.2.2]
+  unfold Stage2.witness?
+  rw [if_pos supported]
+  simp only [bind, view.base.setupSelected, Option.bind_some, chosen.1,
+    show (2 : Nat) ≠ 1 by decide, ↓reduceIte]
+  simp only [ResolvedOccurrence.cmWords?, bind, view.base.setupSelected, Option.bind_some,
+    chosen.2.1, chosen.2.2.1, show (2 : Nat) ≠ 1 by decide,
+    show (1 : Nat) < 2 by decide, ↓reduceIte]
+  simp only [cmAuxAt?, bind, chosen.2.2.1, view.base.native_rotation row rotation,
+    Option.bind_some, view.auxiliary_width, view.auxiliary_offset,
+    chosen.2.2.2.1, chosen.2.2.2.2]
   rw [extension_read_at _ _ _ view.same_auxiliary_buffer bound]
   simp only [auxiliary, auxiliaryAddress, Nat.mul_comm]
   rfl
@@ -179,8 +220,12 @@ theorem auxiliary_generic_source (view : CompleteView resolved) (row : view.Inde
   have actual := view.auxiliary_source row column rotation
   have supported : (2 = 1 ∧ column.val < 13) ∨ (2 = 2 ∧ column.val < 3) :=
     Or.inr ⟨rfl, column.isLt⟩
-  simpa only [Stage2.witness?, supported, ↓reduceIte, view.base.setupSelected,
-    Option.bind_some, chosen.1, branch] using actual
+  unfold Stage2.witness? at actual
+  rw [if_pos supported] at actual
+  simp only [bind, view.base.setupSelected, Option.bind_some, chosen.1,
+    show (2 : Nat) ≠ 1 by decide, ↓reduceIte] at actual
+  rw [branch] at actual
+  exact actual
 
 def challenge (view : CompleteView resolved) (index : Fin 2) : Stage2.Ext3 FGL :=
   if index.val = 0 then view.alpha else view.gamma
@@ -238,7 +283,7 @@ def direct (view : CompleteView resolved) (index : Fin 6) : Stage2.Ext3 FGL := v
 def l1 (view : CompleteView resolved) (row : view.Index) : FGL :=
   resolved.slotData.fixed[2 * row.val + 1]'(by
     have capacity := view.base.fixed_coverage
-    have within := row.isLt
+    have within : row.val < view.base.count := row.isLt
     omega)
 
 theorem l1_source (view : CompleteView resolved) (row : view.Index) :
