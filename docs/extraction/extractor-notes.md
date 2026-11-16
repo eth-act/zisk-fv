@@ -805,3 +805,14 @@ The multiplicity is an arbitrary field value, not a positive count.
 Production tuple, weight, and `std_sum` numerator-sign controls, including a
 fresh canonical baseline and harmless-comment control, are preserved under
 `tools/adversarial-mutations/evidence/results/rom-d1d7104c/`.
+
+`tools/finite-return-rom/capture.py` compiles the minimal return guest and calls
+the actual pinned `Riscv2zisk::run` and `RomSM::compute_custom_trace_rom`.
+Its checked-in fixture preserves the final native image, all eleven physical
+columns and the zero tail. One static PUBOUT site is not thirty-two dynamic
+outputs. Provenance schema 2 separates recorded launch configuration from
+unobserved process state; `check-continuation-provenance.py` checks that retry
+snapshots keep their original hashes and paths.
+This is a reproducible construction/data fixture, not universal serializer
+equivalence, a completed guest execution, source-witness correlation, or
+verifier-public-I/O/Sail binding.
