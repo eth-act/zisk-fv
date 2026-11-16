@@ -165,12 +165,37 @@ private theorem unpacked_single (view : CompleteView occurrence) (row : Index) (
     (row.val * 13 + column.val) bound _ (forward_coordinate row column)).trans
       (congrArg (fun value : FGL => some #[value]) (word_roundtrip ((primary row)[column])))
 
+private theorem witness_from_unpacked
+    {s : SourceObject FGL} (resolved : ResolvedOccurrence s) (setup : NativeSetup)
+    (entry : PolMap) (row column shifted : Nat) (rotation : Int) (value : FGL)
+    (within : column < 13) (hasSetup : resolved.setup? = some setup)
+    (selected : witnessMapId? setup 1 column = some column)
+    (hasEntry : setup.cmPolsMap[column]? = some entry)
+    (stage : entry.stage = 1) (position : entry.stagePos = column)
+    (unpacked : resolved.slotData.metadata.isPacked = false)
+    (shift : setup.baseRow? row rotation = some shifted)
+    (width : setup.mapSectionsN["cm1"]? = some 13)
+    (raw : NativeTraceWords.unpackedBlock? (resolved.params false)
+      (shifted * 13 + column) 1 = some #[value]) :
+    Stage2.witness? resolved row 1 column rotation = some (Ext3.ofBase value) := by
+  have supported : (1 = 1 ∧ column < 13) ∨ (1 = 2 ∧ column < 3) :=
+    Or.inl ⟨rfl, within⟩
+  unfold Stage2.witness?
+  rw [if_pos supported]
+  simp only [hasSetup, bind, Option.bind_some, selected, ↓reduceIte]
+  rw [ResolvedOccurrence.cmWords_unpacked_source resolved false column row rotation
+    setup entry hasSetup hasEntry stage unpacked]
+  simp only [shift, bind, Option.bind_some, stage, position]
+  rw [show "cm" ++ toString (1 : Nat) = "cm1" by decide]
+  simp only [width, Option.bind_some]
+  rw [raw]
+  rfl
+
 theorem stage1_recovery (view : CompleteView occurrence) (row : Index)
     (column : Fin 13) (rotation : Int) :
     Stage2.witness? occurrence row.val 1 column.val rotation =
       some (Ext3.ofBase ((primary (view.base.rotate row rotation))[column])) := by
-  have supported : (1 = 1 ∧ column.val < 13) ∨ (1 = 2 ∧ column.val < 3) :=
-    Or.inl ⟨rfl, column.isLt⟩
+  have unpacked : occurrence.slotData.metadata.isPacked = false := rfl
   have entryBound : column.val < Constructibility.setup.cmPolsMap.size := by
     simp only [Constructibility.setup, Constructibility.cmMap, Array.size_ofFn]
     have within := column.isLt
@@ -180,17 +205,14 @@ theorem stage1_recovery (view : CompleteView occurrence) (row : Index)
       some (view.base.rotate row rotation).val := by
     rw [← setup_of_view view]
     exact view.base.native_rotation row rotation
-  unfold Stage2.witness?
-  rw [if_pos supported]
-  simp only [bind, actual_setup, Option.bind_some, stage1_map, ↓reduceIte]
-  simp only [ResolvedOccurrence.cmWords?, bind, actual_setup, Option.bind_some,
-    getElem?_pos Constructibility.setup.cmPolsMap column.val entryBound, entry.1, ↓reduceIte]
-  have unpacked : occurrence.slotData.metadata.isPacked = false := rfl
-  simp only [unpacked, Bool.false_eq_true, ↓reduceIte, shifted, Option.bind_some, entry.2]
-  rw [show "cm" ++ toString (1 : Nat) = "cm1" by decide]
-  simp only [Constructibility.exact_cm1, Option.bind_some]
-  rw [unpacked_single view (view.base.rotate row rotation) column]
-  rfl
+  exact witness_from_unpacked occurrence Constructibility.setup
+    Constructibility.setup.cmPolsMap[column.val] row.val column.val
+    (view.base.rotate row rotation).val rotation
+    ((primary (view.base.rotate row rotation))[column]) column.isLt actual_setup
+    (stage1_map column)
+    (getElem?_pos Constructibility.setup.cmPolsMap column.val entryBound)
+    entry.1 entry.2 unpacked shifted Constructibility.exact_cm1
+    (unpacked_single view (view.base.rotate row rotation) column)
 
 private theorem base_read_at (params : Params FGL) (kind : FieldBufferKind)
     (values : Array FGL) (offset : Nat) (selected : buffer? params kind = some values)
