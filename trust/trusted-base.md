@@ -1596,3 +1596,29 @@ timestamp order follows from actual physical row indices and fixed capacity.
 No architectural `ZiskStep`/`RowDecode` is fabricated for auxiliary rows.
 These lemmas do not yet identify the full physical last-write fold with Sail's
 four operand lanes, repair the public row-map interface, or close #417.
+
+## Internal canonical physical-row proofs
+
+The canonical lowering, parser and physical-state modules are internal derived
+proofs, not a replacement for the public Root's architectural-step telescope.
+They retain the same selected production lowering, actual source-row widths,
+complete source-span endpoints and physical register/memory folds. The existing
+Root caller schema derives the parser and physical facts for that same lowering;
+no additional parse-success, placement, read or memory-presence promise is added.
+
+The repeated two-row JALR example in this corpus is conditional on its first
+actual Sail step. It is not a complete Accepted4/provider-world construction.
+The all-row old domain, full physical read-lane identification, completed
+execution/public-I/O relation and public mapped cutover remain separate work.
+Existing Root/PureSpec/Accepted/Valid/dispatch statements and InputsAgreeCore are
+unchanged. Any Root-dependent internal lemmas inherit the existing Root trust
+boundary; they are not advertised as standard-three or native-free Root proofs.
+
+The separate concrete JALR world constructs an actual Accepted4 witness with
+five physical Main rows, all31 register-boundary rows and the real ADD/AND/range
+providers. Its first and second Sail steps, input/lane facts and terminal
+physical-channel StepSound proofs are derived, not caller arguments. Only two
+architectural JALRs occur, at physical starts0/2; the real fifth lookahead row
+participates in the whole witness balances. Consumed source end4 is not physical
+completion, termination or a final public-I/O statement. This exercises the
+internal model nonvacuously without changing the public mapped Root interface.
