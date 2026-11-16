@@ -970,7 +970,8 @@ private theorem worldOp_emissions :
     worldAnd_emissions, binaryConsumerSingleRowTable_interactionsWith_opBus,
     worldBinaryAddTable, binaryAddRowsTable_interactionsWith_opBus, worldMain_ops,
     registerStepRangeRowsTable_interactionsWith_opBus_nil,
-    List.map_cons, List.map_nil, List.nil_append, List.append_nil, List.append_assoc]
+    List.map_cons, List.map_nil, List.cons_append, List.nil_append, List.append_nil,
+    List.append_assoc]
 
 private def worldRangeEmissions : List (Interaction FGL) :=
   worldBoundaryRows.map registerBoundaryRangeInteraction ++
@@ -1113,7 +1114,11 @@ private theorem worldSource_emissions (channel : RawChannel FGL)
       And.intro mem (And.intro op range)
   have provider := registerStepRangeRowsTable_interactionsWith_of_ne
     (worldMainRangeValues ++ registerBoundaryRangeValues worldBoundaryRows) channel range
-  simp only [worldWitness, worldTables, List.flatMap_cons, List.flatMap_nil,
+  change worldTables.flatMap (fun table => table.interactionsWith channel) = _
+  unfold worldTables
+  generalize hExtension : worldExtensionSourceTable = extensionTable
+  generalize hBinary : worldBinarySourceTable = binaryTable
+  simp only [List.flatMap_cons, List.flatMap_nil,
     boundary, add, main, provider, emptyComponentTable_interactionsWith,
     List.nil_append, List.append_nil, List.append_assoc]
 
