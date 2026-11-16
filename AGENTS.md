@@ -185,6 +185,12 @@ trust-boundary change. Prefer fixing verification failures over working around t
 
 ## Lean Guidance
 
+- All agents must use the installed Lean MCP/language server for Lean symbol navigation,
+  type information, goals, and diagnostics. Carry this requirement into delegated tasks.
+  An unconfigured harness LSP is not evidence that Lean MCP is unavailable: use the configured
+  `lean-lsp-mcp` server, reachable through `uvx lean-lsp-mcp`, in the correct populated project.
+  Diagnose and report actual startup/dependency failures rather than silently falling back.
+  MCP supplements, but does not replace, the required Lean builds and trust gates.
 - Use Lean diagnostics, goal state, local search, and small target builds before broad rebuilds.
 - Do not shadow the global `[Field FGL]` instance with a proof-local variable; it can break `ring`.
 - For carry-chain arithmetic, keep large coefficients in the factored form used by nearby proofs.
