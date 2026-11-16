@@ -1583,7 +1583,9 @@ MUTATIONS += (
                 "open ZiskFv.AirsClean.MemAlignByte (byte_value_factor value_8b_factor value_16b_factor)",
                 "open ZiskFv.AirsClean.MemAlignReadByte (byte_value_factor)"),
         ),
-        unparsed_added=(("MemAlignWriteByte", "PolynomialSpec",
+        # Import ambiguity is rejected before any clause/predicate is parsed.
+        unparsed_added=(("MemAlignWriteByte",
+                         "ZiskFv/AirsClean/MemAlignWriteByte/Spec.lean",
                          "ambiguous explicitly opened field helper"),),
         expect_exit=1,
     ),
