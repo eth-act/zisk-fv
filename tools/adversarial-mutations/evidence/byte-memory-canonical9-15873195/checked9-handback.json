@@ -1,0 +1,803 @@
+{
+  "source_commit": "158731955cf1e5491732f6d36f1c6751a83fb63f",
+  "source_parent": "46d7c28a64c75e8d144af4295214170b100eef87",
+  "source_contract": "Both AIR dimension guards removed; only native AIR stage/orderedindex/prefix plus boundedall3 words retained. Challenge stage/id/dim are real native fields. No framework/public statement/TCB edits.",
+  "scope": "INTERNAL STRUCTURAL SOURCE FIDELITY ONLY; not production/source authentication or acceptance/satisfaction/balance/finishedOpBus.",
+  "held": [
+    "production construction/accepted image/ABI",
+    "compiled native r.id/PILsymbol rank/compiled operand r.dim correlation",
+    "source segment exact projection and occurrence coverage",
+    "once-world contribution/provider/internal Mem and byte balances",
+    "Binary372 padding/finalizer integration and WriteByte413 routes; 412 stays open"
+  ],
+  "source_and_ci_lineage": {
+    "ZiskFv.AirsClean.ByteMemoryCompiledPadding": {
+      "source": {
+        "path": "/home/cody/zisk-fv-byte-native-port/ZiskFv/AirsClean/ByteMemoryCompiledPadding.lean",
+        "sha256": "bfd345b4f5dae6e4ded67f58420cb80e4d0858e1090379ea5e083827236bb75d"
+      },
+      "object": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/lean/ZiskFv/AirsClean/ByteMemoryCompiledPadding.olean",
+      "object_sha256": "3adbdf0df89b6cd5f15ba1736fdf6513f8c466b59eabb3e469ac96117e45997c",
+      "all_ci_runtime_siblings": [
+        {
+          "path": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/lean/ZiskFv/AirsClean/ByteMemoryCompiledPadding.olean",
+          "sha256": "3adbdf0df89b6cd5f15ba1736fdf6513f8c466b59eabb3e469ac96117e45997c"
+        }
+      ]
+    },
+    "ZiskFv.AirsClean.ByteMemoryPadding": {
+      "source": {
+        "path": "/home/cody/zisk-fv-byte-native-port/ZiskFv/AirsClean/ByteMemoryPadding.lean",
+        "sha256": "f573270e1d5b3558b9d49d0367b61c9efcfcb03f0fb4ba73d29b791cc8c8aeab"
+      },
+      "object": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/lean/ZiskFv/AirsClean/ByteMemoryPadding.olean",
+      "object_sha256": "4752c0c7911d68aa0ef6e4b3ecfab8a1e4f1eece6595bf05270ca49a037fdbc0",
+      "all_ci_runtime_siblings": [
+        {
+          "path": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/lean/ZiskFv/AirsClean/ByteMemoryPadding.olean",
+          "sha256": "4752c0c7911d68aa0ef6e4b3ecfab8a1e4f1eece6595bf05270ca49a037fdbc0"
+        }
+      ]
+    },
+    "ZiskFv.AirsClean.ByteMemorySourceOperations": {
+      "source": {
+        "path": "/home/cody/zisk-fv-byte-native-port/ZiskFv/AirsClean/ByteMemorySourceOperations.lean",
+        "sha256": "64a6e243220e33212a3bbaf0341376a5af85fc1fef5389b779cef153ab7cc71c"
+      },
+      "object": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/lean/ZiskFv/AirsClean/ByteMemorySourceOperations.olean",
+      "object_sha256": "6d407e0a6ff4e5a5134d28c30a4af70e273941e4d68ba96a42bc597ef8c77ccb",
+      "all_ci_runtime_siblings": [
+        {
+          "path": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/lean/ZiskFv/AirsClean/ByteMemorySourceOperations.olean",
+          "sha256": "6d407e0a6ff4e5a5134d28c30a4af70e273941e4d68ba96a42bc597ef8c77ccb"
+        }
+      ]
+    },
+    "ZiskFv.AirsClean.ByteMemoryPhysicalRows": {
+      "source": {
+        "path": "/home/cody/zisk-fv-byte-native-port/ZiskFv/AirsClean/ByteMemoryPhysicalRows.lean",
+        "sha256": "30608d5e5e95a1aaf48743a9e333a3ddc199dd28b758af5bcfe8a084dcc2a173"
+      },
+      "object": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/lean/ZiskFv/AirsClean/ByteMemoryPhysicalRows.olean",
+      "object_sha256": "8ec0362f641a7b4402c34bac4f22ef25dfdc61b3557f1f33f5f5daf1747c0fbe",
+      "all_ci_runtime_siblings": [
+        {
+          "path": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/lean/ZiskFv/AirsClean/ByteMemoryPhysicalRows.olean",
+          "sha256": "8ec0362f641a7b4402c34bac4f22ef25dfdc61b3557f1f33f5f5daf1747c0fbe"
+        }
+      ]
+    },
+    "ZiskFv.AirsClean.ByteMemoryTraceProfiles": {
+      "source": {
+        "path": "/home/cody/zisk-fv-byte-native-port/ZiskFv/AirsClean/ByteMemoryTraceProfiles.lean",
+        "sha256": "36ba81f8aeded852e6967225f1d5e1bfb425a0357742567715528a3137d8be72"
+      },
+      "object": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/lean/ZiskFv/AirsClean/ByteMemoryTraceProfiles.olean",
+      "object_sha256": "f61c8e90894566bf2730a15efb536de98f967afee78bade1e34c22901eb441bf",
+      "all_ci_runtime_siblings": [
+        {
+          "path": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/lean/ZiskFv/AirsClean/ByteMemoryTraceProfiles.olean",
+          "sha256": "f61c8e90894566bf2730a15efb536de98f967afee78bade1e34c22901eb441bf"
+        }
+      ]
+    },
+    "ZiskFv.AirsClean.ByteMemoryLogicalRows": {
+      "source": {
+        "path": "/home/cody/zisk-fv-byte-native-port/ZiskFv/AirsClean/ByteMemoryLogicalRows.lean",
+        "sha256": "f1fcf342177346f7a96ae599ef8b3b7904f3b350e53155b2ec6d199cbb974b46"
+      },
+      "object": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/lean/ZiskFv/AirsClean/ByteMemoryLogicalRows.olean",
+      "object_sha256": "fab14c4e95c16fb7292432c3180d5f134ddf9ad4709fbcd3d3215e36d711b17c",
+      "all_ci_runtime_siblings": [
+        {
+          "path": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/lean/ZiskFv/AirsClean/ByteMemoryLogicalRows.olean",
+          "sha256": "fab14c4e95c16fb7292432c3180d5f134ddf9ad4709fbcd3d3215e36d711b17c"
+        }
+      ]
+    },
+    "ZiskFv.AirsClean.ByteMemorySourceProjection": {
+      "source": {
+        "path": "/home/cody/zisk-fv-byte-native-port/ZiskFv/AirsClean/ByteMemorySourceProjection.lean",
+        "sha256": "bd3872fbe5213ac8887ec9a2c01299813c75e33cb44c123b6f66ff836eabc94b"
+      },
+      "object": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/lean/ZiskFv/AirsClean/ByteMemorySourceProjection.olean",
+      "object_sha256": "f9e5930e986687bef66186b62df15c608887e0a4eb1c770b0d9cc68a61a7acce",
+      "all_ci_runtime_siblings": [
+        {
+          "path": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/lean/ZiskFv/AirsClean/ByteMemorySourceProjection.olean",
+          "sha256": "f9e5930e986687bef66186b62df15c608887e0a4eb1c770b0d9cc68a61a7acce"
+        }
+      ]
+    },
+    "ZiskFv.AirsClean.ByteMemoryDirectSource": {
+      "source": {
+        "path": "/home/cody/zisk-fv-byte-native-port/ZiskFv/AirsClean/ByteMemoryDirectSource.lean",
+        "sha256": "45d958b86864f1c98225968d0219037e3e795bc30dee91a8b64fcf07794be654"
+      },
+      "object": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/source-contract/lean/ZiskFv/AirsClean/ByteMemoryDirectSource.olean",
+      "object_sha256": "a0907fa2c480c5b841d8b306cb431b08aa8f93a5ae4847cd044bd9b37b346bb5",
+      "all_ci_runtime_siblings": [
+        {
+          "path": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/source-contract/lean/ZiskFv/AirsClean/ByteMemoryDirectSource.olean",
+          "sha256": "a0907fa2c480c5b841d8b306cb431b08aa8f93a5ae4847cd044bd9b37b346bb5"
+        }
+      ]
+    },
+    "ZiskFv.AirsClean.NativeByteInstance": {
+      "source": {
+        "path": "/home/cody/zisk-fv-byte-native-port/ZiskFv/AirsClean/NativeByteInstance.lean",
+        "sha256": "514430ee708678871dfddf0931d7de51e14c649ca5e3367ebb06e4eec9ae1b24"
+      },
+      "object": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/source-contract/lean/ZiskFv/AirsClean/NativeByteInstance.olean",
+      "object_sha256": "032e79f73957a1974b54ea8a857ce757306722cceb93a9cd7c1dd29cf02c6784",
+      "all_ci_runtime_siblings": [
+        {
+          "path": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/source-contract/lean/ZiskFv/AirsClean/NativeByteInstance.olean",
+          "sha256": "032e79f73957a1974b54ea8a857ce757306722cceb93a9cd7c1dd29cf02c6784"
+        }
+      ]
+    }
+  },
+  "affected_full": {
+    "complete": true,
+    "source_commit": "158731955cf1e5491732f6d36f1c6751a83fb63f",
+    "narrow": [
+      {
+        "command": [
+          "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+          "-j2",
+          "--tstack=400000",
+          "-o",
+          "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/source-contract/lean/ZiskFv/AirsClean/ByteMemoryDirectSource.olean",
+          "/home/cody/zisk-fv-byte-native-port/ZiskFv/AirsClean/ByteMemoryDirectSource.lean"
+        ],
+        "returncode": 0,
+        "seconds": 5.379316599108279,
+        "log": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/source-contract/narrow-ByteMemoryDirectSource.log",
+        "source_sha256": "45d958b86864f1c98225968d0219037e3e795bc30dee91a8b64fcf07794be654",
+        "object_sha256": "a0907fa2c480c5b841d8b306cb431b08aa8f93a5ae4847cd044bd9b37b346bb5",
+        "object": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/source-contract/lean/ZiskFv/AirsClean/ByteMemoryDirectSource.olean"
+      },
+      {
+        "command": [
+          "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+          "-j2",
+          "--tstack=400000",
+          "-o",
+          "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/source-contract/lean/ZiskFv/AirsClean/NativeByteInstance.olean",
+          "/home/cody/zisk-fv-byte-native-port/ZiskFv/AirsClean/NativeByteInstance.lean"
+        ],
+        "returncode": 0,
+        "seconds": 7.33083486603573,
+        "log": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/source-contract/narrow-NativeByteInstance.log",
+        "source_sha256": "514430ee708678871dfddf0931d7de51e14c649ca5e3367ebb06e4eec9ae1b24",
+        "object_sha256": "032e79f73957a1974b54ea8a857ce757306722cceb93a9cd7c1dd29cf02c6784",
+        "object": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/source-contract/lean/ZiskFv/AirsClean/NativeByteInstance.olean"
+      }
+    ],
+    "full": {
+      "command": [
+        "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+        "-j2",
+        "--tstack=400000",
+        "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/source-contract/MeasureAffectedRaw.lean"
+      ],
+      "returncode": 0,
+      "seconds": 197.05491372395772,
+      "log": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/source-contract/full-affected2-raw.log"
+    },
+    "actual_affected_roots": 144,
+    "raw_axioms": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "per_module_counts": {
+      "ZiskFv.AirsClean.ByteMemoryDirectSource": 71,
+      "ZiskFv.AirsClean.NativeByteInstance": 73
+    },
+    "full_report": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/source-contract/full-raw-axioms.json",
+    "full_report_sha256": "cb7277e6f3c0b7dbb9d99ef855b527033a70c1406a9694cb160fe85be5988823",
+    "original529_unchanged": true
+  },
+  "unchanged_modules": "Seven exact source+CI hashes reused from actual46d7 narrow+FULL529; old529 report remains historical, not rerun/relabelled.",
+  "historical529_report": {
+    "path": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/gate-typed-ir/full-raw-axioms.json",
+    "sha256": "7c74dafe59fbad6c65d1a4e3020d424b2bee0753a9e3138cd55ea9091014634e"
+  },
+  "mutation": {
+    "source_commit": "46d7c28a64c75e8d144af4295214170b100eef87",
+    "unchanged_current_consumer_source_sha256": "bfd345b4f5dae6e4ded67f58420cb80e4d0858e1090379ea5e083827236bb75d",
+    "path": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/preserved-slot0/result.json",
+    "sha256": "560d39f05c69a9da1674f88e5c1284f8868ae183a3e95b2328d61086ad5c56eb",
+    "result": "Fresh normal control19/19GREEN then genuine preserved actual source LOAD8 slot0 1\u21922; all18 imported dependency kernelsGREEN; final SAME actual_residuals_eq_expected rejects generated literal2 vs independentop1 for Byte+Read. Source/residual-fidelity rejection, NOT numeric counterexample/balance.",
+    "no_node_compiler_GEN_rerun": true,
+    "first_missing_Mem_source_setup_failure": "Preserved, NOkill; repair actualnormalMem generatedsource exactpin+byteidenticalMem source/metadata verified."
+  },
+  "mcp": {
+    "path": "/home/cody/zisk-fv-byte-native-port/build/byte-native-port/mcp-corrected-reader.json",
+    "sha256": "312a5d603d8a6c23cf3d23183ef87993e4877f6676d0e30029e73d8bf8d6539d",
+    "result": "ACTUAL success diagnostics empty+nonempty semantic inverse?/fromPhysical? types on correctedsource; actual LSP refs before edit. Installed MCP official processlocal directLean backend/LAKEabsentpath/verifiedmetadata/no writer. Prior unavailable sessions and successful final results retained. Cleanup asyncio destructor warning was not a Lean diagnostic."
+  },
+  "readonly_M_dependency_source_head": "1b130fb2072d73d84cfca078d1e58d2c379cf702",
+  "strict_lease_sha256": "ae43308a4336d0a5bde56fd4aad966e1cca5211ba15b07bebe5b19abea440c99",
+  "original20_archive": {
+    "path": "/tmp/byte-direct412-64d6dc5a-v_qtni_g/byte-direct412-genuine20-64d6dc5a.tar.gz",
+    "sha256": "c7523aa6ae7f6b58dc11eec466a8588cda99933990559a36d4d105f760410a84",
+    "duplicate_in_capsule": false
+  },
+  "evidence": [
+    {
+      "path": "ZiskFv/AirsClean/ByteMemoryCompiledPadding.lean",
+      "sha256": "bfd345b4f5dae6e4ded67f58420cb80e4d0858e1090379ea5e083827236bb75d"
+    },
+    {
+      "path": "ZiskFv/AirsClean/ByteMemoryPadding.lean",
+      "sha256": "f573270e1d5b3558b9d49d0367b61c9efcfcb03f0fb4ba73d29b791cc8c8aeab"
+    },
+    {
+      "path": "ZiskFv/AirsClean/ByteMemorySourceOperations.lean",
+      "sha256": "64a6e243220e33212a3bbaf0341376a5af85fc1fef5389b779cef153ab7cc71c"
+    },
+    {
+      "path": "ZiskFv/AirsClean/ByteMemoryPhysicalRows.lean",
+      "sha256": "30608d5e5e95a1aaf48743a9e333a3ddc199dd28b758af5bcfe8a084dcc2a173"
+    },
+    {
+      "path": "ZiskFv/AirsClean/ByteMemoryTraceProfiles.lean",
+      "sha256": "36ba81f8aeded852e6967225f1d5e1bfb425a0357742567715528a3137d8be72"
+    },
+    {
+      "path": "ZiskFv/AirsClean/ByteMemoryLogicalRows.lean",
+      "sha256": "f1fcf342177346f7a96ae599ef8b3b7904f3b350e53155b2ec6d199cbb974b46"
+    },
+    {
+      "path": "ZiskFv/AirsClean/ByteMemorySourceProjection.lean",
+      "sha256": "bd3872fbe5213ac8887ec9a2c01299813c75e33cb44c123b6f66ff836eabc94b"
+    },
+    {
+      "path": "ZiskFv/AirsClean/ByteMemoryDirectSource.lean",
+      "sha256": "45d958b86864f1c98225968d0219037e3e795bc30dee91a8b64fcf07794be654"
+    },
+    {
+      "path": "ZiskFv/AirsClean/NativeByteInstance.lean",
+      "sha256": "514430ee708678871dfddf0931d7de51e14c649ca5e3367ebb06e4eec9ae1b24"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/run.py",
+      "sha256": "3576e1e292f61290ef6f8a548cfacf72b16951a8346f3618e203400f490ed0f8"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/checked-prefix.json",
+      "sha256": "68103d1bcb1ede04d09d496d0ac37fc642b8d4096c289d47cdc25865f06f2405"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r1/source-freeze.json",
+      "sha256": "6346663c170c0a23af927c2698cec7dd9161d7c29cf3bd067f6690e44312b889"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r1/before-strict.json",
+      "sha256": "dd58dbed1755ec6fde9bb265857a1d29ab5d853f30fdef6f14d24aeafa2cd665"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r1/narrow-ZiskFv-AirsClean-ByteMemoryCompiledPadding.log",
+      "sha256": "d576389e01b26e48a6c290775f07bd1631491edaf47065506ff7931da45d5d84"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r1/narrow-ZiskFv-AirsClean-ByteMemoryCompiledPadding-result.json",
+      "sha256": "a354656b5c0f2a79fed02ec1f7fb8a0141dacf016f9314112f0b8bc2c7a210b8"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r1/after-strict.json",
+      "sha256": "dd58dbed1755ec6fde9bb265857a1d29ab5d853f30fdef6f14d24aeafa2cd665"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r1/final-result.json",
+      "sha256": "210764dcd79eccab52c6292ee6f31911d563ba140b6f387ca8b330a80a14f17f"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r2/source-freeze.json",
+      "sha256": "4295e193236b8092308adc578e69afbdccba453e2ec115512bf3d558d6e0385c"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r2/before-strict.json",
+      "sha256": "48d0cc6db33fa4cbb31cebf6a0df5ed444bc4932b6d8bcc5e49cb4c477ee01c6"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r2/narrow-ZiskFv-AirsClean-ByteMemoryCompiledPadding.log",
+      "sha256": "0a01f6fcca6eb60fd70833ffe4755fa4f191d247b1ba9c4e97796f918445c4fa"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r2/narrow-ZiskFv-AirsClean-ByteMemoryCompiledPadding-result.json",
+      "sha256": "10b337d93139295755c614d3cea81bde0dbd963e4d79b2abced459d0d4651c64"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r2/after-strict.json",
+      "sha256": "48d0cc6db33fa4cbb31cebf6a0df5ed444bc4932b6d8bcc5e49cb4c477ee01c6"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r2/final-result.json",
+      "sha256": "67f571e1b52846b2ac0cae1c2d33ea238fb7c4d2baec737e89b59f4f666efce9"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r3/source-freeze.json",
+      "sha256": "260592e8bb901f1c49abdbfc39c3980ba202b4348245a82c41132e1d3d2ec52a"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r3/before-strict.json",
+      "sha256": "99f73cbc4b952697cf817e13451d04db1cd02ce1974ac23627ea632e05c9c386"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r3/narrow-ZiskFv-AirsClean-ByteMemoryCompiledPadding.log",
+      "sha256": "e76b44d26bdd33347c1177c05c4b7e7363c349ddf8b868846c5976a7a7c2b606"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r3/narrow-ZiskFv-AirsClean-ByteMemoryCompiledPadding-result.json",
+      "sha256": "de2cb5face7943d5f7229ecd8620a745acfed783b9c9a3c2a28a7366f67d4816"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r3/after-strict.json",
+      "sha256": "99f73cbc4b952697cf817e13451d04db1cd02ce1974ac23627ea632e05c9c386"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r3/final-result.json",
+      "sha256": "6355df3cbcf5f3c559c23e4b87719bce246a205e5a2cbe311cf6a4332c07ace8"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r3/mcp-goal.json",
+      "sha256": "903a3f580fb6ef9738accaf34f712300d6c133ab941820a2786ac819d8091bc1"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r4/source-freeze.json",
+      "sha256": "00482ed1906eaef5e46bc0685d383e597d349d310463b59b82dfc437590bc759"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r4/before-strict.json",
+      "sha256": "a69c25b72cbfec19e153ad548aed20a66890a20409290daf6ee0242419f33d7d"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r4/narrow-ZiskFv-AirsClean-ByteMemoryCompiledPadding.log",
+      "sha256": "d1f9677a14f249c9a3874ed894ebc15fe1e46f6a5d59144cada929da9bcd6c18"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r4/narrow-ZiskFv-AirsClean-ByteMemoryCompiledPadding-result.json",
+      "sha256": "c43dd4af3acd4e1ba61be4dd1d0adafd757ef55e9a8f86c54e107a6e78f5e412"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r4/after-strict.json",
+      "sha256": "a69c25b72cbfec19e153ad548aed20a66890a20409290daf6ee0242419f33d7d"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r4/final-result.json",
+      "sha256": "680d739c6f2ceb62e98e1360f16161fdfcf4ff34c941bc938c0c1cacba7b2bfb"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/source-freeze.json",
+      "sha256": "cd864faff3f9eb95998366ae33953607819c1caae49328500448f103339e0b57"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/before-strict.json",
+      "sha256": "81b0075d165d782b1d1be5f6d52bcf392a953ff916f5642a70ff98bb56cd8e3b"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemoryCompiledPadding.log",
+      "sha256": "13e35e738ec7d9d7e717f153769aecade938e1df732dd804bc027097128c0679"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemoryCompiledPadding-result.json",
+      "sha256": "e67a29924ccfb57ce19d0a745acbf3587545544ce35eda3f474a2cbb0f797f8b"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemoryPadding.log",
+      "sha256": "1df7aa42aea5bfcc1a65b9393db81d1e0f1cc26c355ce1fe2a1fe82522d4b82e"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemoryPadding-result.json",
+      "sha256": "16d071d0c02f0265975b5cbdd0ee62d976197ad041588accdb5af762bea6bcca"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemorySourceOperations.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemorySourceOperations-result.json",
+      "sha256": "ce1c37cd3ff367d14f3dc60c346376db6ffbd39a939949b1c5cf339d7a4f549b"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemoryPhysicalRows.log",
+      "sha256": "4d042a705da2517e28e7eafe1e002c4a1ca4fee738c459853d5b94b550b92620"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemoryPhysicalRows-result.json",
+      "sha256": "466088a85121acaabc85336f72537572de23e96e347d29182b3357c35c69a0c9"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemoryTraceProfiles.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemoryTraceProfiles-result.json",
+      "sha256": "b5015ab6071f1a637b888953822f183c71d498a7c130345f72097f9066554256"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemoryLogicalRows.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemoryLogicalRows-result.json",
+      "sha256": "e760b781b20ca5c132b76e95e3bf2ee15b801a7f536c4aa5c17c835e8320f4a4"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemorySourceProjection.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemorySourceProjection-result.json",
+      "sha256": "a75dfada63709a5151d8e7964d7b3bf95d007d58e4f0429fb84e78e00a998d21"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemoryDirectSource.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-ByteMemoryDirectSource-result.json",
+      "sha256": "75260018a5935a1c193f03640ee9ca8b58c4bcf08199bbb5e7dcdfdb272cf067"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-NativeByteInstance.log",
+      "sha256": "bf654f4810679687c7b28dc1585ac969fb3c3af28d0afa266e99293880b09a6b"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/narrow-ZiskFv-AirsClean-NativeByteInstance-result.json",
+      "sha256": "6902375832ffbb8b83f11fbc0daa3f648998b5332fc8e42f45d8e2487b5bbdc3"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/full-all9-raw.log",
+      "sha256": "bf803f9d0de59f1ed6dd7adf89c67c81f2bb0441a85cd3e927c4b5cf10747e80"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/full-all9-raw-result.json",
+      "sha256": "cfec4cf593282952cf4b2c803e2b6e62300420bc87922a5dc1da9d4e2c9220a1"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/after-strict.json",
+      "sha256": "81b0075d165d782b1d1be5f6d52bcf392a953ff916f5642a70ff98bb56cd8e3b"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/final-result.json",
+      "sha256": "64602d5e698600fe704b526b70f46f64225735203e40fe2b12bf18a1376bd5be"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/mcp-final-types.json",
+      "sha256": "aef010ff52c3ff9c7483eda1d8b95e5198320093280466e34c2c5b90f8fefd41"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/mcp-processed-types.json",
+      "sha256": "9d93a603d3ea8d06f0b0fbc9b260bc2a1d06e927f97c6c3a8245accc1443f955"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/mcp-backend-events.jsonl",
+      "sha256": "6cc3a57127f30238f2d2b5d555a04bd3ae451e4a396155c762ff7ec9434b0805"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/mcp-isolated-types.json",
+      "sha256": "848f1c1ec875db5dba9227b685bada004dc3a6fe48a3466e77dbc245de035625"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/mcp-verified-metadata-types.json",
+      "sha256": "6ae7f1f5dcba7962d0ff656eaef61a1b51016bb73dd9b4a17302cbfde17190c5"
+    },
+    {
+      "path": "build/byte-native-port/gate-repairs/r5/mcp-source-contract-references.json",
+      "sha256": "641335accdcaadeda3f43d33a79ea205c8a21d78299e63af6a6d825a5c61fccb"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/run.py",
+      "sha256": "8bb62dedb8c83133c4cbe3f442ec1f76b08614470ceac9a85a6c7ba9382d2642"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/freeze.json",
+      "sha256": "28125d2f3ecaa67fcb15d388dfb68f4de6507a1565b9579f68ac99d9eaac1cfc"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/before-strict.json",
+      "sha256": "73fa813b382e66e8229438966a19c1031c6ac208a8db8d2f600e1dc7f4370bcb"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/after-strict.json",
+      "sha256": "73fa813b382e66e8229438966a19c1031c6ac208a8db8d2f600e1dc7f4370bcb"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/checkpoint-first4.json",
+      "sha256": "e74e9312f9722fa4ab1170f5902d62c10249cbbebab663a68b054987580bd361"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/run-repair1.py",
+      "sha256": "03f4d4e9c5a5a58a4123c51897f967f850a16e706e2cb93ae3f0b671b6cefe9a"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/freeze-repair1.json",
+      "sha256": "2ff4c3af09cf4d065300119fe34c1a21ae1f91e79db732971d0e0411a9e3bd1a"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/before-repair1-strict.json",
+      "sha256": "73fa813b382e66e8229438966a19c1031c6ac208a8db8d2f600e1dc7f4370bcb"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/results.json",
+      "sha256": "f9fdec6d89fb2cf3443902499064a5b07f375110c86fcddd6d5c995a0d550039"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/after-repair1-strict.json",
+      "sha256": "73fa813b382e66e8229438966a19c1031c6ac208a8db8d2f600e1dc7f4370bcb"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/result.json",
+      "sha256": "560d39f05c69a9da1674f88e5c1284f8868ae183a3e95b2328d61086ad5c56eb"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/readonly-metadata.json",
+      "sha256": "db063248df8603a311cfc9cbba40c16a2df5e356529bced56711a2d67670ca10"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/Extraction-Circuit.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/actual-stages.json",
+      "sha256": "397b1fa564dcaac68b247bc92b0ca94c4929edd5457abee8ca0f549e1cb64284"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/Extraction-LookupWiring.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/ZiskFv-AirsClean-Mem-Stage2-Equations.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/ZiskFv-AirsClean-GsumBoundary-Model.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/Extraction-Mem.log",
+      "sha256": "3c3cecce5b36422138b5bf7a5fe8e4f9569a2e08da8f9356e75a9caf58784a2c"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-Extraction-Mem.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-ZiskFv-AirsClean-Mem-RangeWiring.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-ZiskFv-AirsClean-Mem-Constraints.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-ZiskFv-AirsClean-Mem-Circuit.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-ZiskFv-AirsClean-Mem-Bridge.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-ZiskFv-AirsClean-MemMirrorWeld.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-ZiskFv-AirsClean-Mem-SourceFinalizerEquation.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-ZiskFv-AirsClean-MemAlignWriteByte-RawSource.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-ZiskFv-AirsClean-MemAlignWriteByte-NativeTraceWords.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-ZiskFv-AirsClean-MemAlignWriteByte-SourceInstance.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-ZiskFv-AirsClean-Mem-SourceFinalizer.log",
+      "sha256": "fcee667df1703889ae0565fb56d16a5d6f42f938721e08bbdff494a3dab2cf43"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-ZiskFv-AirsClean-Mem-Stage2-Native.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-ZiskFv-AirsClean-MemAlignWriteByte-SourceLiterals.log",
+      "sha256": "b620713b841b3b79b24eaa36218201a7e0387b04961b6a0f51717ef0ff251794"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-ZiskFv-AirsClean-Mem-Stage2-Literals.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/repair1-ZiskFv-AirsClean-ByteMemoryCompiledPadding.log",
+      "sha256": "13e35e738ec7d9d7e717f153769aecade938e1df732dd804bc027097128c0679"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/baseline/result.json",
+      "sha256": "031e7e87771af58d3bf99004f3e7264acd758ee9365b3be393aed6d1ccc42be1"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/readonly-metadata.json",
+      "sha256": "7d2af93c5b0520b6e9463012b06aad390aea5d9d4e06f44a694133e08a031973"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-Extraction-Circuit.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/actual-stages.json",
+      "sha256": "56213dafe9f6ed2725078d0616dd334177fc0503b42492d48ee5dd449480c2bb"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-Extraction-LookupWiring.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-Mem-Stage2-Equations.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-GsumBoundary-Model.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-Extraction-Mem.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-Mem-RangeWiring.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-Mem-Constraints.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-Mem-Circuit.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-Mem-Bridge.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-MemMirrorWeld.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-Mem-SourceFinalizerEquation.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-MemAlignWriteByte-RawSource.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-MemAlignWriteByte-NativeTraceWords.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-MemAlignWriteByte-SourceInstance.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-Mem-SourceFinalizer.log",
+      "sha256": "fcee667df1703889ae0565fb56d16a5d6f42f938721e08bbdff494a3dab2cf43"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-Mem-Stage2-Native.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-MemAlignWriteByte-SourceLiterals.log",
+      "sha256": "b620713b841b3b79b24eaa36218201a7e0387b04961b6a0f51717ef0ff251794"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-Mem-Stage2-Literals.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/repair1-ZiskFv-AirsClean-ByteMemoryCompiledPadding.log",
+      "sha256": "45c8140121671cc8f45aa3c6c587b0e353f903313579a778ddd3f5681973dfed"
+    },
+    {
+      "path": "build/byte-native-port/preserved-slot0/load8-slot0-operation/result.json",
+      "sha256": "865514a2222a2e8c802178aa9af9593066ead52110caf8d4eae039fa98c80f95"
+    },
+    {
+      "path": "build/byte-native-port/source-contract/MeasureAffectedRaw.lean",
+      "sha256": "bfeb74961953af7be0d7f83ac01547ad14e7312fb7ac2b479f0a4ae88ae2421a"
+    },
+    {
+      "path": "build/byte-native-port/source-contract/source-freeze.json",
+      "sha256": "b4c7ea2a51463f820b96c6974f233bffa59772a32c4f3bfc63e36cf75623b572"
+    },
+    {
+      "path": "build/byte-native-port/source-contract/before-strict.json",
+      "sha256": "b041a00cfeae5098d65e9633a796f4ef6576991e0da7639f0d897af7b0e2f532"
+    },
+    {
+      "path": "build/byte-native-port/source-contract/narrow-ByteMemoryDirectSource.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/byte-native-port/source-contract/narrow-ByteMemoryDirectSource-result.json",
+      "sha256": "53ebe33c978d95a9a35dfadb3b8960a2112d09ee46643690878d93c09272f680"
+    },
+    {
+      "path": "build/byte-native-port/source-contract/narrow-NativeByteInstance.log",
+      "sha256": "bf654f4810679687c7b28dc1585ac969fb3c3af28d0afa266e99293880b09a6b"
+    },
+    {
+      "path": "build/byte-native-port/source-contract/narrow-NativeByteInstance-result.json",
+      "sha256": "0a0b9060fa60a3337b8117257042e2b0fea2f2a7d44c688cb295c5a99f0f3eb2"
+    },
+    {
+      "path": "build/byte-native-port/source-contract/full-affected2-raw.log",
+      "sha256": "a534a7d91cdfeb6ae98b13b412bba63f3b92167d7a49f9ba15e4655e778ff068"
+    },
+    {
+      "path": "build/byte-native-port/source-contract/full-raw-axioms.json",
+      "sha256": "cb7277e6f3c0b7dbb9d99ef855b527033a70c1406a9694cb160fe85be5988823"
+    },
+    {
+      "path": "build/byte-native-port/source-contract/full-affected2-raw-result.json",
+      "sha256": "0890f992ab29e8e9f80ec9f34d52c229b6ba347ab05efd5dea2827a4453c78c1"
+    },
+    {
+      "path": "build/byte-native-port/source-contract/after-strict.json",
+      "sha256": "b041a00cfeae5098d65e9633a796f4ef6576991e0da7639f0d897af7b0e2f532"
+    },
+    {
+      "path": "build/byte-native-port/source-contract/final-result.json",
+      "sha256": "49603570b915228ad0b931f5c8ab5ffe45814974f631d87ae5915332a63a475f"
+    },
+    {
+      "path": "build/byte-native-port/mcp-corrected-reader.json",
+      "sha256": "312a5d603d8a6c23cf3d23183ef87993e4877f6676d0e30029e73d8bf8d6539d"
+    },
+    {
+      "path": "build/byte-native-port/run-source-contract-gate.py",
+      "sha256": "ed1f6aeadbb92bab58f5bdbf618993111ded42390d5915da718ce151f5c997ec"
+    },
+    {
+      "path": "build/byte-native-port/package-handback.py",
+      "sha256": "a27f6df73f3c4b6ebd0270dca0296a1085c2ca00b07251f2bc480e6bf845e0a8"
+    },
+    {
+      "path": "build/byte-native-port/gate-typed-ir/ready-gate-lease.json",
+      "sha256": "ae43308a4336d0a5bde56fd4aad966e1cca5211ba15b07bebe5b19abea440c99"
+    },
+    {
+      "path": "build/byte-native-port/gate-typed-ir/MeasureByteMemoryTypedPortRaw.lean",
+      "sha256": "471eb4ca50ad7a84b17f40da084bef5e3dca7789c9fd669dce48e1a31847738c"
+    },
+    {
+      "path": "build/byte-native-port/gate-typed-ir/full-raw-axioms.json",
+      "sha256": "7c74dafe59fbad6c65d1a4e3020d424b2bee0753a9e3138cd55ea9091014634e"
+    },
+    {
+      "path": "build/byte-native-port/gate-typed/mcp-hover.json",
+      "sha256": "d68a624aeee6e2489e2462b9f73232a7a7d82f6d399cfb1fcbed3352d9b0e6ff"
+    },
+    {
+      "path": "build/byte-native-port/gate-typed/mcp-context.json",
+      "sha256": "0e3a3034add82107196b179e40342f51cd1937861d8be2ebdf29bf331dd78aec"
+    },
+    {
+      "path": "build/byte-native-port/gate-typed-ir/mcp-source-types.json",
+      "sha256": "41bb995c470da4741260d121a16fbf6456027ab999f0c2586fb7096a32b08b8c"
+    }
+  ]
+}
