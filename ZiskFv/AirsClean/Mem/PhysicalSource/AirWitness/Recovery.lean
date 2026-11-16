@@ -52,8 +52,20 @@ private theorem native_word (view : CompleteView occurrence) (row : Index) (colu
     have within : row.val < N := row.isLt
     have col := column.isLt
     omega
-  simp only [traceWord?, params_trace, stride, Nat.mul_comm]
-  rw [getElem?_pos bound, trace_coordinate]
+  simp only [traceWord?, params_trace, stride]
+  rw [Nat.mul_comm row.val 13, getElem?_pos _ _ bound, trace_coordinate]
+
+private theorem cached_unpacked
+    {s : SourceObject FGL} {r : ResolvedOccurrence s}
+    (native : ZiskFv.AirsClean.NativeTraceCells.Row .mem r false index)
+    (cell : Extraction.RuntimeMainTraceLayout.Cell) (column : Nat)
+    (selected : ZiskFv.AirsClean.NativeTraceCells.selectedCell? .mem column = some cell)
+    (unpacked : r.slotData.metadata.isPacked = false) :
+    native.cell? column =
+      (traceWord? (r.params false) (native.base + column)).map NativeTraceWords.unpackedField := by
+  simp only [ZiskFv.AirsClean.NativeTraceCells.Row.cell?,
+    ZiskFv.AirsClean.NativeTraceCells.Row.rawCell?, bind, selected, Option.bind_some,
+    unpacked, Bool.false_eq_true, ↓reduceIte]
 
 theorem primary_recovery (view : CompleteView occurrence) (row : Index) (column : Fin 13) :
     view.scalar row column = (primary row)[column] := by
@@ -64,9 +76,10 @@ theorem primary_recovery (view : CompleteView occurrence) (row : Index) (column 
   have unpacked : occurrence.slotData.metadata.isPacked = false := rfl
   have actual : (NativeProjection.sharedRow view.base row).cell? column.val =
       some ((primary row)[column]) := by
-    simp only [ZiskFv.AirsClean.NativeTraceCells.Row.cell?,
-      ZiskFv.AirsClean.NativeTraceCells.Row.rawCell?, selected, bind, Option.bind_some,
-      unpacked, Bool.false_eq_true, ↓reduceIte, NativeProjection.sharedRow]
+    rw [cached_unpacked (NativeProjection.sharedRow view.base row) cell column.val selected unpacked]
+    change (traceWord? (occurrence.params false)
+      (row.val * view.base.nativeStride + column.val)).map NativeTraceWords.unpackedField =
+        some ((primary row)[column])
     rw [native_word view row column, Option.map_some, word_roundtrip]
   exact Option.some.inj ((view.scalar_checked row column).symm.trans actual)
 
@@ -86,10 +99,13 @@ private theorem stage1_map (column : Fin 13) :
   · simp only [Constructibility.setup, Constructibility.cmMap, Array.size_ofFn]
     omega
   · simp [Constructibility.setup, Constructibility.cmMap, Array.getElem_ofFn, within]
+    exact ⟨⟨rfl, rfl⟩, rfl⟩
   · intro index before
     have smaller : index < 13 := by omega
     simp [Constructibility.setup, Constructibility.cmMap, Array.getElem_ofFn, smaller,
       Nat.ne_of_lt before]
+    change (1 = 1 → index = column.val → ¬(1 = 1))
+    omega
 
 private theorem stage1_entry (column : Fin 13) :
     (Constructibility.setup.cmPolsMap[column.val]'(by
@@ -101,6 +117,7 @@ private theorem stage1_entry (column : Fin 13) :
       have within := column.isLt
       omega)).stagePos = column.val := by
   simp [Constructibility.setup, Constructibility.cmMap, Array.getElem_ofFn, column.isLt]
+  exact ⟨rfl, rfl⟩
 
 private theorem unpacked_single (view : CompleteView occurrence) (row : Index) (column : Fin 13) :
     NativeTraceWords.unpackedBlock? (occurrence.params false) (row.val * 13 + column.val) 1 =
@@ -111,7 +128,7 @@ private theorem unpacked_single (view : CompleteView occurrence) (row : Index) (
     have col := column.isLt
     omega
   rw [NativeTraceWords.unpackedBlock_constructible _ _ _ (by decide) bound]
-  congr 1
+  apply congrArg (fun words : Array FGL => some words)
   apply Array.ext
   · simp
   · intro index left right
@@ -140,7 +157,7 @@ theorem stage1_recovery (view : CompleteView occurrence) (row : Index)
   rw [if_pos supported]
   simp only [bind, actual_setup, Option.bind_some, stage1_map, ↓reduceIte]
   simp only [ResolvedOccurrence.cmWords?, bind, actual_setup, Option.bind_some,
-    getElem?_pos entryBound, entry.1, ↓reduceIte]
+    getElem?_pos _ _ entryBound, entry.1, ↓reduceIte]
   have unpacked : occurrence.slotData.metadata.isPacked = false := rfl
   simp only [unpacked, Bool.false_eq_true, ↓reduceIte, shifted, Option.bind_some, entry.2]
   rw [show "cm" ++ toString (1 : Nat) = "cm1" by decide]
@@ -153,7 +170,7 @@ private theorem base_read_at (params : Params FGL) (kind : FieldBufferKind)
     (bound : offset < values.size) :
     Stage2.baseWords? (readBlock? params kind offset 1) = some (Ext3.ofBase values[offset]) := by
   have covered : offset + 1 ≤ values.size := by omega
-  simp [Stage2.baseWords?, SourceFinalizer.scalarWord?, readBlock?, selected, covered,
+  simp [Stage2.baseWords?, SourceFinalizer.scalarWord?, readBlock?, selected, covered, bound,
     Array.size_extract, Array.getElem_extract]
 
 private theorem extension_read_at (params : Params FGL) (kind : FieldBufferKind)
@@ -199,7 +216,7 @@ theorem fixed_recovery (view : CompleteView occurrence) (row : Index)
   have constants : Constructibility.setup.nConstants = 2 := rfl
   rw [constants, if_pos column.isLt]
   rw [base_read_at _ _ _ _ fixed bound]
-  congr 1
+  apply congrArg (fun value : FGL => some (Ext3.ofBase value))
   simpa only [Nat.mul_comm] using fixed_coordinate (view.base.rotate row rotation) column
 
 private theorem air_metadata (index : Fin 21) :
@@ -217,18 +234,18 @@ theorem air_recovery (index : Fin 21) : Stage2.airValue? occurrence index.val = 
   have metadata := air_metadata index
   unfold Stage2.airValue?
   rw [if_pos index.isLt]
-  simp only [actual_setup, bind, Option.bind_some, getElem?_pos bound, metadata.1]
+  simp only [actual_setup, bind, Option.bind_some, getElem?_pos _ _ bound, metadata.1]
   by_cases scalar : index.val < 15
   · simp only [if_pos scalar, ↓reduceIte]
     simp only [ResolvedOccurrence.airValueWords?, actual_setup, bind, Option.bind_some,
-      getElem?_pos bound, metadata.2, if_pos scalar, valueWidth, metadata.1, if_pos scalar,
+      getElem?_pos _ _ bound, metadata.2, if_pos scalar, valueWidth, metadata.1, if_pos scalar,
       ↓reduceIte]
     have capacity : index.val < airBuffer.size := by rw [airBuffer_size]; omega
     rw [base_read_at _ _ _ _ (by simp [buffer?, params_air]) capacity]
     simp [airCell, scalar, airBuffer, Array.getElem_ofFn]
   · simp only [if_neg scalar, ↓reduceIte]
     simp only [ResolvedOccurrence.airValueWords?, actual_setup, bind, Option.bind_some,
-      getElem?_pos bound, metadata.2, if_neg scalar, valueWidth, metadata.1,
+      getElem?_pos _ _ bound, metadata.2, if_neg scalar, valueWidth, metadata.1,
       if_neg scalar, ↓reduceIte]
     have capacity : 15 + 3 * (index.val - 15) + 3 ≤ airBuffer.size := by
       rw [airBuffer_size]
@@ -238,9 +255,17 @@ theorem air_recovery (index : Fin 21) : Stage2.airValue? occurrence index.val = 
     fin_cases index <;> simp_all [airCell, airBuffer, Array.getElem_ofFn, Ext3.coeff]
 
 theorem group_recovery : Stage2.groupValue? occurrence 0 = some groupResult := by
-  simp [Stage2.groupValue?, actual_setup, ResolvedOccurrence.airGroupValueWords?, bind,
-    valueOffset_zero, valueWidth, Constructibility.setup, readBlock?, buffer?, params_group,
-    groupBuffer, Stage2.extensionWords?]
+  have within : 0 < Constructibility.setup.airgroupValuesMap.size := by decide
+  have stage : Constructibility.setup.airgroupValuesMap[0].stage = 2 := rfl
+  unfold Stage2.groupValue?
+  rw [if_pos rfl]
+  simp only [actual_setup, bind, Option.bind_some, getElem?_pos _ _ within, stage, ↓reduceIte]
+  simp only [ResolvedOccurrence.airGroupValueWords?, actual_setup, bind, Option.bind_some,
+    getElem?_pos _ _ within, valueOffset_zero, valueWidth, stage,
+    show (2 : Nat) ≠ 1 by decide, ↓reduceIte]
+  rw [extension_read_at (occurrence.params false) .airGroupValue groupBuffer 0
+    (by simp only [buffer?, params_group]) (by decide)]
+  rfl
 
 /-- Recovery of EVERY supported or unsupported leaf. Opaque AST remains None;
 no selector-zero or missing-buffer shortcut makes a read disappear. -/
@@ -251,12 +276,15 @@ theorem witness_cell_recovery (view : CompleteView occurrence) (row : Index)
   by_cases first : stage = 1
   · subst stage
     by_cases within : column < 13
-    · exact stage1_recovery view row ⟨column, within⟩ rotation
+    · simpa only [witnessCell, if_pos within, dif_pos within, ↓reduceIte] using
+        stage1_recovery view row ⟨column, within⟩ rotation
     · simp [Stage2.witness?, witnessCell, within]
   · by_cases second : stage = 2
     · subst stage
       by_cases within : column < 3
-      · exact stage2_recovery view row ⟨column, within⟩ rotation
+      · simpa only [witnessCell, if_pos within, dif_pos within,
+          show (2 : Nat) ≠ 1 by decide, ↓reduceIte] using
+          stage2_recovery view row ⟨column, within⟩ rotation
       · simp [Stage2.witness?, witnessCell, within]
     · simp [Stage2.witness?, witnessCell, first, second]
 
@@ -284,7 +312,7 @@ theorem all_fixed_recovery (view : CompleteView occurrence) (row : Index)
     (column : Nat) (rotation : Int) :
     Stage2.fixed? occurrence row.val column rotation = fixedCell view.base row column rotation := by
   by_cases within : column < 2
-  · exact fixed_recovery view row ⟨column, within⟩ rotation
+  · simpa only [fixedCell, if_pos within] using fixed_recovery view row ⟨column, within⟩ rotation
   · simp [Stage2.fixed?, fixedCell, within]
 
 theorem polynomial_recovery (view : CompleteView occurrence) (row : Index)
@@ -301,6 +329,6 @@ theorem polynomial_recovery (view : CompleteView occurrence) (row : Index)
   | sub lhs rhs left right => simp only [Stage2.polynomial?, polynomial, left, right]
   | mul lhs rhs left right => simp only [Stage2.polynomial?, polynomial, left, right]
   | neg value equal => simp only [Stage2.polynomial?, polynomial, equal]
-  | opaque kind payload => rfl
+  | «opaque» kind payload => rfl
 
 end ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceImage
