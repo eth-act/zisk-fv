@@ -56,18 +56,261 @@ def worldProgram : Program 2
   | ⟨0, _⟩ => worldAddProgramRow
   | ⟨1, _⟩ => worldAndProgramRow
 
+section SourceSerialization
+
+open Aeneas Aeneas.Std Result zisk_core
+open ZiskFv.Compliance.Extraction
+
+private theorem sourceExtract_precompiled
+    (zi : zisk_inst.ZiskInst) (row : aeneas_extract.ZiskInstExtract)
+    (extracted : aeneas_extract.ZiskInstExtract.from_inst zi = ok row) :
+    row.is_precompiled = zi.is_precompiled := by
+  unfold aeneas_extract.ZiskInstExtract.from_inst at extracted
+  obtain ⟨_, _, extracted⟩ := bind_eq_ok_imp extracted
+  rw [Result.ok.injEq] at extracted
+  subst row
+  rfl
+
+/-- Defaults and mask lanes omitted by the generic decode-facing JALR pins.
+Only actual successful source execution and its two recorded rows are used. -/
+private theorem sourceJalr_remaining_fields
+    (input : riscv2zisk_single_row.Rv64imLoweringInput)
+    (ctx : riscv2zisk_context.Riscv2ZiskContext)
+    (first : aeneas_extract.ZiskInstExtract) (last : zisk_inst_builder.ZiskInstBuilder)
+    (rd : input.rd = 1#u32) (rs1 : input.rs1 = 2#u32) (imm : input.imm = 1#i32)
+    (source : riscv2zisk_context.Riscv2ZiskContext.jalr
+      { defCtx with extract_marker := () } input 4#u64 = ok ctx)
+    (firstRecorded : ctx.extract_first_inst = some first)
+    (lastRecorded : ctx.extract_inst = some last) :
+    first.ind_width = 0#u64 ∧ first.store_offset = 0#i64 ∧ first.is_precompiled = false ∧
+      last.i.a_src = zisk_inst.SRC_IMM ∧
+      last.i.a_use_sp_imm1 = 4294967295#u64 ∧
+      last.i.a_offset_imm0 = 4294967294#u64 ∧
+      last.i.ind_width = 0#u64 ∧ last.i.is_precompiled = false := by
+  have fromU : UScalar.cast UScalarTy.U64 zisk_registers.REGS_IN_MAIN_FROM = 1#u64 := by
+    apply UScalar.eq_of_val_eq
+    simp [zisk_registers.REGS_IN_MAIN_FROM, UScalar.cast, UScalarTy.USize.numBits_eq]
+    cases System.Platform.numBits_eq <;> simp_all <;> decide
+  have toU : UScalar.cast UScalarTy.U64 zisk_registers.REGS_IN_MAIN_TO = 31#u64 := by
+    apply UScalar.eq_of_val_eq
+    simp [zisk_registers.REGS_IN_MAIN_TO, UScalar.cast, UScalarTy.USize.numBits_eq]
+    cases System.Platform.numBits_eq <;> simp_all <;> decide
+  have fromI : UScalar.hcast IScalarTy.I64 zisk_registers.REGS_IN_MAIN_FROM = 1#i64 := by
+    apply IScalar.eq_of_val_eq
+    simp [zisk_registers.REGS_IN_MAIN_FROM, UScalar.hcast, UScalarTy.USize.numBits_eq]
+    cases System.Platform.numBits_eq <;> simp_all <;> decide
+  have toI : UScalar.hcast IScalarTy.I64 zisk_registers.REGS_IN_MAIN_TO = 31#i64 := by
+    apply IScalar.eq_of_val_eq
+    simp [zisk_registers.REGS_IN_MAIN_TO, UScalar.hcast, UScalarTy.USize.numBits_eq]
+    cases System.Platform.numBits_eq <;> simp_all <;> decide
+  have rs1Cast : UScalar.cast UScalarTy.U64 input.rs1 = 2#u64 := by rw [rs1]; decide
+  have rdCast : UScalar.hcast IScalarTy.I64 input.rd = 1#i64 := by rw [rd]; decide
+  have immCast : IScalar.hcast UScalarTy.U64 input.imm = 1#u64 := by rw [imm]; decide
+  have immRem : input.imm % 4#i32 = ok 1#i32 := by rw [imm]; rfl
+  have belowU : ¬ (2#u64 : Std.U64) < 1#u64 := by decide
+  have aboveU : ¬ (2#u64 : Std.U64) > 31#u64 := by decide
+  have belowI : ¬ (1#i64 : Std.I64) < 1#i64 := by decide
+  have aboveI : ¬ (1#i64 : Std.I64) > 31#i64 := by decide
+  simp [riscv2zisk_context.Riscv2ZiskContext.jalr, immRem, immCast, rs1Cast, rdCast,
+    riscv2zisk_context.Riscv2ZiskContext.jalr.JALR_MASK,
+    zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
+    zisk_inst_builder.ZiskInstBuilder.new,
+    zisk_inst_builder.ZiskInstBuilder.Insts.CoreDefaultDefault.default,
+    zisk_inst.ZiskInst.Insts.CoreDefaultDefault.default,
+    zisk_inst_builder.ZiskInstBuilder.src_a_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_reg,
+    zisk_inst_builder.ZiskInstBuilder.src_b_imm,
+    zisk_inst_builder.ZiskInstBuilder.src_b_lastc,
+    zisk_inst_builder.ZiskInstBuilder.op_zisk,
+    zisk_ops.ZiskOp.op_type, zisk_ops.ZiskOp.code,
+    zisk_ops.ZiskOp.input_size, zisk_ops.ZiskOp.is_m32,
+    core.convert.IntoFrom.into,
+    zisk_inst.ZiskOperationType.Insts.CoreConvertFromOpType.from,
+    zisk_inst_builder.ZiskInstBuilder.set_runtime_op_fields,
+    zisk_inst_builder.ZiskInstBuilder.store_pc_reg,
+    zisk_inst_builder.ZiskInstBuilder.store_reg,
+    zisk_inst_builder.ZiskInstBuilder.set_pc,
+    zisk_inst_builder.ZiskInstBuilder.j,
+    zisk_inst_builder.ZiskInstBuilder.build,
+    riscv2zisk_context.Riscv2ZiskContext.insert_inst,
+    HShiftRight.hShiftRight, UScalar.shiftRight_IScalar, UScalar.shiftRight,
+    i32_32_nonnegative, i32_32_toNat_lt_u64_numBits,
+    fromU, toU, fromI, toI, belowU, aboveU, belowI, aboveI,
+    lift, Bind.bind, defCtx] at source
+  subst ctx
+  simp only [Option.some.injEq] at firstRecorded lastRecorded
+  subst first
+  subst last
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> first | rfl | decide
+
 /-- Exact source serialization, not only a decoder shape or an opcode claim. -/
 theorem worldProgram_actual_source :
     romMessagesOfRaw 0 jalrExpansionRaw = (worldAddProgramRow, some worldAndProgramRow) := by
-  rcases System.Platform.numBits_eq with bits | bits
-  all_goals
-    run_tac Lean.Elab.Tactic.liftMetaTactic fun goal => do
-      let args := (← goal.getType).getAppArgs
-      let lhs ← Lean.Meta.withTransparency .all (Lean.Meta.whnf args[1]!)
-      let target ← Lean.Meta.mkEq lhs args[2]!
-      pure [← Lean.Meta.withTransparency .all (goal.change target)]
-  all_goals norm_num [bits, global_simps, Prod.mk.injEq,
-    Option.some.injEq, ZiskRomMessage.mk.injEq]
+  let raw := ZiskFv.Completeness.Rv64imShapes.rawIType 1 2 0 1 0x67
+  have decodedAsI : aeneas_extract.rv64im_decode.decode_32_core (Decode.toU32 raw) =
+      aeneas_extract.rv64im_decode.decode_i (Decode.toU32 raw)
+        aeneas_extract.rv64im_decode.RiscvOpcode.Jalr false := by
+    simp only [raw, aeneas_extract.rv64im_decode.decode_32_core, lift, Bind.bind,
+      bind_ok, Decode.toU32_and127, Decode.toU32_ofNat,
+      Decode.rawIType_opcode 1 2 0 1 0x67 (by norm_num)]
+  obtain ⟨decoded, decodedI, opcode, rdBound, rs1Bound, _⟩ :=
+    decode_i_bounds (Decode.toU32 raw) aeneas_extract.rv64im_decode.RiscvOpcode.Jalr false
+  have decodedCore := decodedAsI.trans decodedI
+  let input : riscv2zisk_single_row.Rv64imLoweringInput :=
+    { rom_address := 0#u64, rd := decoded.rd, rs1 := decoded.rs1,
+      rs2 := decoded.rs2, imm := decoded.imm }
+  obtain ⟨rdBits, rs1Bits, _⟩ := decode_i_rawIType_fields 1 2 0 1 0x67
+    (by norm_num) (by norm_num) (by norm_num) (by norm_num)
+    aeneas_extract.rv64im_decode.RiscvOpcode.Jalr decoded (by simpa only [raw] using decodedI)
+  have rd : input.rd = 1#u32 := by
+    apply UScalar.eq_of_val_eq
+    change decoded.rd.bv.toNat = 1
+    rw [rdBits]
+    decide
+  have rs1 : input.rs1 = 2#u32 := by
+    apply UScalar.eq_of_val_eq
+    change decoded.rs1.bv.toNat = 2
+    rw [rs1Bits]
+    decide
+  have immBits : input.imm.bv = BitVec.signExtend 32 (BitVec.ofNat 12 1) :=
+    decode_i_rawIType_imm 1 2 0 1 0x67 (by norm_num) (by norm_num) (by norm_num)
+      (by norm_num) aeneas_extract.rv64im_decode.RiscvOpcode.Jalr decoded
+      (by simpa only [raw] using decodedI)
+  have imm : input.imm = 1#i32 := by
+    apply IScalar.eq_of_val_eq
+    change input.imm.bv.toInt = 1
+    rw [immBits]
+    decide
+  obtain ⟨ctx, source⟩ := jalr_ok { defCtx with extract_marker := () } input
+    (by simpa only [input] using rs1Bound) (by simpa only [input] using rdBound) rfl
+  have pins := jalr_production_expanded_row_pins input ctx
+    (by simpa only [input] using rdBound) (by simpa only [input] using rs1Bound) source
+  obtain ⟨dext, decodeExtract⟩ := decode_extract_ok decoded
+  have dextFields := decodeExtract
+  unfold aeneas_extract.decode_extract_from_decoded at dextFields
+  obtain ⟨_, _, dextFields⟩ := bind_eq_ok_imp dextFields
+  obtain ⟨_, _, dextFields⟩ := bind_eq_ok_imp dextFields
+  obtain ⟨_, _, dextFields⟩ := bind_eq_ok_imp dextFields
+  rw [Result.ok.injEq] at dextFields
+  have dextImm : dext.imm = decoded.imm := by rw [← dextFields]
+  have dextRd : dext.rd = decoded.rd := by rw [← dextFields]
+  have dextRs1 : dext.rs1 = decoded.rs1 := by rw [← dextFields]
+  have dextRs2 : dext.rs2 = decoded.rs2 := by rw [← dextFields]
+  have lower : riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+      defCtx input riscv2zisk_single_row.Rv64imSingleRowOpcode.Jalr false =
+        ok { ctx with extract_marker := () } := by
+    change (do
+      let next ← riscv2zisk_context.Riscv2ZiskContext.jalr
+        { defCtx with extract_marker := () } input 4#u64
+      ok { next with extract_marker := () }) = _
+    rw [source]
+    rfl
+  rcases pins with aligned | unaligned
+  · obtain ⟨remainder, _, _⟩ := aligned
+    rw [imm] at remainder
+    have oneRem : (1#i32 : Std.I32) % 4#i32 = ok 1#i32 := rfl
+    rw [oneRem] at remainder
+    cases remainder
+  · obtain ⟨rem, remainder, nonzero, first, last, firstRecorded, lastRecorded,
+      firstPins, lastPins⟩ := unaligned
+    obtain ⟨firstWidth, firstStoreOffset, firstPrecompiled, lastASrc, lastAHi, lastALo,
+      lastWidth, lastPrecompiled⟩ := sourceJalr_remaining_fields
+      input ctx first last rd rs1 imm source firstRecorded lastRecorded
+    obtain ⟨lastRow, extracted, aSrc, aHi, aLo, bSrc, bHi, bLo, indWidth,
+      op, store, storeOffset, jmp1, jmp2, setPc, storePc, external, m32⟩ :=
+      from_inst_full_fields last.i
+    have extractedPrecompiled := sourceExtract_precompiled last.i lastRow extracted
+    let terminal : aeneas_extract.Rv64imTranspileExtract :=
+      { accepted := true, decode := dext, row := lastRow }
+    have terminalExtract : aeneas_extract.extract_transpile_rv64im_raw (Decode.toU32 raw) =
+        ok terminal := by
+      rw [aeneas_extract.extract_transpile_rv64im_raw, decodedCore]
+      simp only [bind_ok, Bind.bind, decodeExtract, opcode]
+      change (do
+        let input' ← riscv2zisk_single_row.Rv64imLoweringInput.new 0#u64
+          decoded.rd decoded.rs1 decoded.rs2 decoded.imm
+        let next ← riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+          defCtx input' riscv2zisk_single_row.Rv64imSingleRowOpcode.Jalr false
+        let last' ← core.option.Option.unwrap next.extract_inst
+        let row ← aeneas_extract.ZiskInstExtract.from_inst last'.i
+        ok ({ accepted := true, decode := dext, row := row } :
+          aeneas_extract.Rv64imTranspileExtract)) = _
+      simp only [riscv2zisk_single_row.Rv64imLoweringInput.new]
+      change (do
+        let next ← riscv2zisk_single_row.Riscv2ZiskContext.lower_rv64im_single_row_input
+          defCtx input riscv2zisk_single_row.Rv64imSingleRowOpcode.Jalr false
+        let last' ← core.option.Option.unwrap next.extract_inst
+        let row ← aeneas_extract.ZiskInstExtract.from_inst last'.i
+        ok ({ accepted := true, decode := dext, row := row } :
+          aeneas_extract.Rv64imTranspileExtract)) = _
+      rw [lower]
+      simp only [Bind.bind, lastRecorded, core.option.Option.unwrap, Result.ofOption, bind_ok]
+      rw [extracted]
+      rfl
+    let rows : aeneas_extract.Rv64imTranspileRowsExtract :=
+      { accepted := true, decode := dext, row_count := 2#u32, first_row := first, last_row := lastRow }
+    have actualRows : aeneas_extract.extract_transpile_rv64im_rows_raw (Decode.toU32 raw) =
+        ok rows := by
+      unfold aeneas_extract.extract_transpile_rv64im_rows_raw
+      rw [terminalExtract]
+      simp only [Decode.toU32_and127]
+      have remVal : rem.val ≠ 0 := by
+        intro zero
+        apply nonzero
+        apply IScalar.eq_of_val_eq
+        simpa using zero
+      have inputNew : riscv2zisk_single_row.Rv64imLoweringInput.new 0#u64
+          decoded.rd decoded.rs1 decoded.rs2 decoded.imm = ok input := rfl
+      have decodedRem : decoded.imm % 4#i32 = ok rem := remainder
+      norm_num [terminal, raw, dextRd, dextRs1, dextRs2, dextImm, remainder,
+        decodedRem, remVal, lift, Bind.bind, inputNew, rows, core.option.Option.unwrap, Result.ofOption]
+      rw [if_pos (by decide)]
+      simp only [defCtx] at lower
+      rw [lower]
+      simp [firstRecorded]
+    rcases firstPins with ⟨firstOp, firstJ1, firstJ2, firstASrc, firstAHiVal,
+      firstALoVal, firstB, firstExternal, firstM32, firstSetPc, firstStorePc, firstStore⟩
+    have firstAHi : first.a_use_sp_imm1 = 0#u64 := by
+      apply UScalar.eq_of_val_eq
+      rw [firstAHiVal, imm]
+      decide
+    have firstALo : first.a_offset_imm0 = 1#u64 := by
+      apply UScalar.eq_of_val_eq
+      rw [firstALoVal, imm]
+      decide
+    rcases firstB with ⟨zero, _⟩ | ⟨_, firstBSrc, firstBHi, firstBLo⟩
+    · rw [rs1] at zero
+      cases zero
+    · have firstBLo' : first.b_offset_imm0 = 2#u64 := by
+        rw [firstBLo, rs1]
+        decide
+      rcases lastPins with ⟨lastOp, lastJ1, lastJ2, destination, lastBSrc,
+        lastBHi, lastBLo, lastExternal, lastM32, lastSetPc⟩
+      rcases destination with ⟨zero, _⟩ |
+        ⟨_, lastStore, lastStoreOffset, _, lastStorePc⟩
+      · rw [rd] at zero
+        cases zero
+      · have lastStoreOffset' : last.i.store_offset = 1#i64 := by
+          rw [lastStoreOffset, rd]
+          decide
+        change romMessagesOfRaw 0 raw = _
+        simp only [romMessagesOfRaw, actualRows]
+        norm_num [rows, worldAddProgramRow, worldAndProgramRow, romRowOf, signedOffset,
+          romFlagBitsOfExtract, packFlags, worldAddBits, worldAndBits,
+          JalrSpinWitness.jalrAddBits, JalrSpinWitness.jalrAndBits,
+          firstOp, firstJ1, firstJ2, firstASrc, firstAHi, firstALo,
+          firstBSrc, firstBHi, firstBLo', firstExternal, firstM32,
+          firstSetPc, firstStorePc, firstStore, firstWidth, firstStoreOffset, firstPrecompiled,
+          aSrc, aHi, aLo, bSrc, bHi, bLo, indWidth, op, store, storeOffset,
+          jmp1, jmp2, setPc, storePc, external, m32, extractedPrecompiled,
+          lastASrc, lastAHi, lastALo, lastWidth, lastPrecompiled, lastOp, lastJ1, lastJ2,
+          lastStore, lastStoreOffset', lastStorePc, lastBSrc, lastBHi, lastBLo,
+          lastExternal, lastM32, lastSetPc, ZiskFv.Trusted.OP_ADD, ZiskFv.Trusted.OP_AND,
+          zisk_inst.SRC_IMM, zisk_inst.SRC_MEM, zisk_inst.SRC_REG, zisk_inst.SRC_IND,
+          zisk_inst.SRC_C, zisk_inst.STORE_REG, zisk_inst.STORE_MEM, zisk_inst.STORE_IND,
+          ZiskRomMessage.mk.injEq]
+
+end SourceSerialization
 
 @[reducible] def worldInitial (reg : FGL) : MemBusMessage FGL :=
   ZiskFv.AirsClean.RegisterBoundary.bootMessage (boundaryRowIdle reg)
