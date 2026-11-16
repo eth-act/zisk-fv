@@ -1,0 +1,43 @@
+{
+  "status": "passed-clean-internal-eight-leaf-scope",
+  "exact_proper_base": "0e5ded41992cdbdf21d17f603f737fc066887fdf",
+  "checked_cohesive_source": "90ce939c756961ccd8849980645ae7f92f0cd7f7",
+  "branch": "closure/mem-stage2-internal-0e5",
+  "scope": "Only eight Mem leaves: SourceFinalizerEquation, SourceFinalizer and Stage2.Cubic/Equations/Native/PolynomialRow/Literals/Local; ordinary ZiskFv aggregate imports including existing SourceInstance; append-only build-only extractor notes; explicitly requested historical genuine c33 mutation campaign and historical898 evidence.",
+  "shared_source_word_files_reimported_or_changed": false,
+  "generator_rust_flake_lake_nix_root_declarations_fullensemble_valid_or_rawbyte_changed": false,
+  "root_aggregate_only": "ZiskFv.lean adds ordinary direct imports; no wrappers, public statements, Root acceptance hypotheses or source-field changes.",
+  "normal_generation": {
+    "producer_source": "40afcd7c8d53a1ffd4f87e1d6c7993960b20ddf7",
+    "immutable_output": "/nix/store/pz1sr13qkmbxg8ivkx08rwri8zqj2wz5-zisk-fv-extracted-lean-1.0",
+    "regular_files_cmp_and_hash_verified": 32,
+    "new_runtime_values_sha256": "7d8dfc3b7dc3ff8630333ca448ab5cddf0024fb4fee1b8f37181d0ebfcf18632",
+    "copy": "cp --reflink=never of regular generated source/data only; reject symlinks; preserve prior generated scope; no .olean/.lake/cache/NAR chmod or generation fallback"
+  },
+  "narrow": {
+    "status": "passed-first-attempt",
+    "wall_seconds": 3011.72,
+    "shell_real_seconds": 3011.697,
+    "jobs": 9247,
+    "command": "LEAN_NUM_THREADS=2 CARGO_BUILD_JOBS=2 lake build +ZiskFv.AirsClean.Mem.SourceFinalizerEquation +ZiskFv.AirsClean.Mem.SourceFinalizer +ZiskFv.AirsClean.Mem.Stage2.Cubic +ZiskFv.AirsClean.Mem.Stage2.Equations +ZiskFv.AirsClean.Mem.Stage2.Native +ZiskFv.AirsClean.Mem.Stage2.PolynomialRow +ZiskFv.AirsClean.Mem.Stage2.Literals +ZiskFv.AirsClean.Mem.Stage2.Local +ZiskFv +ZiskFv.Audit --log-level=warning",
+    "scope": "Explicit eight model modules and ordinary Root/Audit module targets, including actual cold-cache imported dependencies; not relabeled as the integrator-owned whole-production default Lake/V1/V2/Nix gate"
+  },
+  "full_raw": {
+    "status": "passed",
+    "wall_seconds": 1064.97,
+    "actual_defining_roots": 385,
+    "module_roots": {"SourceFinalizerEquation":44,"SourceFinalizer":22,"Stage2.Cubic":72,"Stage2.Equations":31,"Stage2.Native":25,"Stage2.PolynomialRow":103,"Stage2.Literals":17,"Stage2.Local":71},
+    "raw_axiom_union": ["Classical.choice","Quot.sound","propext"],
+    "coverage": "ALL actual defining-module declarations in ALL8 modules, private/compiler declarations and constructors included. Complete actual ConstantInfo type/value references INCLUDING opaque bodies and inductive constructors, full axiom paths, no namespace pruning/filter/allowlist/excluded root. EVERY root and each module union independently agree with actual installed Lean.collectAxioms.",
+    "explicit_command": "lake env lean -j2 --run existing exact FullRawObserver.lean MODULE DIRECTORY; sequential ALL8 modules. SourceFinalizerEquation44 is freshly covered, not omitted or reused."
+  },
+  "source_inventory": "source-inventory.json records all8 source hashes and actual direct aggregate import lines; checked-inputs.sha256 records the exact Root/Audit/current recipe/shared-source/generated inputs.",
+  "historical_evidence": "c924 genuine compiled-source c33 baseline/neutral/rejections and old changed-type898 complete graphs are preserved separately. Neither is silently relabeled as this clean-base CI graph. Fresh all8 was run because actual current recipe/aggregate registration changed.",
+  "code_intelligence": "Lean LSP was invoked for exported cmAuxWords? references/hover. A references empty result was observed; a corrected hover-response attempt timed out before the cold-cache aggregate build. These are not proof verification claims. Actual checked declaration references are recorded by the full RAW graphs.",
+  "not_run_here": ["integrator-owned full default Lake gate", "V1", "V2", "unskipped complete Nix", "new mutation campaign"],
+  "public_mem_c33_wrong_kind_repaired": false,
+  "protected_mem_ext3_proposal_approved_or_applied": false,
+  "live_root_provider_numeric_logup_credit_claimed": false,
+  "whole_371_or_372_closure_claimed": false,
+  "remaining": "Packed stage1 coverage; real source/native full-row materialization; compiled operand/opening/PIL identity and native machine/snapshot bindings; physical once-occurrence/provider composition; explicitly approved protected Mem scalar-to-Ext3 model/component correction. Existing public Mem c33 wrong-kind defect remains."
+}

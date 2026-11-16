@@ -863,3 +863,14 @@ under `tools/adversarial-mutations/evidence/finalizers/mem-c33-2f830c34/`.
 Historical changed-type 898-root evidence is retained separately under
 `tools/adversarial-mutations/evidence/finalizers/mem-sourceword-eea4dc86/`;
 it is not silently relabeled as this clean-base integration's CI evidence.
+
+On the exact clean `0e5ded41…` base, checkpoint `90ce939c…` builds all eight
+leaves plus ordinary `ZiskFv`/`ZiskFv.Audit` targets (9,247 jobs). A fresh
+opaque-aware RAW audit covers every defining-module declaration of all eight
+leaves, including the 44-declaration `SourceFinalizerEquation` module; every
+root and each union agree with Lean's collector with only the standard three
+axioms. Source inventory, exact normal 32-file generation-copy hashes and
+complete gate logs are retained under
+`tools/adversarial-mutations/evidence/finalizers/mem-clean-90ce939c/`.
+These are the clean internal-scope checks, not whole-production/V1/V2/Nix
+completion or a live Mem/public c33 repair.
