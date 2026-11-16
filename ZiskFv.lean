@@ -305,3 +305,5 @@ import ZiskFv.AirsClean.MemAlignWriteByte.DirectWiring
 import ZiskFv.AirsClean.MemAlignWriteByte.RawByteSource
 import ZiskFv.AirsClean.MemAlignWriteByte.SourceInstance
 import ZiskFv.AirsClean.NativeValuesLayout
+import ZiskFv.AirsClean.PublicIoMainTraceLayout
+import ZiskFv.AirsClean.PublicIoMemWriteByteTraceLayout

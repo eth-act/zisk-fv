@@ -172,7 +172,14 @@ stdenv.mkDerivation {
       --macro-source ${pil2-proofman-src}/macros/src/trace.rs \
       --air-instance-source ${pil2-proofman-src}/common/src/air_instance.rs \
       --proof-context-source ${pil2-proofman-src}/common/src/proof_ctx.rs \
-      --output $out/RuntimeNativeValuesLayout.lean
+      --trace-row-source ${pil2-proofman-src}/macros/src/trace_row.rs \
+      --packed-row-source ${pil2-proofman-src}/macros/src/packed_row.rs \
+      --unpacked-row-source ${pil2-proofman-src}/macros/src/unpacked_row.rs \
+      --generic-trace-source ${pil2-proofman-src}/common/src/trace.rs \
+      --main-pil-source ${zisk-src}/state-machines/main/pil/main.pil \
+      --output $out/RuntimeNativeValuesLayout.lean \
+      --main-trace-output $out/RuntimeMainTraceLayout.lean \
+      --mem-write-byte-trace-output $out/RuntimeMemWriteByteTraceLayout.lean
 
     # Reviewed byte-identical Clean component source.  Maintained modules
     # re-export these generated declarations instead of carrying a weld copy.

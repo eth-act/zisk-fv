@@ -34,6 +34,8 @@ expected_modules=(
   PublicIo
   SourceDimensions
   RomSource
+  RuntimeMainTraceLayout
+  RuntimeMemWriteByteTraceLayout
   RuntimeNativeValuesLayout
 )
 

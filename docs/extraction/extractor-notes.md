@@ -819,10 +819,13 @@ verifier-public-I/O/Sail binding.
 
 ## Native value source-profile metadata
 
-`pil-extract runtime-native-values-layout` reads the locked ZisK trace-value
-declarations and the locked proofman's macro, AirInstance and ProofCtx sources.
-The normal extraction derivation emits `Extraction.RuntimeNativeValuesLayout`;
-the closed generated inventory and Lake graph compile it. `NativeValuesLayout`
+`pil-extract runtime-native-values-layout` reads the locked ZisK trace declarations
+and the locked proofman's value/trace macros, AirInstance, ProofCtx and native
+buffer code, together with Main's PIL. One normal invocation emits the original
+`Extraction.RuntimeNativeValuesLayout`, `Extraction.RuntimeMainTraceLayout` and
+its additive `Extraction.RuntimeMemWriteByteTraceLayout` companion; all nine
+inputs and three output paths are explicit. The closed inventory and Lake graph
+compile them. `NativeValuesLayout`
 checks independent source-profile contracts for Main's eight AIR values, padding
 scalars, separate three-word GROUP values and Mem's six direct extension values.
 All projections select buffers from one registry-authoritative source object.
@@ -838,3 +841,11 @@ remain explicitly unsupported, not excluded from Root. No missing word becomes
 zero. The source-profile
 metadata proves neither Rust/C ABI correctness nor final public-I/O/Sail binding,
 once-instance/provider composition, or completion of #371/#372/#413/#418.
+
+`PublicIoMainTraceLayout` and `PublicIoMemWriteByteTraceLayout` independently pin
+Main/Binary/Byte/Read and Mem/WriteByte field order, array coordinates, native bit
+positions, row capacities and packed/unpacked strides. The companion reuses the
+same generated `Profile`/`Cell` types and parser, retaining the four-profile
+artifact byte-for-byte. Complete Rust AST fragments are source-shape evidence,
+not a Rust execution/compiler/ABI theorem, an AIR range validator or a substitute
+for actual witness/physical-row/once-instance and verifier-I/O composition.

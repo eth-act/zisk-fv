@@ -61,7 +61,7 @@ enum Cmd {
     PackedVirtualTables(PackedVirtualTablesCmd),
     /// Emit constraint-linked compiled GLOBAL public-IO contributions.
     PublicIo(LookupWiringCmd),
-    /// Emit native value layouts and source macro/buffer dataflow metadata.
+    /// Emit native values, physical trace layouts and source macro metadata.
     RuntimeNativeValuesLayout(RuntimeNativeValuesLayoutCmd),
     /// Parse MemAlignRom's PIL fixed columns and emit `Extraction.MemAlignRom`.
     MemAlignRom(MemAlignRomCmd),
@@ -190,9 +190,23 @@ struct RuntimeNativeValuesLayoutCmd {
     air_instance_source: PathBuf,
     #[arg(long)]
     proof_context_source: PathBuf,
-    /// Output path for the generated Lean module. If omitted, prints to stdout.
+    #[arg(long)]
+    trace_row_source: PathBuf,
+    #[arg(long)]
+    packed_row_source: PathBuf,
+    #[arg(long)]
+    unpacked_row_source: PathBuf,
+    #[arg(long)]
+    generic_trace_source: PathBuf,
+    #[arg(long)]
+    main_pil_source: PathBuf,
+    /// Native-value metadata output. If omitted, prints that module to stdout.
     #[arg(long)]
     output: Option<PathBuf>,
+    #[arg(long)]
+    main_trace_output: PathBuf,
+    #[arg(long)]
+    mem_write_byte_trace_output: PathBuf,
 }
 
 #[derive(Args, Debug)]
@@ -353,10 +367,23 @@ fn main() -> Result<()> {
                 .with_context(|| format!("failed to read {}", args.air_instance_source.display()))?;
             let context = fs::read_to_string(&args.proof_context_source)
                 .with_context(|| format!("failed to read {}", args.proof_context_source.display()))?;
-            write_output(
-                args.output.as_deref(),
-                &runtime_native_values_layout::render(&traces, &macros, &instance, &context)?,
-            )
+            let trace_row = fs::read_to_string(&args.trace_row_source)
+                .with_context(|| format!("failed to read {}", args.trace_row_source.display()))?;
+            let packed_row = fs::read_to_string(&args.packed_row_source)
+                .with_context(|| format!("failed to read {}", args.packed_row_source.display()))?;
+            let unpacked_row = fs::read_to_string(&args.unpacked_row_source)
+                .with_context(|| format!("failed to read {}", args.unpacked_row_source.display()))?;
+            let generic_trace = fs::read_to_string(&args.generic_trace_source)
+                .with_context(|| format!("failed to read {}", args.generic_trace_source.display()))?;
+            let main_pil = fs::read_to_string(&args.main_pil_source)
+                .with_context(|| format!("failed to read {}", args.main_pil_source.display()))?;
+            let values = runtime_native_values_layout::render(&traces, &macros, &instance, &context)?;
+            let main_trace = runtime_native_values_layout::main_trace::render(
+                &traces, &trace_row, &packed_row, &unpacked_row, &generic_trace, &main_pil)?;
+            let mem_write_byte = runtime_native_values_layout::main_trace::render_mem_write_byte(&traces)?;
+            write_output(args.output.as_deref(), &values)?;
+            write_output(Some(&args.main_trace_output), &main_trace)?;
+            write_output(Some(&args.mem_write_byte_trace_output), &mem_write_byte)
         }
         Cmd::ArithTable(args) => {
             let rendered = arith_table::run(&args.rust_source, args.output.as_deref())?;
