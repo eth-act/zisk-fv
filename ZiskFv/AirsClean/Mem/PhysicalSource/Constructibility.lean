@@ -78,7 +78,7 @@ def source (packed : Bool) : SourceObject FGL :=
     setupRepository := ({} : Std.HashMap (Nat × Nat) NativeSetup).insert (0, 14) setup }
 
 def occurrence (packed : Bool) : ResolvedOccurrence (source packed) :=
-  ⟨⟨0, by decide⟩, by decide⟩
+  ⟨⟨0, by change 0 < 1; decide⟩, by change 0 < 1; decide⟩
 
 theorem fixedBuffer_pulse (row : Fin physicalRows) :
     fixedBuffer[2 * row.val + 1]? = some (FixedScan.pulse row.val) := by
@@ -99,7 +99,7 @@ theorem exact_setup_selected (packed : Bool) :
     SourceObject.registryEntry, ResolvedOccurrence.registryEntry, source]
 
 theorem exact_cm1 : setup.mapSectionsN["cm1"]? = some 13 := by
-  simp [setup]
+  decide
 
 theorem exact_group (packed : Bool) :
     NativeValuesLayout.groupWords? .mem ((occurrence packed).params false) =
@@ -121,9 +121,9 @@ or native-world/AIR-validity assertion is used. -/
 theorem constructor_nonvacuous (packed : Bool) :
     (fromResolved? (occurrence packed)).isSome = true := by
   unfold fromResolved?
-  rw [exact_setup_selected, exact_cm1]
+  simp only [exact_setup_selected, exact_cm1]
   split_ifs with checked
-  · rw [exact_group, exact_directs]
+  · simp only [exact_group, exact_directs]
     rfl
   · apply False.elim
     apply checked
