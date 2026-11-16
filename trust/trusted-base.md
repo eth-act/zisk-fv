@@ -1572,3 +1572,17 @@ unwrapped natural-address semantics, including their negative-immediate
 coverage defect, are unchanged. This is runtime-data canonicalization and
 old-domain preservation, not aggregate premise removal, independent memory
 induction, source-derived load A-slot grounding, or closure of #360/#417/#172.
+
+## Seven-load source-derived A slots
+
+`LoadOperandBinding` follows each successful ProductionM2 load lowering and the
+existing same-message Main/ROM and raw-program bindings to derive the actual
+A-source selectors and offset. Architectural x0 uses the real immediate-zero
+branch; nonzero registers use the register source. `LoadOperandInputs` combines
+these pins with the current lane bridge and successful Sail read to derive A0.
+Both sites in the shared private Root induction consume this derivation before
+canonical input construction; the public Root and old-domain comparison retain
+their existing statements.
+The redundant Core fields remain: this is proof-source consumption, not numeric
+premise removal, load-predicate repair, new boot evidence, full Sail decode
+grounding, or committed-ROM source-world/provider completion.
