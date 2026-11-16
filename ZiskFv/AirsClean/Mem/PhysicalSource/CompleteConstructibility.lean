@@ -31,6 +31,15 @@ def occurrence (packed : Bool) : ResolvedOccurrence (source packed) :=
 
 theorem actual_slot (packed : Bool) : (occurrence packed).slotData = slot packed := rfl
 
+theorem slot_fixed (packed : Bool) : (slot packed).fixed = Constructibility.fixedBuffer := by
+  dsimp only [slot]
+  exact Constructibility.slot_fixed packed
+
+theorem actual_auxiliary (packed : Bool) :
+    (occurrence packed).slotData.auxTrace = auxiliaryBuffer := by
+  rw [actual_slot]
+  dsimp only [slot]
+
 theorem exact_setup (packed : Bool) :
     (occurrence packed).setup? = some Constructibility.setup := by
   change (Constructibility.occurrence packed).setup? = some Constructibility.setup
@@ -95,12 +104,9 @@ theorem base_constructor_nonvacuous (packed : Bool) :
             (Constructibility.traceBuffer packed).size
           rw [Constructibility.traceBuffer_size]
           omega
-        · rw [actual_slot]
-          change 2 * physicalRows ≤ Constructibility.fixedBuffer.size
-          rw [Constructibility.fixedBuffer_size]
-        · rw [actual_slot]
-          change FixedScan.check Constructibility.fixedBuffer = true
-          exact Constructibility.fixedBuffer_scan
+        · rw [actual_slot, slot_fixed, Constructibility.fixedBuffer_size]
+          rfl
+        · rw [actual_slot, slot_fixed, Constructibility.fixedBuffer_scan]
 
 private theorem cm2_width : Constructibility.setup.mapSectionsN["cm2"]? = some 9 := by
   simp [Constructibility.setup, Std.HashMap.getElem?_insert, Std.HashMap.getElem_insert]
@@ -111,20 +117,41 @@ private theorem cm2_offset :
     Nat.mul_comm]
 
 private theorem entry0 : auxiliaryEntry? Constructibility.setup 0 =
-    some (13, Constructibility.cmMap[13]) := rfl
+    some (13, Constructibility.cmMap[13]) := by
+  unfold auxiliaryEntry?
+  rw [show Stage2.witnessMapId? Constructibility.setup 2 0 = some 13 by decide]
+  rfl
 private theorem entry1 : auxiliaryEntry? Constructibility.setup 1 =
-    some (14, Constructibility.cmMap[14]) := rfl
+    some (14, Constructibility.cmMap[14]) := by
+  unfold auxiliaryEntry?
+  rw [show Stage2.witnessMapId? Constructibility.setup 2 1 = some 14 by decide]
+  rfl
 private theorem entry2 : auxiliaryEntry? Constructibility.setup 2 =
-    some (15, Constructibility.cmMap[15]) := rfl
+    some (15, Constructibility.cmMap[15]) := by
+  unfold auxiliaryEntry?
+  rw [show Stage2.witnessMapId? Constructibility.setup 2 2 = some 15 by decide]
+  rfl
+
+private theorem challenge0_map :
+    Constructibility.setup.challengesMap.findIdx?
+      (fun entry => entry.stage == 2 && entry.stageId == 0 && entry.dim == 3) = some 0 := by
+  decide
+
+private theorem challenge1_map :
+    Constructibility.setup.challengesMap.findIdx?
+      (fun entry => entry.stage == 2 && entry.stageId == 1 && entry.dim == 3) = some 1 := by
+  decide
 
 theorem actual_alpha (packed : Bool) : Stage2.challenge? (occurrence packed) 2 0 =
     some (⟨29, 31, 37⟩ : Stage2.Ext3 FGL) := by
-  simp only [Stage2.challenge?, exact_setup, bind, Option.bind_some]
+  simp only [Stage2.challenge?, show 2 = 2 ∧ (0 : Nat) < 2 by decide, if_true,
+    exact_setup, bind, Option.bind_some, challenge0_map]
   rfl
 
 theorem actual_gamma (packed : Bool) : Stage2.challenge? (occurrence packed) 2 1 =
     some (⟨41, 43, 47⟩ : Stage2.Ext3 FGL) := by
-  simp only [Stage2.challenge?, exact_setup, bind, Option.bind_some]
+  simp only [Stage2.challenge?, show 2 = 2 ∧ (1 : Nat) < 2 by decide, if_true,
+    exact_setup, bind, Option.bind_some, challenge1_map]
   rfl
 
 /-- Actual computed success on BOTH full native layouts. No arbitrary stage2
@@ -146,22 +173,44 @@ theorem constructor_nonvacuous (packed : Bool) :
     have e2 : auxiliaryEntry? base.setup 2 = some (15, Constructibility.cmMap[15]) := by
       rw [setupEqual]
       exact entry2
-    simp only [completeFromResolved?, selected, bind, Option.bind_some, e0, e1, e2]
-    split_ifs with checked
-    · rw [actual_alpha, actual_gamma]
-      rfl
-    · apply False.elim
-      apply checked
-      refine ⟨?_, ?_, ?_, ?_⟩
-      · rw [setupEqual]
-        exact cm2_width
-      · rw [setupEqual]
-        exact cm2_offset
-      · intro column
-        fin_cases column <;> rw [setupEqual] <;> decide
-      · rw [actual_slot]
-        change 22 * physicalRows ≤ auxiliaryBuffer.size
-        rw [auxiliaryBuffer_size]
+    simp only [completeFromResolved?, selected, bind, Option.bind_some]
+    split
+    · rename_i absent
+      simp [e0] at absent
+    · rename_i found0 selected0
+      have equal := Option.some.inj (selected0.symm.trans e0)
+      subst found0
+      split
+      · rename_i absent
+        simp [e1] at absent
+      · rename_i found1 selected1
+        have equal := Option.some.inj (selected1.symm.trans e1)
+        subst found1
+        split
+        · rename_i absent
+          simp [e2] at absent
+        · rename_i found2 selected2
+          have equal := Option.some.inj (selected2.symm.trans e2)
+          subst found2
+          split_ifs with checked
+          · split
+            · rename_i absent
+              simp [actual_alpha] at absent
+            · split
+              · rename_i absent
+                simp [actual_gamma] at absent
+              · rfl
+          · apply False.elim
+            apply checked
+            refine ⟨?_, ?_, ?_, ?_⟩
+            · rw [setupEqual]
+              exact cm2_width
+            · rw [setupEqual]
+              exact cm2_offset
+            · intro column
+              fin_cases column <;> rw [setupEqual] <;> decide
+            · rw [actual_auxiliary, auxiliaryBuffer_size]
+              rfl
 
 /-- Recovery reads actual original auxiliary words; the symbolic proof never
 materializes or enumerates four million decoded rows. All coefficients differ
@@ -171,9 +220,8 @@ theorem auxiliary_coefficients (packed : Bool) (view : CompleteView (occurrence 
     view.auxiliary row column rotation = (⟨3, 4, 2⟩ : Stage2.Ext3 FGL) := by
   apply Stage2.Ext3.ext
   all_goals
-    simp only [CompleteView.auxiliary, CompleteView.auxiliaryAddress]
-    rw [actual_slot]
-    simp only [slot, auxiliaryBuffer, Array.getElem_ofFn]
+    simp only [CompleteView.auxiliary, CompleteView.auxiliaryAddress, actual_auxiliary,
+      auxiliaryBuffer, Array.getElem_ofFn]
     have within := (view.base.rotate row rotation).isLt
     have col := column.isLt
     apply Fin.ext
