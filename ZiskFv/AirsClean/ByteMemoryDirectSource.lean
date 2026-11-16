@@ -1,5 +1,5 @@
 import ZiskFv.AirsClean.ByteMemoryPhysicalRows
-import ZiskFv.AirsClean.Mem.Stage2.Literals
+import ZiskFv.AirsClean.ByteMemoryCompiledPadding
 
 /-!
 Read-capable byte-memory Direct equations on one source occurrence.
@@ -97,139 +97,36 @@ theorem actual_source_value_kinds (air : ByteMemoryPhysicalRows.Air) :
         .airValue, some 2, 1, 1, [2]⟩] := by
   cases air <;> rfl
 
-private def b (value : FGL) : Ext3 FGL := Ext3.ofBase value
+/-- This is computed from the owning source projection, never supplied to the
+native instance as a separate operand record. -/
+def operands {physical : ByteMemoryPhysicalRows.Rows resolved}
+    (view : Projection physical) : ByteMemoryCompiledPadding.DirectEquations.Operands :=
+  ⟨physical.padding, view.alignedInverse.value, view.byteInverse.value,
+    view.alpha.value, view.gamma.value⟩
 
-/-- Five supported source leaves only. This is not the Mem row decoder and
-never conflates AIR/GROUP/aux or interprets an unsupported leaf as zero. -/
-def evaluate? {physical : ByteMemoryPhysicalRows.Rows resolved}
-    (view : Projection physical) : Expr → Option (Ext3 FGL)
-  | .constant text => literal? text
-  | .airValue 0 => some (b physical.padding)
-  | .airValue 1 => some view.alignedInverse.value
-  | .airValue 2 => some view.byteInverse.value
-  | .challenge 2 0 => some view.alpha.value
-  | .challenge 2 1 => some view.gamma.value
-  | .add left right => return (← evaluate? view left) + (← evaluate? view right)
-  | .sub left right => return (← evaluate? view left) - (← evaluate? view right)
-  | .mul left right => return (← evaluate? view left) * (← evaluate? view right)
-  | .neg value => return -(← evaluate? view value)
-  | _ => none
-
-/-- Actual generated expressions, not a re-packed Direct-template roster. -/
-def actualExpressions (air : ByteMemoryPhysicalRows.Air) : Vector Expr 2 :=
-  match air with
-  | .byte => #v[constraint_MemAlignByte_13, constraint_MemAlignByte_14]
-  | .readByte => #v[constraint_MemAlignReadByte_7, constraint_MemAlignReadByte_8]
+private def readOnly : ByteMemoryPhysicalRows.Air → Bool
+  | .byte => false
+  | .readByte => true
 
 def actualResiduals? {physical : ByteMemoryPhysicalRows.Rows resolved}
-    (view : Projection physical) : Option (Vector (Ext3 FGL) 2) := do
-  return #v[← evaluate? view (actualExpressions physical.air)[0],
-    ← evaluate? view (actualExpressions physical.air)[1]]
+    (view : Projection physical) : Option (Vector (Ext3 FGL) 2) :=
+  ByteMemoryCompiledPadding.DirectEquations.actualResiduals? (readOnly physical.air) (operands view)
 
-/-- Independently fixed op=1, width=8, bus=10, positive raw p. -/
-def alignedExpected {physical : ByteMemoryPhysicalRows.Rows resolved}
-    (view : Projection physical) : Ext3 FGL :=
-  view.alignedInverse.value *
-      (((((b 8 * view.alpha.value) * view.alpha.value) * view.alpha.value + b 1) *
-        view.alpha.value + b 10) + view.gamma.value) - b physical.padding
-
-/-- Independently fixed op=1, width=1, bus=10, negative raw p. -/
-def byteExpected {physical : ByteMemoryPhysicalRows.Rows resolved}
-    (view : Projection physical) : Ext3 FGL :=
-  view.byteInverse.value *
-      ((((view.alpha.value * view.alpha.value) * view.alpha.value + b 1) *
-        view.alpha.value + b 10) + view.gamma.value) - (b 0 - b physical.padding)
-
-/-- Actual normal AST interpretation, including all three mixed-product
-coefficients. No equation-satisfaction hypothesis or conclusion occurs here. -/
-theorem actual_residuals_eq_expected {physical : ByteMemoryPhysicalRows.Rows resolved}
-    (view : Projection physical) :
-    actualResiduals? view = some #v[alignedExpected view, byteExpected view] := by
-  cases hair : physical.air <;>
-    simp [actualResiduals?, actualExpressions, hair, evaluate?,
-      constraint_MemAlignByte_13, constraint_MemAlignByte_14,
-      constraint_MemAlignReadByte_7, constraint_MemAlignReadByte_8,
-      alignedExpected, byteExpected, b]
-
-/-- Horner encoding of ALL six evaluated tuple cells, followed by source bus10.
-Channel/arity/length are checked before interpreting the concrete interaction. -/
-def interactionResidual? (inverse alpha gamma : Ext3 FGL)
-    (interaction : Interaction FGL) : Option (Ext3 FGL) := do
-  if interaction.channel.name = "MemoryBus" ∧ interaction.channel.arity = 6 ∧
-      interaction.msg.size = 6 then
-    let operation ← interaction.msg[0]?
-    let pointer ← interaction.msg[1]?
-    let timestamp ← interaction.msg[2]?
-    let width ← interaction.msg[3]?
-    let value0 ← interaction.msg[4]?
-    let value1 ← interaction.msg[5]?
-    let h0 := b value1 * alpha + b value0
-    let h1 := h0 * alpha + b width
-    let h2 := h1 * alpha + b timestamp
-    let h3 := h2 * alpha + b pointer
-    let h4 := h3 * alpha + b operation
-    return inverse * ((h4 * alpha + b 10) + gamma) - b interaction.mult
-  else none
-
-def batchResiduals? {physical : ByteMemoryPhysicalRows.Rows resolved}
-    (view : Projection physical) : List (Interaction FGL) → Option (Vector (Ext3 FGL) 2)
-  | [aligned, byte] => do
-    return #v[← interactionResidual? view.alignedInverse.value view.alpha.value view.gamma.value aligned,
-      ← interactionResidual? view.byteInverse.value view.alpha.value view.gamma.value byte]
-  | _ => none
-
-/-- Operations are observed, not reconstructed from a caller tuple packet. -/
 def compiledResiduals? {physical : ByteMemoryPhysicalRows.Rows resolved}
     (view : Projection physical) (operations : Operations FGL) (env : Environment FGL) :
     Option (Vector (Ext3 FGL) 2) :=
-  batchResiduals? view (operations.interactionValues env)
+  ByteMemoryCompiledPadding.DirectEquations.compiledResiduals? (operands view) operations env
 
-private theorem block_zero_mul (value : Ext3 FGL) : (0 : Ext3 FGL) * value = 0 := by
-  rw [Ext3.mul_eq_convolutionMul]
-  apply Ext3.ext <;> simp [Ext3.convolutionMul]
-
-private theorem block_zero_add (value : Ext3 FGL) : (0 : Ext3 FGL) + value = value := by
-  cases value
-  apply Ext3.ext <;> simp [HAdd.hAdd, Add.add]
-
-private theorem block_add_zero (value : Ext3 FGL) : value + (0 : Ext3 FGL) = value := by
-  cases value
-  apply Ext3.ext <;> simp [HAdd.hAdd, Add.add]
-
-private theorem block_one_mul (value : Ext3 FGL) : (1 : Ext3 FGL) * value = value := by
-  change Ext3.ofBase (1 : FGL) * value = value
-  rw [Ext3.ofBase_mul_block]
-  cases value
-  apply Ext3.ext <;> simp [HSMul.hSMul, SMul.smul]
-
-private theorem block_zero_sub (value : Ext3 FGL) : (0 : Ext3 FGL) - value = -value := by
-  cases value
-  apply Ext3.ext <;> simp [Sub.sub, Neg.neg]
-
-/-- The residual uses actual compiled message fields and actual signed
-multiplicities, not only a parallel independent local tuple definition. -/
-theorem compiled_residuals_eq_expected {physical : ByteMemoryPhysicalRows.Rows resolved}
-    (view : Projection physical) (env : Environment FGL) :
-    compiledResiduals? view
-        ((ByteMemoryCompiledPadding.byteCircuit (.const physical.padding)).operations 0) env =
-      some #v[alignedExpected view, byteExpected view] := by
-  unfold compiledResiduals?
-  change batchResiduals? view (ByteMemoryCompiledPadding.byteValues physical.padding env) = _
-  rw [ByteMemoryCompiledPadding.byte_compiled]
-  simp [batchResiduals?, interactionResidual?, ByteMemoryCompiledPadding.zeroLoadValue,
-    Channel.pushedIfValue, Channel.toRaw, MemBusChannel,
-    alignedExpected, byteExpected, b, Ext3.ofBase_zero,
-    block_zero_mul, block_zero_add, block_add_zero, block_one_mul, block_zero_sub]
-
-/-- Load-bearing actual-source/actual-compiled residual identity. Environments
-are universally quantified observers; no caller environment equality is needed. -/
+/-- Actual generated source polynomials equal mixed expressions over the
+ACTUAL compiled operations, using the same selected p and extension buffers. -/
 theorem actual_residuals_eq_compiled {physical : ByteMemoryPhysicalRows.Rows resolved}
     (view : Projection physical) (env : Environment FGL) :
     actualResiduals? view = compiledResiduals? view
       ((ByteMemoryCompiledPadding.byteCircuit (.const physical.padding)).operations 0) env := by
-  rw [actual_residuals_eq_expected, compiled_residuals_eq_expected]
+  exact ByteMemoryCompiledPadding.DirectEquations.actual_residuals_eq_compiled
+    (readOnly physical.air) (operands view) env
 
-/-- Every coefficient of each actual residual is retained by the linkage. -/
+/-- All three coefficients of both actual source equations are retained. -/
 theorem actual_compiled_all_coefficients {physical : ByteMemoryPhysicalRows.Rows resolved}
     (view : Projection physical) (env : Environment FGL) (equation : Fin 2)
     (coefficient : Fin 3) :
