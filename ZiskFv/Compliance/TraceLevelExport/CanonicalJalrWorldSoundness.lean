@@ -1,4 +1,5 @@
 import ZiskFv.Compliance.TraceLevelExport.CanonicalJalrWorld
+import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingLineInjectivity
 
 /-!
 # Two actual source-start JALR steps in one accepted physical world
@@ -134,17 +135,23 @@ noncomputable def worldRawDecode (i : Fin 2) :
   · fin_cases i <;> norm_num [worldSourceIndex, mainOfTable, worldClaim,
       worldRow1, worldRow3, worldRow1Template, worldRow3Template, mainRomRowOf]
   · intro j hline
-    fin_cases i <;> fin_cases j
-    all_goals norm_num [worldSourceIndex, mainOfTable,
-      worldAddProgramRow, worldAndProgramRow, worldRow0, worldRow2,
-      worldRow0Template, worldRow2Template, mainRomRowOf] at hline
-    all_goals exact ⟨0, rfl, rfl, rfl⟩
+    have sameLine : (worldTrace.program j).line =
+        (worldTrace.program (worldStart 0)).line := by
+      rw [hline]
+      fin_cases i <;> simp [worldStart, worldSourceIndex, mainOfTable,
+        worldRow0, worldRow2, worldRow0Template, worldRow2Template, mainRomRowOf]
+    have sameIndex := program_lines_injective_of_programRowsBinding worldProgramRowsBinding sameLine
+    subst j
+    exact ⟨0, rfl, rfl, rfl⟩
   · intro j hline
-    fin_cases i <;> fin_cases j
-    all_goals norm_num [worldSourceIndex, mainOfTable,
-      worldAddProgramRow, worldAndProgramRow, worldRow1, worldRow3,
-      worldRow1Template, worldRow3Template, mainRomRowOf] at hline
-    all_goals exact ⟨0, rfl, rfl, rfl⟩
+    let terminal : Fin worldTrace.programLength := ⟨1, by change 1 < 2; decide⟩
+    have sameLine : (worldTrace.program j).line = (worldTrace.program terminal).line := by
+      rw [hline]
+      fin_cases i <;> simp [terminal, worldSourceIndex, mainOfTable,
+        worldRow1, worldRow3, worldRow1Template, worldRow3Template, mainRomRowOf]
+    have sameIndex := program_lines_injective_of_programRowsBinding worldProgramRowsBinding sameLine
+    subst j
+    exact ⟨0, rfl, rfl, rfl⟩
 
 noncomputable def worldRowDecode (i : Fin 2) :
     RowDecode worldTrace (worldSourceIndex i) (.jalr (worldClaim i)) :=
