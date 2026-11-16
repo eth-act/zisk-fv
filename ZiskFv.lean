@@ -248,6 +248,9 @@ import ZiskFv.Compliance.TraceLevelExport.SourcePhysicalRegisterWrites
 import ZiskFv.Compliance.TraceLevelExport.MappedRegisterReadLanes
 import ZiskFv.Compliance.TraceLevelExport.PhysicalRegisterPlatformProjection
 import ZiskFv.Compliance.TraceLevelExport.LegacyRegisterPlatformProjection
+import ZiskFv.Compliance.TraceLevelExport.SourceHeadActualRegisterPrefix
+import ZiskFv.Compliance.TraceLevelExport.SourceMutableMemoryPresence
+import ZiskFv.Compliance.TraceLevelExport.NarrowLoadProviderObstruction
 import ZiskFv.Compliance
 import ZiskFv.Compliance.EnsembleWitnessBuilder
 import ZiskFv.Compliance.RegisterMemBusBalance
