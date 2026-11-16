@@ -72,7 +72,9 @@ private theorem selected_setup (padding : FGL) : (resolved padding).setup? = som
     SourceObject.registryEntry, resolved, image]
 
 private theorem selected_params (padding : FGL) :
-    (resolved padding).params false = paramsOf (image padding).globals (image padding).slots[0] := rfl
+    (resolved padding).params false =
+      paramsOf (image padding).globals
+        ((image padding).slots[0]'(by simp [image])) false := rfl
 
 private theorem selected_operands (padding : FGL) :
     NativeBinaryInstance.readOperands? (resolved padding) =
@@ -80,11 +82,14 @@ private theorem selected_operands (padding : FGL) :
   simp [NativeBinaryInstance.readOperands?, selected_setup, setup, airEntry,
     NativeValuesLayout.padding_reads_actual_buffer, ResolvedOccurrence.airValueWords?,
     valueWidth, valueOffset, Mem.Stage2.challenge?, challengeEntry,
-    Mem.Stage2.extensionWords?, readBlock?, buffer?, selected_params, image, paramsOf]
+    Mem.Stage2.extensionWords?, readBlock?, buffer?, selected_params, image, paramsOf,
+    List.findIdx?, List.findIdx?.go]
 
 private theorem selected_base (padding : FGL) :
     NativeTraceCells.rowBase? .binary (resolved padding) false 0 = some 0 := by
-  simp [NativeTraceCells.rowBase?, selected_setup, setup, NativeTraceRules.actual_source_ready,
+  simp only [NativeTraceCells.rowBase?, selected_setup]
+  rw [selected_params]
+  simp [setup, NativeTraceRules.actual_source_ready,
     NativeSetup.rowCount, NativeTraceCells.profile, NativeTraceCells.nativeStride,
     Extraction.RuntimeMainTraceLayout.binaryProfile,
     Extraction.RuntimeMainTraceLayout.Profile.packedWords,
@@ -106,7 +111,11 @@ theorem constructible_for_every_raw_scalar (padding : FGL) :
   let operands : BinaryPaddingOperations.Operands := ⟨padding, ⟨8, 9, 10⟩, ⟨2, 3, 4⟩, ⟨5, 6, 7⟩⟩
   obtain ⟨cells, hcells⟩ :
       ∃ cells, NativeBinaryInstance.cells? (resolved padding) = some cells := by
-    simp [NativeBinaryInstance.cells?, selected_operands]
+    unfold NativeBinaryInstance.cells?
+    split
+    · rename_i missing
+      simp [selected_operands] at missing
+    · exact ⟨_, rfl⟩
   let anchor : NativeTraceCells.Row .binary (resolved padding) false 0 :=
     ⟨0, selected_base padding⟩
   have hn : NativeTraceCells.row? .binary (resolved padding) false 0 = some anchor :=
