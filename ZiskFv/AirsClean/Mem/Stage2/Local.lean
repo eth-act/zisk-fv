@@ -159,7 +159,8 @@ theorem decode_polynomial_correspondence (resolved : ResolvedOccurrence source) 
     (equation : Fin 9) :
     evaluate? resolved row (actualNonlinear equation) = some (values.residual equation) := by
   by_cases mem : SourceFinalizer.memOccurrence resolved = true
-  · simp only [decodeRow?, mem, ↓reduceIte, Option.bind_eq_some_iff, Option.some.injEq] at decoded
+  · simp only [decodeRow?, mem, ↓reduceIte, bind, pure, Option.bind_eq_some_iff,
+      Option.some.injEq] at decoded
     rcases decoded with
       ⟨addr, haddr, step, hstep, sel, hsel, stepDual, hstepDual, selDual, hselDual,
        valueLo, hvalueLo, valueHi, hvalueHi, wr, hwr, lowIncrement, hlowIncrement,
