@@ -126,7 +126,8 @@ def expectedCoordinate? (resolved : ResolvedOccurrence source)
 theorem native_coordinate_eq_expected (resolved : ResolvedOccurrence source)
     (row : Nat) (coordinate : Fin 3) :
     evalCoordinate? resolved row coordinate = expectedCoordinate? resolved row coordinate := by
-  simp [evalCoordinate?, coordinateSource?, expectedCoordinate?, partial_coordinate_equation]
+  by_cases hmem : memOccurrence resolved = true <;>
+    simp [evalCoordinate?, coordinateSource?, expectedCoordinate?, hmem, partial_coordinate_equation]
 
 /-- All three equations, including failed native reads as failure, not zero. -/
 def Holds (resolved : ResolvedOccurrence source) (row : Nat) : Prop :=
