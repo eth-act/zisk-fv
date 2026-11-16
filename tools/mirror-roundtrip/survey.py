@@ -369,6 +369,38 @@ CLASSIFICATION: dict[tuple[str, str], Entry] = {
            "Option-valued interpretation of a supplied Expr, not a row predicate; "
            "Model.lean:40 Source.eval fails closed and GsumBoundary.lean "
            "*_finalizer_typed_source_iff supplies the actual source bindings"),
+    # Typed Mem source views restate only the already challenge/stage-2 c24-c33
+    # protocol. These entries classify new predicates, not new source exclusions.
+    ("ZiskFv/AirsClean/Mem/SourceFinalizer.lean", "Holds"):
+        _e("NEAR_CHALLENGE", "Mem",
+           "same-source three-coefficient c33 boundary; SourceFinalizerEquation "
+           "pins GROUP0/AIR15-20/L1-next, not the live scalar Mem mirror",
+           claims="33"),
+    ("ZiskFv/AirsClean/Mem/Stage2/Native.lean", "LocalCircuit"):
+        _e("NEAR_CHALLENGE", "Mem",
+           "all nine c24-c32 evaluated through the same typed native occurrence; "
+           "stage-2 Ext3 witnesses/challenges, not stage-1 row equations",
+           claims="24-32"),
+    ("ZiskFv/AirsClean/Mem/Stage2/Native.lean", "ExpectedCircuit"):
+        _e("NEAR_CHALLENGE", "Mem",
+           "independently fixed c24-c32 syntax interpreted by the same native "
+           "reader; native_polynomial_source_correspondence binds actual ASTs",
+           claims="24-32"),
+    ("ZiskFv/AirsClean/Mem/Stage2/Native.lean", "WithFinalizer"):
+        _e("NEAR_CHALLENGE", "Mem",
+           "LocalCircuit plus same-source c33; all ten equations remain the "
+           "already challenge/stage-2 protocol, not live provider composition",
+           claims="24-33"),
+    ("ZiskFv/AirsClean/Mem/Stage2/PolynomialRow.lean", "Circuit"):
+        _e("NEAR_CHALLENGE", "Mem",
+           "three-coefficient polynomial row c24-c32 with pinned cubic arithmetic "
+           "and source alpha/gamma; Local binds every residual to actual syntax",
+           claims="24-32"),
+    ("ZiskFv/AirsClean/Mem/Stage2/PolynomialRow.lean", "WithFinalizer"):
+        _e("NEAR_CHALLENGE", "Mem",
+           "typed polynomial Circuit plus c33 GROUP-result residual; local "
+           "feasibility is not a native full trace or repaired public Valid_Mem",
+           claims="24-33"),
     ("ZiskFv/AirsClean/OperationPadding.lean", "Equation"):
         _e("NEAR_CHALLENGE", note=
            "OperationPadding.lean:34 binaryAdd_source_iff and :43 "

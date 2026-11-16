@@ -1,0 +1,72 @@
+{
+  "proper_frozen_base": "0e5ded41992cdbdf21d17f603f737fc066887fdf",
+  "cohesive_port_head": "90ce939c756961ccd8849980645ae7f92f0cd7f7",
+  "source_inventory": [
+    {
+      "module": "ZiskFv.AirsClean.Mem.SourceFinalizerEquation",
+      "path": "ZiskFv/AirsClean/Mem/SourceFinalizerEquation.lean",
+      "sha256": "d2eaecce93eb64b6151e440b4d418feec2f31586e310bcff58fb1e9f9899e2b0",
+      "bytes": 7720,
+      "ordinary_aggregate_import_line": 308
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.SourceFinalizer",
+      "path": "ZiskFv/AirsClean/Mem/SourceFinalizer.lean",
+      "sha256": "34134a1fec9509124454589f373d3a9b26501719143172ac3ea936f35105517d",
+      "bytes": 7392,
+      "ordinary_aggregate_import_line": 309
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Cubic",
+      "path": "ZiskFv/AirsClean/Mem/Stage2/Cubic.lean",
+      "sha256": "a46a1b5754f44ae33d3858426411d335d28b4e2d0991e424c636fb786a61fd57",
+      "bytes": 6329,
+      "ordinary_aggregate_import_line": 310
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Equations",
+      "path": "ZiskFv/AirsClean/Mem/Stage2/Equations.lean",
+      "sha256": "281a4e6909ff7587d2f81b74fc4590ea394fb406c12b6235b038f3e496d75871",
+      "bytes": 8736,
+      "ordinary_aggregate_import_line": 311
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Native",
+      "path": "ZiskFv/AirsClean/Mem/Stage2/Native.lean",
+      "sha256": "9dcc032f8636ac601d8e291fcdb755d67116583e190433644111bc4591ff89d3",
+      "bytes": 8432,
+      "ordinary_aggregate_import_line": 312
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.PolynomialRow",
+      "path": "ZiskFv/AirsClean/Mem/Stage2/PolynomialRow.lean",
+      "sha256": "9515ccc6083d400214f551c6335286872f4b1e9732dedb677f1e5de9130d390c",
+      "bytes": 6521,
+      "ordinary_aggregate_import_line": 313
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Literals",
+      "path": "ZiskFv/AirsClean/Mem/Stage2/Literals.lean",
+      "sha256": "6a99af73e639c2494a992ee288c5f5e6db672256c6a2831ce61dc16df4667c23",
+      "bytes": 3507,
+      "ordinary_aggregate_import_line": 314
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Local",
+      "path": "ZiskFv/AirsClean/Mem/Stage2/Local.lean",
+      "sha256": "0353296a547746c84ffc6f0317dd2aeb27fc3cacdf4d261646ad3dd9a0b180c5",
+      "bytes": 15499,
+      "ordinary_aggregate_import_line": 315
+    }
+  ],
+  "existing_shared_source_instance_direct_import": true,
+  "recipe_hashes": {
+    "ZiskFv.lean": "8bc97f4eb01254ee14d04f0292b3518313ddb561ee0cfc00bbc398a529abece6",
+    "ZiskFv/Audit.lean": "1a1743a4af3656d46084e5210a0abe5459b867242eba7fdf4db636f4f8eee09c",
+    "lakefile.toml": "7802ddf6af4c1fde9ddb5b21ec6ef349cb5a6b69b88009fc4fa90230ae6d8826",
+    "lake-manifest.json": "354d98ca220a909807af809fe71f5d611ad7db057f554942628ca6cb095bd835",
+    "flake.lock": "54559fd326574342bd2ce8c16191327e9e61bde78918d9d485d3928d47aea050",
+    "lean-toolchain": "db7bb24b756d745bbde83fe92718b51bd3625dae3701ba0f598d0eedcd3f3028"
+  },
+  "scope": "Only eight Mem source/model leaves plus ordinary aggregate imports and append-only build-only docs. Source-word files, generator/Rust/lock/Nix/FullEnsemble/Valid/interface/old public Mem c33 untouched. Historical campaign and898 evidence remain labelled historical, not reused as clean-base CI proof."
+}
