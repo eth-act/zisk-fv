@@ -40,7 +40,7 @@ theorem canonicalNat_mod (word : UInt64) :
     calc
       word.toNat % GL_prime = ((word.toNat - GL_prime) + GL_prime) % GL_prime :=
         congrArg (fun value : Nat => value % GL_prime) hsplit
-      _ = word.toNat - GL_prime := by simp [Nat.add_mod, Nat.mod_eq_of_lt hsmall]
+      _ = word.toNat - GL_prime := by simp [Nat.mod_eq_of_lt hsmall]
   · have hsmall : word.toNat < GL_prime := by omega
     simp [canonicalNat, h, Nat.mod_eq_of_lt hsmall]
 
@@ -90,7 +90,7 @@ theorem unpackedBlock_size (params : Params FGL) (offset width : Nat)
   by_cases hz : width = 0
   · simp [unpackedBlock?, hz] at h
   · by_cases hb : offset + width ≤ params.trace.size
-    · simp only [unpackedBlock?, hz, hb, ↓reduceIte, Option.some.injEq] at h
+    · simp [unpackedBlock?, hz, hb] at h
       subst words
       simp
     · simp [unpackedBlock?, hz, hb] at h
