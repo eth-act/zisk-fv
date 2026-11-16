@@ -51,6 +51,31 @@ private theorem forward_coordinate (row : Index) (column : Fin 13) :
   have swap : row.val * 13 + column.val = 13 * row.val + column.val := by omega
   exact (getElem_congr_idx (c := traceBuffer) swap).trans (trace_coordinate row column)
 
+private theorem word_from_coordinate (params : Params FGL) (words : Array UInt64)
+    (same : params.trace = words) (offset : Nat) (bound : offset < words.size)
+    (word : UInt64) (coordinate : words[offset] = word) :
+    traceWord? params offset = some word := by
+  simp only [traceWord?, same]
+  exact (getElem?_pos words offset bound).trans (congrArg some coordinate)
+
+private theorem singleton_from_coordinate (params : Params FGL) (words : Array UInt64)
+    (same : params.trace = words) (offset : Nat) (bound : offset < words.size)
+    (word : UInt64) (coordinate : words[offset] = word) :
+    NativeTraceWords.unpackedBlock? params offset 1 =
+      some #[NativeTraceWords.unpackedField word] := by
+  have capacity : offset + 1 ≤ params.trace.size := by rw [same]; omega
+  rw [NativeTraceWords.unpackedBlock_constructible _ _ _ (by decide) capacity]
+  apply congrArg (fun values : Array FGL => some values)
+  apply Array.ext
+  · simp
+  · intro index left right
+    have zero : index = 0 := by simpa using left
+    subst index
+    change NativeTraceWords.unpackedField (params.trace[offset]) =
+      NativeTraceWords.unpackedField word
+    apply congrArg NativeTraceWords.unpackedField
+    exact (getElem_congr_coll same).trans coordinate
+
 private theorem native_word (view : CompleteView occurrence) (row : Index) (column : Fin 13) :
     traceWord? (occurrence.params false)
       (row.val * view.base.nativeStride + column.val) =
@@ -61,9 +86,8 @@ private theorem native_word (view : CompleteView occurrence) (row : Index) (colu
     have within : row.val < N := row.isLt
     have col := column.isLt
     omega
-  simp only [traceWord?, params_trace, stride]
-  exact (getElem?_pos traceBuffer (row.val * 13 + column.val) bound).trans
-    (congrArg (fun word : UInt64 => some word) (forward_coordinate row column))
+  simpa only [stride] using word_from_coordinate (occurrence.params false) traceBuffer
+    params_trace (row.val * 13 + column.val) bound _ (forward_coordinate row column)
 
 private theorem cached_unpacked
     {s : SourceObject FGL} {r : ResolvedOccurrence s}
@@ -132,23 +156,14 @@ private theorem stage1_entry (column : Fin 13) :
 private theorem unpacked_single (view : CompleteView occurrence) (row : Index) (column : Fin 13) :
     NativeTraceWords.unpackedBlock? (occurrence.params false) (row.val * 13 + column.val) 1 =
       some #[((primary row)[column])] := by
-  have bound : row.val * 13 + column.val + 1 ≤ (occurrence.params false).trace.size := by
-    rw [params_trace, traceBuffer_size]
+  have bound : row.val * 13 + column.val < traceBuffer.size := by
+    rw [traceBuffer_size]
     have within : row.val < N := row.isLt
     have col := column.isLt
     omega
-  rw [NativeTraceWords.unpackedBlock_constructible _ _ _ (by decide) bound]
-  apply congrArg (fun words : Array FGL => some words)
-  apply Array.ext
-  · simp
-  · intro index left right
-    have zero : index = 0 := by simpa using left
-    subst index
-    change NativeTraceWords.unpackedField
-      ((occurrence.params false).trace[row.val * 13 + column.val]) = (primary row)[column]
-    rw [params_trace]
-    exact (congrArg NativeTraceWords.unpackedField (forward_coordinate row column)).trans
-      (word_roundtrip ((primary row)[column]))
+  exact (singleton_from_coordinate (occurrence.params false) traceBuffer params_trace
+    (row.val * 13 + column.val) bound _ (forward_coordinate row column)).trans
+      (congrArg (fun value : FGL => some #[value]) (word_roundtrip ((primary row)[column])))
 
 theorem stage1_recovery (view : CompleteView occurrence) (row : Index)
     (column : Fin 13) (rotation : Int) :
