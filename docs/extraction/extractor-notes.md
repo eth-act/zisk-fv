@@ -904,3 +904,28 @@ proof repairs, source hashes and full paths/logs are retained under
 `tools/adversarial-mutations/evidence/finalizers/mem-physical-support-5b64f5c0/`.
 This support check is separate from the later shared six-kind logical-projection
 consumer and makes no native/source-world or protected-interface success claim.
+
+#### Mem canonical projection continuation (source-only)
+
+Frozen source `6e7c2e57642a3fcca1d3358523e690c8be9d8651` adds two consumers of the
+sole checked six-kind `NativeTraceCells` implementation (`205c4c19`, lease
+`1e8c6bec`). `PhysicalSource.NativeProjection` covers every physical
+`Fin 4194304 × Fin 13` stage1 coordinate, jointly with the same source's
+GROUP0 and six three-coefficient AIR direct values. `Comparison` proves
+the scalar-coordinate loss, cyclic-predecessor mismatch, and actual GROUP/AIR0
+counterexamples without changing live protected fields.
+
+The two narrow checks passed (17.781s); complete RAW checking passed all38 roots
+(31/7, 251.922s), including private/compiler declarations, opaque values,
+constructors, and full dependency paths. Every root and each defining-module
+union independently agrees with `Lean.collectAxioms` and standard3. All1660
+immutable lease source/object inputs plus overlay/compiler hashes remained
+exact afterward; no borrowed object/cache copies or foreign writes occurred.
+Evidence: `tools/adversarial-mutations/evidence/finalizers/mem-physical-projection-6e7c2e57/`.
+This is distinct from the five support modules'189 roots and the frozen eight
+Mem leaves'385 roots. No new production registration, protected API, Root,
+provider, live c33, numeric logUp, or full source-world closure is claimed.
+Real stage2 auxiliary/challenge coverage and PIL/compiled-operand/ABI/opening/
+snapshot authentication remain required. Correct scalar-to-Ext3 fields,
+GROUP0 binding, and cyclic native rows require explicit protected approval.
+
