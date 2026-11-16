@@ -1088,6 +1088,32 @@ private theorem worldOps_balanced :
     decide +kernel
   · decide +kernel
 
+private theorem worldBoundary_source_channel_nil (channel : RawChannel FGL)
+    (mem : channel ≠ MemBusChannel.toRaw)
+    (range : channel ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) :
+    worldBoundaryTable.interactionsWith channel = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  change channel ∉ [MemBusChannel.toRaw,
+    ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
+  simpa only [List.mem_cons, List.not_mem_nil, or_false, not_or] using And.intro mem range
+
+private theorem worldBinaryAdd_source_channel_nil (channel : RawChannel FGL)
+    (op : channel ≠ OpBusChannel.toRaw) :
+    worldBinaryAddTable.interactionsWith channel = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  change channel ∉ [OpBusChannel.toRaw]
+  simpa only [List.mem_singleton] using op
+
+private theorem worldMain_source_channel_nil (channel : RawChannel FGL)
+    (mem : channel ≠ MemBusChannel.toRaw) (op : channel ≠ OpBusChannel.toRaw)
+    (range : channel ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) :
+    worldMainTable.interactionsWith channel = [] := by
+  apply Table.interactionsWith_nil_of_channel_not_mem
+  change channel ∉ [MemBusChannel.toRaw, OpBusChannel.toRaw,
+    ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
+  simpa only [List.mem_cons, List.not_mem_nil, or_false, not_or] using
+    And.intro mem (And.intro op range)
+
 /-- Reduce only proved-silent tables; retain the actual consumer and both
 full-domain source streams, including zero multiplicities. -/
 private theorem worldSource_emissions (channel : RawChannel FGL)
@@ -1097,21 +1123,9 @@ private theorem worldSource_emissions (channel : RawChannel FGL)
       worldBinaryAndTable.interactionsWith channel ++
         worldExtensionSourceTable.interactionsWith channel ++
           worldBinarySourceTable.interactionsWith channel := by
-  have boundary : worldBoundaryTable.interactionsWith channel = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    change channel ∉ [MemBusChannel.toRaw,
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
-    simpa only [List.mem_cons, List.not_mem_nil, or_false, not_or] using And.intro mem range
-  have add : worldBinaryAddTable.interactionsWith channel = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    change channel ∉ [OpBusChannel.toRaw]
-    simpa only [List.mem_singleton] using op
-  have main : worldMainTable.interactionsWith channel = [] := by
-    apply Table.interactionsWith_nil_of_channel_not_mem
-    change channel ∉ [MemBusChannel.toRaw, OpBusChannel.toRaw,
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
-    simpa only [List.mem_cons, List.not_mem_nil, or_false, not_or] using
-      And.intro mem (And.intro op range)
+  have boundary := worldBoundary_source_channel_nil channel mem range
+  have add := worldBinaryAdd_source_channel_nil channel op
+  have main := worldMain_source_channel_nil channel mem op range
   have provider := registerStepRangeRowsTable_interactionsWith_of_ne
     (worldMainRangeValues ++ registerBoundaryRangeValues worldBoundaryRows) channel range
   change worldTables.flatMap (fun table => table.interactionsWith channel) = _
