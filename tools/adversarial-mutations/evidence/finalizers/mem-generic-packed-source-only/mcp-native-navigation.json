@@ -1,0 +1,433 @@
+{
+  "context": {
+    "project": "/home/cody/zisk-fv-mem-ten-main452",
+    "env": {
+      "LEAN_PROJECT_PATH": "/home/cody/zisk-fv-mem-ten-main452",
+      "LEAN_PATH": "/home/cody/zisk-fv-closure-extractor/build/mem-physical-source/logical-ci/lean",
+      "LEAN_LSP_MAX_OPEN_FILES": "1",
+      "LEAN_NUM_THREADS": "2",
+      "LEAN_MCP_PREWARM_FILES": ""
+    }
+  },
+  "tools": [
+    {
+      "name": "lean_diagnostic_messages",
+      "input_schema": {
+        "properties": {
+          "file_path": {
+            "description": "Absolute or project-root-relative path to Lean file",
+            "title": "File Path",
+            "type": "string"
+          },
+          "start_line": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter from line",
+            "title": "Start Line"
+          },
+          "end_line": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter to line",
+            "title": "End Line"
+          },
+          "declaration_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Filter to declaration (slow)",
+            "title": "Declaration Name"
+          },
+          "interactive": {
+            "default": false,
+            "description": "Returns verbose nested TaggedText with embedded widgets. Only use when plain text is insufficient. For 'Try This' suggestions, prefer lean_code_actions.",
+            "title": "Interactive",
+            "type": "boolean"
+          },
+          "timeout_s": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Max seconds to wait for elaboration. On timeout returns partial=true with still_elaborating_lines - poll again. Omit to wait for full elaboration.",
+            "title": "Timeout S"
+          },
+          "severity": {
+            "default": null,
+            "description": "Filter by severity level. Returns all levels when omitted.",
+            "enum": [
+              "error",
+              "warning",
+              "info",
+              "hint"
+            ],
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file_path"
+        ],
+        "type": "object",
+        "title": "diagnostic_messagesArguments"
+      }
+    },
+    {
+      "name": "lean_file_outline",
+      "input_schema": {
+        "properties": {
+          "file_path": {
+            "description": "Absolute or project-root-relative path to Lean file",
+            "title": "File Path",
+            "type": "string"
+          },
+          "max_declarations": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Max declarations to return",
+            "title": "Max Declarations"
+          }
+        },
+        "required": [
+          "file_path"
+        ],
+        "type": "object",
+        "title": "file_outlineArguments"
+      }
+    },
+    {
+      "name": "lean_hover_info",
+      "input_schema": {
+        "properties": {
+          "file_path": {
+            "description": "Absolute or project-root-relative path to Lean file",
+            "title": "File Path",
+            "type": "string"
+          },
+          "line": {
+            "description": "Line number (1-indexed)",
+            "minimum": 1,
+            "title": "Line",
+            "type": "integer"
+          },
+          "column": {
+            "description": "Column at START of identifier (1-indexed characters)",
+            "minimum": 1,
+            "title": "Column",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "file_path",
+          "line",
+          "column"
+        ],
+        "type": "object",
+        "title": "hoverArguments"
+      }
+    }
+  ],
+  "results": [
+    {
+      "tool": "lean_file_outline",
+      "args": {
+        "file_path": "ZiskFv/AirsClean/Mem/Stage2/Native.lean",
+        "max_declarations": 30
+      },
+      "result": {
+        "meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"imports\": [\n    \"ZiskFv.AirsClean.Mem.Stage2.Cubic\",\n    \"ZiskFv.AirsClean.Mem.Stage2.Equations\",\n    \"ZiskFv.AirsClean.Mem.SourceFinalizer\"\n  ],\n  \"declarations\": [\n    {\n      \"name\": \"ZiskFv.AirsClean.Mem.Stage2\",\n      \"kind\": \"Ns\",\n      \"start_line\": 18,\n      \"end_line\": 167\n    },\n    {\n      \"name\": \"extensionWords?\",\n      \"kind\": \"Def\",\n      \"start_line\": 27,\n      \"end_line\": 32,\n      \"type_signature\": \"(words : Option (Array FGL)) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"extensionWords?\",\n      \"kind\": \"Def\",\n      \"start_line\": 28,\n      \"end_line\": 28,\n      \"type_signature\": \"(words : Option (Array FGL)) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"baseWords?\",\n      \"kind\": \"Def\",\n      \"start_line\": 34,\n      \"end_line\": 35,\n      \"type_signature\": \"(words : Option (Array FGL)) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"literal?\",\n      \"kind\": \"Def\",\n      \"start_line\": 37,\n      \"end_line\": 40,\n      \"type_signature\": \"(text : String) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"literal?\",\n      \"kind\": \"Def\",\n      \"start_line\": 39,\n      \"end_line\": 39,\n      \"type_signature\": \"(text : String) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"witnessMapId?\",\n      \"kind\": \"Def\",\n      \"start_line\": 42,\n      \"end_line\": 48,\n      \"type_signature\": \"(setup : NativeSetup) (stage column : Nat) : Option Nat\"\n    },\n    {\n      \"name\": \"witnessMapId?\",\n      \"kind\": \"Def\",\n      \"start_line\": 44,\n      \"end_line\": 44,\n      \"type_signature\": \"(setup : NativeSetup) (stage column : Nat) : Option Nat\"\n    },\n    {\n      \"name\": \"witness?\",\n      \"kind\": \"Def\",\n      \"start_line\": 50,\n      \"end_line\": 59,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row stage column : Nat) (rotation : Int) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"witness?\",\n      \"kind\": \"Def\",\n      \"start_line\": 52,\n      \"end_line\": 52,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row stage column : Nat) (rotation : Int) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"fixed?\",\n      \"kind\": \"Def\",\n      \"start_line\": 61,\n      \"end_line\": 66,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row column : Nat) (rotation : Int) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"fixed?\",\n      \"kind\": \"Def\",\n      \"start_line\": 63,\n      \"end_line\": 63,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row column : Nat) (rotation : Int) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"airValue?\",\n      \"kind\": \"Def\",\n      \"start_line\": 68,\n      \"end_line\": 79,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (index : Nat) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"airValue?\",\n      \"kind\": \"Def\",\n      \"start_line\": 70,\n      \"end_line\": 70,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (index : Nat) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"groupValue?\",\n      \"kind\": \"Def\",\n      \"start_line\": 81,\n      \"end_line\": 88,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (index : Nat) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"groupValue?\",\n      \"kind\": \"Def\",\n      \"start_line\": 82,\n      \"end_line\": 82,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (index : Nat) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"challenge?\",\n      \"kind\": \"Def\",\n      \"start_line\": 90,\n      \"end_line\": 101,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (stage index : Nat) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"challenge?\",\n      \"kind\": \"Def\",\n      \"start_line\": 94,\n      \"end_line\": 94,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (stage index : Nat) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"polynomial?\",\n      \"kind\": \"Def\",\n      \"start_line\": 103,\n      \"end_line\": 117,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row : Nat) : Expr \u2192 Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"polynomial?\",\n      \"kind\": \"Def\",\n      \"start_line\": 105,\n      \"end_line\": 105,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row : Nat) : Expr \u2192 Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"evaluate?\",\n      \"kind\": \"Def\",\n      \"start_line\": 119,\n      \"end_line\": 123,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row : Nat) (expr : Expr) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"evaluate?\",\n      \"kind\": \"Def\",\n      \"start_line\": 121,\n      \"end_line\": 121,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row : Nat) (expr : Expr) : Option (Ext3 FGL)\"\n    },\n    {\n      \"name\": \"LocalCircuit\",\n      \"kind\": \"Def\",\n      \"start_line\": 125,\n      \"end_line\": 128,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row : Nat) : Prop\"\n    },\n    {\n      \"name\": \"LocalCircuit\",\n      \"kind\": \"Def\",\n      \"start_line\": 127,\n      \"end_line\": 127,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row : Nat) : Prop\"\n    },\n    {\n      \"name\": \"ExpectedCircuit\",\n      \"kind\": \"Def\",\n      \"start_line\": 130,\n      \"end_line\": 131,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row : Nat) : Prop\"\n    },\n    {\n      \"name\": \"native_polynomial_source_correspondence\",\n      \"kind\": \"Thm\",\n      \"start_line\": 133,\n      \"end_line\": 137,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row : Nat) (equation : Fin 9) : evaluate? resolved row (actualNonlinear equation) = evaluate? resolved row (expectedNonlinear equation)\"\n    },\n    {\n      \"name\": \"localCircuit_iff_expected\",\n      \"kind\": \"Thm\",\n      \"start_line\": 139,\n      \"end_line\": 141,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row : Nat) : LocalCircuit resolved row \u2194 ExpectedCircuit resolved row\"\n    },\n    {\n      \"name\": \"WithFinalizer\",\n      \"kind\": \"Def\",\n      \"start_line\": 143,\n      \"end_line\": 146,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row : Nat) : Prop\"\n    },\n    {\n      \"name\": \"WithFinalizer\",\n      \"kind\": \"Def\",\n      \"start_line\": 145,\n      \"end_line\": 145,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (row : Nat) : Prop\"\n    },\n    {\n      \"name\": \"source_buffers_are_shared\",\n      \"kind\": \"Thm\",\n      \"start_line\": 148,\n      \"end_line\": 153,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) : (resolved.params false).trace = resolved.slotData.trace \u2227 (resolved.params false).airvalues = resolved.slotData.airvalues \u2227 (resolved.params false).airgroupValues = resolved.slotData.airgroupValues \u2227 (resolved.params false).challenges = source.globals.challenges\"\n    }\n  ],\n  \"total_declarations\": 33\n}",
+            "annotations": null,
+            "meta": null
+          }
+        ],
+        "structured_content": {
+          "imports": [
+            "ZiskFv.AirsClean.Mem.Stage2.Cubic",
+            "ZiskFv.AirsClean.Mem.Stage2.Equations",
+            "ZiskFv.AirsClean.Mem.SourceFinalizer"
+          ],
+          "declarations": [
+            {
+              "name": "ZiskFv.AirsClean.Mem.Stage2",
+              "kind": "Ns",
+              "start_line": 18,
+              "end_line": 167
+            },
+            {
+              "name": "extensionWords?",
+              "kind": "Def",
+              "start_line": 27,
+              "end_line": 32,
+              "type_signature": "(words : Option (Array FGL)) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "extensionWords?",
+              "kind": "Def",
+              "start_line": 28,
+              "end_line": 28,
+              "type_signature": "(words : Option (Array FGL)) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "baseWords?",
+              "kind": "Def",
+              "start_line": 34,
+              "end_line": 35,
+              "type_signature": "(words : Option (Array FGL)) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "literal?",
+              "kind": "Def",
+              "start_line": 37,
+              "end_line": 40,
+              "type_signature": "(text : String) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "literal?",
+              "kind": "Def",
+              "start_line": 39,
+              "end_line": 39,
+              "type_signature": "(text : String) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "witnessMapId?",
+              "kind": "Def",
+              "start_line": 42,
+              "end_line": 48,
+              "type_signature": "(setup : NativeSetup) (stage column : Nat) : Option Nat"
+            },
+            {
+              "name": "witnessMapId?",
+              "kind": "Def",
+              "start_line": 44,
+              "end_line": 44,
+              "type_signature": "(setup : NativeSetup) (stage column : Nat) : Option Nat"
+            },
+            {
+              "name": "witness?",
+              "kind": "Def",
+              "start_line": 50,
+              "end_line": 59,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row stage column : Nat) (rotation : Int) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "witness?",
+              "kind": "Def",
+              "start_line": 52,
+              "end_line": 52,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row stage column : Nat) (rotation : Int) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "fixed?",
+              "kind": "Def",
+              "start_line": 61,
+              "end_line": 66,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row column : Nat) (rotation : Int) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "fixed?",
+              "kind": "Def",
+              "start_line": 63,
+              "end_line": 63,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row column : Nat) (rotation : Int) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "airValue?",
+              "kind": "Def",
+              "start_line": 68,
+              "end_line": 79,
+              "type_signature": "(resolved : ResolvedOccurrence source) (index : Nat) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "airValue?",
+              "kind": "Def",
+              "start_line": 70,
+              "end_line": 70,
+              "type_signature": "(resolved : ResolvedOccurrence source) (index : Nat) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "groupValue?",
+              "kind": "Def",
+              "start_line": 81,
+              "end_line": 88,
+              "type_signature": "(resolved : ResolvedOccurrence source) (index : Nat) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "groupValue?",
+              "kind": "Def",
+              "start_line": 82,
+              "end_line": 82,
+              "type_signature": "(resolved : ResolvedOccurrence source) (index : Nat) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "challenge?",
+              "kind": "Def",
+              "start_line": 90,
+              "end_line": 101,
+              "type_signature": "(resolved : ResolvedOccurrence source) (stage index : Nat) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "challenge?",
+              "kind": "Def",
+              "start_line": 94,
+              "end_line": 94,
+              "type_signature": "(resolved : ResolvedOccurrence source) (stage index : Nat) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "polynomial?",
+              "kind": "Def",
+              "start_line": 103,
+              "end_line": 117,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row : Nat) : Expr \u2192 Option (Ext3 FGL)"
+            },
+            {
+              "name": "polynomial?",
+              "kind": "Def",
+              "start_line": 105,
+              "end_line": 105,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row : Nat) : Expr \u2192 Option (Ext3 FGL)"
+            },
+            {
+              "name": "evaluate?",
+              "kind": "Def",
+              "start_line": 119,
+              "end_line": 123,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row : Nat) (expr : Expr) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "evaluate?",
+              "kind": "Def",
+              "start_line": 121,
+              "end_line": 121,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row : Nat) (expr : Expr) : Option (Ext3 FGL)"
+            },
+            {
+              "name": "LocalCircuit",
+              "kind": "Def",
+              "start_line": 125,
+              "end_line": 128,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row : Nat) : Prop"
+            },
+            {
+              "name": "LocalCircuit",
+              "kind": "Def",
+              "start_line": 127,
+              "end_line": 127,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row : Nat) : Prop"
+            },
+            {
+              "name": "ExpectedCircuit",
+              "kind": "Def",
+              "start_line": 130,
+              "end_line": 131,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row : Nat) : Prop"
+            },
+            {
+              "name": "native_polynomial_source_correspondence",
+              "kind": "Thm",
+              "start_line": 133,
+              "end_line": 137,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row : Nat) (equation : Fin 9) : evaluate? resolved row (actualNonlinear equation) = evaluate? resolved row (expectedNonlinear equation)"
+            },
+            {
+              "name": "localCircuit_iff_expected",
+              "kind": "Thm",
+              "start_line": 139,
+              "end_line": 141,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row : Nat) : LocalCircuit resolved row \u2194 ExpectedCircuit resolved row"
+            },
+            {
+              "name": "WithFinalizer",
+              "kind": "Def",
+              "start_line": 143,
+              "end_line": 146,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row : Nat) : Prop"
+            },
+            {
+              "name": "WithFinalizer",
+              "kind": "Def",
+              "start_line": 145,
+              "end_line": 145,
+              "type_signature": "(resolved : ResolvedOccurrence source) (row : Nat) : Prop"
+            },
+            {
+              "name": "source_buffers_are_shared",
+              "kind": "Thm",
+              "start_line": 148,
+              "end_line": 153,
+              "type_signature": "(resolved : ResolvedOccurrence source) : (resolved.params false).trace = resolved.slotData.trace \u2227 (resolved.params false).airvalues = resolved.slotData.airvalues \u2227 (resolved.params false).airgroupValues = resolved.slotData.airgroupValues \u2227 (resolved.params false).challenges = source.globals.challenges"
+            }
+          ],
+          "total_declarations": 33
+        },
+        "is_error": false,
+        "result_type": "complete"
+      }
+    },
+    {
+      "tool": "lean_hover_info",
+      "args": {
+        "file_path": "ZiskFv/AirsClean/Mem/Stage2/Native.lean",
+        "line": 52,
+        "column": 5
+      },
+      "result": {
+        "meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"symbol\": \"witness?\",\n  \"info\": \"ZiskFv.AirsClean.Mem.Stage2.witness? {source : SourceObject (Fin 18446744069414584321)}\\n  (resolved : ResolvedOccurrence source) (row stage column : \u2115) (rotation : \u2124) :\\n  Option (Ext3 (Fin 18446744069414584321))\\n***\\nPhase1 Mem has thirteen scalar columns; phase2 has three extension columns.\\nThe native reader deliberately does not guess how to unpack packed stage1.\",\n  \"diagnostics\": []\n}",
+            "annotations": null,
+            "meta": null
+          }
+        ],
+        "structured_content": {
+          "symbol": "witness?",
+          "info": "ZiskFv.AirsClean.Mem.Stage2.witness? {source : SourceObject (Fin 18446744069414584321)}\n  (resolved : ResolvedOccurrence source) (row stage column : \u2115) (rotation : \u2124) :\n  Option (Ext3 (Fin 18446744069414584321))\n***\nPhase1 Mem has thirteen scalar columns; phase2 has three extension columns.\nThe native reader deliberately does not guess how to unpack packed stage1.",
+          "diagnostics": []
+        },
+        "is_error": false,
+        "result_type": "complete"
+      }
+    }
+  ]
+}

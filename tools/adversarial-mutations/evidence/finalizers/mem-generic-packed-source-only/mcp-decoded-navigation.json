@@ -1,0 +1,100 @@
+{
+  "context": {
+    "project": "/home/cody/zisk-fv-mem-ten-main452",
+    "env": {
+      "LEAN_PROJECT_PATH": "/home/cody/zisk-fv-mem-ten-main452",
+      "LEAN_PATH": "/home/cody/zisk-fv-closure-extractor/build/mem-physical-source/logical-ci/lean",
+      "LEAN_LSP_MAX_OPEN_FILES": "1",
+      "LEAN_NUM_THREADS": "2",
+      "LEAN_MCP_PREWARM_FILES": ""
+    }
+  },
+  "results": [
+    {
+      "tool": "lean_hover_info",
+      "args": {
+        "file_path": "ZiskFv/AirsClean/MemAlignWriteByte/SourceInstance.lean",
+        "line": 105,
+        "column": 5
+      },
+      "result": {
+        "meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"symbol\": \"valueOffset\",\n  \"info\": \"ZiskFv.AirsClean.MemAlignWriteByte.RawSource.Native.valueOffset (entries : Array PolMap) (id : \u2115) : \u2115\\n***\\nSource-expression id -> native word offset, using the actual ordered map.\\nThis is NOT id itself, dim, rank, or a freely supplied decoded offset.\",\n  \"diagnostics\": []\n}",
+            "annotations": null,
+            "meta": null
+          }
+        ],
+        "structured_content": {
+          "symbol": "valueOffset",
+          "info": "ZiskFv.AirsClean.MemAlignWriteByte.RawSource.Native.valueOffset (entries : Array PolMap) (id : \u2115) : \u2115\n***\nSource-expression id -> native word offset, using the actual ordered map.\nThis is NOT id itself, dim, rank, or a freely supplied decoded offset.",
+          "diagnostics": []
+        },
+        "is_error": false,
+        "result_type": "complete"
+      }
+    },
+    {
+      "tool": "lean_references",
+      "args": {
+        "file_path": "/home/cody/zisk-fv-mem-ten-main452/ZiskFv/AirsClean/NativeValuesLayout.lean",
+        "line": 469,
+        "column": 9,
+        "max_results": 20
+      },
+      "result": {
+        "meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"items\": [\n    {\n      \"file_path\": \"ZiskFv/AirsClean/NativeValuesLayout.lean\",\n      \"line\": 469,\n      \"column\": 9,\n      \"end_line\": 469,\n      \"end_column\": 40\n    }\n  ],\n  \"total\": 1\n}",
+            "annotations": null,
+            "meta": null
+          }
+        ],
+        "structured_content": {
+          "items": [
+            {
+              "file_path": "ZiskFv/AirsClean/NativeValuesLayout.lean",
+              "line": 469,
+              "column": 9,
+              "end_line": 469,
+              "end_column": 40
+            }
+          ],
+          "total": 1
+        },
+        "is_error": false,
+        "result_type": "complete"
+      }
+    },
+    {
+      "tool": "lean_hover_info",
+      "args": {
+        "file_path": "ZiskFv/AirsClean/Mem/PhysicalSource/Domain.lean",
+        "line": 74,
+        "column": 3
+      },
+      "result": {
+        "meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"symbol\": \"directWords\",\n  \"info\": \"ZiskFv.AirsClean.Mem.PhysicalSource.View.directWords {source : SourceObject (Fin 18446744069414584321)}\\n  {resolved : ResolvedOccurrence source} (self : View resolved) : Vector (Vector (Fin 18446744069414584321) 3) 6\",\n  \"diagnostics\": []\n}",
+            "annotations": null,
+            "meta": null
+          }
+        ],
+        "structured_content": {
+          "symbol": "directWords",
+          "info": "ZiskFv.AirsClean.Mem.PhysicalSource.View.directWords {source : SourceObject (Fin 18446744069414584321)}\n  {resolved : ResolvedOccurrence source} (self : View resolved) : Vector (Vector (Fin 18446744069414584321) 3) 6",
+          "diagnostics": []
+        },
+        "is_error": false,
+        "result_type": "complete"
+      }
+    }
+  ]
+}

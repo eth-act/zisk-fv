@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceImage
+import ZiskFv.AirsClean.Mem.Stage2.PackedSource
 
 /-! All chosen algebraic leaves recover the ACTUAL source-owned partial readers.
 The theorem is about this computed source image, not an arbitrary field-function
@@ -58,24 +59,6 @@ private theorem word_from_coordinate (params : Params FGL) (words : Array UInt64
   simp only [traceWord?, same]
   exact (getElem?_pos words offset bound).trans (congrArg some coordinate)
 
-private theorem singleton_from_coordinate (params : Params FGL) (words : Array UInt64)
-    (same : params.trace = words) (offset : Nat) (bound : offset < words.size)
-    (word : UInt64) (coordinate : words[offset] = word) :
-    NativeTraceWords.unpackedBlock? params offset 1 =
-      some #[NativeTraceWords.unpackedField word] := by
-  have capacity : offset + 1 ≤ params.trace.size := by rw [same]; omega
-  rw [NativeTraceWords.unpackedBlock_constructible _ _ _ (by decide) capacity]
-  apply congrArg (fun values : Array FGL => some values)
-  apply Array.ext
-  · simp
-  · intro index left right
-    have zero : index = 0 := by simpa using left
-    subst index
-    change NativeTraceWords.unpackedField (params.trace[offset]) =
-      NativeTraceWords.unpackedField word
-    apply congrArg NativeTraceWords.unpackedField
-    exact (getElem_congr_coll same).trans coordinate
-
 private theorem native_word (view : CompleteView occurrence) (row : Index) (column : Fin 13) :
     traceWord? (occurrence.params false)
       (row.val * view.base.nativeStride + column.val) =
@@ -123,96 +106,11 @@ theorem canonical_primary_recovery (view : CompleteView occurrence) (row : Index
       some ((primary row)[column]) := by
   rw [view.scalar_source, primary_recovery]
 
-private theorem stage1_map (column : Fin 13) :
-    Stage2.witnessMapId? Constructibility.setup 1 column.val = some column.val := by
-  unfold Stage2.witnessMapId?
-  rw [if_neg (by omega : ¬(1 = 2 ∧ column.val = 0))]
-  rw [Array.findIdx?_eq_some_iff_getElem]
-  have within := column.isLt
-  refine ⟨?_, ?_, ?_⟩
-  · simp only [Constructibility.setup, Constructibility.cmMap, Array.size_ofFn]
-    omega
-  · simp [Constructibility.setup, Constructibility.cmMap, Array.getElem_ofFn, within]
-    exact ⟨⟨rfl, rfl⟩, rfl⟩
-  · intro index before
-    have smaller : index < 13 := by omega
-    simp [Constructibility.setup, Constructibility.cmMap, Array.getElem_ofFn, smaller,
-      Nat.ne_of_lt before]
-    change (1 = 1 → index = column.val → ¬(1 = 1))
-    omega
-
-private theorem stage1_entry (column : Fin 13) :
-    (Constructibility.setup.cmPolsMap[column.val]'(by
-      simp only [Constructibility.setup, Constructibility.cmMap, Array.size_ofFn]
-      have within := column.isLt
-      omega)).stage = 1 ∧
-    (Constructibility.setup.cmPolsMap[column.val]'(by
-      simp only [Constructibility.setup, Constructibility.cmMap, Array.size_ofFn]
-      have within := column.isLt
-      omega)).stagePos = column.val := by
-  simp [Constructibility.setup, Constructibility.cmMap, Array.getElem_ofFn, column.isLt]
-  exact ⟨rfl, rfl⟩
-
-private theorem unpacked_single (view : CompleteView occurrence) (row : Index) (column : Fin 13) :
-    NativeTraceWords.unpackedBlock? (occurrence.params false) (row.val * 13 + column.val) 1 =
-      some #[((primary row)[column])] := by
-  have bound : row.val * 13 + column.val < traceBuffer.size := by
-    rw [traceBuffer_size]
-    have within : row.val < N := row.isLt
-    have col := column.isLt
-    omega
-  exact (singleton_from_coordinate (occurrence.params false) traceBuffer params_trace
-    (row.val * 13 + column.val) bound _ (forward_coordinate row column)).trans
-      (congrArg (fun value : FGL => some #[value]) (word_roundtrip ((primary row)[column])))
-
-private theorem witness_from_unpacked
-    {s : SourceObject FGL} (resolved : ResolvedOccurrence s) (setup : NativeSetup)
-    (entry : PolMap) (row column shifted : Nat) (rotation : Int) (value : FGL)
-    (within : column < 13) (hasSetup : resolved.setup? = some setup)
-    (selected : witnessMapId? setup 1 column = some column)
-    (hasEntry : setup.cmPolsMap[column]? = some entry)
-    (stage : entry.stage = 1) (position : entry.stagePos = column)
-    (unpacked : resolved.slotData.metadata.isPacked = false)
-    (shift : setup.baseRow? row rotation = some shifted)
-    (width : setup.mapSectionsN["cm1"]? = some 13)
-    (raw : NativeTraceWords.unpackedBlock? (resolved.params false)
-      (shifted * 13 + column) 1 = some #[value]) :
-    Stage2.witness? resolved row 1 column rotation = some (Ext3.ofBase value) := by
-  have supported : (1 = 1 ∧ column < 13) ∨ (1 = 2 ∧ column < 3) :=
-    Or.inl ⟨rfl, within⟩
-  unfold Stage2.witness?
-  rw [if_pos supported]
-  simp only [hasSetup, bind, Option.bind_some, selected, ↓reduceIte]
-  rw [ResolvedOccurrence.cmWords_unpacked_source resolved false column row rotation
-    setup entry hasSetup hasEntry stage unpacked]
-  simp only [shift, bind, Option.bind_some, stage, position]
-  rw [show "cm" ++ toString (1 : Nat) = "cm1" by decide]
-  simp only [width, Option.bind_some]
-  rw [raw]
-  rfl
-
 theorem stage1_recovery (view : CompleteView occurrence) (row : Index)
     (column : Fin 13) (rotation : Int) :
     Stage2.witness? occurrence row.val 1 column.val rotation =
       some (Ext3.ofBase ((primary (view.base.rotate row rotation))[column])) := by
-  have unpacked : occurrence.slotData.metadata.isPacked = false := rfl
-  have entryBound : column.val < Constructibility.setup.cmPolsMap.size := by
-    simp only [Constructibility.setup, Constructibility.cmMap, Array.size_ofFn]
-    have within := column.isLt
-    omega
-  have entry := stage1_entry column
-  have shifted : Constructibility.setup.baseRow? row.val rotation =
-      some (view.base.rotate row rotation).val := by
-    rw [← setup_of_view view]
-    exact view.base.native_rotation row rotation
-  exact witness_from_unpacked occurrence Constructibility.setup
-    Constructibility.setup.cmPolsMap[column.val] row.val column.val
-    (view.base.rotate row rotation).val rotation
-    ((primary (view.base.rotate row rotation))[column]) column.isLt actual_setup
-    (stage1_map column)
-    (getElem?_pos Constructibility.setup.cmPolsMap column.val entryBound)
-    entry.1 entry.2 unpacked shifted Constructibility.exact_cm1
-    (unpacked_single view (view.base.rotate row rotation) column)
+  rw [Stage2.witness_stage1_source, primary_recovery]
 
 private theorem base_read_at (params : Params FGL) (kind : FieldBufferKind)
     (values : Array FGL) (offset : Nat) (selected : buffer? params kind = some values)

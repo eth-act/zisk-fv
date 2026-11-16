@@ -1,0 +1,125 @@
+{
+  "status": "SOURCE ONLY; NOT YET ELABORATED OR ACCEPTANCE VERIFIED IN CHANGED CONTEXT",
+  "branch": "closure/mem-generic-packed452",
+  "base_dependent_ten": "154b9a8c265aa1eb849ad954a7da74476150b64e",
+  "immutable_prior_six": "a037cdf3ffd1b58b97070303e4137d9701a78a6f",
+  "nodes": [
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Native",
+      "path": "ZiskFv/AirsClean/Mem/Stage2/Native.lean",
+      "sha256": "84a79fd6a07d4b99bc798fb52e35f99e5fabf53ed99eef50b597ed75b8ed5e74",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.Stage2.Cubic",
+        "ZiskFv.AirsClean.Mem.Stage2.Equations",
+        "ZiskFv.AirsClean.Mem.SourceFinalizer",
+        "ZiskFv.AirsClean.NativeTraceCells"
+      ],
+      "new_phase_dependencies": []
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.PackedSource",
+      "path": "ZiskFv/AirsClean/Mem/Stage2/PackedSource.lean",
+      "sha256": "ff17fe388a7d18eec31937caf2fbacb79929d6e68b5420d8d10e0cd655f76991",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Columns"
+      ],
+      "new_phase_dependencies": []
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Recovery",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/AirWitness/Recovery.lean",
+      "sha256": "a29b0a71bef94c5eeb85ef17599501de386fc0e4bb31b484204763b9caba2661",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceImage",
+        "ZiskFv.AirsClean.Mem.Stage2.PackedSource"
+      ],
+      "new_phase_dependencies": [
+        "ZiskFv.AirsClean.Mem.Stage2.PackedSource"
+      ]
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.DecodedView",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/DecodedView.lean",
+      "sha256": "5e779489ccc7360dd3b1233f6cf72a2c8f3a70d2594d119654d842c3558b49c5",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Columns"
+      ],
+      "new_phase_dependencies": []
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.PolynomialSource",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/PolynomialSource.lean",
+      "sha256": "1d3f9d71625199157f9f5abd0790627253dc5e0a1dc8c4535b8545e98006b445",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Columns",
+        "ZiskFv.AirsClean.Mem.Stage2.PolynomialRow",
+        "ZiskFv.AirsClean.Mem.Stage2.PackedSource",
+        "ZiskFv.AirsClean.Mem.Stage2.Equations",
+        "ZiskFv.AirsClean.Mem.Stage2.Literals"
+      ],
+      "new_phase_dependencies": [
+        "ZiskFv.AirsClean.Mem.Stage2.PackedSource"
+      ]
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.PolynomialCorrespondence",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/PolynomialCorrespondence.lean",
+      "sha256": "e9173f9f08ac831805e9054c640be75393c234ce80ba9770c4da2040be7e915c",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.PolynomialSource",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.DecodedView",
+        "ZiskFv.AirsClean.Mem.SourceFinalizerEquation"
+      ],
+      "new_phase_dependencies": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.PolynomialSource",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.DecodedView"
+      ]
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.DecodedConstructibility",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/DecodedConstructibility.lean",
+      "sha256": "9544a0352f99d95ef246350c5be1f85213f14130f0a91ef10661303d02b9f134",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.DecodedView",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceImage"
+      ],
+      "new_phase_dependencies": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.DecodedView"
+      ]
+    }
+  ],
+  "ordinary_narrow_full_raw_trust_nix_gates_run": false,
+  "old243_496_rerun_or_relabelled_current": false,
+  "scope": "canonical raw-first packed/unpacked stage1 plus generic physical model and privately computed structural AIR/GROUP decoding correspondence only",
+  "for_every_old_CompleteView": "polynomial data construction and canonical13 stage1 reads at arbitrary signed rotations; no fake typed AIR/GROUP totality claim",
+  "for_every_new_DecodedView": "c24..33 typed evaluator/model correspondence, every Ext3 coefficient; profile computed from SAME CompleteView/setup/Params",
+  "known_empty_map_counterexample": "oldCompleteView checks raw nativeGROUP/direct buffers+geometry/cm2/challenges but NOT ordered AIR/GROUP maps; these maps can be empty while those old checks remain unchanged, and metadata typedAIR/GROUP readers return None",
+  "source_initialized_fields": {
+    "AIR_GROUP": "name+stage only; ordered index/prefix source code; no stageId/dim/stagePos check",
+    "challenge": "stage/name/dim/stageId are initialized and existing exact reader retained"
+  },
+  "source_citations": {
+    "stark_info.cpp": "ff0e103-110,125-150",
+    "expressions_info.cpp": "ff0e525-532,545-565"
+  },
+  "independent_pins": "normal SourceSchema Mem stage1 scalar roster and names/indices, stage2 im_direct/group symbols; source native declaration types, scalar/direct/GROUP addresses and Ext3 width",
+  "old_private_helper_migration": "witness_from_unpacked and exclusively dead helper chain removed; valid for OLD raw-word decoder, invalid for arbitrarywrongprofile AFTER canonical semantics; no kernel contradiction/upstream bug",
+  "protected_changes": false,
+  "chosen_AirWitness_values_buffers_all34_fullcoeff_changed": false,
+  "single_Main_scope_328_changed": false,
+  "remaining_required_Lean_laws": [
+    "compiled operand r.id selects exact PIL flattened source symbol id and actual ordered native map entry; r.dim/extension word width match actual compiled source operand",
+    "actual source-native pointer/ABI/layout/offset/rotation agreement and exact same-source equality of materialized input witness to SourceObject projections",
+    "production decode-domain/totality for required packed/unpacked formats and all relevant existing-scope senders; no hidden unsupported-format carve-out or new root parse-success premise",
+    "source-derived component/table/provider composition under existing numerical balance TCB only"
+  ],
+  "external_boundary_only": "actual executed compiled binary/commit identity; DOES NOT waive required same-source/PILr.id/ABI/input-witness equalities",
+  "mcp_context": {
+    "project": "/home/cody/zisk-fv-mem-ten-main452",
+    "LEAN_PATH": "/home/cody/zisk-fv-closure-extractor/build/mem-physical-source/logical-ci/lean",
+    "max_open": 1,
+    "lean_threads": 2,
+    "prewarm": false,
+    "purpose": "semantic source navigation/types/references on existing checked read-only dependencies; raw actual outputs retained, not changed-context proof acceptance"
+  }
+}

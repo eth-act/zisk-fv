@@ -964,3 +964,46 @@ ordinary acceptance gates; the latter remain the integration owner's work.
 The exact non-applied protected type/domain proposal is
 `docs/extraction/mem-source-carrier-held-proposal.txt`. All protected edits
 remain HELD; additive feasibility is not approval and #371 remains open.
+
+### New internal generic polynomial and packed-reader source phase
+
+The separate `closure/mem-generic-packed452` branch leaves the six/ten port
+commit references immutable. It changes the internal stage1 `Stage2.witness?`
+branch to the sole canonical `NativeTraceCells` Mem raw-bit getter after the
+actual signed source rotation, with field conversion only after raw decoding.
+`Stage2.witness_stage1_source` (from PackedSource) targets every CompleteView,
+all13 columns and arbitrary rotations in both storage modes. Stage2 remains
+the actual existing metadata/auxiliary reader. The chosen AirWitness data and
+all34-clause target are unchanged; its old private `witness_from_unpacked`
+proof chain is retired in favor of that generic canonical theorem.
+The retired helper was valid for the OLD raw-word decoder, not arbitrary
+wrong-profile inputs under NEW canonical semantics; this is not a kernel
+contradiction or upstream defect.
+
+`CompleteView.polynomialRow` now assembles the independent polynomial data for
+EVERY old CompleteView, preserving all3 coefficients, genuine cyclic previous
+running value, next L1, GROUP0, direct6 and raw scalar AIR15. Those fifteen raw
+fields exist as a consequence of the already selected original direct buffer,
+not a new height/range/capacity premise. Old CompleteView geometry does NOT
+check ordered AIR/GROUP maps: erasing those maps leaves its raw storage and
+geometry checks intact while typed `airValue?`/`groupValue?` return None.
+No false every-old-view typed-evaluator theorem is asserted.
+
+New privately computed `DecodedView` checks the SAME authoritative setup's
+ordered AIR stages/prefix offsets and GROUP0 stage. Independent normal PIL
+scalar/extension rosters and native declaration/address pins justify expected
+layout; unused AIR-map names and uninitialized AIR/GROUP stageId/dim/stagePos
+are not constrained. Actual source `stark_info.cpp`125–150 initializes only
+name/stage there; challenge stageId/dim are real fields at103–110.
+`PolynomialCorrespondence` supplies c24–33 evaluator/model and every-coordinate
+contracts on this computed refinement, not a caller Holds/coherence premise.
+`DecodedConstructibility` targets existence on the unchanged chosen source.
+
+This is SOURCE ONLY pending fresh affected-context narrow/FULL acceptance
+checks, not reuse of old243/496 evidence as current verification. Actual source
+PILr.id/r.dim, same-source pointer/ABI/input-witness equality and production
+decode-domain totality remain required Lean obligations before protected
+adoption. External intended compiled-binary/commit identity is separate and
+does not waive those equalities. Single-Main scope is unchanged (#328 is not
+activated), and no other relevant bus sender may be dropped. All protected
+Valid/Component/Table/Accepted/Root interfaces remain held; #371 stays open.

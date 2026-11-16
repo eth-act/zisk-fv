@@ -1,0 +1,139 @@
+{
+  "context": {
+    "project": "/home/cody/zisk-fv-mem-ten-main452",
+    "env": {
+      "LEAN_PROJECT_PATH": "/home/cody/zisk-fv-mem-ten-main452",
+      "LEAN_PATH": "/home/cody/zisk-fv-closure-extractor/build/mem-physical-source/logical-ci/lean",
+      "LEAN_LSP_MAX_OPEN_FILES": "1",
+      "LEAN_NUM_THREADS": "2",
+      "LEAN_MCP_PREWARM_FILES": ""
+    }
+  },
+  "reference_tools": [
+    {
+      "name": "lean_references",
+      "input_schema": {
+        "properties": {
+          "file_path": {
+            "description": "Absolute path to Lean file",
+            "title": "File Path",
+            "type": "string"
+          },
+          "line": {
+            "description": "Line number (1-indexed)",
+            "minimum": 1,
+            "title": "Line",
+            "type": "integer"
+          },
+          "column": {
+            "description": "Column at START of identifier (1-indexed)",
+            "minimum": 1,
+            "title": "Column",
+            "type": "integer"
+          },
+          "max_results": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 50,
+            "description": "Max locations to return (default 50)",
+            "title": "Max Results"
+          }
+        },
+        "required": [
+          "file_path",
+          "line",
+          "column"
+        ],
+        "type": "object",
+        "title": "referencesArguments"
+      }
+    }
+  ],
+  "results": [
+    {
+      "tool": "lean_hover_info",
+      "args": {
+        "file_path": "ZiskFv/AirsClean/Mem/PhysicalSource/CompleteView.lean",
+        "line": 270,
+        "column": 9
+      },
+      "result": {
+        "meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"symbol\": \"scalar_source\",\n  \"info\": \"ZiskFv.AirsClean.Mem.PhysicalSource.CompleteView.scalar_source {source : SourceObject (Fin 18446744069414584321)}\\n  {resolved : ResolvedOccurrence source} (view : CompleteView resolved) (row : view.Index) (column : Fin 13) :\\n  NativeTraceCells.cell? NativeTraceCells.Kind.mem resolved false \u2191row \u2191column = some (view.scalar row column)\",\n  \"diagnostics\": []\n}",
+            "annotations": null,
+            "meta": null
+          }
+        ],
+        "structured_content": {
+          "symbol": "scalar_source",
+          "info": "ZiskFv.AirsClean.Mem.PhysicalSource.CompleteView.scalar_source {source : SourceObject (Fin 18446744069414584321)}\n  {resolved : ResolvedOccurrence source} (view : CompleteView resolved) (row : view.Index) (column : Fin 13) :\n  NativeTraceCells.cell? NativeTraceCells.Kind.mem resolved false \u2191row \u2191column = some (view.scalar row column)",
+          "diagnostics": []
+        },
+        "is_error": false,
+        "result_type": "complete"
+      }
+    },
+    {
+      "tool": "lean_hover_info",
+      "args": {
+        "file_path": "ZiskFv/AirsClean/Mem/PhysicalSource/Rotation.lean",
+        "line": 23,
+        "column": 9
+      },
+      "result": {
+        "meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"symbol\": \"native_rotation\",\n  \"info\": \"ZiskFv.AirsClean.Mem.PhysicalSource.View.native_rotation {source : SourceObject (Fin 18446744069414584321)}\\n  {resolved : ResolvedOccurrence source} (view : View resolved) (row : view.Index) (rotation : \u2124) :\\n  view.setup.baseRow? (\u2191row) rotation = some \u2191(view.rotate row rotation)\",\n  \"diagnostics\": []\n}",
+            "annotations": null,
+            "meta": null
+          }
+        ],
+        "structured_content": {
+          "symbol": "native_rotation",
+          "info": "ZiskFv.AirsClean.Mem.PhysicalSource.View.native_rotation {source : SourceObject (Fin 18446744069414584321)}\n  {resolved : ResolvedOccurrence source} (view : View resolved) (row : view.Index) (rotation : \u2124) :\n  view.setup.baseRow? (\u2191row) rotation = some \u2191(view.rotate row rotation)",
+          "diagnostics": []
+        },
+        "is_error": false,
+        "result_type": "complete"
+      }
+    },
+    {
+      "tool": "lean_hover_info",
+      "args": {
+        "file_path": "ZiskFv/AirsClean/NativeTraceCells.lean",
+        "line": 225,
+        "column": 9
+      },
+      "result": {
+        "meta": null,
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"symbol\": \"field_after_raw\",\n  \"info\": \"ZiskFv.AirsClean.NativeTraceCells.field_after_raw {source : SourceObject (Fin 18446744069414584321)} (kind : Kind)\\n  (resolved : ResolvedOccurrence source) (mode : Bool) (row column : \u2115) :\\n  cell? kind resolved mode row column =\\n    Option.map RawSource.NativeTraceWords.unpackedField (rawCell? kind resolved mode row column)\",\n  \"diagnostics\": []\n}",
+            "annotations": null,
+            "meta": null
+          }
+        ],
+        "structured_content": {
+          "symbol": "field_after_raw",
+          "info": "ZiskFv.AirsClean.NativeTraceCells.field_after_raw {source : SourceObject (Fin 18446744069414584321)} (kind : Kind)\n  (resolved : ResolvedOccurrence source) (mode : Bool) (row column : \u2115) :\n  cell? kind resolved mode row column =\n    Option.map RawSource.NativeTraceWords.unpackedField (rawCell? kind resolved mode row column)",
+          "diagnostics": []
+        },
+        "is_error": false,
+        "result_type": "complete"
+      }
+    }
+  ]
+}

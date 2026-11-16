@@ -1,0 +1,1039 @@
+[
+  {
+    "tool_schema": "lean_references",
+    "schema": {
+      "properties": {
+        "file_path": {
+          "description": "Absolute path to Lean file",
+          "title": "File Path",
+          "type": "string"
+        },
+        "line": {
+          "description": "Line number (1-indexed)",
+          "minimum": 1,
+          "title": "Line",
+          "type": "integer"
+        },
+        "column": {
+          "description": "Column at START of identifier (1-indexed)",
+          "minimum": 1,
+          "title": "Column",
+          "type": "integer"
+        },
+        "max_results": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": 50,
+          "description": "Max locations to return (default 50)",
+          "title": "Max Results"
+        }
+      },
+      "required": [
+        "file_path",
+        "line",
+        "column"
+      ],
+      "type": "object",
+      "title": "referencesArguments"
+    }
+  },
+  {
+    "file": "PhysicalSource/CompleteView.lean",
+    "result": {
+      "meta": null,
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"imports\": [\n    \"ZiskFv.AirsClean.Mem.PhysicalSource.Rotation\",\n    \"ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection\",\n    \"ZiskFv.AirsClean.Mem.Stage2.Native\"\n  ],\n  \"declarations\": [\n    {\n      \"name\": \"auxiliaryEntry?\",\n      \"kind\": \"Def\",\n      \"start_line\": 20,\n      \"end_line\": 20,\n      \"type_signature\": \"(setup : NativeSetup) (column : Nat) : Option (Nat \u00d7 PolMap)\"\n    },\n    {\n      \"name\": \"auxiliaryEntry_selected\",\n      \"kind\": \"Thm\",\n      \"start_line\": 25,\n      \"end_line\": 25,\n      \"type_signature\": \"(setup : NativeSetup) (column : Nat) (entry : Nat \u00d7 PolMap) (selected : auxiliaryEntry? setup column = some entry) : Stage2.witnessMapId? setup 2 column = some entry.1 \u2227 setup.cmPolsMap[entry.1]? = some entry.2\"\n    },\n    {\n      \"name\": \"auxiliaryGeometry\",\n      \"kind\": \"Def\",\n      \"start_line\": 40,\n      \"end_line\": 40,\n      \"type_signature\": \"(view : View resolved) (entries : Vector (Nat \u00d7 PolMap) 3) : Prop\"\n    },\n    {\n      \"name\": \"CompleteView\",\n      \"kind\": \"Struct\",\n      \"start_line\": 53,\n      \"end_line\": 53,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source)\"\n    },\n    {\n      \"name\": \"completeFromResolved?\",\n      \"kind\": \"Def\",\n      \"start_line\": 67,\n      \"end_line\": 67,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) : Option (CompleteView resolved)\"\n    },\n    {\n      \"name\": \"auxiliary_width\",\n      \"kind\": \"Thm\",\n      \"start_line\": 101,\n      \"end_line\": 101,\n      \"type_signature\": \"(view : CompleteView resolved) : view.base.setup.mapSectionsN[\\\"cm2\\\"]? = some 9\"\n    },\n    {\n      \"name\": \"auxiliary_offset\",\n      \"kind\": \"Thm\",\n      \"start_line\": 104,\n      \"end_line\": 104,\n      \"type_signature\": \"(view : CompleteView resolved) : view.base.setup.mapOffsets[(\\\"cm2\\\", false)]? = some (13 * view.base.count)\"\n    },\n    {\n      \"name\": \"auxiliary_coverage\",\n      \"kind\": \"Thm\",\n      \"start_line\": 108,\n      \"end_line\": 108,\n      \"type_signature\": \"(view : CompleteView resolved) : 22 * view.base.count \u2264 resolved.slotData.auxTrace.size\"\n    },\n    {\n      \"name\": \"mapId\",\n      \"kind\": \"Def\",\n      \"start_line\": 111,\n      \"end_line\": 111,\n      \"type_signature\": \"(view : CompleteView resolved) (column : Fin 3) : Nat\"\n    },\n    {\n      \"name\": \"mapEntry\",\n      \"kind\": \"Def\",\n      \"start_line\": 113,\n      \"end_line\": 113,\n      \"type_signature\": \"(view : CompleteView resolved) (column : Fin 3) : PolMap\"\n    },\n    {\n      \"name\": \"selected_map\",\n      \"kind\": \"Thm\",\n      \"start_line\": 115,\n      \"end_line\": 115,\n      \"type_signature\": \"(view : CompleteView resolved) (column : Fin 3) : Stage2.witnessMapId? view.base.setup 2 column.val = some (view.mapId column) \u2227 view.base.setup.cmPolsMap[view.mapId column]? = some (view.mapEntry column) \u2227 (view.mapEntry column).stage = 2 \u2227 (view.mapEntry column).dim = 3 \u2227 (view.mapEntry column).stagePos = 3 * column.val\"\n    },\n    {\n      \"name\": \"auxiliary_nonempty\",\n      \"kind\": \"Thm\",\n      \"start_line\": 123,\n      \"end_line\": 123,\n      \"type_signature\": \"(view : CompleteView resolved) : resolved.slotData.auxTrace.isEmpty = false\"\n    },\n    {\n      \"name\": \"same_auxiliary_buffer\",\n      \"kind\": \"Thm\",\n      \"start_line\": 132,\n      \"end_line\": 132,\n      \"type_signature\": \"(view : CompleteView resolved) : (resolved.params false).auxTrace = some resolved.slotData.auxTrace\"\n    },\n    {\n      \"name\": \"auxiliaryAddress\",\n      \"kind\": \"Def\",\n      \"start_line\": 138,\n      \"end_line\": 138,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) (column : Fin 3) (rotation : Int) (coordinate : Fin 3) : Fin resolved.slotData.auxTrace.size\"\n    },\n    {\n      \"name\": \"auxiliary\",\n      \"kind\": \"Def\",\n      \"start_line\": 149,\n      \"end_line\": 149,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) (column : Fin 3) (rotation : Int) : Stage2.Ext3 FGL\"\n    },\n    {\n      \"name\": \"auxiliary_coeff\",\n      \"kind\": \"Thm\",\n      \"start_line\": 155,\n      \"end_line\": 155,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) (column : Fin 3) (rotation : Int) (coordinate : Fin 3) : (view.auxiliary row column rotation).coeff coordinate = resolved.slotData.auxTrace[view.auxiliaryAddress row column rotation coordinate]\"\n    },\n    {\n      \"name\": \"extension_read_at\",\n      \"kind\": \"Thm\",\n      \"start_line\": 161,\n      \"end_line\": 161,\n      \"type_signature\": \"(params : Params FGL) (values : Array FGL) (offset : Nat) (selected : params.auxTrace = some values) (bound : offset + 3 \u2264 values.size) : Stage2.extensionWords? (readBlock? params .auxTrace offset 3) = some (\u27e8values[offset], values[offset + 1], values[offset + 2]\u27e9 : Stage2.Ext3 FGL)\"\n    },\n    {\n      \"name\": \"auxiliary_source\",\n      \"kind\": \"Thm\",\n      \"start_line\": 173,\n      \"end_line\": 173,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) (column : Fin 3) (rotation : Int) : Stage2.witness? resolved row.val 2 column.val rotation = some (view.auxiliary row column rotation)\"\n    },\n    {\n      \"name\": \"auxiliary_coefficient_source\",\n      \"kind\": \"Thm\",\n      \"start_line\": 204,\n      \"end_line\": 204,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) (column : Fin 3) (rotation : Int) (coordinate : Fin 3) : (Stage2.witness? resolved row.val 2 column.val rotation).map (fun value => value.coeff coordinate) = some resolved.slotData.auxTrace[view.auxiliaryAddress row column rotation coordinate]\"\n    },\n    {\n      \"name\": \"auxiliary_generic_source\",\n      \"kind\": \"Thm\",\n      \"start_line\": 213,\n      \"end_line\": 213,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) (column : Fin 3) (rotation : Int) : Stage2.extensionWords? (resolved.cmAuxWords? false (view.mapId column) row.val rotation) = some (view.auxiliary row column rotation)\"\n    },\n    {\n      \"name\": \"challenge\",\n      \"kind\": \"Def\",\n      \"start_line\": 232,\n      \"end_line\": 232,\n      \"type_signature\": \"(view : CompleteView resolved) (index : Fin 2) : Stage2.Ext3 FGL\"\n    },\n    {\n      \"name\": \"challenge_source\",\n      \"kind\": \"Thm\",\n      \"start_line\": 235,\n      \"end_line\": 235,\n      \"type_signature\": \"(view : CompleteView resolved) (index : Fin 2) : Stage2.challenge? resolved 2 index.val = some (view.challenge index)\"\n    },\n    {\n      \"name\": \"challenge_coeff_source\",\n      \"kind\": \"Thm\",\n      \"start_line\": 241,\n      \"end_line\": 241,\n      \"type_signature\": \"(view : CompleteView resolved) (index : Fin 2) (coordinate : Fin 3) : (Stage2.challenge? resolved 2 index.val).map (fun value => value.coeff coordinate) = some ((view.challenge index).coeff coordinate)\"\n    },\n    {\n      \"name\": \"stage1\",\n      \"kind\": \"Def\",\n      \"start_line\": 248,\n      \"end_line\": 248,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) : Vector FGL 13\"\n    },\n    {\n      \"name\": \"scalar\",\n      \"kind\": \"Def\",\n      \"start_line\": 253,\n      \"end_line\": 253,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) (column : Fin 13) : FGL\"\n    },\n    {\n      \"name\": \"scalar_checked\",\n      \"kind\": \"Thm\",\n      \"start_line\": 260,\n      \"end_line\": 260,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) (column : Fin 13) : (NativeProjection.sharedRow view.base row).cell? column.val = some (view.scalar row column)\"\n    },\n    {\n      \"name\": \"scalar_source\",\n      \"kind\": \"Thm\",\n      \"start_line\": 270,\n      \"end_line\": 270,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) (column : Fin 13) : ZiskFv.AirsClean.NativeTraceCells.cell? .mem resolved false row.val column.val = some (view.scalar row column)\"\n    },\n    {\n      \"name\": \"scalar_is_logicalRow\",\n      \"kind\": \"Thm\",\n      \"start_line\": 276,\n      \"end_line\": 276,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) (column : Fin 13) : view.scalar row column = (view.stage1 row)[column]\"\n    },\n    {\n      \"name\": \"group\",\n      \"kind\": \"Def\",\n      \"start_line\": 281,\n      \"end_line\": 281,\n      \"type_signature\": \"(view : CompleteView resolved) : Stage2.Ext3 FGL\"\n    },\n    {\n      \"name\": \"direct\",\n      \"kind\": \"Def\",\n      \"start_line\": 283,\n      \"end_line\": 283,\n      \"type_signature\": \"(view : CompleteView resolved) (index : Fin 6) : Stage2.Ext3 FGL\"\n    },\n    {\n      \"name\": \"l1\",\n      \"kind\": \"Def\",\n      \"start_line\": 285,\n      \"end_line\": 285,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) : FGL\"\n    },\n    {\n      \"name\": \"l1_source\",\n      \"kind\": \"Thm\",\n      \"start_line\": 291,\n      \"end_line\": 291,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) : view.base.l1? row = some (view.l1 row)\"\n    },\n    {\n      \"name\": \"same_source\",\n      \"kind\": \"Thm\",\n      \"start_line\": 295,\n      \"end_line\": 295,\n      \"type_signature\": \"(view : CompleteView resolved) : (resolved.params false).trace = resolved.slotData.trace \u2227 (resolved.params false).auxTrace = some resolved.slotData.auxTrace \u2227 (resolved.params false).challenges = source.globals.challenges \u2227 (resolved.params false).airgroupValues = resolved.slotData.airgroupValues \u2227 (resolved.params false).airvalues = resolved.slotData.airvalues\"\n    }\n  ]\n}",
+          "annotations": null,
+          "meta": null
+        }
+      ],
+      "structured_content": {
+        "imports": [
+          "ZiskFv.AirsClean.Mem.PhysicalSource.Rotation",
+          "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection",
+          "ZiskFv.AirsClean.Mem.Stage2.Native"
+        ],
+        "declarations": [
+          {
+            "name": "auxiliaryEntry?",
+            "kind": "Def",
+            "start_line": 20,
+            "end_line": 20,
+            "type_signature": "(setup : NativeSetup) (column : Nat) : Option (Nat \u00d7 PolMap)"
+          },
+          {
+            "name": "auxiliaryEntry_selected",
+            "kind": "Thm",
+            "start_line": 25,
+            "end_line": 25,
+            "type_signature": "(setup : NativeSetup) (column : Nat) (entry : Nat \u00d7 PolMap) (selected : auxiliaryEntry? setup column = some entry) : Stage2.witnessMapId? setup 2 column = some entry.1 \u2227 setup.cmPolsMap[entry.1]? = some entry.2"
+          },
+          {
+            "name": "auxiliaryGeometry",
+            "kind": "Def",
+            "start_line": 40,
+            "end_line": 40,
+            "type_signature": "(view : View resolved) (entries : Vector (Nat \u00d7 PolMap) 3) : Prop"
+          },
+          {
+            "name": "CompleteView",
+            "kind": "Struct",
+            "start_line": 53,
+            "end_line": 53,
+            "type_signature": "(resolved : ResolvedOccurrence source)"
+          },
+          {
+            "name": "completeFromResolved?",
+            "kind": "Def",
+            "start_line": 67,
+            "end_line": 67,
+            "type_signature": "(resolved : ResolvedOccurrence source) : Option (CompleteView resolved)"
+          },
+          {
+            "name": "auxiliary_width",
+            "kind": "Thm",
+            "start_line": 101,
+            "end_line": 101,
+            "type_signature": "(view : CompleteView resolved) : view.base.setup.mapSectionsN[\"cm2\"]? = some 9"
+          },
+          {
+            "name": "auxiliary_offset",
+            "kind": "Thm",
+            "start_line": 104,
+            "end_line": 104,
+            "type_signature": "(view : CompleteView resolved) : view.base.setup.mapOffsets[(\"cm2\", false)]? = some (13 * view.base.count)"
+          },
+          {
+            "name": "auxiliary_coverage",
+            "kind": "Thm",
+            "start_line": 108,
+            "end_line": 108,
+            "type_signature": "(view : CompleteView resolved) : 22 * view.base.count \u2264 resolved.slotData.auxTrace.size"
+          },
+          {
+            "name": "mapId",
+            "kind": "Def",
+            "start_line": 111,
+            "end_line": 111,
+            "type_signature": "(view : CompleteView resolved) (column : Fin 3) : Nat"
+          },
+          {
+            "name": "mapEntry",
+            "kind": "Def",
+            "start_line": 113,
+            "end_line": 113,
+            "type_signature": "(view : CompleteView resolved) (column : Fin 3) : PolMap"
+          },
+          {
+            "name": "selected_map",
+            "kind": "Thm",
+            "start_line": 115,
+            "end_line": 115,
+            "type_signature": "(view : CompleteView resolved) (column : Fin 3) : Stage2.witnessMapId? view.base.setup 2 column.val = some (view.mapId column) \u2227 view.base.setup.cmPolsMap[view.mapId column]? = some (view.mapEntry column) \u2227 (view.mapEntry column).stage = 2 \u2227 (view.mapEntry column).dim = 3 \u2227 (view.mapEntry column).stagePos = 3 * column.val"
+          },
+          {
+            "name": "auxiliary_nonempty",
+            "kind": "Thm",
+            "start_line": 123,
+            "end_line": 123,
+            "type_signature": "(view : CompleteView resolved) : resolved.slotData.auxTrace.isEmpty = false"
+          },
+          {
+            "name": "same_auxiliary_buffer",
+            "kind": "Thm",
+            "start_line": 132,
+            "end_line": 132,
+            "type_signature": "(view : CompleteView resolved) : (resolved.params false).auxTrace = some resolved.slotData.auxTrace"
+          },
+          {
+            "name": "auxiliaryAddress",
+            "kind": "Def",
+            "start_line": 138,
+            "end_line": 138,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) (column : Fin 3) (rotation : Int) (coordinate : Fin 3) : Fin resolved.slotData.auxTrace.size"
+          },
+          {
+            "name": "auxiliary",
+            "kind": "Def",
+            "start_line": 149,
+            "end_line": 149,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) (column : Fin 3) (rotation : Int) : Stage2.Ext3 FGL"
+          },
+          {
+            "name": "auxiliary_coeff",
+            "kind": "Thm",
+            "start_line": 155,
+            "end_line": 155,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) (column : Fin 3) (rotation : Int) (coordinate : Fin 3) : (view.auxiliary row column rotation).coeff coordinate = resolved.slotData.auxTrace[view.auxiliaryAddress row column rotation coordinate]"
+          },
+          {
+            "name": "extension_read_at",
+            "kind": "Thm",
+            "start_line": 161,
+            "end_line": 161,
+            "type_signature": "(params : Params FGL) (values : Array FGL) (offset : Nat) (selected : params.auxTrace = some values) (bound : offset + 3 \u2264 values.size) : Stage2.extensionWords? (readBlock? params .auxTrace offset 3) = some (\u27e8values[offset], values[offset + 1], values[offset + 2]\u27e9 : Stage2.Ext3 FGL)"
+          },
+          {
+            "name": "auxiliary_source",
+            "kind": "Thm",
+            "start_line": 173,
+            "end_line": 173,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) (column : Fin 3) (rotation : Int) : Stage2.witness? resolved row.val 2 column.val rotation = some (view.auxiliary row column rotation)"
+          },
+          {
+            "name": "auxiliary_coefficient_source",
+            "kind": "Thm",
+            "start_line": 204,
+            "end_line": 204,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) (column : Fin 3) (rotation : Int) (coordinate : Fin 3) : (Stage2.witness? resolved row.val 2 column.val rotation).map (fun value => value.coeff coordinate) = some resolved.slotData.auxTrace[view.auxiliaryAddress row column rotation coordinate]"
+          },
+          {
+            "name": "auxiliary_generic_source",
+            "kind": "Thm",
+            "start_line": 213,
+            "end_line": 213,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) (column : Fin 3) (rotation : Int) : Stage2.extensionWords? (resolved.cmAuxWords? false (view.mapId column) row.val rotation) = some (view.auxiliary row column rotation)"
+          },
+          {
+            "name": "challenge",
+            "kind": "Def",
+            "start_line": 232,
+            "end_line": 232,
+            "type_signature": "(view : CompleteView resolved) (index : Fin 2) : Stage2.Ext3 FGL"
+          },
+          {
+            "name": "challenge_source",
+            "kind": "Thm",
+            "start_line": 235,
+            "end_line": 235,
+            "type_signature": "(view : CompleteView resolved) (index : Fin 2) : Stage2.challenge? resolved 2 index.val = some (view.challenge index)"
+          },
+          {
+            "name": "challenge_coeff_source",
+            "kind": "Thm",
+            "start_line": 241,
+            "end_line": 241,
+            "type_signature": "(view : CompleteView resolved) (index : Fin 2) (coordinate : Fin 3) : (Stage2.challenge? resolved 2 index.val).map (fun value => value.coeff coordinate) = some ((view.challenge index).coeff coordinate)"
+          },
+          {
+            "name": "stage1",
+            "kind": "Def",
+            "start_line": 248,
+            "end_line": 248,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) : Vector FGL 13"
+          },
+          {
+            "name": "scalar",
+            "kind": "Def",
+            "start_line": 253,
+            "end_line": 253,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) (column : Fin 13) : FGL"
+          },
+          {
+            "name": "scalar_checked",
+            "kind": "Thm",
+            "start_line": 260,
+            "end_line": 260,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) (column : Fin 13) : (NativeProjection.sharedRow view.base row).cell? column.val = some (view.scalar row column)"
+          },
+          {
+            "name": "scalar_source",
+            "kind": "Thm",
+            "start_line": 270,
+            "end_line": 270,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) (column : Fin 13) : ZiskFv.AirsClean.NativeTraceCells.cell? .mem resolved false row.val column.val = some (view.scalar row column)"
+          },
+          {
+            "name": "scalar_is_logicalRow",
+            "kind": "Thm",
+            "start_line": 276,
+            "end_line": 276,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) (column : Fin 13) : view.scalar row column = (view.stage1 row)[column]"
+          },
+          {
+            "name": "group",
+            "kind": "Def",
+            "start_line": 281,
+            "end_line": 281,
+            "type_signature": "(view : CompleteView resolved) : Stage2.Ext3 FGL"
+          },
+          {
+            "name": "direct",
+            "kind": "Def",
+            "start_line": 283,
+            "end_line": 283,
+            "type_signature": "(view : CompleteView resolved) (index : Fin 6) : Stage2.Ext3 FGL"
+          },
+          {
+            "name": "l1",
+            "kind": "Def",
+            "start_line": 285,
+            "end_line": 285,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) : FGL"
+          },
+          {
+            "name": "l1_source",
+            "kind": "Thm",
+            "start_line": 291,
+            "end_line": 291,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) : view.base.l1? row = some (view.l1 row)"
+          },
+          {
+            "name": "same_source",
+            "kind": "Thm",
+            "start_line": 295,
+            "end_line": 295,
+            "type_signature": "(view : CompleteView resolved) : (resolved.params false).trace = resolved.slotData.trace \u2227 (resolved.params false).auxTrace = some resolved.slotData.auxTrace \u2227 (resolved.params false).challenges = source.globals.challenges \u2227 (resolved.params false).airgroupValues = resolved.slotData.airgroupValues \u2227 (resolved.params false).airvalues = resolved.slotData.airvalues"
+          }
+        ]
+      },
+      "is_error": false,
+      "result_type": "complete"
+    }
+  },
+  {
+    "file": "Stage2/PolynomialRow.lean",
+    "result": {
+      "meta": null,
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"imports\": [\n    \"ZiskFv.AirsClean.Mem.Stage2.Cubic\",\n    \"ZiskFv.Field.Goldilocks\"\n  ],\n  \"declarations\": [\n    {\n      \"name\": \"ZiskFv.AirsClean.Mem.Stage2\",\n      \"kind\": \"Ns\",\n      \"start_line\": 9,\n      \"end_line\": 160\n    },\n    {\n      \"name\": \"PolynomialRow\",\n      \"kind\": \"Struct\",\n      \"start_line\": 12,\n      \"end_line\": 51\n    },\n    {\n      \"name\": \"PolynomialRow\",\n      \"kind\": \"Ns\",\n      \"start_line\": 53,\n      \"end_line\": 159\n    },\n    {\n      \"name\": \"b\",\n      \"kind\": \"Def\",\n      \"start_line\": 54,\n      \"end_line\": 54\n    },\n    {\n      \"name\": \"highDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 56,\n      \"end_line\": 57,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"highDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 57,\n      \"end_line\": 57,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"dualStepDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 58,\n      \"end_line\": 58,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"lowDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 59,\n      \"end_line\": 59,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"primaryDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 61,\n      \"end_line\": 63,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"dualDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 65,\n      \"end_line\": 67,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"previousDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 69,\n      \"end_line\": 72,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"nextDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 74,\n      \"end_line\": 77,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"residual24\",\n      \"kind\": \"Def\",\n      \"start_line\": 79,\n      \"end_line\": 81,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual25\",\n      \"kind\": \"Def\",\n      \"start_line\": 82,\n      \"end_line\": 84,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual26\",\n      \"kind\": \"Def\",\n      \"start_line\": 85,\n      \"end_line\": 86,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual27\",\n      \"kind\": \"Def\",\n      \"start_line\": 87,\n      \"end_line\": 87,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual28\",\n      \"kind\": \"Def\",\n      \"start_line\": 88,\n      \"end_line\": 88,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual29\",\n      \"kind\": \"Def\",\n      \"start_line\": 89,\n      \"end_line\": 89,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual30\",\n      \"kind\": \"Def\",\n      \"start_line\": 90,\n      \"end_line\": 90,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual31\",\n      \"kind\": \"Def\",\n      \"start_line\": 91,\n      \"end_line\": 91,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual32\",\n      \"kind\": \"Def\",\n      \"start_line\": 92,\n      \"end_line\": 92,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual\",\n      \"kind\": \"Def\",\n      \"start_line\": 94,\n      \"end_line\": 104,\n      \"type_signature\": \"(r : PolynomialRow) (equation : Fin 9) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"directSum\",\n      \"kind\": \"Def\",\n      \"start_line\": 106,\n      \"end_line\": 107,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual33\",\n      \"kind\": \"Def\",\n      \"start_line\": 109,\n      \"end_line\": 110,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"Circuit\",\n      \"kind\": \"Def\",\n      \"start_line\": 112,\n      \"end_line\": 115,\n      \"type_signature\": \"(r : PolynomialRow) : Prop\"\n    },\n    {\n      \"name\": \"WithFinalizer\",\n      \"kind\": \"Def\",\n      \"start_line\": 117,\n      \"end_line\": 117,\n      \"type_signature\": \"(r : PolynomialRow) : Prop\"\n    },\n    {\n      \"name\": \"constructed\",\n      \"kind\": \"Def\",\n      \"start_line\": 119,\n      \"end_line\": 138,\n      \"type_signature\": \": PolynomialRow\"\n    },\n    {\n      \"name\": \"constructed\",\n      \"kind\": \"Def\",\n      \"start_line\": 122,\n      \"end_line\": 122,\n      \"type_signature\": \": PolynomialRow\"\n    },\n    {\n      \"name\": \"constructed_satisfies\",\n      \"kind\": \"Thm\",\n      \"start_line\": 140,\n      \"end_line\": 157,\n      \"type_signature\": \": constructed.WithFinalizer\"\n    }\n  ]\n}",
+          "annotations": null,
+          "meta": null
+        }
+      ],
+      "structured_content": {
+        "imports": [
+          "ZiskFv.AirsClean.Mem.Stage2.Cubic",
+          "ZiskFv.Field.Goldilocks"
+        ],
+        "declarations": [
+          {
+            "name": "ZiskFv.AirsClean.Mem.Stage2",
+            "kind": "Ns",
+            "start_line": 9,
+            "end_line": 160
+          },
+          {
+            "name": "PolynomialRow",
+            "kind": "Struct",
+            "start_line": 12,
+            "end_line": 51
+          },
+          {
+            "name": "PolynomialRow",
+            "kind": "Ns",
+            "start_line": 53,
+            "end_line": 159
+          },
+          {
+            "name": "b",
+            "kind": "Def",
+            "start_line": 54,
+            "end_line": 54
+          },
+          {
+            "name": "highDen",
+            "kind": "Def",
+            "start_line": 56,
+            "end_line": 57,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "highDen",
+            "kind": "Def",
+            "start_line": 57,
+            "end_line": 57,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "dualStepDen",
+            "kind": "Def",
+            "start_line": 58,
+            "end_line": 58,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "lowDen",
+            "kind": "Def",
+            "start_line": 59,
+            "end_line": 59,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "primaryDen",
+            "kind": "Def",
+            "start_line": 61,
+            "end_line": 63,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "dualDen",
+            "kind": "Def",
+            "start_line": 65,
+            "end_line": 67,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "previousDen",
+            "kind": "Def",
+            "start_line": 69,
+            "end_line": 72,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "nextDen",
+            "kind": "Def",
+            "start_line": 74,
+            "end_line": 77,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "residual24",
+            "kind": "Def",
+            "start_line": 79,
+            "end_line": 81,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual25",
+            "kind": "Def",
+            "start_line": 82,
+            "end_line": 84,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual26",
+            "kind": "Def",
+            "start_line": 85,
+            "end_line": 86,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual27",
+            "kind": "Def",
+            "start_line": 87,
+            "end_line": 87,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual28",
+            "kind": "Def",
+            "start_line": 88,
+            "end_line": 88,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual29",
+            "kind": "Def",
+            "start_line": 89,
+            "end_line": 89,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual30",
+            "kind": "Def",
+            "start_line": 90,
+            "end_line": 90,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual31",
+            "kind": "Def",
+            "start_line": 91,
+            "end_line": 91,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual32",
+            "kind": "Def",
+            "start_line": 92,
+            "end_line": 92,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual",
+            "kind": "Def",
+            "start_line": 94,
+            "end_line": 104,
+            "type_signature": "(r : PolynomialRow) (equation : Fin 9) : Ext3 FGL"
+          },
+          {
+            "name": "directSum",
+            "kind": "Def",
+            "start_line": 106,
+            "end_line": 107,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual33",
+            "kind": "Def",
+            "start_line": 109,
+            "end_line": 110,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "Circuit",
+            "kind": "Def",
+            "start_line": 112,
+            "end_line": 115,
+            "type_signature": "(r : PolynomialRow) : Prop"
+          },
+          {
+            "name": "WithFinalizer",
+            "kind": "Def",
+            "start_line": 117,
+            "end_line": 117,
+            "type_signature": "(r : PolynomialRow) : Prop"
+          },
+          {
+            "name": "constructed",
+            "kind": "Def",
+            "start_line": 119,
+            "end_line": 138,
+            "type_signature": ": PolynomialRow"
+          },
+          {
+            "name": "constructed",
+            "kind": "Def",
+            "start_line": 122,
+            "end_line": 122,
+            "type_signature": ": PolynomialRow"
+          },
+          {
+            "name": "constructed_satisfies",
+            "kind": "Thm",
+            "start_line": 140,
+            "end_line": 157,
+            "type_signature": ": constructed.WithFinalizer"
+          }
+        ]
+      },
+      "is_error": false,
+      "result_type": "complete"
+    }
+  },
+  {
+    "file": "Stage2/Equations.lean",
+    "result": {
+      "meta": null,
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"imports\": [\n    \"Extraction.LookupWiring\"\n  ],\n  \"declarations\": [\n    {\n      \"name\": \"ZiskFv.AirsClean.Mem.Stage2\",\n      \"kind\": \"Ns\",\n      \"start_line\": 42,\n      \"end_line\": 211\n    },\n    {\n      \"name\": \"sourceAlpha\",\n      \"kind\": \"Def\",\n      \"start_line\": 46,\n      \"end_line\": 47,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"sourceAlpha\",\n      \"kind\": \"Def\",\n      \"start_line\": 47,\n      \"end_line\": 47,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"sourceGamma\",\n      \"kind\": \"Def\",\n      \"start_line\": 48,\n      \"end_line\": 48,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"sourceHornerStep\",\n      \"kind\": \"Def\",\n      \"start_line\": 50,\n      \"end_line\": 52,\n      \"type_signature\": \"(high low : Expr) : Expr\"\n    },\n    {\n      \"name\": \"sourceHornerStep\",\n      \"kind\": \"Def\",\n      \"start_line\": 51,\n      \"end_line\": 51,\n      \"type_signature\": \"(high low : Expr) : Expr\"\n    },\n    {\n      \"name\": \"highIncrementDenominator\",\n      \"kind\": \"Def\",\n      \"start_line\": 54,\n      \"end_line\": 56,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"highIncrementDenominator\",\n      \"kind\": \"Def\",\n      \"start_line\": 55,\n      \"end_line\": 55,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"dualStepDenominator\",\n      \"kind\": \"Def\",\n      \"start_line\": 58,\n      \"end_line\": 62,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"dualStepDenominator\",\n      \"kind\": \"Def\",\n      \"start_line\": 59,\n      \"end_line\": 59,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"primaryMemoryDenominator\",\n      \"kind\": \"Def\",\n      \"start_line\": 64,\n      \"end_line\": 76,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"primaryMemoryDenominator\",\n      \"kind\": \"Def\",\n      \"start_line\": 65,\n      \"end_line\": 65,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"dualMemoryDenominator\",\n      \"kind\": \"Def\",\n      \"start_line\": 78,\n      \"end_line\": 90,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"dualMemoryDenominator\",\n      \"kind\": \"Def\",\n      \"start_line\": 79,\n      \"end_line\": 79,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected24\",\n      \"kind\": \"Def\",\n      \"start_line\": 92,\n      \"end_line\": 96,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected24\",\n      \"kind\": \"Def\",\n      \"start_line\": 93,\n      \"end_line\": 93,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected25\",\n      \"kind\": \"Def\",\n      \"start_line\": 98,\n      \"end_line\": 102,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected25\",\n      \"kind\": \"Def\",\n      \"start_line\": 99,\n      \"end_line\": 99,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected26\",\n      \"kind\": \"Def\",\n      \"start_line\": 104,\n      \"end_line\": 111,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected26\",\n      \"kind\": \"Def\",\n      \"start_line\": 105,\n      \"end_line\": 105,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"previousContinuationDenominator\",\n      \"kind\": \"Def\",\n      \"start_line\": 113,\n      \"end_line\": 124,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"previousContinuationDenominator\",\n      \"kind\": \"Def\",\n      \"start_line\": 114,\n      \"end_line\": 114,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"nextContinuationDenominator\",\n      \"kind\": \"Def\",\n      \"start_line\": 126,\n      \"end_line\": 137,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"nextContinuationDenominator\",\n      \"kind\": \"Def\",\n      \"start_line\": 127,\n      \"end_line\": 127,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected27\",\n      \"kind\": \"Def\",\n      \"start_line\": 139,\n      \"end_line\": 141,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected27\",\n      \"kind\": \"Def\",\n      \"start_line\": 140,\n      \"end_line\": 140,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected28\",\n      \"kind\": \"Def\",\n      \"start_line\": 143,\n      \"end_line\": 146,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected28\",\n      \"kind\": \"Def\",\n      \"start_line\": 144,\n      \"end_line\": 144,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected29\",\n      \"kind\": \"Def\",\n      \"start_line\": 148,\n      \"end_line\": 152,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected29\",\n      \"kind\": \"Def\",\n      \"start_line\": 149,\n      \"end_line\": 149,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected30\",\n      \"kind\": \"Def\",\n      \"start_line\": 154,\n      \"end_line\": 158,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected30\",\n      \"kind\": \"Def\",\n      \"start_line\": 155,\n      \"end_line\": 155,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected31\",\n      \"kind\": \"Def\",\n      \"start_line\": 160,\n      \"end_line\": 164,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected31\",\n      \"kind\": \"Def\",\n      \"start_line\": 161,\n      \"end_line\": 161,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected32\",\n      \"kind\": \"Def\",\n      \"start_line\": 166,\n      \"end_line\": 170,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"expected32\",\n      \"kind\": \"Def\",\n      \"start_line\": 167,\n      \"end_line\": 167,\n      \"type_signature\": \": Expr\"\n    },\n    {\n      \"name\": \"actual24_eq_expected24\",\n      \"kind\": \"Thm\",\n      \"start_line\": 172,\n      \"end_line\": 172,\n      \"type_signature\": \": Extraction.LookupWiring.constraint_Mem_24 = expected24\"\n    },\n    {\n      \"name\": \"actual25_eq_expected25\",\n      \"kind\": \"Thm\",\n      \"start_line\": 173,\n      \"end_line\": 173,\n      \"type_signature\": \": Extraction.LookupWiring.constraint_Mem_25 = expected25\"\n    },\n    {\n      \"name\": \"actual26_eq_expected26\",\n      \"kind\": \"Thm\",\n      \"start_line\": 174,\n      \"end_line\": 174,\n      \"type_signature\": \": Extraction.LookupWiring.constraint_Mem_26 = expected26\"\n    },\n    {\n      \"name\": \"actual27_eq_expected27\",\n      \"kind\": \"Thm\",\n      \"start_line\": 175,\n      \"end_line\": 175,\n      \"type_signature\": \": Extraction.LookupWiring.constraint_Mem_27 = expected27\"\n    },\n    {\n      \"name\": \"actual28_eq_expected28\",\n      \"kind\": \"Thm\",\n      \"start_line\": 176,\n      \"end_line\": 176,\n      \"type_signature\": \": Extraction.LookupWiring.constraint_Mem_28 = expected28\"\n    },\n    {\n      \"name\": \"actual29_eq_expected29\",\n      \"kind\": \"Thm\",\n      \"start_line\": 177,\n      \"end_line\": 177,\n      \"type_signature\": \": Extraction.LookupWiring.constraint_Mem_29 = expected29\"\n    },\n    {\n      \"name\": \"actual30_eq_expected30\",\n      \"kind\": \"Thm\",\n      \"start_line\": 178,\n      \"end_line\": 178,\n      \"type_signature\": \": Extraction.LookupWiring.constraint_Mem_30 = expected30\"\n    },\n    {\n      \"name\": \"actual31_eq_expected31\",\n      \"kind\": \"Thm\",\n      \"start_line\": 179,\n      \"end_line\": 179,\n      \"type_signature\": \": Extraction.LookupWiring.constraint_Mem_31 = expected31\"\n    },\n    {\n      \"name\": \"actual32_eq_expected32\",\n      \"kind\": \"Thm\",\n      \"start_line\": 180,\n      \"end_line\": 180,\n      \"type_signature\": \": Extraction.LookupWiring.constraint_Mem_32 = expected32\"\n    },\n    {\n      \"name\": \"actualNonlinear\",\n      \"kind\": \"Def\",\n      \"start_line\": 182,\n      \"end_line\": 193,\n      \"type_signature\": \"(i : Fin 9) : Expr\"\n    },\n    {\n      \"name\": \"actualNonlinear\",\n      \"kind\": \"Def\",\n      \"start_line\": 183,\n      \"end_line\": 183,\n      \"type_signature\": \"(i : Fin 9) : Expr\"\n    },\n    {\n      \"name\": \"expectedNonlinear\",\n      \"kind\": \"Def\",\n      \"start_line\": 195,\n      \"end_line\": 205,\n      \"type_signature\": \"(i : Fin 9) : Expr\"\n    },\n    {\n      \"name\": \"actualNonlinear_eq_expectedNonlinear\",\n      \"kind\": \"Thm\",\n      \"start_line\": 207,\n      \"end_line\": 209,\n      \"type_signature\": \"(i : Fin 9) : actualNonlinear i = expectedNonlinear i\"\n    }\n  ]\n}",
+          "annotations": null,
+          "meta": null
+        }
+      ],
+      "structured_content": {
+        "imports": [
+          "Extraction.LookupWiring"
+        ],
+        "declarations": [
+          {
+            "name": "ZiskFv.AirsClean.Mem.Stage2",
+            "kind": "Ns",
+            "start_line": 42,
+            "end_line": 211
+          },
+          {
+            "name": "sourceAlpha",
+            "kind": "Def",
+            "start_line": 46,
+            "end_line": 47,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "sourceAlpha",
+            "kind": "Def",
+            "start_line": 47,
+            "end_line": 47,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "sourceGamma",
+            "kind": "Def",
+            "start_line": 48,
+            "end_line": 48,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "sourceHornerStep",
+            "kind": "Def",
+            "start_line": 50,
+            "end_line": 52,
+            "type_signature": "(high low : Expr) : Expr"
+          },
+          {
+            "name": "sourceHornerStep",
+            "kind": "Def",
+            "start_line": 51,
+            "end_line": 51,
+            "type_signature": "(high low : Expr) : Expr"
+          },
+          {
+            "name": "highIncrementDenominator",
+            "kind": "Def",
+            "start_line": 54,
+            "end_line": 56,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "highIncrementDenominator",
+            "kind": "Def",
+            "start_line": 55,
+            "end_line": 55,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "dualStepDenominator",
+            "kind": "Def",
+            "start_line": 58,
+            "end_line": 62,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "dualStepDenominator",
+            "kind": "Def",
+            "start_line": 59,
+            "end_line": 59,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "primaryMemoryDenominator",
+            "kind": "Def",
+            "start_line": 64,
+            "end_line": 76,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "primaryMemoryDenominator",
+            "kind": "Def",
+            "start_line": 65,
+            "end_line": 65,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "dualMemoryDenominator",
+            "kind": "Def",
+            "start_line": 78,
+            "end_line": 90,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "dualMemoryDenominator",
+            "kind": "Def",
+            "start_line": 79,
+            "end_line": 79,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected24",
+            "kind": "Def",
+            "start_line": 92,
+            "end_line": 96,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected24",
+            "kind": "Def",
+            "start_line": 93,
+            "end_line": 93,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected25",
+            "kind": "Def",
+            "start_line": 98,
+            "end_line": 102,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected25",
+            "kind": "Def",
+            "start_line": 99,
+            "end_line": 99,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected26",
+            "kind": "Def",
+            "start_line": 104,
+            "end_line": 111,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected26",
+            "kind": "Def",
+            "start_line": 105,
+            "end_line": 105,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "previousContinuationDenominator",
+            "kind": "Def",
+            "start_line": 113,
+            "end_line": 124,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "previousContinuationDenominator",
+            "kind": "Def",
+            "start_line": 114,
+            "end_line": 114,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "nextContinuationDenominator",
+            "kind": "Def",
+            "start_line": 126,
+            "end_line": 137,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "nextContinuationDenominator",
+            "kind": "Def",
+            "start_line": 127,
+            "end_line": 127,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected27",
+            "kind": "Def",
+            "start_line": 139,
+            "end_line": 141,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected27",
+            "kind": "Def",
+            "start_line": 140,
+            "end_line": 140,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected28",
+            "kind": "Def",
+            "start_line": 143,
+            "end_line": 146,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected28",
+            "kind": "Def",
+            "start_line": 144,
+            "end_line": 144,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected29",
+            "kind": "Def",
+            "start_line": 148,
+            "end_line": 152,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected29",
+            "kind": "Def",
+            "start_line": 149,
+            "end_line": 149,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected30",
+            "kind": "Def",
+            "start_line": 154,
+            "end_line": 158,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected30",
+            "kind": "Def",
+            "start_line": 155,
+            "end_line": 155,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected31",
+            "kind": "Def",
+            "start_line": 160,
+            "end_line": 164,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected31",
+            "kind": "Def",
+            "start_line": 161,
+            "end_line": 161,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected32",
+            "kind": "Def",
+            "start_line": 166,
+            "end_line": 170,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "expected32",
+            "kind": "Def",
+            "start_line": 167,
+            "end_line": 167,
+            "type_signature": ": Expr"
+          },
+          {
+            "name": "actual24_eq_expected24",
+            "kind": "Thm",
+            "start_line": 172,
+            "end_line": 172,
+            "type_signature": ": Extraction.LookupWiring.constraint_Mem_24 = expected24"
+          },
+          {
+            "name": "actual25_eq_expected25",
+            "kind": "Thm",
+            "start_line": 173,
+            "end_line": 173,
+            "type_signature": ": Extraction.LookupWiring.constraint_Mem_25 = expected25"
+          },
+          {
+            "name": "actual26_eq_expected26",
+            "kind": "Thm",
+            "start_line": 174,
+            "end_line": 174,
+            "type_signature": ": Extraction.LookupWiring.constraint_Mem_26 = expected26"
+          },
+          {
+            "name": "actual27_eq_expected27",
+            "kind": "Thm",
+            "start_line": 175,
+            "end_line": 175,
+            "type_signature": ": Extraction.LookupWiring.constraint_Mem_27 = expected27"
+          },
+          {
+            "name": "actual28_eq_expected28",
+            "kind": "Thm",
+            "start_line": 176,
+            "end_line": 176,
+            "type_signature": ": Extraction.LookupWiring.constraint_Mem_28 = expected28"
+          },
+          {
+            "name": "actual29_eq_expected29",
+            "kind": "Thm",
+            "start_line": 177,
+            "end_line": 177,
+            "type_signature": ": Extraction.LookupWiring.constraint_Mem_29 = expected29"
+          },
+          {
+            "name": "actual30_eq_expected30",
+            "kind": "Thm",
+            "start_line": 178,
+            "end_line": 178,
+            "type_signature": ": Extraction.LookupWiring.constraint_Mem_30 = expected30"
+          },
+          {
+            "name": "actual31_eq_expected31",
+            "kind": "Thm",
+            "start_line": 179,
+            "end_line": 179,
+            "type_signature": ": Extraction.LookupWiring.constraint_Mem_31 = expected31"
+          },
+          {
+            "name": "actual32_eq_expected32",
+            "kind": "Thm",
+            "start_line": 180,
+            "end_line": 180,
+            "type_signature": ": Extraction.LookupWiring.constraint_Mem_32 = expected32"
+          },
+          {
+            "name": "actualNonlinear",
+            "kind": "Def",
+            "start_line": 182,
+            "end_line": 193,
+            "type_signature": "(i : Fin 9) : Expr"
+          },
+          {
+            "name": "actualNonlinear",
+            "kind": "Def",
+            "start_line": 183,
+            "end_line": 183,
+            "type_signature": "(i : Fin 9) : Expr"
+          },
+          {
+            "name": "expectedNonlinear",
+            "kind": "Def",
+            "start_line": 195,
+            "end_line": 205,
+            "type_signature": "(i : Fin 9) : Expr"
+          },
+          {
+            "name": "actualNonlinear_eq_expectedNonlinear",
+            "kind": "Thm",
+            "start_line": 207,
+            "end_line": 209,
+            "type_signature": "(i : Fin 9) : actualNonlinear i = expectedNonlinear i"
+          }
+        ]
+      },
+      "is_error": false,
+      "result_type": "complete"
+    }
+  },
+  {
+    "file": "Stage2/Literals.lean",
+    "result": {
+      "meta": null,
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"imports\": [\n    \"ZiskFv.AirsClean.Mem.Stage2.Native\",\n    \"ZiskFv.AirsClean.MemAlignWriteByte.SourceLiterals\"\n  ],\n  \"declarations\": [\n    {\n      \"name\": \"ZiskFv.AirsClean.Mem.Stage2\",\n      \"kind\": \"Ns\",\n      \"start_line\": 7,\n      \"end_line\": 61\n    },\n    {\n      \"name\": \"LiteralProof\",\n      \"kind\": \"Ns\",\n      \"start_line\": 9,\n      \"end_line\": 37\n    },\n    {\n      \"name\": \"nat_11\",\n      \"kind\": \"Thm\",\n      \"start_line\": 12,\n      \"end_line\": 15,\n      \"type_signature\": \": \\\"11\\\".toNat? = some 11\"\n    },\n    {\n      \"name\": \"nat_102\",\n      \"kind\": \"Thm\",\n      \"start_line\": 16,\n      \"end_line\": 19,\n      \"type_signature\": \": \\\"102\\\".toNat? = some 102\"\n    },\n    {\n      \"name\": \"nat_103\",\n      \"kind\": \"Thm\",\n      \"start_line\": 20,\n      \"end_line\": 23,\n      \"type_signature\": \": \\\"103\\\".toNat? = some 103\"\n    },\n    {\n      \"name\": \"nat_104\",\n      \"kind\": \"Thm\",\n      \"start_line\": 24,\n      \"end_line\": 27,\n      \"type_signature\": \": \\\"104\\\".toNat? = some 104\"\n    },\n    {\n      \"name\": \"nat_continuation\",\n      \"kind\": \"Thm\",\n      \"start_line\": 28,\n      \"end_line\": 31,\n      \"type_signature\": \": \\\"2684354560\\\".toNat? = some 2684354560\"\n    },\n    {\n      \"name\": \"nat_negative_one\",\n      \"kind\": \"Thm\",\n      \"start_line\": 32,\n      \"end_line\": 36,\n      \"type_signature\": \": \\\"18446744069414584320\\\".toNat? = some 18446744069414584320\"\n    },\n    {\n      \"name\": \"literal_zero\",\n      \"kind\": \"Thm\",\n      \"start_line\": 39,\n      \"end_line\": 40,\n      \"type_signature\": \": literal? \\\"0\\\" = some (Ext3.ofBase (0 : FGL))\"\n    },\n    {\n      \"name\": \"literal_one\",\n      \"kind\": \"Thm\",\n      \"start_line\": 41,\n      \"end_line\": 42,\n      \"type_signature\": \": literal? \\\"1\\\" = some (Ext3.ofBase (1 : FGL))\"\n    },\n    {\n      \"name\": \"literal_eight\",\n      \"kind\": \"Thm\",\n      \"start_line\": 43,\n      \"end_line\": 44,\n      \"type_signature\": \": literal? \\\"8\\\" = some (Ext3.ofBase (8 : FGL))\"\n    },\n    {\n      \"name\": \"literal_ten\",\n      \"kind\": \"Thm\",\n      \"start_line\": 45,\n      \"end_line\": 46,\n      \"type_signature\": \": literal? \\\"10\\\" = some (Ext3.ofBase (10 : FGL))\"\n    },\n    {\n      \"name\": \"literal_eleven\",\n      \"kind\": \"Thm\",\n      \"start_line\": 47,\n      \"end_line\": 48,\n      \"type_signature\": \": literal? \\\"11\\\" = some (Ext3.ofBase (11 : FGL))\"\n    },\n    {\n      \"name\": \"literal_range24\",\n      \"kind\": \"Thm\",\n      \"start_line\": 49,\n      \"end_line\": 50,\n      \"type_signature\": \": literal? \\\"102\\\" = some (Ext3.ofBase (102 : FGL))\"\n    },\n    {\n      \"name\": \"literal_range16\",\n      \"kind\": \"Thm\",\n      \"start_line\": 51,\n      \"end_line\": 52,\n      \"type_signature\": \": literal? \\\"103\\\" = some (Ext3.ofBase (103 : FGL))\"\n    },\n    {\n      \"name\": \"literal_range22\",\n      \"kind\": \"Thm\",\n      \"start_line\": 53,\n      \"end_line\": 54,\n      \"type_signature\": \": literal? \\\"104\\\" = some (Ext3.ofBase (104 : FGL))\"\n    },\n    {\n      \"name\": \"literal_continuation\",\n      \"kind\": \"Thm\",\n      \"start_line\": 55,\n      \"end_line\": 56,\n      \"type_signature\": \": literal? \\\"2684354560\\\" = some (Ext3.ofBase (2684354560 : FGL))\"\n    },\n    {\n      \"name\": \"literal_negative_one\",\n      \"kind\": \"Thm\",\n      \"start_line\": 57,\n      \"end_line\": 59,\n      \"type_signature\": \": literal? \\\"18446744069414584320\\\" = some (Ext3.ofBase (-1 : FGL))\"\n    }\n  ]\n}",
+          "annotations": null,
+          "meta": null
+        }
+      ],
+      "structured_content": {
+        "imports": [
+          "ZiskFv.AirsClean.Mem.Stage2.Native",
+          "ZiskFv.AirsClean.MemAlignWriteByte.SourceLiterals"
+        ],
+        "declarations": [
+          {
+            "name": "ZiskFv.AirsClean.Mem.Stage2",
+            "kind": "Ns",
+            "start_line": 7,
+            "end_line": 61
+          },
+          {
+            "name": "LiteralProof",
+            "kind": "Ns",
+            "start_line": 9,
+            "end_line": 37
+          },
+          {
+            "name": "nat_11",
+            "kind": "Thm",
+            "start_line": 12,
+            "end_line": 15,
+            "type_signature": ": \"11\".toNat? = some 11"
+          },
+          {
+            "name": "nat_102",
+            "kind": "Thm",
+            "start_line": 16,
+            "end_line": 19,
+            "type_signature": ": \"102\".toNat? = some 102"
+          },
+          {
+            "name": "nat_103",
+            "kind": "Thm",
+            "start_line": 20,
+            "end_line": 23,
+            "type_signature": ": \"103\".toNat? = some 103"
+          },
+          {
+            "name": "nat_104",
+            "kind": "Thm",
+            "start_line": 24,
+            "end_line": 27,
+            "type_signature": ": \"104\".toNat? = some 104"
+          },
+          {
+            "name": "nat_continuation",
+            "kind": "Thm",
+            "start_line": 28,
+            "end_line": 31,
+            "type_signature": ": \"2684354560\".toNat? = some 2684354560"
+          },
+          {
+            "name": "nat_negative_one",
+            "kind": "Thm",
+            "start_line": 32,
+            "end_line": 36,
+            "type_signature": ": \"18446744069414584320\".toNat? = some 18446744069414584320"
+          },
+          {
+            "name": "literal_zero",
+            "kind": "Thm",
+            "start_line": 39,
+            "end_line": 40,
+            "type_signature": ": literal? \"0\" = some (Ext3.ofBase (0 : FGL))"
+          },
+          {
+            "name": "literal_one",
+            "kind": "Thm",
+            "start_line": 41,
+            "end_line": 42,
+            "type_signature": ": literal? \"1\" = some (Ext3.ofBase (1 : FGL))"
+          },
+          {
+            "name": "literal_eight",
+            "kind": "Thm",
+            "start_line": 43,
+            "end_line": 44,
+            "type_signature": ": literal? \"8\" = some (Ext3.ofBase (8 : FGL))"
+          },
+          {
+            "name": "literal_ten",
+            "kind": "Thm",
+            "start_line": 45,
+            "end_line": 46,
+            "type_signature": ": literal? \"10\" = some (Ext3.ofBase (10 : FGL))"
+          },
+          {
+            "name": "literal_eleven",
+            "kind": "Thm",
+            "start_line": 47,
+            "end_line": 48,
+            "type_signature": ": literal? \"11\" = some (Ext3.ofBase (11 : FGL))"
+          },
+          {
+            "name": "literal_range24",
+            "kind": "Thm",
+            "start_line": 49,
+            "end_line": 50,
+            "type_signature": ": literal? \"102\" = some (Ext3.ofBase (102 : FGL))"
+          },
+          {
+            "name": "literal_range16",
+            "kind": "Thm",
+            "start_line": 51,
+            "end_line": 52,
+            "type_signature": ": literal? \"103\" = some (Ext3.ofBase (103 : FGL))"
+          },
+          {
+            "name": "literal_range22",
+            "kind": "Thm",
+            "start_line": 53,
+            "end_line": 54,
+            "type_signature": ": literal? \"104\" = some (Ext3.ofBase (104 : FGL))"
+          },
+          {
+            "name": "literal_continuation",
+            "kind": "Thm",
+            "start_line": 55,
+            "end_line": 56,
+            "type_signature": ": literal? \"2684354560\" = some (Ext3.ofBase (2684354560 : FGL))"
+          },
+          {
+            "name": "literal_negative_one",
+            "kind": "Thm",
+            "start_line": 57,
+            "end_line": 59,
+            "type_signature": ": literal? \"18446744069414584320\" = some (Ext3.ofBase (-1 : FGL))"
+          }
+        ]
+      },
+      "is_error": false,
+      "result_type": "complete"
+    }
+  }
+]

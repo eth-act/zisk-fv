@@ -1,0 +1,51 @@
+{
+  "context": {
+    "project": "/home/cody/zisk-fv-mem-ten-main452",
+    "env": {
+      "LEAN_PROJECT_PATH": "/home/cody/zisk-fv-mem-ten-main452",
+      "LEAN_PATH": "/home/cody/zisk-fv-closure-extractor/build/mem-physical-source/logical-ci/lean",
+      "LEAN_LSP_MAX_OPEN_FILES": "1",
+      "LEAN_NUM_THREADS": "2",
+      "LEAN_MCP_PREWARM_FILES": ""
+    }
+  },
+  "tool": "lean_references",
+  "args": {
+    "file_path": "/home/cody/zisk-fv-mem-ten-main452/ZiskFv/AirsClean/Mem/PhysicalSource/CompleteView.lean",
+    "line": 270,
+    "column": 9,
+    "max_results": 30
+  },
+  "result": {
+    "meta": null,
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"items\": [\n    {\n      \"file_path\": \"ZiskFv/AirsClean/Mem/PhysicalSource/CompleteView.lean\",\n      \"line\": 270,\n      \"column\": 9,\n      \"end_line\": 270,\n      \"end_column\": 22\n    },\n    {\n      \"file_path\": \"ZiskFv/AirsClean/Mem/PhysicalSource/CompleteView.lean\",\n      \"line\": 278,\n      \"column\": 32,\n      \"end_line\": 278,\n      \"end_column\": 45\n    }\n  ],\n  \"total\": 2\n}",
+        "annotations": null,
+        "meta": null
+      }
+    ],
+    "structured_content": {
+      "items": [
+        {
+          "file_path": "ZiskFv/AirsClean/Mem/PhysicalSource/CompleteView.lean",
+          "line": 270,
+          "column": 9,
+          "end_line": 270,
+          "end_column": 22
+        },
+        {
+          "file_path": "ZiskFv/AirsClean/Mem/PhysicalSource/CompleteView.lean",
+          "line": 278,
+          "column": 32,
+          "end_line": 278,
+          "end_column": 45
+        }
+      ],
+      "total": 2
+    },
+    "is_error": false,
+    "result_type": "complete"
+  }
+}

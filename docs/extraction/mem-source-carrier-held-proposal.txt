@@ -41,10 +41,17 @@ Here direct0 means view.direct(0:Fin6), etc.; group is the actual GROUP0
 extension block, NEVER segment_id or AIR0. All three coefficients remain.
 The nine preceding phase2 conjuncts must be the genuine full-coefficient
 PolynomialRow residual24..32 built from this same view and real previous row.
-A generic view->PolynomialRow construction/correspondence is still missing:
-AirWitness.polynomialRow and the all34 satisfaction theorem prove the chosen
-image, not every CompleteView. That generic proof must be implemented, not
-replaced with a caller sourceHolds/coherence/native-auth hypothesis.
+The new internal source-only implementation builds PolynomialRow for EVERY
+CompleteView. Existing CompleteView checks geometry/raw native buffers but not
+ordered AIR/GROUP maps: empty such maps leave those geometry checks intact
+while the typed metadata readers fail. Therefore typed-evaluator correspondence
+uses NEW DecodedView, privately computed from that SAME CompleteView and actual
+setup/Params, with source-pinned ordered-stage/prefix agreement. This is
+STRUCTURAL DECODING, not actual compiled PILr.id/r.dim/ABI/producer identity.
+The new proof sources and supplemental refinement existence still require
+their fresh affected-context acceptance gates. Chosen-image proofs alone are
+not generalized, and no caller sourceHolds/coherence/native-auth premise is
+introduced. Neither the refined view nor failed decoding silently narrows Root.
 
 On cutover retire the obsolete three scalar Valid_Mem fields and old scalar
 PermutationColumns/phase2 helpers; preserve the genuine thirteen-field local
@@ -71,12 +78,16 @@ Smallest protected acceptance-carrier change is replacing the freely supplied
 AcceptedZiskTrace.witness with that source plus the actual existing mode
 selection, and computing the ensemble/table projections from it. Keep existing
 constraint/channel-balance obligations over the COMPUTED witness; do not add a
-Root sourceHolds/decoder-success premise. Unsupported decoding is an explicit
-failed acceptance case, not zero/default data or a hidden source exclusion.
-Main, Mem, WriteByte and other consumers must project the SAME source object.
-The registry may contain multiple occurrences: materialize and compose ALL
-actual slots; replace mem_replay_table/source_covers with source-keyed derived
-selection/coverage rather than enforcing a new unique-Mem roster promise.
+Root sourceHolds/decoder-success premise. Failed decoding is only an explicit
+case in the honest corrected-domain PROPOSAL: before any live cutover, prove
+production decode-domain coverage/totality for every required source format.
+No hidden unsupported-format exclusion or parse-success Root premise follows.
+Main, Mem, WriteByte and other consumers project the SAME source object.
+Enumerate relevant existing-domain slots without dropping any bus sender.
+This does NOT activate #328, multiple-Main or cross-segment semantic coverage:
+the current single-Main execution scope remains unchanged. Source-keyed table
+selection must preserve that scope and all its relevant senders; no stronger
+unique-Mem roster promise or new cross-segment completeness claim is permitted.
 No Root theorem signature or Accepted structure is edited by this proposal.
 
 This is a corrected DOMAIN: source-owned accepted physical instances, not
@@ -102,13 +113,20 @@ INTERNAL proof/implementation obligations (not external caller promises):
   from the pinned extraction recipe, not registry=slot metadata or an opaque
   native-auth predicate. Present setup storage alone does not authenticate it.
 
-EXTERNAL intended-binary boundary, not silently discharged by these proofs:
-materialization of live Rust/C++ buffers, globals, setup repository and final
-registry into SourceObject; ABI/layout/lifetime and actual executed binary/
-compiled PIL provenance. The current project extraction/intended-binary
-boundary does not turn an arbitrary SourceObject into an authenticated runtime
-snapshot. Either prove that materialization or state an explicitly approved
-external intended-binary scope; no new axiom/assumption is proposed here.
+REQUIRED in Lean, not a blanket external materialization disclaimer:
+prove SAME-source raw/native/PILr.id and operand/opening identity; prove the
+actual buffer/ABI/layout/address/width/rotation correspondence and equality
+between the materialized input witness and this SourceObject's computed image.
+Production decode-domain coverage/totality is part of that obligation, not a
+parse-success assumption or an unsupported-format carve-out. The source-only
+existence witness and metadata shapes do not discharge these equalities.
+
+EXTERNAL intended-compiled-binary boundary is narrower and separate: identifying
+the actual executed compiled binary/commit with the intended pinned program.
+That commit/binary identity is not implied by the Lean equality just listed;
+conversely it does not waive any same-source/PILr.id/ABI/input-witness equality.
+No new axiom, native-auth predicate or externalized materialization promise is
+proposed. Obtain explicit approval for any genuinely changed external boundary.
 
 DECISION REQUIRED before any protected implementation: approve the above
 source-carrier/corrected-physical-domain cutover and retirement of the scalar

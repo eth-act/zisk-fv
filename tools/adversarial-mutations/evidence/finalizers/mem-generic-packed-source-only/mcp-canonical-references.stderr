@@ -1,0 +1,25 @@
+[11/16/26 10:49:09] INFO     Shared async LSP client         client_utils.py:133
+                             connected at                                       
+                             /home/cody/zisk-fv-mem-ten-main                    
+                             452                                                
+[11/16/26 10:49:20] INFO     Session ending — cleaning up          server.py:325
+                             per-session resources                              
+                    WARNING  Loop <_UnixSelectorEventLoop    unix_events.py:1424
+                             running=False closed=True                          
+                             debug=False> that handles pid                      
+                             3175453 is closed                                  
+Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x7fcd7b0272e0>
+Traceback (most recent call last):
+  File "/home/cody/.local/share/uv/python/cpython-3.12.11-linux-x86_64-gnu/lib/python3.12/asyncio/base_subprocess.py", line 126, in __del__
+    self.close()
+  File "/home/cody/.local/share/uv/python/cpython-3.12.11-linux-x86_64-gnu/lib/python3.12/asyncio/base_subprocess.py", line 104, in close
+    proto.pipe.close()
+  File "/home/cody/.local/share/uv/python/cpython-3.12.11-linux-x86_64-gnu/lib/python3.12/asyncio/unix_events.py", line 767, in close
+    self.write_eof()
+  File "/home/cody/.local/share/uv/python/cpython-3.12.11-linux-x86_64-gnu/lib/python3.12/asyncio/unix_events.py", line 753, in write_eof
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/home/cody/.local/share/uv/python/cpython-3.12.11-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py", line 799, in call_soon
+    self._check_closed()
+  File "/home/cody/.local/share/uv/python/cpython-3.12.11-linux-x86_64-gnu/lib/python3.12/asyncio/base_events.py", line 545, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed

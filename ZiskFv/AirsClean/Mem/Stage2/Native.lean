@@ -1,6 +1,7 @@
 import ZiskFv.AirsClean.Mem.Stage2.Cubic
 import ZiskFv.AirsClean.Mem.Stage2.Equations
 import ZiskFv.AirsClean.Mem.SourceFinalizer
+import ZiskFv.AirsClean.NativeTraceCells
 
 /-! Actual polynomial fragment of the remaining Mem stage-2 equations.
 
@@ -10,9 +11,10 @@ retain all three words. Multiplication is the pinned cubic source operation,
 not pointwise multiplication and not a postulated Field structure.
 
 This partial model does not bind native compiled operand/opening ids or
-machine arithmetic to the metadata match. Packed stage1, GPU/verifier layouts
-and live buffer/ABI materialization remain explicit representation gaps, not
-Root acceptance exclusions. No existing validator or source-validity caller
+machine arithmetic to source stage/column identifiers. Stage1 uses the sole
+canonical raw-bit getter for both storage modes, at the actual setup rotation.
+GPU/verifier layouts and live buffer/ABI materialization remain explicit gaps,
+not Root acceptance exclusions. No existing validator or source-validity caller
 premise is added. c33 reuses its frozen linear source equation separately.
 -/
 namespace ZiskFv.AirsClean.Mem.Stage2
@@ -47,15 +49,20 @@ def witnessMapId? (setup : NativeSetup) (stage column : Nat) : Option Nat :=
     entry.stage == stage && entry.stageId == column &&
       entry.dim == (if stage == 1 then 1 else 3)
 
-/-- Phase1 Mem has thirteen scalar columns; phase2 has three extension columns.
-The native reader deliberately does not guess how to unpack packed stage1. -/
+/-- Phase1 Mem has thirteen scalar columns, decoded raw-first by the canonical
+native getter; phase2 retains its three metadata-selected extension columns.
+Source stage/column names do not authenticate compiled PILr operand ids. -/
 def witness? (resolved : ResolvedOccurrence source) (row stage column : Nat)
     (rotation : Int) : Option (Ext3 FGL) := do
   if (stage = 1 ∧ column < 13) ∨ (stage = 2 ∧ column < 3) then
     let setup ← resolved.setup?
-    let mapId ← witnessMapId? setup stage column
-    if stage = 1 then baseWords? (resolved.cmWords? false mapId row rotation)
-    else extensionWords? (resolved.cmWords? false mapId row rotation)
+    if stage = 1 then
+      let shifted ← setup.baseRow? row rotation
+      return Ext3.ofBase (← ZiskFv.AirsClean.NativeTraceCells.cell?
+        .mem resolved false shifted column)
+    else
+      let mapId ← witnessMapId? setup stage column
+      extensionWords? (resolved.cmWords? false mapId row rotation)
   else none
 
 /-- Native fixed operand uses its direct source column id, not a const-map

@@ -1,0 +1,395 @@
+[
+  {
+    "tool": "lean_file_outline",
+    "args": {
+      "file_path": "ZiskFv/AirsClean/Mem/PhysicalSource/Domain.lean",
+      "max_declarations": 140
+    },
+    "result": {
+      "meta": null,
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"imports\": [\n    \"ZiskFv.AirsClean.Mem.PhysicalSource.FixedScan\",\n    \"ZiskFv.AirsClean.Mem.Stage1.NativeProfile\",\n    \"ZiskFv.AirsClean.Mem.Stage2.Cubic\",\n    \"ZiskFv.AirsClean.MemAlignWriteByte.SourceInstance\",\n    \"ZiskFv.AirsClean.NativeValuesLayout\"\n  ],\n  \"declarations\": [\n    {\n      \"name\": \"directBatch?\",\n      \"kind\": \"Def\",\n      \"start_line\": 26,\n      \"end_line\": 26,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) : Option (Vector (Vector FGL 3) 6)\"\n    },\n    {\n      \"name\": \"extension\",\n      \"kind\": \"Def\",\n      \"start_line\": 37,\n      \"end_line\": 37,\n      \"type_signature\": \"(words : Vector FGL 3) : Stage2.Ext3 FGL\"\n    },\n    {\n      \"name\": \"geometry\",\n      \"kind\": \"Def\",\n      \"start_line\": 42,\n      \"end_line\": 42,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) (setup : NativeSetup) (cm1 : Nat) : Prop\"\n    },\n    {\n      \"name\": \"View\",\n      \"kind\": \"Struct\",\n      \"start_line\": 65,\n      \"end_line\": 65,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source)\"\n    },\n    {\n      \"name\": \"fromResolved?\",\n      \"kind\": \"Def\",\n      \"start_line\": 77,\n      \"end_line\": 77,\n      \"type_signature\": \"(resolved : ResolvedOccurrence source) : Option (View resolved)\"\n    },\n    {\n      \"name\": \"count\",\n      \"kind\": \"Def\",\n      \"start_line\": 100,\n      \"end_line\": 100,\n      \"type_signature\": \"(_view : View resolved) : Nat\"\n    },\n    {\n      \"name\": \"nativeStride\",\n      \"kind\": \"Def\",\n      \"start_line\": 102,\n      \"end_line\": 102,\n      \"type_signature\": \"(_view : View resolved) : Nat\"\n    },\n    {\n      \"name\": \"count_pos\",\n      \"kind\": \"Thm\",\n      \"start_line\": 104,\n      \"end_line\": 104,\n      \"type_signature\": \"(view : View resolved) : 0 < view.count\"\n    },\n    {\n      \"name\": \"registry_scope\",\n      \"kind\": \"Thm\",\n      \"start_line\": 108,\n      \"end_line\": 108,\n      \"type_signature\": \"(view : View resolved) : resolved.registryEntry.airgroupId = 0 \u2227 resolved.registryEntry.airId = 14\"\n    },\n    {\n      \"name\": \"setup_rows\",\n      \"kind\": \"Thm\",\n      \"start_line\": 112,\n      \"end_line\": 112,\n      \"type_signature\": \"(view : View resolved) : view.setup.rowCount = view.count\"\n    },\n    {\n      \"name\": \"cpu_profile\",\n      \"kind\": \"Thm\",\n      \"start_line\": 115,\n      \"end_line\": 115,\n      \"type_signature\": \"(view : View resolved) : view.setup.profile.verify = false \u2227 view.setup.profile.gpu = false\"\n    },\n    {\n      \"name\": \"metadata_rows\",\n      \"kind\": \"Thm\",\n      \"start_line\": 119,\n      \"end_line\": 119,\n      \"type_signature\": \"(view : View resolved) : resolved.slotData.metadata.numRows = view.count\"\n    },\n    {\n      \"name\": \"logical_width\",\n      \"kind\": \"Thm\",\n      \"start_line\": 124,\n      \"end_line\": 124,\n      \"type_signature\": \"(view : View resolved) : view.cm1 = memProfile.unpackedWords\"\n    },\n    {\n      \"name\": \"native_stride_profile\",\n      \"kind\": \"Thm\",\n      \"start_line\": 127,\n      \"end_line\": 127,\n      \"type_signature\": \"(view : View resolved) : view.nativeStride = (if resolved.slotData.metadata.isPacked then memProfile.packedWords else memProfile.unpackedWords)\"\n    },\n    {\n      \"name\": \"native_stride_positive\",\n      \"kind\": \"Thm\",\n      \"start_line\": 132,\n      \"end_line\": 132,\n      \"type_signature\": \"(view : View resolved) : 0 < view.nativeStride\"\n    },\n    {\n      \"name\": \"trace_coverage\",\n      \"kind\": \"Thm\",\n      \"start_line\": 135,\n      \"end_line\": 135,\n      \"type_signature\": \"(view : View resolved) : view.count * view.nativeStride \u2264 resolved.slotData.trace.size\"\n    },\n    {\n      \"name\": \"fixed_width\",\n      \"kind\": \"Thm\",\n      \"start_line\": 140,\n      \"end_line\": 140,\n      \"type_signature\": \"(view : View resolved) : view.setup.nConstants = 2\"\n    },\n    {\n      \"name\": \"fixed_coverage\",\n      \"kind\": \"Thm\",\n      \"start_line\": 143,\n      \"end_line\": 143,\n      \"type_signature\": \"(view : View resolved) : 2 * view.count \u2264 resolved.slotData.fixed.size\"\n    },\n    {\n      \"name\": \"fixed_scan\",\n      \"kind\": \"Thm\",\n      \"start_line\": 148,\n      \"end_line\": 148,\n      \"type_signature\": \"(view : View resolved) : FixedScan.check resolved.slotData.fixed = true\"\n    },\n    {\n      \"name\": \"nativeAddress\",\n      \"kind\": \"Def\",\n      \"start_line\": 153,\n      \"end_line\": 153,\n      \"type_signature\": \"(view : View resolved) (row : view.Index) (word : Fin view.nativeStride) : Fin resolved.slotData.trace.size\"\n    },\n    {\n      \"name\": \"l1?\",\n      \"kind\": \"Def\",\n      \"start_line\": 163,\n      \"end_line\": 163,\n      \"type_signature\": \"(_view : View resolved) (row : _view.Index) : Option FGL\"\n    },\n    {\n      \"name\": \"actual_l1\",\n      \"kind\": \"Thm\",\n      \"start_line\": 166,\n      \"end_line\": 166,\n      \"type_signature\": \"(view : View resolved) (row : view.Index) : view.l1? row = some (if row.val = 0 then 1 else 0)\"\n    },\n    {\n      \"name\": \"same_native_fixed_buffer\",\n      \"kind\": \"Thm\",\n      \"start_line\": 170,\n      \"end_line\": 170,\n      \"type_signature\": \"(view : View resolved) (row : view.Index) : readWord? (resolved.params false) .fixed (row.val * view.setup.nConstants + 1) = view.l1? row\"\n    },\n    {\n      \"name\": \"native_current_row\",\n      \"kind\": \"Thm\",\n      \"start_line\": 178,\n      \"end_line\": 178,\n      \"type_signature\": \"(view : View resolved) (row : view.Index) : view.setup.baseRow? row.val 0 = some row.val\"\n    },\n    {\n      \"name\": \"first\",\n      \"kind\": \"Def\",\n      \"start_line\": 188,\n      \"end_line\": 188,\n      \"type_signature\": \"(view : View resolved) : view.Index\"\n    },\n    {\n      \"name\": \"next\",\n      \"kind\": \"Def\",\n      \"start_line\": 190,\n      \"end_line\": 190,\n      \"type_signature\": \"(view : View resolved) (row : view.Index) : view.Index\"\n    },\n    {\n      \"name\": \"native_next_row\",\n      \"kind\": \"Thm\",\n      \"start_line\": 193,\n      \"end_line\": 193,\n      \"type_signature\": \"(view : View resolved) (row : view.Index) : view.setup.baseRow? row.val 1 = some (view.next row).val\"\n    },\n    {\n      \"name\": \"last\",\n      \"kind\": \"Def\",\n      \"start_line\": 204,\n      \"end_line\": 204,\n      \"type_signature\": \"(view : View resolved) : view.Index\"\n    },\n    {\n      \"name\": \"shifted_l1\",\n      \"kind\": \"Thm\",\n      \"start_line\": 210,\n      \"end_line\": 210,\n      \"type_signature\": \"(view : View resolved) (row : view.Index) : view.l1? (view.next row) = some (if row.val + 1 = view.count then 1 else 0)\"\n    },\n    {\n      \"name\": \"unique_physical_last\",\n      \"kind\": \"Thm\",\n      \"start_line\": 220,\n      \"end_line\": 220,\n      \"type_signature\": \"(view : View resolved) : \u2203! row : view.Index, view.l1? (view.next row) = some 1\"\n    },\n    {\n      \"name\": \"group\",\n      \"kind\": \"Def\",\n      \"start_line\": 233,\n      \"end_line\": 233,\n      \"type_signature\": \"(view : View resolved) : Stage2.Ext3 FGL\"\n    },\n    {\n      \"name\": \"direct\",\n      \"kind\": \"Def\",\n      \"start_line\": 235,\n      \"end_line\": 235,\n      \"type_signature\": \"(view : View resolved) (index : Fin 6) : Stage2.Ext3 FGL\"\n    },\n    {\n      \"name\": \"joint_source_buffers\",\n      \"kind\": \"Thm\",\n      \"start_line\": 240,\n      \"end_line\": 240,\n      \"type_signature\": \"(view : View resolved) : NativeValuesLayout.groupWords? .mem (resolved.params false) = some view.groupWords \u2227 directBatch? resolved = some view.directWords \u2227 (resolved.params false).trace = resolved.slotData.trace \u2227 (resolved.params false).airgroupValues = resolved.slotData.airgroupValues \u2227 (resolved.params false).airvalues = resolved.slotData.airvalues\"\n    }\n  ]\n}",
+          "annotations": null,
+          "meta": null
+        }
+      ],
+      "structured_content": {
+        "imports": [
+          "ZiskFv.AirsClean.Mem.PhysicalSource.FixedScan",
+          "ZiskFv.AirsClean.Mem.Stage1.NativeProfile",
+          "ZiskFv.AirsClean.Mem.Stage2.Cubic",
+          "ZiskFv.AirsClean.MemAlignWriteByte.SourceInstance",
+          "ZiskFv.AirsClean.NativeValuesLayout"
+        ],
+        "declarations": [
+          {
+            "name": "directBatch?",
+            "kind": "Def",
+            "start_line": 26,
+            "end_line": 26,
+            "type_signature": "(resolved : ResolvedOccurrence source) : Option (Vector (Vector FGL 3) 6)"
+          },
+          {
+            "name": "extension",
+            "kind": "Def",
+            "start_line": 37,
+            "end_line": 37,
+            "type_signature": "(words : Vector FGL 3) : Stage2.Ext3 FGL"
+          },
+          {
+            "name": "geometry",
+            "kind": "Def",
+            "start_line": 42,
+            "end_line": 42,
+            "type_signature": "(resolved : ResolvedOccurrence source) (setup : NativeSetup) (cm1 : Nat) : Prop"
+          },
+          {
+            "name": "View",
+            "kind": "Struct",
+            "start_line": 65,
+            "end_line": 65,
+            "type_signature": "(resolved : ResolvedOccurrence source)"
+          },
+          {
+            "name": "fromResolved?",
+            "kind": "Def",
+            "start_line": 77,
+            "end_line": 77,
+            "type_signature": "(resolved : ResolvedOccurrence source) : Option (View resolved)"
+          },
+          {
+            "name": "count",
+            "kind": "Def",
+            "start_line": 100,
+            "end_line": 100,
+            "type_signature": "(_view : View resolved) : Nat"
+          },
+          {
+            "name": "nativeStride",
+            "kind": "Def",
+            "start_line": 102,
+            "end_line": 102,
+            "type_signature": "(_view : View resolved) : Nat"
+          },
+          {
+            "name": "count_pos",
+            "kind": "Thm",
+            "start_line": 104,
+            "end_line": 104,
+            "type_signature": "(view : View resolved) : 0 < view.count"
+          },
+          {
+            "name": "registry_scope",
+            "kind": "Thm",
+            "start_line": 108,
+            "end_line": 108,
+            "type_signature": "(view : View resolved) : resolved.registryEntry.airgroupId = 0 \u2227 resolved.registryEntry.airId = 14"
+          },
+          {
+            "name": "setup_rows",
+            "kind": "Thm",
+            "start_line": 112,
+            "end_line": 112,
+            "type_signature": "(view : View resolved) : view.setup.rowCount = view.count"
+          },
+          {
+            "name": "cpu_profile",
+            "kind": "Thm",
+            "start_line": 115,
+            "end_line": 115,
+            "type_signature": "(view : View resolved) : view.setup.profile.verify = false \u2227 view.setup.profile.gpu = false"
+          },
+          {
+            "name": "metadata_rows",
+            "kind": "Thm",
+            "start_line": 119,
+            "end_line": 119,
+            "type_signature": "(view : View resolved) : resolved.slotData.metadata.numRows = view.count"
+          },
+          {
+            "name": "logical_width",
+            "kind": "Thm",
+            "start_line": 124,
+            "end_line": 124,
+            "type_signature": "(view : View resolved) : view.cm1 = memProfile.unpackedWords"
+          },
+          {
+            "name": "native_stride_profile",
+            "kind": "Thm",
+            "start_line": 127,
+            "end_line": 127,
+            "type_signature": "(view : View resolved) : view.nativeStride = (if resolved.slotData.metadata.isPacked then memProfile.packedWords else memProfile.unpackedWords)"
+          },
+          {
+            "name": "native_stride_positive",
+            "kind": "Thm",
+            "start_line": 132,
+            "end_line": 132,
+            "type_signature": "(view : View resolved) : 0 < view.nativeStride"
+          },
+          {
+            "name": "trace_coverage",
+            "kind": "Thm",
+            "start_line": 135,
+            "end_line": 135,
+            "type_signature": "(view : View resolved) : view.count * view.nativeStride \u2264 resolved.slotData.trace.size"
+          },
+          {
+            "name": "fixed_width",
+            "kind": "Thm",
+            "start_line": 140,
+            "end_line": 140,
+            "type_signature": "(view : View resolved) : view.setup.nConstants = 2"
+          },
+          {
+            "name": "fixed_coverage",
+            "kind": "Thm",
+            "start_line": 143,
+            "end_line": 143,
+            "type_signature": "(view : View resolved) : 2 * view.count \u2264 resolved.slotData.fixed.size"
+          },
+          {
+            "name": "fixed_scan",
+            "kind": "Thm",
+            "start_line": 148,
+            "end_line": 148,
+            "type_signature": "(view : View resolved) : FixedScan.check resolved.slotData.fixed = true"
+          },
+          {
+            "name": "nativeAddress",
+            "kind": "Def",
+            "start_line": 153,
+            "end_line": 153,
+            "type_signature": "(view : View resolved) (row : view.Index) (word : Fin view.nativeStride) : Fin resolved.slotData.trace.size"
+          },
+          {
+            "name": "l1?",
+            "kind": "Def",
+            "start_line": 163,
+            "end_line": 163,
+            "type_signature": "(_view : View resolved) (row : _view.Index) : Option FGL"
+          },
+          {
+            "name": "actual_l1",
+            "kind": "Thm",
+            "start_line": 166,
+            "end_line": 166,
+            "type_signature": "(view : View resolved) (row : view.Index) : view.l1? row = some (if row.val = 0 then 1 else 0)"
+          },
+          {
+            "name": "same_native_fixed_buffer",
+            "kind": "Thm",
+            "start_line": 170,
+            "end_line": 170,
+            "type_signature": "(view : View resolved) (row : view.Index) : readWord? (resolved.params false) .fixed (row.val * view.setup.nConstants + 1) = view.l1? row"
+          },
+          {
+            "name": "native_current_row",
+            "kind": "Thm",
+            "start_line": 178,
+            "end_line": 178,
+            "type_signature": "(view : View resolved) (row : view.Index) : view.setup.baseRow? row.val 0 = some row.val"
+          },
+          {
+            "name": "first",
+            "kind": "Def",
+            "start_line": 188,
+            "end_line": 188,
+            "type_signature": "(view : View resolved) : view.Index"
+          },
+          {
+            "name": "next",
+            "kind": "Def",
+            "start_line": 190,
+            "end_line": 190,
+            "type_signature": "(view : View resolved) (row : view.Index) : view.Index"
+          },
+          {
+            "name": "native_next_row",
+            "kind": "Thm",
+            "start_line": 193,
+            "end_line": 193,
+            "type_signature": "(view : View resolved) (row : view.Index) : view.setup.baseRow? row.val 1 = some (view.next row).val"
+          },
+          {
+            "name": "last",
+            "kind": "Def",
+            "start_line": 204,
+            "end_line": 204,
+            "type_signature": "(view : View resolved) : view.Index"
+          },
+          {
+            "name": "shifted_l1",
+            "kind": "Thm",
+            "start_line": 210,
+            "end_line": 210,
+            "type_signature": "(view : View resolved) (row : view.Index) : view.l1? (view.next row) = some (if row.val + 1 = view.count then 1 else 0)"
+          },
+          {
+            "name": "unique_physical_last",
+            "kind": "Thm",
+            "start_line": 220,
+            "end_line": 220,
+            "type_signature": "(view : View resolved) : \u2203! row : view.Index, view.l1? (view.next row) = some 1"
+          },
+          {
+            "name": "group",
+            "kind": "Def",
+            "start_line": 233,
+            "end_line": 233,
+            "type_signature": "(view : View resolved) : Stage2.Ext3 FGL"
+          },
+          {
+            "name": "direct",
+            "kind": "Def",
+            "start_line": 235,
+            "end_line": 235,
+            "type_signature": "(view : View resolved) (index : Fin 6) : Stage2.Ext3 FGL"
+          },
+          {
+            "name": "joint_source_buffers",
+            "kind": "Thm",
+            "start_line": 240,
+            "end_line": 240,
+            "type_signature": "(view : View resolved) : NativeValuesLayout.groupWords? .mem (resolved.params false) = some view.groupWords \u2227 directBatch? resolved = some view.directWords \u2227 (resolved.params false).trace = resolved.slotData.trace \u2227 (resolved.params false).airgroupValues = resolved.slotData.airgroupValues \u2227 (resolved.params false).airvalues = resolved.slotData.airvalues"
+          }
+        ]
+      },
+      "is_error": false,
+      "result_type": "complete"
+    }
+  },
+  {
+    "tool": "lean_file_outline",
+    "args": {
+      "file_path": "ZiskFv/AirsClean/Mem/PhysicalSource/Rotation.lean",
+      "max_declarations": 100
+    },
+    "result": {
+      "meta": null,
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"imports\": [\n    \"ZiskFv.AirsClean.Mem.PhysicalSource.Domain\"\n  ],\n  \"declarations\": [\n    {\n      \"name\": \"rotate\",\n      \"kind\": \"Def\",\n      \"start_line\": 14,\n      \"end_line\": 14,\n      \"type_signature\": \"(view : View resolved) (row : view.Index) (rotation : Int) : view.Index\"\n    },\n    {\n      \"name\": \"native_rotation\",\n      \"kind\": \"Thm\",\n      \"start_line\": 23,\n      \"end_line\": 23,\n      \"type_signature\": \"(view : View resolved) (row : view.Index) (rotation : Int) : view.setup.baseRow? row.val rotation = some (view.rotate row rotation).val\"\n    },\n    {\n      \"name\": \"rotate_zero\",\n      \"kind\": \"Thm\",\n      \"start_line\": 35,\n      \"end_line\": 35,\n      \"type_signature\": \"(view : View resolved) (row : view.Index) : view.rotate row 0 = row\"\n    },\n    {\n      \"name\": \"rotate_one\",\n      \"kind\": \"Thm\",\n      \"start_line\": 42,\n      \"end_line\": 42,\n      \"type_signature\": \"(view : View resolved) (row : view.Index) : view.rotate row 1 = view.next row\"\n    },\n    {\n      \"name\": \"previous\",\n      \"kind\": \"Def\",\n      \"start_line\": 49,\n      \"end_line\": 49,\n      \"type_signature\": \"(view : View resolved) (row : view.Index) : view.Index\"\n    },\n    {\n      \"name\": \"native_previous\",\n      \"kind\": \"Thm\",\n      \"start_line\": 52,\n      \"end_line\": 52,\n      \"type_signature\": \"(view : View resolved) (row : view.Index) : view.setup.baseRow? row.val (-1) = some (view.previous row).val\"\n    },\n    {\n      \"name\": \"previous_first\",\n      \"kind\": \"Thm\",\n      \"start_line\": 56,\n      \"end_line\": 56,\n      \"type_signature\": \"(view : View resolved) : view.previous view.first = view.last\"\n    },\n    {\n      \"name\": \"previous_of_positive\",\n      \"kind\": \"Thm\",\n      \"start_line\": 63,\n      \"end_line\": 63,\n      \"type_signature\": \"(view : View resolved) (row : view.Index) (positive : 0 < row.val) : (view.previous row).val = row.val - 1\"\n    }\n  ]\n}",
+          "annotations": null,
+          "meta": null
+        }
+      ],
+      "structured_content": {
+        "imports": [
+          "ZiskFv.AirsClean.Mem.PhysicalSource.Domain"
+        ],
+        "declarations": [
+          {
+            "name": "rotate",
+            "kind": "Def",
+            "start_line": 14,
+            "end_line": 14,
+            "type_signature": "(view : View resolved) (row : view.Index) (rotation : Int) : view.Index"
+          },
+          {
+            "name": "native_rotation",
+            "kind": "Thm",
+            "start_line": 23,
+            "end_line": 23,
+            "type_signature": "(view : View resolved) (row : view.Index) (rotation : Int) : view.setup.baseRow? row.val rotation = some (view.rotate row rotation).val"
+          },
+          {
+            "name": "rotate_zero",
+            "kind": "Thm",
+            "start_line": 35,
+            "end_line": 35,
+            "type_signature": "(view : View resolved) (row : view.Index) : view.rotate row 0 = row"
+          },
+          {
+            "name": "rotate_one",
+            "kind": "Thm",
+            "start_line": 42,
+            "end_line": 42,
+            "type_signature": "(view : View resolved) (row : view.Index) : view.rotate row 1 = view.next row"
+          },
+          {
+            "name": "previous",
+            "kind": "Def",
+            "start_line": 49,
+            "end_line": 49,
+            "type_signature": "(view : View resolved) (row : view.Index) : view.Index"
+          },
+          {
+            "name": "native_previous",
+            "kind": "Thm",
+            "start_line": 52,
+            "end_line": 52,
+            "type_signature": "(view : View resolved) (row : view.Index) : view.setup.baseRow? row.val (-1) = some (view.previous row).val"
+          },
+          {
+            "name": "previous_first",
+            "kind": "Thm",
+            "start_line": 56,
+            "end_line": 56,
+            "type_signature": "(view : View resolved) : view.previous view.first = view.last"
+          },
+          {
+            "name": "previous_of_positive",
+            "kind": "Thm",
+            "start_line": 63,
+            "end_line": 63,
+            "type_signature": "(view : View resolved) (row : view.Index) (positive : 0 < row.val) : (view.previous row).val = row.val - 1"
+          }
+        ]
+      },
+      "is_error": false,
+      "result_type": "complete"
+    }
+  },
+  {
+    "tool": "lean_references",
+    "args": {
+      "file_path": "/home/cody/zisk-fv-mem-ten-main452/ZiskFv/AirsClean/Mem/PhysicalSource/CompleteView.lean",
+      "line": 173,
+      "column": 9,
+      "max_results": 20
+    },
+    "result": {
+      "meta": null,
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"items\": [\n    {\n      \"file_path\": \"ZiskFv/AirsClean/Mem/PhysicalSource/CompleteView.lean\",\n      \"line\": 173,\n      \"column\": 9,\n      \"end_line\": 173,\n      \"end_column\": 25\n    },\n    {\n      \"file_path\": \"ZiskFv/AirsClean/Mem/PhysicalSource/CompleteView.lean\",\n      \"line\": 209,\n      \"column\": 12,\n      \"end_line\": 209,\n      \"end_column\": 28\n    },\n    {\n      \"file_path\": \"ZiskFv/AirsClean/Mem/PhysicalSource/CompleteView.lean\",\n      \"line\": 222,\n      \"column\": 23,\n      \"end_line\": 222,\n      \"end_column\": 39\n    }\n  ],\n  \"total\": 3\n}",
+          "annotations": null,
+          "meta": null
+        }
+      ],
+      "structured_content": {
+        "items": [
+          {
+            "file_path": "ZiskFv/AirsClean/Mem/PhysicalSource/CompleteView.lean",
+            "line": 173,
+            "column": 9,
+            "end_line": 173,
+            "end_column": 25
+          },
+          {
+            "file_path": "ZiskFv/AirsClean/Mem/PhysicalSource/CompleteView.lean",
+            "line": 209,
+            "column": 12,
+            "end_line": 209,
+            "end_column": 28
+          },
+          {
+            "file_path": "ZiskFv/AirsClean/Mem/PhysicalSource/CompleteView.lean",
+            "line": 222,
+            "column": 23,
+            "end_line": 222,
+            "end_column": 39
+          }
+        ],
+        "total": 3
+      },
+      "is_error": false,
+      "result_type": "complete"
+    }
+  }
+]
