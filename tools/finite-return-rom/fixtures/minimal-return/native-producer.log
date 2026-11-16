@@ -1,0 +1,3 @@
+   Compiling finite-return-rom-capture v0.1.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/driver)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.78s
+     Running `target/debug/finite-return-rom-capture /home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/guest.elf /home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/raw`
