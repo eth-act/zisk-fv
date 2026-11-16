@@ -108,6 +108,12 @@ theorem repeatJalr_first_execution :
   repeatJalr_execute repeatJalrInit repeatJalrInit_reads.1 repeatJalrInit_reads.2.1
     repeatJalrInit_reads.2.2.1 repeatJalrInit_reads.2.2.2.1 repeatJalrInit_reads.2.2.2.2
 
+/-- The actual generated Sail encoder returns the exact checked source word
+on this same state. Kernel reduction only; no ext_decode direction is asserted. -/
+theorem repeatJalr_actual_encoder :
+    SailEncodesToIn repeatJalrInit repeatJalrInstruction (repeatJalrRawProgram 0) := by
+  rfl
+
 private theorem repeatJalrSecond_reads :
     repeatJalrSecond.regs.get? Register.PC = some (0#64) ∧
     repeatJalrSecond.regs.get? Register.misa = some (4096#64) ∧
@@ -125,6 +131,7 @@ private theorem repeatJalrSecond_reads :
 The architectural continuation is executable, not a firstSound promise.
 Physical-channel equivalence still requires the same actual Accepted world. -/
 theorem repeatedJalr_actual_sail_execution :
+    SailEncodesToIn repeatJalrInit repeatJalrInstruction (repeatJalrRawProgram 0) ∧
     sourceEnd repeatJalrLowerings = 4 ∧
     execute_instruction repeatJalrInstruction repeatJalrInit =
       EStateM.Result.ok (ExecutionResult.Retire_Success ()) (repeatJalrPost repeatJalrInit) ∧
@@ -138,7 +145,7 @@ theorem repeatedJalr_actual_sail_execution :
     repeatJalrFinal.regs.get? Register.x1 = some (4#64) ∧
     repeatJalrFinal.regs.get? Register.x2 = some (0#64) ∧
     repeatJalrFinal.mem = repeatJalrInit.mem := by
-  refine ⟨repeatJalr_sourceEnd, repeatJalr_first_execution, ?_,
+  refine ⟨repeatJalr_actual_encoder, repeatJalr_sourceEnd, repeatJalr_first_execution, ?_,
     repeatJalrSecond_reads.1, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact repeatJalr_execute repeatJalrSecond repeatJalrSecond_reads.1
       repeatJalrSecond_reads.2.1 repeatJalrSecond_reads.2.2.1
