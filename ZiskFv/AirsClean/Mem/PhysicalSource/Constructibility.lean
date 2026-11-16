@@ -83,7 +83,8 @@ def occurrence (packed : Bool) : ResolvedOccurrence (source packed) :=
 
 theorem actual_slot (packed : Bool) : (occurrence packed).slotData = slot packed := rfl
 
-theorem slot_fixed (packed : Bool) : (slot packed).fixed = fixedBuffer := rfl
+theorem slot_fixed (packed : Bool) : (slot packed).fixed = fixedBuffer := by
+  dsimp only [slot]
 
 theorem traceBuffer_size (packed : Bool) :
     (traceBuffer packed).size = physicalRows * (if packed then 4 else 13) + 5 := by
