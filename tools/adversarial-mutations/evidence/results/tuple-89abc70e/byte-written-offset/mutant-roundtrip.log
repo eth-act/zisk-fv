@@ -1,0 +1,4 @@
+argv: ["/usr/bin/python3", "/home/cody/zisk-fv-closure-mutation/tools/pilout-roundtrip/check.py", "--pilout", "/home/cody/zisk-fv-closure-mutation/build/closure-tuple-source-controls/byte-written-offset/mutant.pilout", "--extraction", "/nix/store/y3vj91jaqh0w097q42lxvq7kkbx21r0f-zisk-fv-extracted-lean-1.0", "--quiet"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+pilout-roundtrip: OK 355/355 constraints matched across 10 airs of 10 declared (0 mismatched, 0 dropped, 0 invented, 0 skipped, 0 accounting, 0 parse errors; P3 203/203)

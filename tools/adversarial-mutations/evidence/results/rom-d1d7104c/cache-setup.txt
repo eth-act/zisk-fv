@@ -1,0 +1,37 @@
+import hashlib,json,os,pathlib,subprocess,time
+source=pathlib.Path('/home/cody/zisk-fv-binary-integration')
+target=pathlib.Path('/tmp/closure-rom-bounded-packet')
+evidence=pathlib.Path('/tmp/closure-rom-bounded-evidence')
+def digest(path):
+ h=hashlib.sha256()
+ with path.open('rb') as stream:
+  for block in iter(lambda:stream.read(1048576),b''):h.update(block)
+ return h.hexdigest()
+def inputs(root):
+ files=list((root/'ZiskFv').rglob('*.lean'))+list((root/'trust/aeneas').rglob('*.lean'))
+ files += [root/name for name in ['lakefile.toml','lake-manifest.json','lean-toolchain','flake.lock']]
+ return {str(path.relative_to(root)):digest(path) for path in sorted(files) if path.is_file()}
+report={'source':str(source),'target':str(target),'source_commit':subprocess.check_output(['/usr/bin/git','rev-parse','HEAD'],cwd=source,text=True).strip(),'target_commit':subprocess.check_output(['/usr/bin/git','rev-parse','HEAD'],cwd=target,text=True).strip(),'copy_mode':'cp -a --reflink=never; every regular file compared; symlink targets compared','source_inputs':inputs(source),'target_inputs':inputs(target),'copies':[]}
+(evidence/'cache-provenance.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
+for relative in ['.lake','build/clean-lean','build/sail-lean','build/aeneas-lean','build/extraction']:
+ src=source/relative; dst=target/relative
+ if dst.exists():raise RuntimeError(f'copy destination unexpectedly exists: {dst}')
+ dst.parent.mkdir(parents=True,exist_ok=True)
+ subprocess.run(['cp','-a','--reflink=never',str(src),str(dst)],check=True)
+ checked=0
+ for original in src.rglob('*'):
+  copied=dst/original.relative_to(src)
+  if original.is_symlink():
+   if not copied.is_symlink() or os.readlink(original)!=os.readlink(copied):raise RuntimeError(f'symlink differs: {original}')
+  elif original.is_file():
+   subprocess.run(['cmp','--silent',str(original),str(copied)],check=True)
+   checked+=1
+ report['copies'].append({'relative':relative,'regular_files_compared':checked})
+ (evidence/'cache-provenance.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')
+ print(relative,checked,flush=True)
+(target/'build').mkdir(exist_ok=True)
+subprocess.run(['cp','--reflink=never',str(source/'build/zisk.pilout'),str(target/'build/zisk.pilout')],check=True)
+assert digest(target/'build/zisk.pilout')=='e816e4fd728fae4b0b55cac6da01312adf72afe152fe22a47da7610cf0338e6f'
+report['pilout_sha256']=digest(target/'build/zisk.pilout')
+report['complete']=True
+(evidence/'cache-provenance.json').write_text(json.dumps(report,indent=2,sort_keys=True)+'\n')

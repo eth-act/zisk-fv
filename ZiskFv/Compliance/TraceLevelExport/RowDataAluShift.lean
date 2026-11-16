@@ -2014,7 +2014,7 @@ def toRowData_sraw {trace : AcceptedZiskTrace numInstructions} {binding : SailTr
   toInputs := ia
 
 structure Claim_slliw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
-  slliw_input : PureSpec.SlliwInput
+  shamt : BitVec 5
   r1 : regidx
   rd : regidx
 
@@ -2065,15 +2065,39 @@ structure Decode_slliw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.b_src_imm = 1
   h_b_offset_imm0 :
     (mainRowWithRomSub trace i).rom.b_offset_imm0 =
-      shamt_b_lo (BitVec.setWidth 6 c.slliw_input.shamt)
+      shamt_b_lo (BitVec.setWidth 6 c.shamt)
 
 structure InputsCore_slliw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_slliw trace i) : Type where
-  h_input_r1 :
-    read_xreg (regidx_to_fin c.r1) (binding i)
-      = EStateM.Result.ok c.slliw_input.r1_val (binding i)
-  h_input_pc : (binding i).regs.get? Register.PC = .some c.slliw_input.PC
-  h_input_rd : c.slliw_input.rd = regidx_to_fin c.rd
+  h_input_r1 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r1) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc
+
+/-- The instruction claim contains only decoded fields. Runtime input values
+are selected from successful reads of the actual Sail state, without defaults. -/
+noncomputable def InputsCore_slliw.input
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_slliw trace i}
+    (inputs : InputsCore_slliw trace binding i c) : PureSpec.SlliwInput where
+  r1_val := Classical.choose inputs.h_input_r1
+  shamt := c.shamt
+  rd := regidx_to_fin c.rd
+  PC := Classical.choose inputs.h_input_pc
+
+theorem InputsCore_slliw.input_r1_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_slliw trace i}
+    (inputs : InputsCore_slliw trace binding i c) :
+    read_xreg (regidx_to_fin c.r1) (binding i) =
+      EStateM.Result.ok inputs.input.r1_val (binding i) :=
+  Classical.choose_spec inputs.h_input_r1
+
+theorem InputsCore_slliw.input_pc_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_slliw trace i}
+    (inputs : InputsCore_slliw trace binding i c) :
+    (binding i).regs.get? Register.PC = some inputs.input.PC :=
+  Classical.choose_spec inputs.h_input_pc
 
 /-- The PC agreement `Inputs_slliw` carries on top of `InputsCore_slliw`.
 
@@ -2085,7 +2109,7 @@ structure Inputs_slliw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     (i : Fin trace.numInstructions) (c : Claim_slliw trace i) : Type extends InputsCore_slliw trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.slliw_input.PC.toNat
+      = (Classical.choose h_input_pc).toNat
 
 /-- Per-op residual bundle for the `slliw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_slliw` bundles them. -/
@@ -2104,7 +2128,7 @@ def toRowData_slliw {trace : AcceptedZiskTrace numInstructions} {binding : SailT
   toInputs := ia
 
 structure Claim_srliw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
-  srliw_input : PureSpec.SrliwInput
+  shamt : BitVec 5
   r1 : regidx
   rd : regidx
 
@@ -2155,15 +2179,39 @@ structure Decode_srliw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.b_src_imm = 1
   h_b_offset_imm0 :
     (mainRowWithRomSub trace i).rom.b_offset_imm0 =
-      shamt_b_lo (BitVec.setWidth 6 c.srliw_input.shamt)
+      shamt_b_lo (BitVec.setWidth 6 c.shamt)
 
 structure InputsCore_srliw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_srliw trace i) : Type where
-  h_input_r1 :
-    read_xreg (regidx_to_fin c.r1) (binding i)
-      = EStateM.Result.ok c.srliw_input.r1_val (binding i)
-  h_input_pc : (binding i).regs.get? Register.PC = .some c.srliw_input.PC
-  h_input_rd : c.srliw_input.rd = regidx_to_fin c.rd
+  h_input_r1 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r1) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc
+
+/-- Runtime values come from the generated state's successful reads, not the
+decoded instruction data. -/
+noncomputable def InputsCore_srliw.input
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_srliw trace i}
+    (inputs : InputsCore_srliw trace binding i c) : PureSpec.SrliwInput where
+  r1_val := Classical.choose inputs.h_input_r1
+  shamt := c.shamt
+  rd := regidx_to_fin c.rd
+  PC := Classical.choose inputs.h_input_pc
+
+theorem InputsCore_srliw.input_r1_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_srliw trace i}
+    (inputs : InputsCore_srliw trace binding i c) :
+    read_xreg (regidx_to_fin c.r1) (binding i) =
+      EStateM.Result.ok inputs.input.r1_val (binding i) :=
+  Classical.choose_spec inputs.h_input_r1
+
+theorem InputsCore_srliw.input_pc_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_srliw trace i}
+    (inputs : InputsCore_srliw trace binding i c) :
+    (binding i).regs.get? Register.PC = some inputs.input.PC :=
+  Classical.choose_spec inputs.h_input_pc
 
 /-- The PC agreement `Inputs_srliw` carries on top of `InputsCore_srliw`.
 
@@ -2175,7 +2223,7 @@ structure Inputs_srliw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     (i : Fin trace.numInstructions) (c : Claim_srliw trace i) : Type extends InputsCore_srliw trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.srliw_input.PC.toNat
+      = (Classical.choose h_input_pc).toNat
 
 /-- Per-op residual bundle for the `srliw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_srliw` bundles them. -/
@@ -2194,7 +2242,7 @@ def toRowData_srliw {trace : AcceptedZiskTrace numInstructions} {binding : SailT
   toInputs := ia
 
 structure Claim_sraiw (trace : AcceptedZiskTrace numInstructions) (i : Fin trace.numInstructions) where
-  sraiw_input : PureSpec.SraiwInput
+  shamt : BitVec 5
   r1 : regidx
   rd : regidx
 
@@ -2245,15 +2293,39 @@ structure Decode_sraiw (trace : AcceptedZiskTrace numInstructions)
     (mainRowWithRomSub trace i).rom.b_src_imm = 1
   h_b_offset_imm0 :
     (mainRowWithRomSub trace i).rom.b_offset_imm0 =
-      shamt_b_lo (BitVec.setWidth 6 c.sraiw_input.shamt)
+      shamt_b_lo (BitVec.setWidth 6 c.shamt)
 
 structure InputsCore_sraiw (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions)
     (i : Fin trace.numInstructions) (c : Claim_sraiw trace i) : Type where
-  h_input_r1 :
-    read_xreg (regidx_to_fin c.r1) (binding i)
-      = EStateM.Result.ok c.sraiw_input.r1_val (binding i)
-  h_input_pc : (binding i).regs.get? Register.PC = .some c.sraiw_input.PC
-  h_input_rd : c.sraiw_input.rd = regidx_to_fin c.rd
+  h_input_r1 : ∃ value : BitVec 64,
+    read_xreg (regidx_to_fin c.r1) (binding i) = EStateM.Result.ok value (binding i)
+  h_input_pc : ∃ pc : BitVec 64, (binding i).regs.get? Register.PC = some pc
+
+/-- Runtime values come from the generated state's successful reads, not the
+decoded instruction data. -/
+noncomputable def InputsCore_sraiw.input
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_sraiw trace i}
+    (inputs : InputsCore_sraiw trace binding i c) : PureSpec.SraiwInput where
+  r1_val := Classical.choose inputs.h_input_r1
+  shamt := c.shamt
+  rd := regidx_to_fin c.rd
+  PC := Classical.choose inputs.h_input_pc
+
+theorem InputsCore_sraiw.input_r1_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_sraiw trace i}
+    (inputs : InputsCore_sraiw trace binding i c) :
+    read_xreg (regidx_to_fin c.r1) (binding i) =
+      EStateM.Result.ok inputs.input.r1_val (binding i) :=
+  Classical.choose_spec inputs.h_input_r1
+
+theorem InputsCore_sraiw.input_pc_read
+    {trace : AcceptedZiskTrace numInstructions} {binding : SailTrace trace.numInstructions}
+    {i : Fin trace.numInstructions} {c : Claim_sraiw trace i}
+    (inputs : InputsCore_sraiw trace binding i c) :
+    (binding i).regs.get? Register.PC = some inputs.input.PC :=
+  Classical.choose_spec inputs.h_input_pc
 
 /-- The PC agreement `Inputs_sraiw` carries on top of `InputsCore_sraiw`.
 
@@ -2265,7 +2337,7 @@ structure Inputs_sraiw (trace : AcceptedZiskTrace numInstructions) (binding : Sa
     (i : Fin trace.numInstructions) (c : Claim_sraiw trace i) : Type extends InputsCore_sraiw trace binding i c where
   h_pc_bridge :
     ((ZiskFv.AirsClean.FullEnsemble.mainOfTable trace.program trace.mainTable).pc i.val).val
-      = c.sraiw_input.PC.toNat
+      = (Classical.choose h_input_pc).toNat
 
 /-- Per-op residual bundle for the `sraiw` archetype: the 3-way `Claim`/`Decode`/`Inputs`
     split is the single declaration site for every field; `RowData_sraiw` bundles them. -/

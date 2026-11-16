@@ -14,6 +14,9 @@ import ZiskFv.AirsClean.ArithMul.RangeWiring
 import ZiskFv.AirsClean.ArithMul.ExtractedRow
 import ZiskFv.AirsClean.Main.Wiring
 import ZiskFv.AirsClean.Main.RomWiring
+import ZiskFv.AirsClean.ZiskInstructionRomImage
+import ZiskFv.AirsClean.ZiskInstructionRomProvider
+import ZiskFv.AirsClean.ZiskInstructionRomSource
 import ZiskFv.AirsClean.Main.MemoryWiring
 import ZiskFv.AirsClean.BinaryExtension.ExtractedWiring
 import ZiskFv.AirsClean.MemAlign.ExtractedWiring
@@ -158,6 +161,7 @@ import ZiskFv.ZiskCircuit.MemTimeline.Construction
 import ZiskFv.ZiskCircuit.MemTimeline.Linkage
 import ZiskFv.ZiskCircuit.MemTimeline.Spike
 import ZiskFv.Compliance.RowProvenance
+import ZiskFv.Compliance.RomProducerFlags
 import ZiskFv.Compliance.AcceptedZiskTrace
 import ZiskFv.Compliance.AcceptedZiskTrace.Spec
 import ZiskFv.Compliance.AcceptedZiskTrace.MemTable
@@ -290,3 +294,7 @@ import ZiskFv.AirsClean.MemAlignByteMirrorWeld
 -- constraint definitions are all `@[simp]`-tagged, so keeping it out of every
 -- other module's import closure keeps that simp set out of the proofs.
 import ZiskFv.AirsClean.MemMirrorWeld
+import ZiskFv.AirsClean.GsumBoundary
+import ZiskFv.AirsClean.OperationPadding
+import ZiskFv.AirsClean.MemAlignWriteByte.ExtractedWiring
+import ZiskFv.AirsClean.MemAlignWriteByte.DirectWiring

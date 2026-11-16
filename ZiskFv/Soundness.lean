@@ -5,6 +5,7 @@ import ZiskFv.Compliance.TraceLevelExport.RawProgramDecode
 import ZiskFv.Compliance.TraceLevelExport.RegisterFileAgreement
 import ZiskFv.Compliance.TraceLevelExport.RegisterCoverageBridge
 import ZiskFv.Compliance.TraceLevelExport.PureInputs
+import ZiskFv.Compliance.TraceLevelExport.StatePresence
 import ZiskFv.AirsClean.ArithTableProjections
 
 /-!
@@ -1077,11 +1078,24 @@ private lemma copyb_narrow_entry_range
         (h_zero.2.1 (h_main_width.trans h_width)).1]
       decide
 
+/-- Register-write ranges do not use any load PC/forge exclusion. The other
+families retain precisely the original range-avoidance facts. -/
+private def stepRegWriteRangeAvoidance
+    {n : Nat} (trace : AcceptedZiskTrace n) (i : Fin n) : ZiskStep trace i → Prop
+  | .ld _ | .lbu _ | .lhu _ | .lwu _ | .lb _ | .lh _ | .lw _ => True
+  | step => RowOutsideDefectRegion trace i step
+
+private theorem stepRegWriteRangeAvoidance_of_rowOutside
+    {n : Nat} {trace : AcceptedZiskTrace n} {i : Fin n} (step : ZiskStep trace i)
+    (outside : RowOutsideDefectRegion trace i step) :
+    stepRegWriteRangeAvoidance trace i step := by
+  cases step <;> first | exact True.intro | exact outside
+
 private theorem stepRegWrite_entry_range_aux
     {n : ℕ} {trace : AcceptedZiskTrace n} {sailTrace : SailTrace n}
     (i : Fin n) (zs : ZiskStep trace i) (rd : RowDecode trace i zs)
     (ia : InputsAgreeCore trace sailTrace i zs)
-    (hAvoid : RowOutsideDefectRegion trace i zs)
+    (hAvoid : stepRegWriteRangeAvoidance trace i zs)
     (h_mem_present : ZiskStepLoadMemoryRows trace i zs →
       MutableMemPresent trace.witness)
     (he : stepRegWrite (stepChannelOutput i zs rd)
@@ -1967,6 +1981,120 @@ private theorem stepRegWrite_consistent_aux
       exact (congrArg Fin.val h_eq.symm).trans rd.rows.architectural_start
   | _ => exact ⟨(fun h => nomatch h), rfl⟩
 
+/-- One coupled induction serves both the public Main-PC domain and the exact
+old Sail-input-PC comparison. Avoidance is supplied only after this induction
+has derived the CURRENT step's PC tie; neither specialization calls the other. -/
+private theorem root_soundness_induction
+    (numInstructions rawLength : Nat)
+    (ziskTrace : AcceptedZiskTrace numInstructions)
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (ziskStep : ∀ i : Fin numInstructions, ZiskStep ziskTrace i)
+    (start : Fin rawLength → Fin ziskTrace.programLength)
+    (addr : Fin rawLength → FGL)
+    (rawProgram : Fin rawLength → BitVec 32)
+    (programBinding : RawProgramBinding.ProgramRowsBinding
+      ziskTrace start addr rawProgram)
+    (rawProgramDecodes : ∀ i : Fin numInstructions,
+      RawProgramDecode ziskTrace i (ziskStep i) start addr rawProgram)
+    (inputsAgree : ∀ i : Fin numInstructions,
+      InputsAgreeCore ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i))
+    (pcBoot : ∀ (_ : 0 < numInstructions),
+      ((ZiskFv.AirsClean.FullEnsemble.mainOfTable ziskTrace.program ziskTrace.mainTable).pc 0).val
+        = (init.regs.get? Register.PC).elim 0 BitVec.toNat)
+    (rowsAligned : StepRowsAligned ziskTrace ziskStep
+      (fun i => rowDecode_of_programDecode ziskTrace i
+        (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
+          start addr rawProgram programBinding (rawProgramDecodes i))))
+    (bootSeed : BootSegmentMemorySeed ziskTrace (chainedSailTrace ziskStep init) ziskStep)
+    (regBoot : ∀ k : Fin 32, k ≠ 0 →
+      init.regs.get? (reg_of_fin k)
+        = some (cast (by rw [register_type_reg_of_fin_equiv]) (0 : BitVec 64)))
+    (hEntryRangeAvoidance : ∀ i : Fin numInstructions,
+      stepRegWriteRangeAvoidance ziskTrace i (ziskStep i))
+    (hAvoidKnownBugs : ∀ i : Fin numInstructions,
+      ((mainOfTable ziskTrace.program ziskTrace.mainTable).pc i.val).val =
+        ((chainedSailTrace ziskStep init i).regs.get? Register.PC).elim 0 BitVec.toNat →
+      RowOutsideDefectRegion ziskTrace i (ziskStep i)) :
+    ∀ i : Fin numInstructions,
+      StepSound ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)
+        (rowDecode_of_programDecode ziskTrace i
+          (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
+            start addr rawProgram programBinding (rawProgramDecodes i))) ∧
+      ((mainOfTable ziskTrace.program ziskTrace.mainTable).pc i.val).val =
+        ((chainedSailTrace ziskStep init i).regs.get? Register.PC).elim 0 BitVec.toNat := by
+  let rowDecodes := fun i => rowDecode_of_programDecode ziskTrace i
+    (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
+      start addr rawProgram programBinding (rawProgramDecodes i))
+  have h_stepRegWrite_consistent : ∀ (i : Fin numInstructions),
+      (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val).rom.store_reg = 1 →
+      stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
+      ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val := fun i h_sr =>
+    stepRegWrite_consistent_aux i (ziskStep i) (rowDecodes i) h_sr
+  have h_stepRegWrite_converse : ∀ (i : Fin numInstructions)
+      (e : Interaction.MemoryBusEntry FGL),
+      i.val + 1 < numInstructions →
+      stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
+      Transpiler.wrap_to_regidx e.ptr ≠ 0 →
+      (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val).rom.store_reg = 1 :=
+    fun i e h_succ he h_ne =>
+    stepRegWrite_converse_aux i (ziskStep i) (rowDecodes i)
+      (RomDecodeBinding.mainAddressSpec_at ziskTrace ⟨i.val, ziskTrace.mainTable_index i⟩)
+      (rowsAligned i.val h_succ) e he h_ne
+  have h_entry_range : ∀ (i : Fin numInstructions),
+      stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i))
+        = some ((cMemMessage
+          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) →
+      Transpiler.wrap_to_regidx ((cMemMessage
+          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1).ptr ≠ 0 →
+      ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
+        ((cMemMessage
+          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) :=
+    fun i he h_ptr =>
+    stepRegWrite_entry_range_aux i (ziskStep i) (rowDecodes i) (inputsAgree i)
+      (hEntryRangeAvoidance i) (fun h_load => bootSeed.memPresent_of_load i h_load) he h_ptr
+  have combined : ∀ (k : ℕ) (hk : k < numInstructions),
+      RegAgree ziskStep rowDecodes init k
+      ∧ ((ZiskFv.AirsClean.FullEnsemble.mainOfTable
+            ziskTrace.program ziskTrace.mainTable).pc k).val
+        = ((chainedSailTrace ziskStep init ⟨k, hk⟩).regs.get? Register.PC).elim 0
+            BitVec.toNat
+      ∧ ∃ pc, (chainedSailTrace ziskStep init ⟨k, hk⟩).regs.get? Register.PC = some pc := by
+    intro k
+    induction k with
+    | zero =>
+        intro hk
+        exact ⟨regAgree_zero ziskStep rowDecodes init regBoot, pcBoot hk,
+          inputsAgreeCore_pc_present ⟨0, hk⟩ (ziskStep ⟨0, hk⟩) (inputsAgree ⟨0, hk⟩)⟩
+    | succ j ih =>
+        intro hk
+        have hj : j < numInstructions := Nat.lt_of_succ_lt hk
+        obtain ⟨h_reg_j, h_pc_j, pc_j, h_present_j⟩ := ih hj
+        have ss_j : StepSound ziskTrace (chainedSailTrace ziskStep init) ⟨j, hj⟩
+            (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩) :=
+          stepSound_of_evidence ziskTrace (chainedSailTrace ziskStep init) ⟨j, hj⟩
+            (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩)
+            (inputsAgree_of_pcBridge ⟨j, hj⟩ h_pc_j (ziskStep ⟨j, hj⟩)
+              (pureInputsOfRegAgree ziskStep rowDecodes init ⟨j, hj⟩ h_reg_j
+                pc_j h_present_j (inputsAgree ⟨j, hj⟩)))
+            (memEvidence_of_bootSeed bootSeed ⟨j, hj⟩) (hAvoidKnownBugs ⟨j, hj⟩ h_pc_j)
+            (laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init j hj
+              h_reg_j h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range)
+        exact ⟨
+          regAgree_succ ziskStep rowDecodes init j hj ss_j h_reg_j,
+          pcBridge_succ_of_stepSound (chainedSailTrace_retireChain ziskStep init)
+            rowsAligned j hk ss_j,
+          pc_present_succ_of_stepSound (chainedSailTrace_retireChain ziskStep init) j hk ss_j⟩
+  intro i
+  obtain ⟨h_reg_i, h_pc_i, pc_i, h_present_i⟩ := combined i.val i.isLt
+  refine ⟨?_, h_pc_i⟩
+  exact stepSound_of_evidence ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)
+    (rowDecodes i)
+    (inputsAgree_of_pcBridge i h_pc_i (ziskStep i)
+      (pureInputsOfRegAgree ziskStep rowDecodes init i h_reg_i pc_i h_present_i (inputsAgree i)))
+    (memEvidence_of_bootSeed bootSeed i) (hAvoidKnownBugs i h_pc_i)
+    (laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init i.val i.isLt
+      h_reg_i h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range)
+
 theorem root_soundness
     (numInstructions rawLength : Nat)
     (ziskTrace : AcceptedZiskTrace numInstructions)
@@ -1999,73 +2127,105 @@ theorem root_soundness
         (rowDecode_of_programDecode ziskTrace i
           (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
             start addr rawProgram programBinding (rawProgramDecodes i))) := by
-  let rowDecodes := fun i => rowDecode_of_programDecode ziskTrace i
-    (programDecode_of_rawProgramDecode ziskTrace i (ziskStep i)
-      start addr rawProgram programBinding (rawProgramDecodes i))
-  have h_stepRegWrite_consistent : ∀ (i : Fin numInstructions),
-      (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val).rom.store_reg = 1 →
-      stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) ≠ none
-      ∧ stepProducerRow i (ziskStep i) (rowDecodes i) = i.val := fun i h_sr =>
-    stepRegWrite_consistent_aux i (ziskStep i) (rowDecodes i) h_sr
-  have h_stepRegWrite_converse : ∀ (i : Fin numInstructions)
-      (e : Interaction.MemoryBusEntry FGL),
-      i.val + 1 < numInstructions →
-      stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i)) = some e →
-      Transpiler.wrap_to_regidx e.ptr ≠ 0 →
-      (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val).rom.store_reg = 1 :=
-    fun i e h_succ he h_ne =>
-    stepRegWrite_converse_aux i (ziskStep i) (rowDecodes i)
-      (RomDecodeBinding.mainAddressSpec_at ziskTrace ⟨i.val, ziskTrace.mainTable_index i⟩)
-      (rowsAligned i.val h_succ) e he h_ne
-  have h_entry_range : ∀ (i : Fin numInstructions),
-      stepRegWrite (stepChannelOutput i (ziskStep i) (rowDecodes i))
-        = some ((cMemMessage
-          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) →
-      Transpiler.wrap_to_regidx ((cMemMessage
-          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1).ptr ≠ 0 →
-      ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
-        ((cMemMessage
-          (mainTableRowAtOrZero ziskTrace.program ziskTrace.mainTable i.val)).toEntry 1 1) :=
-    fun i he h_ptr =>
-    stepRegWrite_entry_range_aux i (ziskStep i) (rowDecodes i) (inputsAgree i)
-      (hAvoidKnownBugs i) (fun h_load => bootSeed.memPresent_of_load i h_load) he h_ptr
-  have combined : ∀ (k : ℕ) (hk : k < numInstructions),
-      RegAgree ziskStep rowDecodes init k
-      ∧ ((ZiskFv.AirsClean.FullEnsemble.mainOfTable
-            ziskTrace.program ziskTrace.mainTable).pc k).val
-        = ((chainedSailTrace ziskStep init ⟨k, hk⟩).regs.get? Register.PC).elim 0
-            BitVec.toNat := by
-    intro k
-    induction k with
-    | zero =>
-        intro hk
-        exact ⟨regAgree_zero ziskStep rowDecodes init regBoot, pcBoot hk⟩
-    | succ j ih =>
-        intro hk
-        have hj : j < numInstructions := Nat.lt_of_succ_lt hk
-        obtain ⟨h_reg_j, h_pc_j⟩ := ih hj
-        have ss_j : StepSound ziskTrace (chainedSailTrace ziskStep init) ⟨j, hj⟩
-            (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩) :=
-          stepSound_of_evidence ziskTrace (chainedSailTrace ziskStep init) ⟨j, hj⟩
-            (ziskStep ⟨j, hj⟩) (rowDecodes ⟨j, hj⟩)
-            (inputsAgree_of_pcBridge ⟨j, hj⟩ h_pc_j (ziskStep ⟨j, hj⟩)
-              (pureInputsOfRegAgree ziskStep rowDecodes init ⟨j, hj⟩ h_reg_j
-                (inputsAgree ⟨j, hj⟩)))
-            (memEvidence_of_bootSeed bootSeed ⟨j, hj⟩) (hAvoidKnownBugs ⟨j, hj⟩)
-            (laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init j hj
-              h_reg_j h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range)
-        exact ⟨
-          regAgree_succ ziskStep rowDecodes init j hj ss_j h_reg_j,
-          pcBridge_succ_of_stepSound (chainedSailTrace_retireChain ziskStep init)
-            rowsAligned j hk ss_j⟩
+  have proved := root_soundness_induction numInstructions rawLength ziskTrace init ziskStep
+    start addr rawProgram programBinding rawProgramDecodes inputsAgree pcBoot rowsAligned
+    bootSeed regBoot
+    (fun i => stepRegWriteRangeAvoidance_of_rowOutside (ziskStep i) (hAvoidKnownBugs i))
+    (fun i _ => hAvoidKnownBugs i)
+  exact fun i => (proved i).1
+
+namespace OldLoadDomainComparison
+
+/-- The old seven load exclusions, evaluated at the SAME canonical input
+returned by the complete-old-surface constructors. Every non-load case and
+all six narrow-load forge conjuncts remain exactly unchanged. This is only the
+comparison domain, never a replacement public root premise. -/
+def loadAvoidAtSail {n : Nat} (trace : AcceptedZiskTrace n)
+    (binding : SailTrace n) (i : Fin n) (step : ZiskStep trace i)
+    (core : InputsAgreeCore trace binding i step) : Prop :=
+  match step, core with
+  | .ld _, core => SequentialPcDomain core.input.PC
+  | .lbu _, core | .lb _, core =>
+      SequentialPcDomain core.input.PC ∧
+        ¬ Defects.MemAlignNarrowLoadLaneForge trace.program trace.witness
+          1 (busLd trace i (Pilot.execRowOf trace i)).e1 ∧
+        ¬ Defects.MemAlignSkippableProveForge trace.program trace.witness
+          (busLd trace i (Pilot.execRowOf trace i)).e1
+  | .lhu _, core | .lh _, core =>
+      SequentialPcDomain core.input.PC ∧
+        ¬ Defects.MemAlignNarrowLoadLaneForge trace.program trace.witness
+          2 (busLd trace i (Pilot.execRowOf trace i)).e1 ∧
+        ¬ Defects.MemAlignSkippableProveForge trace.program trace.witness
+          (busLd trace i (Pilot.execRowOf trace i)).e1
+  | .lwu _, core | .lw _, core =>
+      SequentialPcDomain core.input.PC ∧
+        ¬ Defects.MemAlignNarrowLoadLaneForge trace.program trace.witness
+          4 (busLd trace i (Pilot.execRowOf trace i)).e1 ∧
+        ¬ Defects.MemAlignSkippableProveForge trace.program trace.witness
+          (busLd trace i (Pilot.execRowOf trace i)).e1
+  | step, _ => RowOutsideDefectRegion trace i step
+
+private theorem load_avoid_iff_of_derived_pc {n : Nat}
+    (trace : AcceptedZiskTrace n) (binding : SailTrace n) (i : Fin n)
+    (step : ZiskStep trace i) (core : InputsAgreeCore trace binding i step)
+    (bridge : ((mainOfTable trace.program trace.mainTable).pc i.val).val =
+      ((binding i).regs.get? Register.PC).elim 0 BitVec.toNat) :
+    loadAvoidAtSail trace binding i step core ↔ RowOutsideDefectRegion trace i step := by
+  cases step <;> try rfl
+  all_goals
+    have pc := h_pc_bridge_of_pcBridge bridge core.input_pc_read
+    simp only [loadAvoidAtSail, RowOutsideDefectRegion, MainSequentialPcDomain,
+      mainPcVal, SequentialPcDomain, pc]
+
+private theorem range_avoid_of_sail_avoid {n : Nat}
+    (trace : AcceptedZiskTrace n) (binding : SailTrace n) (i : Fin n)
+    (step : ZiskStep trace i) (core : InputsAgreeCore trace binding i step)
+    (outside : loadAvoidAtSail trace binding i step core) :
+    stepRegWriteRangeAvoidance trace i step := by
+  cases step <;> first | exact True.intro | exact outside
+
+/-- The entire old supported domain still proves soundness, its PC tie, and
+the seven exact avoidance equivalences. Crucially this specializes the SAME
+private induction as `root_soundness`; it does not invoke the retargeted public
+root with old avoidance or assume its own resulting PC bridge. -/
+theorem old_root_domain_pc_and_load_avoid
+    (n rawLength : Nat) (trace : AcceptedZiskTrace n)
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (steps : ∀ i : Fin n, ZiskStep trace i)
+    (start : Fin rawLength → Fin trace.programLength)
+    (addr : Fin rawLength → FGL) (rawProgram : Fin rawLength → BitVec 32)
+    (binding : RawProgramBinding.ProgramRowsBinding trace start addr rawProgram)
+    (rawDecodes : ∀ i : Fin n, RawProgramDecode trace i (steps i) start addr rawProgram)
+    (core : ∀ i : Fin n, InputsAgreeCore trace (chainedSailTrace steps init) i (steps i))
+    (pcBoot : ∀ (_ : 0 < n), ((mainOfTable trace.program trace.mainTable).pc 0).val =
+      (init.regs.get? Register.PC).elim 0 BitVec.toNat)
+    (rowsAligned : StepRowsAligned trace steps (fun i => rowDecode_of_programDecode trace i
+      (programDecode_of_rawProgramDecode trace i (steps i) start addr rawProgram
+        binding (rawDecodes i))))
+    (bootSeed : BootSegmentMemorySeed trace (chainedSailTrace steps init) steps)
+    (regBoot : ∀ k : Fin 32, k ≠ 0 →
+      init.regs.get? (reg_of_fin k) =
+        some (cast (by rw [register_type_reg_of_fin_equiv]) (0 : BitVec 64)))
+    (oldAvoid : ∀ i : Fin n,
+      loadAvoidAtSail trace (chainedSailTrace steps init) i (steps i) (core i)) :
+    ∀ i : Fin n,
+      (((mainOfTable trace.program trace.mainTable).pc i.val).val =
+        ((chainedSailTrace steps init i).regs.get? Register.PC).elim 0 BitVec.toNat) ∧
+      (loadAvoidAtSail trace (chainedSailTrace steps init) i (steps i) (core i) ↔
+        RowOutsideDefectRegion trace i (steps i)) ∧
+      RowOutsideDefectRegion trace i (steps i) := by
+  have proved := root_soundness_induction n rawLength trace init steps start addr rawProgram
+    binding rawDecodes core pcBoot rowsAligned bootSeed regBoot
+    (fun i => range_avoid_of_sail_avoid trace (chainedSailTrace steps init)
+      i (steps i) (core i) (oldAvoid i))
+    (fun i bridge => (load_avoid_iff_of_derived_pc trace (chainedSailTrace steps init)
+      i (steps i) (core i) bridge).mp (oldAvoid i))
   intro i
-  obtain ⟨h_reg_i, h_pc_i⟩ := combined i.val i.isLt
-  exact stepSound_of_evidence ziskTrace (chainedSailTrace ziskStep init) i (ziskStep i)
-    (rowDecodes i)
-    (inputsAgree_of_pcBridge i h_pc_i (ziskStep i)
-      (pureInputsOfRegAgree ziskStep rowDecodes init i h_reg_i (inputsAgree i)))
-    (memEvidence_of_bootSeed bootSeed i) (hAvoidKnownBugs i)
-    (laneBridge_of_regAgree ziskTrace ziskStep rowDecodes init i.val i.isLt
-      h_reg_i h_stepRegWrite_consistent h_stepRegWrite_converse h_entry_range)
+  have tie := (proved i).2
+  have equivalent := load_avoid_iff_of_derived_pc trace (chainedSailTrace steps init)
+    i (steps i) (core i) tie
+  exact ⟨tie, equivalent, equivalent.mp (oldAvoid i)⟩
+
+end OldLoadDomainComparison
 
 end ZiskFv.Compliance

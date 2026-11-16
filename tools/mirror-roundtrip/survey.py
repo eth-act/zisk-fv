@@ -205,6 +205,18 @@ CLASSIFICATION: dict[tuple[str, str], Entry] = {
         _e("NEAR_SOUNDNESS", "Binary"),
     ("ZiskFv/AirsClean/Binary/Circuit.lean", "StaticBinaryTableSpecFacts"):
         _e("NEAR_LOOKUP", "Binary"),
+    # Source-only Direct accumulator equations: each is checked by the named
+    # generated stage-2 weld, not a new comparable row-local field equation.
+    ("ZiskFv/AirsClean/Binary/Wiring.lean", "paddingDirectSourceEquation"):
+        _e("NEAR_CHALLENGE", "Binary",
+           "Binary c12, checked by paddingDirect_source_iff; arbitrary source AIR scalar, not a row-count premise",
+           claims="12"),
+    ("ZiskFv/AirsClean/DirectPadding.lean", "alignedLoadPaddingEquation"):
+        _e("NEAR_CHALLENGE", note=
+           "positive Direct source equation checked against MemAlignByte c13 and MemAlignReadByte c7 in their ExtractedWiring modules"),
+    ("ZiskFv/AirsClean/DirectPadding.lean", "byteLoadPaddingEquation"):
+        _e("NEAR_CHALLENGE", note=
+           "negative Direct source equation checked against MemAlignByte c14 and MemAlignReadByte c8 in their ExtractedWiring modules"),
 
     # ---- BinaryAdd
     ("ZiskFv/AirsClean/BinaryAdd/Circuit.lean", "CoreFacts"):
@@ -325,6 +337,44 @@ CLASSIFICATION: dict[tuple[str, str], Entry] = {
            "3 selector booleans plus composed_value, over `Valid_MemAlignReadByte`",
            claims="0-3"),
 
+    # ---- actual MemAlignWriteByte specialization and source-local protocol helpers
+    ("ZiskFv/AirsClean/MemAlignWriteByte/Spec.lean", "PolynomialSpec"):
+        _e("MIRROR", "MemAlignWriteByte",
+           "all seven actual stage-1 equations, over the fourteen-field row; "
+           "SourceMirrorWeld.lean:54 polynomials_iff_extracted binds c0-c6",
+           claims="0-6"),
+    ("ZiskFv/AirsClean/MemAlignWriteByte/Spec.lean", "RangeSpec"):
+        _e("NEAR_RANGE", "MemAlignWriteByte",
+           "four .val bounds from actual bus107/bus103/bus88 lookups; "
+           "Circuit.lean circuit.soundness, not bits annotations"),
+    ("ZiskFv/AirsClean/MemAlignWriteByte/Spec.lean", "Spec"):
+        _e("MIXED_COMPOSITE", "MemAlignWriteByte", "PolynomialSpec + RangeSpec"),
+    ("ZiskFv/AirsClean/MemAlignWriteByte/DirectEquations.lean", "DirectSpec"):
+        _e("NEAR_CHALLENGE", "MemAlignWriteByte",
+           "DirectEquations.lean:28 directSpec_iff_extracted binds exactly c11-c13, "
+           "all reaching source alpha/gamma challenges; no physical-count premise",
+           claims="11-13"),
+    ("ZiskFv/AirsClean/MemAlignWriteByte/SourceBoundary.lean", "SourceDirectsHold"):
+        _e("NEAR_CHALLENGE", "MemAlignWriteByte",
+           "SourceBoundary.lean:43 sourceDirects_iff_model interprets actual "
+           "link_MemAlignWriteByte_11/12/13 through the typed source object",
+           claims="11-13"),
+    ("ZiskFv/AirsClean/GsumBoundary/Model.lean", "Closed"):
+        _e("NEAR_CHALLENGE", note=
+           "abstract finalizer equation; GsumBoundary.lean eight *_finalizer_source_iff "
+           "and *_finalizer_typed_source_iff weld it to std_sum.pil:688-696 "
+           "stage-2 running sums, with independent source cell/schema pins"),
+    ("ZiskFv/AirsClean/GsumBoundary/Model.lean", "Source.Holds"):
+        _e("NEAR_DATA", note=
+           "Option-valued interpretation of a supplied Expr, not a row predicate; "
+           "Model.lean:40 Source.eval fails closed and GsumBoundary.lean "
+           "*_finalizer_typed_source_iff supplies the actual source bindings"),
+    ("ZiskFv/AirsClean/OperationPadding.lean", "Equation"):
+        _e("NEAR_CHALLENGE", note=
+           "OperationPadding.lean:34 binaryAdd_source_iff and :43 "
+           "binaryExtension_source_iff bind BinaryAdd c7/BinaryExtension c6; "
+           "both source Direct equations reach alpha/gamma challenges"),
+
     # ---- shared tables
     ("ZiskFv/AirsClean/RangeTables.lean", "ArithRangePosId"): _e("NEAR_LITERAL", "Arith"),
     ("ZiskFv/AirsClean/RangeTables.lean", "ArithRangeNegId"): _e("NEAR_LITERAL", "Arith"),
@@ -427,6 +477,7 @@ MIRROR_RECORDS: list[tuple[str, str, str | None]] = [
     ("ZiskFv/AirsClean/MemAlign/Row.lean", "MemAlignRow", "MemAlign"),
     ("ZiskFv/AirsClean/MemAlignByte/Row.lean", "MemAlignByteRow", "MemAlignByte"),
     ("ZiskFv/AirsClean/MemAlignReadByte/Row.lean", "MemAlignReadByteRow", "MemAlignReadByte"),
+    ("ZiskFv/AirsClean/MemAlignWriteByte/Row.lean", "MemAlignWriteByteRow", "MemAlignWriteByte"),
     ("ZiskFv/AirsClean/Binary/Row.lean", "BinaryAByteCols", None),
     ("ZiskFv/AirsClean/Binary/Row.lean", "BinaryBByteCols", None),
     ("ZiskFv/AirsClean/Binary/Row.lean", "BinaryCByteCols", None),
@@ -597,10 +648,10 @@ def top_level_conjuncts(decl: Decl) -> int:
 
 
 def bound_row_variables(decl: Decl, records: set[str]) -> list[tuple[str, str]]:
-    """`(binder, record)` pairs for binders whose type is a known row record."""
+    """Known row binders, including generic type arguments, without interpreting them."""
     found: list[tuple[str, str]] = []
     for names, typename in re.findall(
-        r"\(([^():]+?)\s*:\s*([A-Za-z_][A-Za-z0-9_.]*)\s+FGL\s*\)", decl.signature
+        r"[(\{\[]([^(){}\[\]:]+?)\s*:\s*([A-Za-z_][A-Za-z0-9_.]*)\s+[A-Za-z_][A-Za-z0-9_.]*\s*[)}\]]", decl.signature
     ):
         short = typename.rsplit(".", 1)[-1]
         if short in records:

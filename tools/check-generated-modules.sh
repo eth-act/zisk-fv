@@ -31,6 +31,7 @@ expected_modules=(
   MemGeneratedConstraintBridge
   MemoryBuses
   SourceDimensions
+  RomSource
 )
 
 if [[ ! -d "$generated_dir" ]]; then

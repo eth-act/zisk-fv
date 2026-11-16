@@ -1,0 +1,401 @@
+✔ [8027/8037] Built Extraction.Main (9.3s)
+✔ [8028/8037] Built Extraction.LookupWiring (10s)
+✔ [8029/8037] Built Extraction.BinaryAdd (3.3s)
+✔ [8030/8037] Built Extraction.Binary (4.7s)
+✔ [8031/8037] Built Extraction.BinaryExtension (4.2s)
+✔ [8032/8037] Built Extraction.MemAlign (4.6s)
+✔ [8033/8037] Built Extraction.MemAlignByte (3.9s)
+✔ [8034/8037] Built Extraction.MemAlignReadByte (3.7s)
+✔ [8035/8037] Built Extraction.MemAlignWriteByte (4.2s)
+✔ [8036/8037] Built ZiskFv.AirsClean.GsumBoundary.Model (3.6s)
+✖ [8037/8037] Building ZiskFv.AirsClean.GsumBoundary (15s)
+trace: .> LEAN_PATH=/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/Cli/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/batteries/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/Qq/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/aesop/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/proofwidgets/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/importGraph/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/LeanSearchClient/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/plausible/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/mathlib/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/sail-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/clean-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/build/aeneas-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/packages/repl/.lake/build/lib/lean:/home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/build/lib/lean /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean --tstack=400000 /home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/ZiskFv/AirsClean/GsumBoundary.lean -o /home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/build/lib/lean/ZiskFv/AirsClean/GsumBoundary.olean -i /home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/build/lib/lean/ZiskFv/AirsClean/GsumBoundary.ilean -c /home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/build/ir/ZiskFv/AirsClean/GsumBoundary.c --setup /home/cody/zisk-fv-closure-extractor/build/371-finalizer-source-controls/proof/.lake/build/ir/ZiskFv/AirsClean/GsumBoundary.setup.json --json
+error: ZiskFv/AirsClean/GsumBoundary.lean:52:2: Tactic `rfl` failed: The left-hand side
+  Main.extraction.constraint_143_every_row c row
+is not definitionally equal to the right-hand side
+  Closed (Extraction.Circuit.preprocessed c 2 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+    (Extraction.Circuit.main c 2 0 row 0) (mainDirectSum c)
+
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ Main.extraction.constraint_143_every_row c row ↔
+    Closed (Extraction.Circuit.preprocessed c 2 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+      (Extraction.Circuit.main c 2 0 row 0) (mainDirectSum c)
+error: ZiskFv/AirsClean/GsumBoundary.lean:61:2: Tactic `rfl` failed: The left-hand side
+  Binary.extraction.constraint_13_every_row c row
+is not definitionally equal to the right-hand side
+  Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+    (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1)
+
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ Binary.extraction.constraint_13_every_row c row ↔
+    Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+      (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1)
+error: ZiskFv/AirsClean/GsumBoundary.lean:70:2: Tactic `rfl` failed: The left-hand side
+  BinaryAdd.extraction.constraint_8_every_row c row
+is not definitionally equal to the right-hand side
+  Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+    (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1)
+
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ BinaryAdd.extraction.constraint_8_every_row c row ↔
+    Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+      (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1)
+error: ZiskFv/AirsClean/GsumBoundary.lean:79:2: Tactic `rfl` failed: The left-hand side
+  BinaryExtension.extraction.constraint_7_every_row c row
+is not definitionally equal to the right-hand side
+  Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+    (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1)
+
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ BinaryExtension.extraction.constraint_7_every_row c row ↔
+    Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+      (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1)
+error: ZiskFv/AirsClean/GsumBoundary.lean:86:94: unsolved goals
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ Extraction.Circuit.preprocessed c 1 row 0 * (Extraction.Circuit.exposed c 0 - Extraction.Circuit.main c 2 0 row 0) =
+      0 ↔
+    Extraction.Circuit.preprocessed c 1 (row + 1) 0 *
+        (Extraction.Circuit.exposed c 0 - Extraction.Circuit.main c 2 0 row 0) =
+      0
+error: ZiskFv/AirsClean/GsumBoundary.lean:96:2: Tactic `rfl` failed: The left-hand side
+  MemAlignByte.extraction.constraint_15_every_row c row
+is not definitionally equal to the right-hand side
+  Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+    (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1 + Extraction.Circuit.exposed c 2)
+
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ MemAlignByte.extraction.constraint_15_every_row c row ↔
+    Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+      (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1 + Extraction.Circuit.exposed c 2)
+error: ZiskFv/AirsClean/GsumBoundary.lean:105:2: Tactic `rfl` failed: The left-hand side
+  MemAlignReadByte.extraction.constraint_9_every_row c row
+is not definitionally equal to the right-hand side
+  Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+    (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1 + Extraction.Circuit.exposed c 2)
+
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ MemAlignReadByte.extraction.constraint_9_every_row c row ↔
+    Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+      (Extraction.Circuit.main c 2 0 row 0) (Extraction.Circuit.exposed c 1 + Extraction.Circuit.exposed c 2)
+error: ZiskFv/AirsClean/GsumBoundary.lean:116:2: Tactic `rfl` failed: The left-hand side
+  MemAlignWriteByte.extraction.constraint_14_every_row c row
+is not definitionally equal to the right-hand side
+  Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+    (Extraction.Circuit.main c 2 0 row 0)
+    (Extraction.Circuit.exposed c 1 + Extraction.Circuit.exposed c 2 + Extraction.Circuit.exposed c 3)
+
+C : Type → Type → Sort u
+F : Type
+inst✝¹ : Field F
+inst✝ : Extraction.Circuit F F C
+c : C F F
+row : ℕ
+⊢ MemAlignWriteByte.extraction.constraint_14_every_row c row ↔
+    Closed (Extraction.Circuit.preprocessed c 0 (row + 1) 0) (Extraction.Circuit.exposed c 0)
+      (Extraction.Circuit.main c 2 0 row 0)
+      (Extraction.Circuit.exposed c 1 + Extraction.Circuit.exposed c 2 + Extraction.Circuit.exposed c 3)
+error: ZiskFv/AirsClean/GsumBoundary.lean:132:17: Unknown identifier `link_Main_143.constraint`
+error: ZiskFv/AirsClean/GsumBoundary.lean:140:17: Unknown identifier `link_Binary_13.constraint`
+error: ZiskFv/AirsClean/GsumBoundary.lean:148:17: Unknown identifier `link_BinaryAdd_8.constraint`
+error: ZiskFv/AirsClean/GsumBoundary.lean:156:17: Unknown identifier `link_BinaryExtension_7.constraint`
+error: ZiskFv/AirsClean/GsumBoundary.lean:164:17: Unknown identifier `link_MemAlign_39.constraint`
+error: ZiskFv/AirsClean/GsumBoundary.lean:171:17: Unknown identifier `link_MemAlignByte_15.constraint`
+error: ZiskFv/AirsClean/GsumBoundary.lean:180:17: Unknown identifier `link_MemAlignReadByte_9.constraint`
+error: ZiskFv/AirsClean/GsumBoundary.lean:189:17: Unknown identifier `link_MemAlignWriteByte_14.constraint`
+error: ZiskFv/AirsClean/GsumBoundary.lean:203:4: Unknown identifier `link_Binary_13.selector`
+error: ZiskFv/AirsClean/GsumBoundary.lean:204:4: Unknown identifier `link_Binary_13.groupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:205:4: Unknown identifier `link_Binary_13.gsum`
+error: ZiskFv/AirsClean/GsumBoundary.lean:206:4: Unknown identifier `link_Binary_13.directTerms`
+error: ZiskFv/AirsClean/GsumBoundary.lean:203:30: Invalid dotted identifier notation: The expected type of `.fixed` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `AddSubgroup.Characteristic.fixed`
+  [apply] `Subgroup.Characteristic.fixed`
+  [apply] `Expr.fixed`
+  [apply] `Lean.Meta.CongrArgKind.fixed`
+  [apply] `Source.fixed`
+  [apply] `Lean.Compiler.LCNF.FixedParams.State.fixed`
+error: ZiskFv/AirsClean/GsumBoundary.lean:204:32: Invalid dotted identifier notation: The expected type of `.airGroupValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airGroupValue`
+  [apply] `Source.airGroupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:205:26: Invalid dotted identifier notation: The expected type of `.witness` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Equidecomp.witness`
+  [apply] `UnivLE.witness`
+  [apply] `CategoryTheory.Functor.essImage.witness`
+  [apply] `Expr.witness`
+  [apply] `Source.witness`
+error: ZiskFv/AirsClean/GsumBoundary.lean:206:34: Invalid dotted identifier notation: The expected type of `.airValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airValue`
+  [apply] `Source.airValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:210:4: Unknown identifier `link_Main_143.selector`
+error: ZiskFv/AirsClean/GsumBoundary.lean:211:4: Unknown identifier `link_Main_143.groupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:212:4: Unknown identifier `link_Main_143.gsum`
+error: ZiskFv/AirsClean/GsumBoundary.lean:213:4: Unknown identifier `link_Main_143.directTerms`
+error: ZiskFv/AirsClean/GsumBoundary.lean:210:29: Invalid dotted identifier notation: The expected type of `.fixed` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `AddSubgroup.Characteristic.fixed`
+  [apply] `Subgroup.Characteristic.fixed`
+  [apply] `Expr.fixed`
+  [apply] `Lean.Meta.CongrArgKind.fixed`
+  [apply] `Source.fixed`
+  [apply] `Lean.Compiler.LCNF.FixedParams.State.fixed`
+error: ZiskFv/AirsClean/GsumBoundary.lean:211:31: Invalid dotted identifier notation: The expected type of `.airGroupValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airGroupValue`
+  [apply] `Source.airGroupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:212:25: Invalid dotted identifier notation: The expected type of `.witness` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Equidecomp.witness`
+  [apply] `UnivLE.witness`
+  [apply] `CategoryTheory.Functor.essImage.witness`
+  [apply] `Expr.witness`
+  [apply] `Source.witness`
+error: ZiskFv/AirsClean/GsumBoundary.lean:217:4: Unknown identifier `link_BinaryAdd_8.selector`
+error: ZiskFv/AirsClean/GsumBoundary.lean:218:4: Unknown identifier `link_BinaryAdd_8.groupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:219:4: Unknown identifier `link_BinaryAdd_8.gsum`
+error: ZiskFv/AirsClean/GsumBoundary.lean:220:4: Unknown identifier `link_BinaryAdd_8.directTerms`
+error: ZiskFv/AirsClean/GsumBoundary.lean:217:32: Invalid dotted identifier notation: The expected type of `.fixed` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `AddSubgroup.Characteristic.fixed`
+  [apply] `Subgroup.Characteristic.fixed`
+  [apply] `Expr.fixed`
+  [apply] `Lean.Meta.CongrArgKind.fixed`
+  [apply] `Source.fixed`
+  [apply] `Lean.Compiler.LCNF.FixedParams.State.fixed`
+error: ZiskFv/AirsClean/GsumBoundary.lean:218:34: Invalid dotted identifier notation: The expected type of `.airGroupValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airGroupValue`
+  [apply] `Source.airGroupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:219:28: Invalid dotted identifier notation: The expected type of `.witness` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Equidecomp.witness`
+  [apply] `UnivLE.witness`
+  [apply] `CategoryTheory.Functor.essImage.witness`
+  [apply] `Expr.witness`
+  [apply] `Source.witness`
+error: ZiskFv/AirsClean/GsumBoundary.lean:220:36: Invalid dotted identifier notation: The expected type of `.airValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airValue`
+  [apply] `Source.airValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:224:4: Unknown identifier `link_BinaryExtension_7.selector`
+error: ZiskFv/AirsClean/GsumBoundary.lean:225:4: Unknown identifier `link_BinaryExtension_7.groupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:226:4: Unknown identifier `link_BinaryExtension_7.gsum`
+error: ZiskFv/AirsClean/GsumBoundary.lean:227:4: Unknown identifier `link_BinaryExtension_7.directTerms`
+error: ZiskFv/AirsClean/GsumBoundary.lean:224:38: Invalid dotted identifier notation: The expected type of `.fixed` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `AddSubgroup.Characteristic.fixed`
+  [apply] `Subgroup.Characteristic.fixed`
+  [apply] `Expr.fixed`
+  [apply] `Lean.Meta.CongrArgKind.fixed`
+  [apply] `Source.fixed`
+  [apply] `Lean.Compiler.LCNF.FixedParams.State.fixed`
+error: ZiskFv/AirsClean/GsumBoundary.lean:225:40: Invalid dotted identifier notation: The expected type of `.airGroupValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airGroupValue`
+  [apply] `Source.airGroupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:226:34: Invalid dotted identifier notation: The expected type of `.witness` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Equidecomp.witness`
+  [apply] `UnivLE.witness`
+  [apply] `CategoryTheory.Functor.essImage.witness`
+  [apply] `Expr.witness`
+  [apply] `Source.witness`
+error: ZiskFv/AirsClean/GsumBoundary.lean:227:42: Invalid dotted identifier notation: The expected type of `.airValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airValue`
+  [apply] `Source.airValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:231:4: Unknown identifier `link_MemAlign_39.selector`
+error: ZiskFv/AirsClean/GsumBoundary.lean:232:4: Unknown identifier `link_MemAlign_39.groupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:233:4: Unknown identifier `link_MemAlign_39.gsum`
+error: ZiskFv/AirsClean/GsumBoundary.lean:234:4: Unknown identifier `link_MemAlign_39.directTerms`
+error: ZiskFv/AirsClean/GsumBoundary.lean:231:32: Invalid dotted identifier notation: The expected type of `.fixed` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `AddSubgroup.Characteristic.fixed`
+  [apply] `Subgroup.Characteristic.fixed`
+  [apply] `Expr.fixed`
+  [apply] `Lean.Meta.CongrArgKind.fixed`
+  [apply] `Source.fixed`
+  [apply] `Lean.Compiler.LCNF.FixedParams.State.fixed`
+error: ZiskFv/AirsClean/GsumBoundary.lean:232:34: Invalid dotted identifier notation: The expected type of `.airGroupValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airGroupValue`
+  [apply] `Source.airGroupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:233:28: Invalid dotted identifier notation: The expected type of `.witness` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Equidecomp.witness`
+  [apply] `UnivLE.witness`
+  [apply] `CategoryTheory.Functor.essImage.witness`
+  [apply] `Expr.witness`
+  [apply] `Source.witness`
+error: ZiskFv/AirsClean/GsumBoundary.lean:238:4: Unknown identifier `link_MemAlignByte_15.selector`
+error: ZiskFv/AirsClean/GsumBoundary.lean:239:4: Unknown identifier `link_MemAlignByte_15.groupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:240:4: Unknown identifier `link_MemAlignByte_15.gsum`
+error: ZiskFv/AirsClean/GsumBoundary.lean:241:4: Unknown identifier `link_MemAlignByte_15.directTerms`
+error: ZiskFv/AirsClean/GsumBoundary.lean:238:36: Invalid dotted identifier notation: The expected type of `.fixed` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `AddSubgroup.Characteristic.fixed`
+  [apply] `Subgroup.Characteristic.fixed`
+  [apply] `Expr.fixed`
+  [apply] `Lean.Meta.CongrArgKind.fixed`
+  [apply] `Source.fixed`
+  [apply] `Lean.Compiler.LCNF.FixedParams.State.fixed`
+error: ZiskFv/AirsClean/GsumBoundary.lean:239:38: Invalid dotted identifier notation: The expected type of `.airGroupValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airGroupValue`
+  [apply] `Source.airGroupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:240:32: Invalid dotted identifier notation: The expected type of `.witness` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Equidecomp.witness`
+  [apply] `UnivLE.witness`
+  [apply] `CategoryTheory.Functor.essImage.witness`
+  [apply] `Expr.witness`
+  [apply] `Source.witness`
+error: ZiskFv/AirsClean/GsumBoundary.lean:241:40: Invalid dotted identifier notation: The expected type of `.airValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airValue`
+  [apply] `Source.airValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:241:53: Invalid dotted identifier notation: The expected type of `.airValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airValue`
+  [apply] `Source.airValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:245:4: Unknown identifier `link_MemAlignReadByte_9.selector`
+error: ZiskFv/AirsClean/GsumBoundary.lean:246:4: Unknown identifier `link_MemAlignReadByte_9.groupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:247:4: Unknown identifier `link_MemAlignReadByte_9.gsum`
+error: ZiskFv/AirsClean/GsumBoundary.lean:248:4: Unknown identifier `link_MemAlignReadByte_9.directTerms`
+error: ZiskFv/AirsClean/GsumBoundary.lean:245:39: Invalid dotted identifier notation: The expected type of `.fixed` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `AddSubgroup.Characteristic.fixed`
+  [apply] `Subgroup.Characteristic.fixed`
+  [apply] `Expr.fixed`
+  [apply] `Lean.Meta.CongrArgKind.fixed`
+  [apply] `Source.fixed`
+  [apply] `Lean.Compiler.LCNF.FixedParams.State.fixed`
+error: ZiskFv/AirsClean/GsumBoundary.lean:246:41: Invalid dotted identifier notation: The expected type of `.airGroupValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airGroupValue`
+  [apply] `Source.airGroupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:247:35: Invalid dotted identifier notation: The expected type of `.witness` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Equidecomp.witness`
+  [apply] `UnivLE.witness`
+  [apply] `CategoryTheory.Functor.essImage.witness`
+  [apply] `Expr.witness`
+  [apply] `Source.witness`
+error: ZiskFv/AirsClean/GsumBoundary.lean:248:43: Invalid dotted identifier notation: The expected type of `.airValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airValue`
+  [apply] `Source.airValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:248:56: Invalid dotted identifier notation: The expected type of `.airValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airValue`
+  [apply] `Source.airValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:252:4: Unknown identifier `link_MemAlignWriteByte_14.selector`
+error: ZiskFv/AirsClean/GsumBoundary.lean:253:4: Unknown identifier `link_MemAlignWriteByte_14.groupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:254:4: Unknown identifier `link_MemAlignWriteByte_14.gsum`
+error: ZiskFv/AirsClean/GsumBoundary.lean:255:4: Unknown identifier `link_MemAlignWriteByte_14.directTerms`
+error: ZiskFv/AirsClean/GsumBoundary.lean:252:41: Invalid dotted identifier notation: The expected type of `.fixed` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `AddSubgroup.Characteristic.fixed`
+  [apply] `Subgroup.Characteristic.fixed`
+  [apply] `Expr.fixed`
+  [apply] `Lean.Meta.CongrArgKind.fixed`
+  [apply] `Source.fixed`
+  [apply] `Lean.Compiler.LCNF.FixedParams.State.fixed`
+error: ZiskFv/AirsClean/GsumBoundary.lean:253:43: Invalid dotted identifier notation: The expected type of `.airGroupValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airGroupValue`
+  [apply] `Source.airGroupValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:254:37: Invalid dotted identifier notation: The expected type of `.witness` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Equidecomp.witness`
+  [apply] `UnivLE.witness`
+  [apply] `CategoryTheory.Functor.essImage.witness`
+  [apply] `Expr.witness`
+  [apply] `Source.witness`
+error: ZiskFv/AirsClean/GsumBoundary.lean:255:45: Invalid dotted identifier notation: The expected type of `.airValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airValue`
+  [apply] `Source.airValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:255:58: Invalid dotted identifier notation: The expected type of `.airValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airValue`
+  [apply] `Source.airValue`
+error: ZiskFv/AirsClean/GsumBoundary.lean:255:71: Invalid dotted identifier notation: The expected type of `.airValue` could not be determined
+
+Hint: Using one of these would be unambiguous:
+  [apply] `Expr.airValue`
+  [apply] `Source.airValue`
+error: Lean exited with code 1
+Some required targets logged failures:
+- ZiskFv.AirsClean.GsumBoundary
+error: build failed

@@ -51,6 +51,11 @@ the flags themselves.
 - `lookup-wiring`: emit a closed typed syntax manifest for all pilout AIRs.
   A hint tuple is retained only when a generated Lean `rfl` check links it to
   a standard direct or two-hint-cluster accumulator template.
+  Its additive `SourceSchema` catalogs actual fixed/witness/AIR/group-value
+  declarations from that same pilout object, retaining source scope, names,
+  optional stages, indices and array shapes independently of operand syntax.
+  Maintained finalizer theorems pin the complete protocol-cell/name roster;
+  this does not change `Extraction.Circuit` or establish logUp balance.
 - `arith-table`: emit the extracted arithmetic lookup table from upstream
   Rust source.
 - `arith-range-table`: emit source-derived `RANGES`, `OFFSETS`, row-mapping
@@ -172,11 +177,20 @@ defs.
 `lookup-wiring` is intentionally separate from `bus-emissions`. The latter
 targets the older `F`-valued `BusEmissionSpec` interface and still replaces a
 hint operand containing `Challenge`, `AirValue`, or `AirGroupValue` with `0`.
-The link shapes are not a fixed pair. `LinkShape` (`src/lookup_wiring.rs:1556`)
-currently has seven constructors — `direct`, `cluster2`, `derivedMixed2`,
-`directZeroTail`, `cluster2ZeroTail`, `directAssumesNegForm`,
-`directAssumesNegFormZeroTail` — so read that enum rather than this note for the
-current set.
+The live link shapes are `direct`, `cluster2`, `gsumFinalRow`,
+`directZeroTail`, `cluster2ZeroTail`, `directAssumesNegForm`, and
+`directAssumesNegFormZeroTail`. Route scopes are independent by template and
+AIR. In particular, Arith c62 and the BinaryAdd/BinaryExtension/WriteByte
+Direct padding adjustments use the composed assumes-neg/zero-tail route;
+WriteByte's clustered STORE tuple uses the zero-tail cluster route.
+
+Recognition is not model adoption. `ArithMul.RangeWiring` binds c62's full
+comparison tuple and multiplicity to the completed component's real
+remainder-bound interaction. `OperationPadding` independently welds
+BinaryAdd c7 and BinaryExtension c6's local Direct equations and tuple
+metadata. Their physical `padding_size = num_rows - total_inputs` provenance
+and actual segment emissions remain required; a free exposed count is not a
+replacement. The WriteByte live model owns its four newly recognized links.
 
 The lookup-wiring manifest has a closed `Expr` syntax with distinct typed
 constructors for witness, fixed, challenge, AIR value, AIR-group value, and
@@ -187,10 +201,10 @@ whether the current Nix extraction emits its constraint file and how many
 mixed constraints and gsum hints it has. PR 1 publishes links only for those
 currently emitted constraint files; all other AIRs are explicit absence
 reports. For an emitted AIR, an unlinked mixed constraint is retained as a
-`ConstraintOnly` typed AST without any hint payload; this preserves, for
-example, the global-sum constraint for later wiring extraction. An unlinked
-hint contributes only to counts: its bus id, multiplicity, and tuple AST are
-not published, so no caller can treat a search witness as a channel emission.
+`ConstraintOnly` typed AST without any hint payload, with an explicit reason
+and the source debug citation. Unrecognized standard-sum syntax is distinguished
+from non-lookup AIR-value relations; neither is silently counted as a link.
+An unlinked hint contributes only to counts, not a usable channel emission.
 
 For each published `ValidatedLink`, the generator retains the raw named tuple
 AST, multiplicity, PIOP side, accumulator expression, and the exact alpha and
@@ -204,9 +218,22 @@ solver. `nix/test.nix` regenerates and Lean-compiles the module, checks the
 kernel examples are present, and asserts the Mem `AirValue(11)` raw padding
 survives.
 
+`ZiskFv.AirsClean.GsumBoundary` independently fixes the eight remaining
+finalizer equations and their selector/group/accumulator/direct-term cells,
+then welds them to the generated per-AIR constraints. Main has direct AIR
+values 101--196; Binary/Add/Extension have value 1; MemAlign has none; Byte
+and ReadByte have 1,2; WriteByte has 1,2,3. This is source-local stage-2
+fidelity under the existing assumed channel-balance boundary, not a theorem
+that numeric `gsum` implements Clean balance. The boundary equation has a
+constructibility proof, but constructibility alone is not fidelity evidence.
+The independent typed source interpretation keeps AIR-group values separate
+from AIR values and rejects unsupported syntax as `none`; it does not inherit
+the legacy `Extraction.Circuit.exposed` kind conflation.
+
 `link_Main_reloadRange : Fin 31 → ValidatedLink` indexes c49+3k in source
 order. It is separate from `link_Main_reload`, which indexes the corresponding
 memory reload messages. Both are generated only after exact template checks.
+
 
 ## Clean `Air.Flat.Component` emission (`clean-component`, C0g)
 
@@ -299,6 +326,18 @@ axiom closures are unchanged. Like every other extractor shape,
 `clean-component` is extended one AIR-interaction-kind at a time;
 later phases add range-lookup / ROM-lookup / cross-row emission, each
 validated on one AIR before reuse.
+
+MemAlignByte also consumes the actual unconditional bus-107 written-byte
+range hint (`mem_align_byte.pil:25`, h1016). Emission requires exactly one
+assumes-side `Range Check` tuple `[written_byte_value]` with multiplicity1;
+missing, duplicated, changed-slot or gated-multiplicity hints fail closed.
+The sixth local lookup is not inferred from a `bits` annotation or from the
+bus-byte mux. Source-only Direct accumulator equations are separately recorded
+as challenge/stage-2 predicates, with their generated-constraint welds; this
+does not claim row-count correlation or finished provider composition.
+The faithfulness check uses an explicit `PIL_EXTRACT` override when supplied;
+otherwise it runs Cargo against the current extractor source. An existing
+debug CLI is not freshness evidence: `cargo test` can leave it stale.
 
 Regenerate the Clean Component source with:
 
@@ -702,3 +741,21 @@ does not establish that detection.
 
 Measured on the pinned inputs: `BinaryTable` 19 blocks / 5,505,024 rows,
 `BinaryExtensionTable` 9 blocks / 3,151,872 rows; the model matches the builder on every row.
+
+## Typed committed-ROM source boundary (#416)
+
+`pil-extract rom-source` retains Rom's eleven custom-commit columns, commitment
+and stage indices, signed rotations, unrestricted witness multiplicity, and
+the domains of both compiled polynomial constraints. It is regenerated by
+`nix/extracted-lean.nix`; it does not widen the generic `Extraction.Circuit`.
+
+`ZiskInstructionRomImage`, `ZiskInstructionRomProvider`, and
+`ZiskInstructionRomSource` check physical padding/rotation, materialized tuple
+ownership, and the dedicated generated source projections in the normal Lake
+graph. These are local source/provider proofs, not channel finishing, native
+producer-history realization, or authentication against verifier root cells.
+The multiplicity is an arbitrary field value, not a positive count.
+
+Production tuple, weight, and `std_sum` numerator-sign controls, including a
+fresh canonical baseline and harmless-comment control, are preserved under
+`tools/adversarial-mutations/evidence/results/rom-d1d7104c/`.

@@ -553,23 +553,27 @@ dropped as describing a cursor the evidence no longer uses.)
 
 ### Canonical ALU input derivation — #360 partial
 
-`TraceLevelExport.PureInputs.pureInputsOfRegAgree` reconstructs 27 simple ALU
+`TraceLevelExport.PureInputs.pureInputsOfRegAgree` reconstructs 43 ALU/M
 input families from decoded operands and the **current** register-agreement
 invariant. Architectural x0 is the specified zero register; other values come
 from the register file. Both the induction step and final `root_soundness`
 call consume this constructor. It does not assume future step soundness.
+The 13 M factories retain every existing provider, range, remainder, forge and
+ISA fact and prove equality of the complete old and canonical runtime inputs.
+The common register reader is shared rather than duplicated in the dispatcher.
 
-This slice retains the existing PC-presence equality and passes the other 36
-families through unchanged. The public input records and aggregate
-`InputsAgreeCore` premise are **not removed**. Memory, architectural/physical
-row placement, boot/platform invariants and the remaining family-specific
-obligations still need their actual derivations.
+Four store and seven load families also reconstruct their successful reads;
+the remaining nine families pass through unchanged. The existing current-PC
+equality and aggregate `InputsAgreeCore` premise are **not removed**. Memory,
+architectural/physical row placement, boot/platform invariants and remaining
+family-specific obligations still need their actual derivations.
 
 Separately, the seven signed-M environment builders derive their nine literal
 bus-shape facts instead of projecting those proofs from promises; their four
-Sail-input equalities remain. The 28 R-type concat/layout facts now use symbolic
-kernel proofs. Neither change establishes #172's consumed committed-word/state
-encoding claim or repairs the existing M/Zmmul domain predicate.
+Sail-input equalities remain. The 28 R-type concat/layout facts use symbolic
+kernel proofs. The impossible M/Zmmul state predicate was corrected separately
+in #430; none of these changes alone establishes #172's consumed
+committed-word/state encoding claim.
 
 ### The PC premises (`SegmentPcChain` + `StepRowsAligned`) — #330
 
@@ -1505,3 +1509,63 @@ recipe: `nix/sail-lean-tree.nix` inherits nixpkgs's Sail compiler. The recorded
 derivation uses Sail0.20.1. These proofs are against the actual imported Lean
 declarations, not a newly asserted compiler-provenance or byte-for-byte
 regeneration result. No compiler/native proof trust is added by this repair.
+
+## Four-store canonical runtime inputs
+
+The explicitly approved SB/SH/SW/SD cutover adds exactly three proof fields per
+family: existence of successful same-state reads of decoded r1/r2 and presence
+of the current Sail PC. Claims retain only decoded r1/r2/imm. These twelve
+structural fields are not independent execution-domain conditions: each complete
+old opcode predicate already provides PC presence and both exact register reads.
+
+For every store, `InputsCore_<op>.of_state_assumptions` accepts the WHOLE old
+surface: original input, unchanged opcode predicate, mode registers, all four
+lane equalities and the old platform predicate. It constructs the complete new
+Core plus equality of its WHOLE canonical input to that original input; no read,
+PC, parse, mappedness or equality hypothesis is added to the constructor.
+Successful-read uniqueness justifies the equality and transports all original
+input-dependent obligations, not merely selected residual conjuncts.
+
+All four live `pureInputsOfRegAgree` store arms consume those constructors AND
+their equality certificates to retain the whole old predicate. Their read
+witnesses still come from current `RegAgree`; PC presence comes from the
+generated-state invariant. The concrete SD root consumer also uses its complete
+certificate. This is runtime-data canonicalization/domain preservation, not
+removal of the aggregate `InputsAgreeCore` premise or a proof of memory induction.
+The four-store change alone leaves the existing PureSpec/per-op/root/validator
+interfaces and load predicates unchanged; it introduces no load-read field or
+source-word witness.
+
+## Seven-load canonical runtime inputs
+
+The explicitly approved LD/LBU/LHU/LWU/LB/LH/LW cutover adds exactly three
+proof fields per family: a successful same-state read of decoded r1, presence
+of the current Sail PC, and successful reads of every byte at the EXISTING
+unwrapped address. Claims retain only decoded r1/rd/imm. These twenty-one
+fields are redundant consequences of the complete old opcode predicates,
+not additional execution-domain conditions.
+
+Each `InputsCore_<load>.of_state_assumptions` accepts the whole old surface:
+the original input and unchanged opcode predicate, mode registers, memory
+provider and row, A-lane equality, platform predicate, message equality,
+selection/write tags, and the old unsigned-load alignment witness where
+applicable. It returns the complete new Core AND equality of its WHOLE
+canonical input to the original input, including all bytes. No read, PC,
+mappedness, parse or equality hypothesis is added. Every live load arm of
+`pureInputsOfRegAgree` consumes that equality to transport the entire old
+predicate; the concrete LD root witness consumes its certificate as well.
+
+The load PC defect bounds now use Main.pc. The independent
+`OldLoadDomainComparison.old_root_domain_pc_and_load_avoid` theorem in
+`Soundness.lean` retains the exact old Sail-input-PC comparison domain.
+It and the public root specialize one PRIVATE coupled register/PC induction:
+only after deriving the current step's PC tie does the old specialization
+transport the old exclusion to Main. It never calls the retargeted public
+root to establish that tie. All six narrow-load forge exclusions and all
+non-load exclusions are unchanged.
+
+The public root signature and validators are unchanged. The load predicates'
+unwrapped natural-address semantics, including their negative-immediate
+coverage defect, are unchanged. This is runtime-data canonicalization and
+old-domain preservation, not aggregate premise removal, independent memory
+induction, source-derived load A-slot grounding, or closure of #360/#417/#172.

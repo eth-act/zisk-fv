@@ -1,0 +1,478 @@
+{
+  "scope": "Additive source schema and eight independent Lean name/scope/stage/index/dimension-roster pins; no new balance assumptions, no Circuit/ValidatedLink changes, no full logUp proof.",
+  "source_revision": "b63274507a040bf9e09d22214df43066e8f80cb7",
+  "pilout_sha256": "e816e4fd728fae4b0b55cac6da01312adf72afe152fe22a47da7610cf0338e6f",
+  "generated_lookup_wiring_sha256": "c44807d618d000f2a3456b5c0a9af9e2dbb728df31725df1cb2cd7a1d097ff8c",
+  "producer": "CARGO_BUILD_JOBS=2 cargo run --manifest-path tools/pil-extract/Cargo.toml -- lookup-wiring --pilout build/zisk.pilout --output build/extraction/Extraction/LookupWiring.lean",
+  "cargo": {
+    "command": "CARGO_BUILD_JOBS=2 cargo test --manifest-path tools/pil-extract/Cargo.toml lookup_wiring::tests",
+    "passed": 10,
+    "failed": 0
+  },
+  "preserved_source_controls": {
+    "snapshot": "851d0ea9e6015312f475149470876ac9e6d1c401",
+    "evidence_commits": [
+      "7b7e458f",
+      "0eda590e"
+    ],
+    "path": "tools/adversarial-mutations/evidence/finalizers/a86bbb09",
+    "controls": [
+      "group-slot",
+      "direct-sign",
+      "selector"
+    ],
+    "rerun": false,
+    "changed": false
+  },
+  "schema_contracts": [
+    {
+      "group": "Zisk",
+      "group_index": 0,
+      "air": "Main",
+      "air_index": 12,
+      "constraint_index": 143,
+      "selector_index": 2,
+      "roster": [
+        {
+          "group_index": 0,
+          "air_index": null,
+          "name": "Zisk.gsum_result",
+          "kind": "AIR_GROUP_VALUE",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 12,
+          "name": "gsum",
+          "kind": "WITNESS_COL",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 12,
+          "name": "__L1__",
+          "kind": "FIXED_COL",
+          "stage": 0,
+          "index": 2,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 12,
+          "name": "Main.im_direct",
+          "kind": "AIR_VALUE",
+          "stage": 2,
+          "index": 101,
+          "dimensions": 1,
+          "lengths": [
+            96
+          ]
+        }
+      ],
+      "lean_theorem": "ZiskFv.AirsClean.GsumBoundary.main_finalizer_schema"
+    },
+    {
+      "group": "Zisk",
+      "group_index": 0,
+      "air": "Binary",
+      "air_index": 22,
+      "constraint_index": 13,
+      "selector_index": 0,
+      "roster": [
+        {
+          "group_index": 0,
+          "air_index": null,
+          "name": "Zisk.gsum_result",
+          "kind": "AIR_GROUP_VALUE",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 22,
+          "name": "gsum",
+          "kind": "WITNESS_COL",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 22,
+          "name": "__L1__",
+          "kind": "FIXED_COL",
+          "stage": 0,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 22,
+          "name": "Binary.im_direct",
+          "kind": "AIR_VALUE",
+          "stage": 2,
+          "index": 1,
+          "dimensions": 1,
+          "lengths": [
+            1
+          ]
+        }
+      ],
+      "lean_theorem": "ZiskFv.AirsClean.GsumBoundary.binary_finalizer_schema"
+    },
+    {
+      "group": "Zisk",
+      "group_index": 0,
+      "air": "BinaryAdd",
+      "air_index": 23,
+      "constraint_index": 8,
+      "selector_index": 0,
+      "roster": [
+        {
+          "group_index": 0,
+          "air_index": null,
+          "name": "Zisk.gsum_result",
+          "kind": "AIR_GROUP_VALUE",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 23,
+          "name": "gsum",
+          "kind": "WITNESS_COL",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 23,
+          "name": "__L1__",
+          "kind": "FIXED_COL",
+          "stage": 0,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 23,
+          "name": "BinaryAdd.im_direct",
+          "kind": "AIR_VALUE",
+          "stage": 2,
+          "index": 1,
+          "dimensions": 1,
+          "lengths": [
+            1
+          ]
+        }
+      ],
+      "lean_theorem": "ZiskFv.AirsClean.GsumBoundary.binaryAdd_finalizer_schema"
+    },
+    {
+      "group": "Zisk",
+      "group_index": 0,
+      "air": "BinaryExtension",
+      "air_index": 24,
+      "constraint_index": 7,
+      "selector_index": 0,
+      "roster": [
+        {
+          "group_index": 0,
+          "air_index": null,
+          "name": "Zisk.gsum_result",
+          "kind": "AIR_GROUP_VALUE",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 24,
+          "name": "gsum",
+          "kind": "WITNESS_COL",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 24,
+          "name": "__L1__",
+          "kind": "FIXED_COL",
+          "stage": 0,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 24,
+          "name": "BinaryExtension.im_direct",
+          "kind": "AIR_VALUE",
+          "stage": 2,
+          "index": 1,
+          "dimensions": 1,
+          "lengths": [
+            1
+          ]
+        }
+      ],
+      "lean_theorem": "ZiskFv.AirsClean.GsumBoundary.binaryExtension_finalizer_schema"
+    },
+    {
+      "group": "Zisk",
+      "group_index": 0,
+      "air": "MemAlign",
+      "air_index": 17,
+      "constraint_index": 39,
+      "selector_index": 1,
+      "roster": [
+        {
+          "group_index": 0,
+          "air_index": null,
+          "name": "Zisk.gsum_result",
+          "kind": "AIR_GROUP_VALUE",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 17,
+          "name": "gsum",
+          "kind": "WITNESS_COL",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 17,
+          "name": "__L1__",
+          "kind": "FIXED_COL",
+          "stage": 0,
+          "index": 1,
+          "dimensions": 0,
+          "lengths": []
+        }
+      ],
+      "lean_theorem": "ZiskFv.AirsClean.GsumBoundary.memAlign_finalizer_schema"
+    },
+    {
+      "group": "Zisk",
+      "group_index": 0,
+      "air": "MemAlignByte",
+      "air_index": 18,
+      "constraint_index": 15,
+      "selector_index": 0,
+      "roster": [
+        {
+          "group_index": 0,
+          "air_index": null,
+          "name": "Zisk.gsum_result",
+          "kind": "AIR_GROUP_VALUE",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 18,
+          "name": "gsum",
+          "kind": "WITNESS_COL",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 18,
+          "name": "__L1__",
+          "kind": "FIXED_COL",
+          "stage": 0,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 18,
+          "name": "MemAlignByte.im_direct",
+          "kind": "AIR_VALUE",
+          "stage": 2,
+          "index": 1,
+          "dimensions": 1,
+          "lengths": [
+            2
+          ]
+        }
+      ],
+      "lean_theorem": "ZiskFv.AirsClean.GsumBoundary.memAlignByte_finalizer_schema"
+    },
+    {
+      "group": "Zisk",
+      "group_index": 0,
+      "air": "MemAlignReadByte",
+      "air_index": 19,
+      "constraint_index": 9,
+      "selector_index": 0,
+      "roster": [
+        {
+          "group_index": 0,
+          "air_index": null,
+          "name": "Zisk.gsum_result",
+          "kind": "AIR_GROUP_VALUE",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 19,
+          "name": "gsum",
+          "kind": "WITNESS_COL",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 19,
+          "name": "__L1__",
+          "kind": "FIXED_COL",
+          "stage": 0,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 19,
+          "name": "MemAlignReadByte.im_direct",
+          "kind": "AIR_VALUE",
+          "stage": 2,
+          "index": 1,
+          "dimensions": 1,
+          "lengths": [
+            2
+          ]
+        }
+      ],
+      "lean_theorem": "ZiskFv.AirsClean.GsumBoundary.memAlignReadByte_finalizer_schema"
+    },
+    {
+      "group": "Zisk",
+      "group_index": 0,
+      "air": "MemAlignWriteByte",
+      "air_index": 20,
+      "constraint_index": 14,
+      "selector_index": 0,
+      "roster": [
+        {
+          "group_index": 0,
+          "air_index": null,
+          "name": "Zisk.gsum_result",
+          "kind": "AIR_GROUP_VALUE",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 20,
+          "name": "gsum",
+          "kind": "WITNESS_COL",
+          "stage": 2,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 20,
+          "name": "__L1__",
+          "kind": "FIXED_COL",
+          "stage": 0,
+          "index": 0,
+          "dimensions": 0,
+          "lengths": []
+        },
+        {
+          "group_index": 0,
+          "air_index": 20,
+          "name": "MemAlignWriteByte.im_direct",
+          "kind": "AIR_VALUE",
+          "stage": 2,
+          "index": 1,
+          "dimensions": 1,
+          "lengths": [
+            3
+          ]
+        }
+      ],
+      "lean_theorem": "ZiskFv.AirsClean.GsumBoundary.memAlignWriteByte_finalizer_schema"
+    }
+  ],
+  "source_commits": {
+    "schema": "106b44972dc617d95807c2fb24a9b5498d9dff67",
+    "minimal_writebyte_prerequisites": "fc4d0feed40430ed503cc0fc3164f3ed7e086d67",
+    "writebyte_proof_repairs": "7e950dc33688b066eba2f4ec1096ba450692b93d"
+  },
+  "maintained_gsum_boundary_sha256": "699168ffabe39bdfaba2e5b13fd5bc0a2018a70cb567b7cbbee6045c8c689aaa",
+  "lean": {
+    "environment": {
+      "LEAN_NUM_THREADS": "2"
+    },
+    "targets": [
+      "ZiskFv.AirsClean.GsumBoundary",
+      "ZiskFv.AirsClean.ArithMul.Wiring",
+      "ZiskFv.AirsClean.ArithMul.RangeWiring",
+      "ZiskFv.AirsClean.OperationPadding",
+      "ZiskFv.AirsClean.MemAlignWriteByte.Source",
+      "ZiskFv.AirsClean.MemAlignWriteByte.ExtractedWiring",
+      "ZiskFv.AirsClean.MemAlignWriteByte.DirectWiring"
+    ],
+    "exit_code": 0,
+    "result": "Build completed successfully (8122 jobs).",
+    "log_sha256": "423106b3984d03a4e9a92e2e1c32e35b8d44680734e18ee97110a980d7c8b505"
+  },
+  "deltas": {
+    "new_independent_kernel_schema_theorems": 8,
+    "existing_validated_link_signatures_changed": 0,
+    "Circuit_signatures_changed": 0,
+    "caller_hypotheses_added": 0,
+    "root_or_provider_composition_credit": "not claimed",
+    "name_only_polynomial_mutation_credit": "not claimed"
+  },
+  "proof_repairs": [
+    "WB selector classification uses sub_eq_zero plus Boolean simplification, statement unchanged.",
+    "WB mixed-channel exposure split follows existing Binary/BinaryExtension proof pattern; static dual-byte range uses actual h_input.",
+    "WB actual-main source weld uses generic eval_const before structural normalization.",
+    "WB padding messages use semantic eval_const field projections before unfolding paddingRow; no replacement of Direct AIR0 by an honest count."
+  ]
+}

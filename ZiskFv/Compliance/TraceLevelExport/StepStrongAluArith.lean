@@ -3127,7 +3127,7 @@ theorem stepStrong_sraw
 theorem stepStrong_slliw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_slliw trace binding i)
-    (h_domain : SequentialPcDomain d.toClaim.slliw_input.PC)
+    (h_domain : SequentialPcDomain d.toInputs.toInputsCore_slliw.input.PC)
     (h_a_lo : (mainOfTable trace.program trace.mainTable).a_0 i.val =
       lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
         (regidx_to_fin d.toClaim.r1)))
@@ -3135,9 +3135,9 @@ theorem stepStrong_slliw
       lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
         (regidx_to_fin d.toClaim.r1)))
     (h_b_lo : (mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_b_lo d.toClaim.slliw_input.shamt) :
+      shamt_b_lo d.toClaim.shamt) :
     execute_instruction
-      (instruction.SHIFTIWOP (d.toClaim.slliw_input.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SLLIW)) (binding i)
+      (instruction.SHIFTIWOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SLLIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
            [ (busSub trace i (Pilot.execRowOf trace i)).e0
@@ -3179,17 +3179,17 @@ theorem stepStrong_slliw
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
-      state d.toClaim.slliw_input.r1_val d.toClaim.slliw_input.rd d.toClaim.slliw_input.PC
-      (PureSpec.execute_SHIFTIWOP_slliw_pure d.toClaim.slliw_input).nextPC
+      state d.toInputs.toInputsCore_slliw.input.r1_val d.toInputs.toInputsCore_slliw.input.rd d.toInputs.toInputsCore_slliw.input.PC
+      (PureSpec.execute_SHIFTIWOP_slliw_pure d.toInputs.toInputsCore_slliw.input).nextPC
       d.toClaim.r1 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.toInputs.h_input_r1,
-      input_rd_eq := d.toInputs.h_input_rd,
-      input_pc_eq := d.toInputs.h_input_pc,
+    { input_r1_eq := d.toInputs.toInputsCore_slliw.input_r1_read,
+      input_rd_eq := rfl,
+      input_pc_eq := d.toInputs.toInputsCore_slliw.input_pc_read,
       exec_len := by rfl,
       e0_mult := by rfl,
       e1_mult := by rfl,
       nextPC_matches :=
-        Pilot.sequential_nextPC_discharged trace i d.toClaim.slliw_input.PC
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.toInputsCore_slliw.input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
           d.toInputs.h_pc_bridge h_domain,
       m0_mult := by rfl,
@@ -3198,8 +3198,7 @@ theorem stepStrong_slliw
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_input_rd.trans
-        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
+      rd_idx := busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
@@ -3208,13 +3207,13 @@ theorem stepStrong_slliw
       (Or.inr (Or.inr (Or.inr (Or.inl
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op])))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.slliw_input.r1_val
-      d.toDecode.h_m32 h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.toInputsCore_slliw.input.r1_val
+      d.toDecode.h_m32 h_a_lo h_a_hi d.toInputs.toInputsCore_slliw.input_r1_read h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.slliw_input.shamt
+    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
       h_b_lo h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.slliw d.toClaim.slliw_input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
+    OpEnvelope.slliw d.toInputs.toInputsCore_slliw.input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
@@ -3230,7 +3229,7 @@ theorem stepStrong_slliw
 theorem stepStrong_srliw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_srliw trace binding i)
-    (h_domain : SequentialPcDomain d.toClaim.srliw_input.PC)
+    (h_domain : SequentialPcDomain d.toInputs.toInputsCore_srliw.input.PC)
     (h_a_lo : (mainOfTable trace.program trace.mainTable).a_0 i.val =
       lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
         (regidx_to_fin d.toClaim.r1)))
@@ -3238,9 +3237,9 @@ theorem stepStrong_srliw
       lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
         (regidx_to_fin d.toClaim.r1)))
     (h_b_lo : (mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_b_lo d.toClaim.srliw_input.shamt) :
+      shamt_b_lo d.toClaim.shamt) :
     execute_instruction
-      (instruction.SHIFTIWOP (d.toClaim.srliw_input.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SRLIW)) (binding i)
+      (instruction.SHIFTIWOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SRLIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
            [ (busSub trace i (Pilot.execRowOf trace i)).e0
@@ -3282,17 +3281,17 @@ theorem stepStrong_srliw
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
-      state d.toClaim.srliw_input.r1_val d.toClaim.srliw_input.rd d.toClaim.srliw_input.PC
-      (PureSpec.execute_SHIFTIWOP_srliw_pure d.toClaim.srliw_input).nextPC
+      state d.toInputs.toInputsCore_srliw.input.r1_val d.toInputs.toInputsCore_srliw.input.rd d.toInputs.toInputsCore_srliw.input.PC
+      (PureSpec.execute_SHIFTIWOP_srliw_pure d.toInputs.toInputsCore_srliw.input).nextPC
       d.toClaim.r1 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.toInputs.h_input_r1,
-      input_rd_eq := d.toInputs.h_input_rd,
-      input_pc_eq := d.toInputs.h_input_pc,
+    { input_r1_eq := d.toInputs.toInputsCore_srliw.input_r1_read,
+      input_rd_eq := rfl,
+      input_pc_eq := d.toInputs.toInputsCore_srliw.input_pc_read,
       exec_len := by rfl,
       e0_mult := by rfl,
       e1_mult := by rfl,
       nextPC_matches :=
-        Pilot.sequential_nextPC_discharged trace i d.toClaim.srliw_input.PC
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.toInputsCore_srliw.input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
           d.toInputs.h_pc_bridge h_domain,
       m0_mult := by rfl,
@@ -3301,8 +3300,7 @@ theorem stepStrong_srliw
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_input_rd.trans
-        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
+      rd_idx := busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
@@ -3311,13 +3309,13 @@ theorem stepStrong_srliw
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inl
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.srliw_input.r1_val
-      d.toDecode.h_m32 h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.toInputsCore_srliw.input.r1_val
+      d.toDecode.h_m32 h_a_lo h_a_hi d.toInputs.toInputsCore_srliw.input_r1_read h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.srliw_input.shamt
+    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
       h_b_lo h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.srliw d.toClaim.srliw_input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
+    OpEnvelope.srliw d.toInputs.toInputsCore_srliw.input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by
@@ -3333,7 +3331,7 @@ theorem stepStrong_srliw
 theorem stepStrong_sraiw
     (trace : AcceptedZiskTrace numInstructions) (binding : SailTrace trace.numInstructions) (i : Fin trace.numInstructions)
     (d : RowData_sraiw trace binding i)
-    (h_domain : SequentialPcDomain d.toClaim.sraiw_input.PC)
+    (h_domain : SequentialPcDomain d.toInputs.toInputsCore_sraiw.input.PC)
     (h_a_lo : (mainOfTable trace.program trace.mainTable).a_0 i.val =
       lane_lo ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
         (regidx_to_fin d.toClaim.r1)))
@@ -3341,9 +3339,9 @@ theorem stepStrong_sraiw
       lane_hi ((ZiskFv.EquivCore.Bridge.SailStateBridge.sail_to_rv64 (binding i)).xreg
         (regidx_to_fin d.toClaim.r1)))
     (h_b_lo : (mainOfTable trace.program trace.mainTable).b_0 i.val =
-      shamt_b_lo d.toClaim.sraiw_input.shamt) :
+      shamt_b_lo d.toClaim.shamt) :
     execute_instruction
-      (instruction.SHIFTIWOP (d.toClaim.sraiw_input.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SRAIW)) (binding i)
+      (instruction.SHIFTIWOP (d.toClaim.shamt, d.toClaim.r1, d.toClaim.rd, sopw.SRAIW)) (binding i)
       = ZiskFv.Channels.state_effect_via_channels
           ⟨(busSub trace i (Pilot.execRowOf trace i)).exec_row,
            [ (busSub trace i (Pilot.execRowOf trace i)).e0
@@ -3386,17 +3384,17 @@ theorem stepStrong_sraiw
     simpa [bus, busSub, ZiskFv.AirsClean.Main.validOfRow,
       ZiskFv.AirsClean.Main.rowAt] using h
   let promises : ZiskFv.EquivCore.Promises.ShiftWImmPromises
-      state d.toClaim.sraiw_input.r1_val d.toClaim.sraiw_input.rd d.toClaim.sraiw_input.PC
-      (PureSpec.execute_SHIFTIWOP_sraiw_pure d.toClaim.sraiw_input).nextPC
+      state d.toInputs.toInputsCore_sraiw.input.r1_val d.toInputs.toInputsCore_sraiw.input.rd d.toInputs.toInputsCore_sraiw.input.PC
+      (PureSpec.execute_SHIFTIWOP_sraiw_pure d.toInputs.toInputsCore_sraiw.input).nextPC
       d.toClaim.r1 d.toClaim.rd bus.exec_row bus.e0 bus.e1 bus.e2 :=
-    { input_r1_eq := d.toInputs.h_input_r1,
-      input_rd_eq := d.toInputs.h_input_rd,
-      input_pc_eq := d.toInputs.h_input_pc,
+    { input_r1_eq := d.toInputs.toInputsCore_sraiw.input_r1_read,
+      input_rd_eq := rfl,
+      input_pc_eq := d.toInputs.toInputsCore_sraiw.input_pc_read,
       exec_len := by rfl,
       e0_mult := by rfl,
       e1_mult := by rfl,
       nextPC_matches :=
-        Pilot.sequential_nextPC_discharged trace i d.toClaim.sraiw_input.PC
+        Pilot.sequential_nextPC_discharged trace i d.toInputs.toInputsCore_sraiw.input.PC
           d.toDecode.h_idx d.toDecode.h_set_pc d.toDecode.h_jmp1 d.toDecode.h_jmp2
           d.toInputs.h_pc_bridge h_domain,
       m0_mult := by rfl,
@@ -3405,8 +3403,7 @@ theorem stepStrong_sraiw
       m1_as := by rfl,
       m2_mult := by rfl,
       m2_as := by rfl,
-      rd_idx := d.toInputs.h_input_rd.trans
-        (busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset) }
+      rd_idx := busSub_rd_idx_of_decode d.toDecode.h_store_ind d.toDecode.h_store_offset }
   have h_shift_facts :=
     ZiskFv.AirsClean.BinaryFamily.shiftStaticBinaryExtension_wf_and_b0_range_of_table_spec
       h_component h_table_spec h_provider_row
@@ -3415,13 +3412,13 @@ theorem stepStrong_sraiw
       (Or.inr (Or.inr (Or.inr (Or.inr (Or.inr
         (by rw [shift_op_pin_eq_of_match m _ i.val h_match, d.toDecode.h_main_op]))))))
   have h_input_r1_row :=
-    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toClaim.sraiw_input.r1_val
-      d.toDecode.h_m32 h_a_lo h_a_hi d.toInputs.h_input_r1 h_match h_shift_facts.1 h_op_is_shift
+    shift_m32_1_input_r1_row_of_facts m _ i.val (regidx_to_fin d.toClaim.r1) d.toInputs.toInputsCore_sraiw.input.r1_val
+      d.toDecode.h_m32 h_a_lo h_a_hi d.toInputs.toInputsCore_sraiw.input_r1_read h_match h_shift_facts.1 h_op_is_shift
   have h_shift_pin_row :=
-    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.sraiw_input.shamt
+    shift_m32_1_imm_shift_pin_row_of_facts m _ i.val d.toClaim.shamt
       h_b_lo h_match h_shift_facts.1 h_shift_facts.2 h_op_is_shift
   let env : OpEnvelope state m i.val :=
-    OpEnvelope.sraiw d.toClaim.sraiw_input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
+    OpEnvelope.sraiw d.toInputs.toInputsCore_sraiw.input d.toClaim.r1 d.toClaim.rd providerTable providerRow bus
       promises pins h_component h_table_spec h_provider_row h_match
       h_input_r1_row h_shift_pin_row h_lane_rd
   have h_bridge : env.aeneasBridgeTrust := by

@@ -1,5 +1,5 @@
 { writeShellApplication, elan, cargo, rustc, protobuf, python3, jq, git
-, clang, libclang, gcc, gnumake, nasm, gmp, nix, pkgsCross, aeneas, virtual-table-check }:
+, clang, libclang, gcc, gnumake, gnutar, nasm, gmp, nix, pkgsCross, aeneas, virtual-table-check }:
 
 # Top-level test entry point. Single source of truth for "is the
 # project green?" Runs every check in dependency order so a clean
@@ -32,6 +32,7 @@ writeShellApplication {
     libclang.lib
     gcc
     gnumake
+    gnutar
     nasm
     nix
     pkgsCross.riscv64-embedded.stdenv.cc
@@ -183,6 +184,10 @@ LEAN
       AENEAS_FLAKE="${aeneas}" AENEAS_CHECK_RV_COMPLETENESS=1 scripts/aeneas-production-extract.sh
     '
 
+    run "Rust ROM get_flags fresh extraction correspondence" bash -c '
+      AENEAS_FLAKE="${aeneas}" scripts/aeneas-rom-flags-extract.sh --check
+    '
+
     # 6. Lake build — the FV check. Every theorem typechecks. This is
     # the load-bearing claim: if `lake build` is green, every per-opcode
     # equivalence theorem (Sail spec = ZisK circuit + bus model) holds.
@@ -212,6 +217,7 @@ LEAN
       --export-dir build/extraction/ByteTables --quiet
     run "production virtual-table fidelity" ${virtual-table-check}/bin/virtual-table-check
     run "MemAlignRom fidelity controls" python3 -m unittest discover -s tools/virtual-tables -p test_mem_align_rom.py
+    run "clean-component extractor selection" python3 -m unittest discover -s tools/clean-components -p test_faithfulness.py
     run "clean-component faithfulness" python3 tools/clean-components/faithfulness.py
     run "constant registry" python3 trust/scripts/check-constants.py
     run "CI input classification tests" python3 -m unittest discover -s scripts -p test_ci_proof_inputs.py

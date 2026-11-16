@@ -65,7 +65,9 @@ def sdLdSdInput : PureSpec.SdInput where
   PC := 16#64
 
 def sdLdSdClaim : Claim_sd sdLdAcceptedTrace sdLdSdIndex where
-  sd_input := sdLdSdInput
+  r1 := x1
+  r2 := x2
+  imm := 0#12
 
 def sdLdLdInput : PureSpec.LdInput where
   r1 := 1#5
@@ -83,7 +85,9 @@ def sdLdLdInput : PureSpec.LdInput where
   data7 := 0#8
 
 def sdLdLdClaim : Claim_ld sdLdAcceptedTrace sdLdLdIndex where
-  ld_input := sdLdLdInput
+  r1 := x1
+  rd := x3
+  imm := 0#12
 
 def sdLdJalClaim : Claim_jal sdLdAcceptedTrace sdLdJalIndex where
   imm := 0#21
@@ -372,7 +376,7 @@ def sdLdSdProgramDecode :
     subst j
     rw [sdLdAcceptedTrace_program]
     norm_num [sdLdAcceptedTrace, sdLdProgram, sdLdSdProgramRow, sdLdSdClaim,
-      sdLdSdInput, packFlags, sdLdSdBits, ZiskFv.AirsClean.boolF]
+      x1, x2, regidx_to_fin, packFlags, sdLdSdBits, ZiskFv.AirsClean.boolF]
     all_goals decide
 
 def sdLdLdProgramDecode :
@@ -393,7 +397,7 @@ def sdLdLdProgramDecode :
     subst j
     rw [sdLdAcceptedTrace_program]
     norm_num [sdLdAcceptedTrace, sdLdProgram, sdLdLdProgramRow, sdLdLdClaim,
-      sdLdLdInput, Transpiler.ind, Transpiler.regidxOfBitVec5, packFlags,
+      x1, x3, storeRegBits, regidx_to_fin, Transpiler.ind, Transpiler.regidxOfBitVec5, packFlags,
       sdLdLdBits, ZiskFv.AirsClean.boolF]
     all_goals decide
 
@@ -555,59 +559,79 @@ def sdLdAddiX2Inputs :
   h_input_rd := rfl
   h_pc_bridge := by rw [sdLdMainPc]; norm_num [sdLdAddiX2Index, sdLdAddiInput]
 
-def sdLdSdInputs :
-    Inputs_sd sdLdAcceptedTrace sdLdSailTrace sdLdSdIndex sdLdSdClaim where
-  regs := sdLdModeRegs
-  h_opcode_assumptions := by
-    unfold PureSpec.sd_state_assumptions
-    simp [sdLdSdClaim, sdLdSdInput, sdLdSailTrace, sdLdSdIndex, sdLdState, sdLdRegs,
+private theorem sdLdSdR1Value
+    (hread : ∃ value : BitVec 64,
+      read_xreg (regidx_to_fin sdLdSdClaim.r1) (sdLdSailTrace sdLdSdIndex) =
+        EStateM.Result.ok value (sdLdSailTrace sdLdSdIndex)) :
+    Classical.choose hread = 2684354568#64 := by
+  have hactual : read_xreg (regidx_to_fin sdLdSdClaim.r1)
+      (sdLdSailTrace sdLdSdIndex) =
+        EStateM.Result.ok (2684354568#64) (sdLdSailTrace sdLdSdIndex) := by
+    simpa [sdLdSdClaim, sdLdSdIndex] using sdLdReadX1 sdLdSdIndex
+  have hchosen := Classical.choose_spec hread
+  exact (EStateM.Result.ok.inj (hchosen.symm.trans hactual)).1
+
+/-- Instantiate the complete old store surface; the general constructor derives
+all three new read witnesses and certifies equality with this exact input. -/
+private def sdLdSdConstruction :
+    { core : InputsCore_sd sdLdAcceptedTrace sdLdSailTrace sdLdSdIndex sdLdSdClaim //
+      core.input = sdLdSdInput } := by
+  apply InputsCore_sd.of_state_assumptions sdLdSdIndex sdLdSdInput sdLdModeRegs
+  · unfold PureSpec.sd_state_assumptions
+    simp [sdLdSdInput, sdLdSailTrace, sdLdSdIndex, sdLdState, sdLdRegs,
       x1, x2, x3, regidx_to_fin, reg_of_fin, LeanRV64D.Functions.rX_bits,
       LeanRV64D.Functions.rX, Std.ExtDHashMap.get?_insert,
       Std.ExtDHashMap.get?_insert_self]
-  h_a0_value := by
-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_0]
+  · rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_0]
     change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
       sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable sdLdSdIndex.val).core.a_0 = _
     rw [congrArg (fun row => row.core.a_0) (sdLdAcceptedMainRowAt sdLdSdIndex)]
-    norm_num [sdLdSdIndex, sdLdSdClaim, sdLdSdInput, sdLdMainRows, sdLdSdRow,
+    norm_num [sdLdSdIndex, sdLdSdInput, sdLdMainRows, sdLdSdRow,
       sdLdSdRowTemplate, mainRomRowOf, lane_lo]
     decide
-  h_a1_value := by
-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_1]
+  · rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_1]
     change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
       sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable sdLdSdIndex.val).core.a_1 = _
     rw [congrArg (fun row => row.core.a_1) (sdLdAcceptedMainRowAt sdLdSdIndex)]
-    norm_num [sdLdSdIndex, sdLdSdClaim, sdLdSdInput, sdLdMainRows, sdLdSdRow,
+    norm_num [sdLdSdIndex, sdLdSdInput, sdLdMainRows, sdLdSdRow,
       sdLdSdRowTemplate, mainRomRowOf, lane_hi]
-  h_b0_value := by
-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_b_0]
+  · rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_b_0]
     change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
       sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable sdLdSdIndex.val).core.b_0 = _
     rw [congrArg (fun row => row.core.b_0) (sdLdAcceptedMainRowAt sdLdSdIndex)]
-    norm_num [sdLdSdIndex, sdLdSdClaim, sdLdSdInput, sdLdMainRows, sdLdSdRow,
+    norm_num [sdLdSdIndex, sdLdSdInput, sdLdMainRows, sdLdSdRow,
       sdLdSdRowTemplate, mainRomRowOf, lane_lo]
     decide
-  h_b1_value := by
-    rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_b_1]
+  · rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_b_1]
     change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
       sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable sdLdSdIndex.val).core.b_1 = _
     rw [congrArg (fun row => row.core.b_1) (sdLdAcceptedMainRowAt sdLdSdIndex)]
-    norm_num [sdLdSdIndex, sdLdSdClaim, sdLdSdInput, sdLdMainRows, sdLdSdRow,
+    norm_num [sdLdSdIndex, sdLdSdInput, sdLdMainRows, sdLdSdRow,
       sdLdSdRowTemplate, mainRomRowOf, lane_hi]
-  h_risc_v_assumptions := by
-    unfold RISC_V_assumptions
+  · unfold RISC_V_assumptions
     simp [sdLdSailTrace, sdLdSdIndex, sdLdState, sdLdRegs, sdLdModeRegs,
       sdLdPmaRegion, sdLdPmaAttrs, x1, x2, x3, regidx_to_fin, reg_of_fin,
       Sail.readReg, PreSail.readReg,
       Std.ExtDHashMap.get?_insert, Std.ExtDHashMap.get?_insert_self]
-  h_pc_bridge := by rw [sdLdMainPc]; norm_num [sdLdSdIndex, sdLdSdClaim, sdLdSdInput]
 
-def sdLdLdInputs :
-    Inputs_ld sdLdAcceptedTrace sdLdSailTrace sdLdLdIndex sdLdLdClaim where
-  regs := sdLdModeRegs
-  mem := ZiskFv.AirsClean.FullEnsemble.memOfTableData sdLdMemTable
-  r_mem := 1
-  h_opcode_assumptions := by
+def sdLdSdInputs :
+    Inputs_sd sdLdAcceptedTrace sdLdSailTrace sdLdSdIndex sdLdSdClaim where
+  toInputsCore_sd := sdLdSdConstruction.val
+  h_pc_bridge := by
+    change ((ZiskFv.AirsClean.FullEnsemble.mainOfTable
+      sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable).pc sdLdSdIndex.val).val =
+        sdLdSdConstruction.val.input.PC.toNat
+    rw [sdLdSdConstruction.property, sdLdMainPc]
+    norm_num [sdLdSdIndex, sdLdSdInput]
+
+/-- The complete old LD surface, including the memory provider and both row tags,
+is passed to the general constructor, which certifies this exact canonical input. -/
+private def sdLdLdConstruction :
+    { core : InputsCore_ld sdLdAcceptedTrace sdLdSailTrace sdLdLdIndex sdLdLdClaim //
+      core.input = sdLdLdInput } := by
+  apply InputsCore_ld.of_state_assumptions sdLdLdIndex sdLdLdInput sdLdModeRegs
+    (ZiskFv.AirsClean.FullEnsemble.memOfTableData sdLdMemTable) 1
+  ·
     unfold PureSpec.ld_state_assumptions
     simp [sdLdLdClaim, sdLdLdInput, sdLdSailTrace, sdLdLdIndex, sdLdState, sdLdRegs,
       sdLdStoredMem, sdLdInitialMem, sdLdAcceptedReplayRows, sdMemRow,
@@ -622,7 +646,7 @@ def sdLdLdInputs :
       LeanRV64D.Functions.rX_bits, LeanRV64D.Functions.rX,
       Std.ExtDHashMap.get?_insert, Std.ExtDHashMap.get?_insert_self,
       Std.ExtHashMap.getElem_insert, Std.ExtHashMap.getElem_insert_self]
-  h_a0_value := by
+  ·
     rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_a_0]
     change (ZiskFv.AirsClean.FullEnsemble.mainTableRowAtOrZero
       sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable sdLdLdIndex.val).core.a_0 = _
@@ -630,14 +654,13 @@ def sdLdLdInputs :
     norm_num [sdLdLdIndex, sdLdLdClaim, sdLdLdInput, sdLdMainRows, sdLdLdRow,
       sdLdLdRowTemplate, mainRomRowOf, lane_lo]
     decide
-  h_risc_v_assumptions := by
+  ·
     unfold RISC_V_assumptions
     simp [sdLdSailTrace, sdLdLdIndex, sdLdState, sdLdRegs, sdLdModeRegs,
       sdLdPmaRegion, sdLdPmaAttrs, x1, x2, x3, regidx_to_fin, reg_of_fin,
       Sail.readReg, PreSail.readReg,
       Std.ExtDHashMap.get?_insert, Std.ExtDHashMap.get?_insert_self]
-  h_pc_bridge := by rw [sdLdMainPc]; norm_num [sdLdLdIndex, sdLdLdClaim, sdLdLdInput]
-  h_msg := by
+  ·
     have hmem :
         ZiskFv.AirsClean.Mem.rowAt
           (ZiskFv.AirsClean.FullEnsemble.memOfTableData sdLdMemTable) 1 = ldMemRow := by
@@ -672,16 +695,26 @@ def sdLdLdInputs :
     simp [toElements, loadEvalEnv, ProvableStruct.componentsToElements,
       ProvableStruct.components, ProvableStruct.toComponents]
     decide
-  h_mem_sel := by
+  ·
     have hmem := ZiskFv.AirsClean.FullEnsemble.rowAt_memOfTableData
       sdLdMemTable ⟨1, by simp⟩
     have hrow := sdLdMemTable_memRowAt_one
     exact congrArg ZiskFv.AirsClean.Mem.MemRow.sel (hmem.trans hrow)
-  h_mem_wr := by
+  ·
     have hmem := ZiskFv.AirsClean.FullEnsemble.rowAt_memOfTableData
       sdLdMemTable ⟨1, by simp⟩
     have hrow := sdLdMemTable_memRowAt_one
     exact congrArg ZiskFv.AirsClean.Mem.MemRow.wr (hmem.trans hrow)
+
+def sdLdLdInputs :
+    Inputs_ld sdLdAcceptedTrace sdLdSailTrace sdLdLdIndex sdLdLdClaim where
+  toInputsCore_ld := sdLdLdConstruction.val
+  h_pc_bridge := by
+    change ((ZiskFv.AirsClean.FullEnsemble.mainOfTable
+      sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable).pc sdLdLdIndex.val).val =
+        sdLdLdConstruction.val.input.PC.toNat
+    rw [sdLdLdConstruction.property, sdLdMainPc]
+    norm_num [sdLdLdIndex, sdLdLdInput]
 
 def sdLdJalInput : PureSpec.JalInput where
   imm := 0#21
@@ -1179,11 +1212,11 @@ def sdLdLaneBridge : ∀ i : Fin 7,
         norm_num)
       (sdLdLaneLo sdLdSdIndex (2684354568#64)
         (by simpa [sdLdSdIndex] using sdLdReadX1 sdLdSdIndex)
-        (fun m i => m.a_0 i) (by simpa [sdLdSdClaim, sdLdSdInput] using
+        (fun m i => m.a_0 i) (by simpa only [sdLdSdR1Value] using
           sdLdSdInputs.h_a0_value))
       (sdLdLaneHi sdLdSdIndex (2684354568#64)
         (by simpa [sdLdSdIndex] using sdLdReadX1 sdLdSdIndex)
-        (fun m i => m.a_1 i) (by simpa [sdLdSdClaim, sdLdSdInput] using
+        (fun m i => m.a_1 i) (by simpa only [sdLdSdR1Value] using
           sdLdSdInputs.h_a1_value))
       (by
         rw [ZiskFv.AirsClean.FullEnsemble.mainOfTable_b_0]
@@ -1213,8 +1246,16 @@ def sdLdLaneBridge : ∀ i : Fin 7,
         norm_num)
       (sdLdLaneLo sdLdLdIndex (2684354568#64)
         (by simpa [sdLdLdIndex] using sdLdReadX1 sdLdLdIndex)
-        (fun m i => m.a_0 i) (by simpa [sdLdLdClaim, sdLdLdInput] using
-          sdLdLdInputs.h_a0_value))
+        (fun m i => m.a_0 i) (by
+          have hinput : sdLdLdInputs.toInputsCore_ld.input = sdLdLdInput :=
+            sdLdLdConstruction.property
+          have h_lane :
+              (ZiskFv.AirsClean.FullEnsemble.mainOfTable
+                sdLdAcceptedTrace.program sdLdAcceptedTrace.mainTable).a_0 sdLdLdIndex.val =
+                  lane_lo sdLdLdInputs.toInputsCore_ld.input.r1_val :=
+            sdLdLdInputs.h_a0_value
+          rw [hinput] at h_lane
+          simpa only [sdLdLdInput] using h_lane))
       (sdLdLaneHi sdLdLdIndex (2684354568#64)
         (by simpa [sdLdLdIndex] using sdLdReadX1 sdLdLdIndex)
         (fun m i => m.a_1 i) (by

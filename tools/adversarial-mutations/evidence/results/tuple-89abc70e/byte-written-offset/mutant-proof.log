@@ -1,0 +1,19 @@
+argv: ["nix", "--extra-experimental-features", "nix-command flakes", "develop", "--no-write-lock-file", "/home/cody/zisk-fv-closure-mutation", "-c", "lake", "build", "ZiskFv.AirsClean.MemAlignByte.ExtractedWiring", "--log-level=warning"]
+cwd: /home/cody/zisk-fv-closure-mutation
+
+✔ [8076/8078] Built Extraction.MemAlignByte (3.9s)
+✔ [8077/8078] Built Extraction.LookupWiring (9.9s)
+✖ [8078/8078] Building ZiskFv.AirsClean.MemAlignByte.ExtractedWiring (3.4s)
+trace: .> LEAN_PATH=/home/cody/zisk-fv-closure-mutation/.lake/packages/Cli/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/batteries/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/Qq/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/aesop/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/proofwidgets/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/importGraph/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/LeanSearchClient/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/plausible/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/mathlib/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/build/sail-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/build/clean-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/build/aeneas-lean/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/packages/repl/.lake/build/lib/lean:/home/cody/zisk-fv-closure-mutation/.lake/build/lib/lean /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean --tstack=400000 /home/cody/zisk-fv-closure-mutation/ZiskFv/AirsClean/MemAlignByte/ExtractedWiring.lean -o /home/cody/zisk-fv-closure-mutation/.lake/build/lib/lean/ZiskFv/AirsClean/MemAlignByte/ExtractedWiring.olean -i /home/cody/zisk-fv-closure-mutation/.lake/build/lib/lean/ZiskFv/AirsClean/MemAlignByte/ExtractedWiring.ilean -c /home/cody/zisk-fv-closure-mutation/.lake/build/ir/ZiskFv/AirsClean/MemAlignByte/ExtractedWiring.c --setup /home/cody/zisk-fv-closure-mutation/.lake/build/ir/ZiskFv/AirsClean/MemAlignByte/ExtractedWiring.setup.json --json
+error: ZiskFv/AirsClean/MemAlignByte/ExtractedWiring.lean:187:50: Application type mismatch: The argument
+  rfl
+has type
+  ?m.30 = ?m.30
+but is expected to have type
+  decodeReadSourceSlots row hint_MemAlignByte_12_0.slots = some [row.written_byte_value]
+in the application
+  ⟨rfl, rfl⟩
+error: Lean exited with code 1
+Some required targets logged failures:
+- ZiskFv.AirsClean.MemAlignByte.ExtractedWiring
+error: build failed

@@ -1657,11 +1657,39 @@ def near_miss_screen(lane_map_for) -> NearMissScreen:
             survey.CLASSIFICATION.clear()
             survey.CLASSIFICATION[(rel, name)] = dataclasses.replace(
                 entry, cls="MIRROR")
+            parse_error = None
             try:
                 parsed = mirror_parse.parse_mirror_file(
                     mirror_parse.REPO_ROOT / rel, lane_map_for)
             except Exception as error:  # noqa: BLE001 - the screen must not abort
-                out.refused.append(f"{rel} {name}: {type(error).__name__}: {error}")
+                parsed = []
+                parse_error = str(error)
+            # parse_mirror_file also returns early signature refusals as a
+            # MirrorDef with no row context. Such a refusal is not evidence
+            # that a row-bearing protocol predicate is equation-free.
+            if parse_error is not None or any(
+                    definition.unparsed and not definition.carriers
+                    for definition in parsed):
+                declarations = survey.declarations(mirror_parse.REPO_ROOT / rel, rel)
+                declaration = next((decl for decl in declarations if decl.name == name), None)
+                records = {record for _file, record, _air in survey.MIRROR_RECORDS}
+                if declaration is None or survey.bound_row_variables(declaration, records):
+                    refusal = parse_error or next(
+                        (definition.unparsed[0] for definition in parsed
+                         if definition.unparsed), "unsupported row signature")
+                    out.carrying.append(
+                        f"{rel} {name} [{entry.cls}]: row-bearing declaration "
+                        f"cannot be screened by the supported grammar: {refusal}")
+                    continue
+                if parse_error is not None:
+                    out.refused.append(f"{rel} {name}: {parse_error}")
+                    continue
+            ambiguous_rows = [note for definition in parsed for note in definition.notes
+                              if note.startswith("row_air_undetermined:")]
+            if ambiguous_rows:
+                out.carrying.append(
+                    f"{rel} {name} [{entry.cls}]: cannot screen row equations "
+                    f"without a unique audited AIR: {ambiguous_rows[0]}")
                 continue
             equations = [clause for definition in parsed
                          for clause in definition.clauses if clause.comparable]

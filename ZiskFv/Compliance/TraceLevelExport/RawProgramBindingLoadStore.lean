@@ -13,7 +13,10 @@ the access width `ind_width`, which the in-circuit ROM lookup (`Decode_<op>_of_p
 reads, so each `transpile_<op>` additionally exposes `ext.row.ind_width = N#u64`
 (via the block-2 `load_op_typed_jmp_width` / `store_op_typed_jmp_width` + the
 `ind_width_setN` witnesses) and a `loadstore_decode_fields_of_binding` helper
-serializes it to `msg.ind_width = (N : FGL)`.  For each op `<op>`:
+serializes it to `msg.ind_width = (N : FGL)`.
+Loads use only the decode-only claim's `r1`/`rd`/`imm`, converting registers with
+`storeRegBits`; no runtime input witness enters raw or committed-program decoding.
+For each op `<op>`:
 
   * `transpile_<op>` — the REAL Aeneas pipeline `extract_transpile_rv64im_raw` on
     the symbolic I-type / S-type word reduces to the op's decode-field pins.  Decode
@@ -1037,7 +1040,7 @@ private theorem load_rom_store_offset (rd : BitVec 5) (d : DecodedRv64im)
   rw [hdval]
   exact Nat.mod_eq_of_lt (by omega)
 
-local macro "load_copyb_program_decode" nm:ident "," inp:term "," f3:term ","
+local macro "load_copyb_program_decode" nm:ident "," f3:term ","
     rop:term : command => do
   let s := nm.getId.toString
   let rawName := Lean.mkIdent (Lean.Name.mkSimple ("RawProgramDecode_" ++ s))
@@ -1057,8 +1060,9 @@ local macro "load_copyb_program_decode" nm:ident "," inp:term "," f3:term ","
         ∃ k : Fin rawLength,
           addr k = (trace.program j).line ∧
             rawProgram k =
-              ZiskFv.Completeness.Rv64imShapes.rawIType ($inp c).imm.toNat
-                ($inp c).r1.toNat $f3 ($inp c).rd.toNat 0x03)
+              ZiskFv.Completeness.Rv64imShapes.rawIType c.imm.toNat
+                (ZiskFv.Compliance.storeRegBits c.r1).toNat $f3
+                (ZiskFv.Compliance.storeRegBits c.rd).toNat 0x03)
   let t2 ← `(noncomputable def $ctorName {n rawLength : Nat}
       (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
       (i : Fin trace.numInstructions) (c : $claimName trace i)
@@ -1068,23 +1072,28 @@ local macro "load_copyb_program_decode" nm:ident "," inp:term "," f3:term ","
       (hbind : ProgramRowsBinding trace start addr rawProgram)
       (rawDecode : $rawName trace i c addr rawProgram) :
       $programName trace i c := by
-    let rd := ($inp c).rd.toNat
-    let rs1 := ($inp c).r1.toNat
-    let imm := ($inp c).imm.toNat
-    let ext := ($transpileName rd rs1 imm ($inp c).rd.isLt ($inp c).r1.isLt).choose
+    let rd := (ZiskFv.Compliance.storeRegBits c.rd).toNat
+    let rs1 := (ZiskFv.Compliance.storeRegBits c.r1).toNat
+    let imm := c.imm.toNat
+    let ext := ($transpileName rd rs1 imm
+      (ZiskFv.Compliance.storeRegBits c.rd).isLt
+      (ZiskFv.Compliance.storeRegBits c.r1).isLt).choose
     obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hiw, hj1, hj2, hrow⟩ :=
-      ($transpileName rd rs1 imm ($inp c).rd.isLt ($inp c).r1.isLt).choose_spec
+      ($transpileName rd rs1 imm
+        (ZiskFv.Compliance.storeRegBits c.rd).isLt
+        (ZiskFv.Compliance.storeRegBits c.r1).isLt).choose_spec
     let d := hrow.choose
     obtain ⟨hdecode, hbSrc, hbOff, hstoreOff, hstoreInd, hstoreReg, hstoreSelector⟩ :=
       hrow.choose_spec
     have hdfields := decode_i_rawIType_fields imm rs1 $f3 rd 0x03
-      ($inp c).r1.isLt (by norm_num) ($inp c).rd.isLt (by norm_num) $rop d hdecode
-    have hdval : d.rd.val = ($inp c).rd.toNat := by
-      change d.rd.bv.toNat = ($inp c).rd.toNat
+      (ZiskFv.Compliance.storeRegBits c.r1).isLt (by norm_num)
+      (ZiskFv.Compliance.storeRegBits c.rd).isLt (by norm_num) $rop d hdecode
+    have hdval : d.rd.val = (ZiskFv.Compliance.storeRegBits c.rd).toNat := by
+      change d.rd.bv.toNat = (ZiskFv.Compliance.storeRegBits c.rd).toNat
       rw [hdfields.1, BitVec.toNat_ofNat]
       exact Nat.mod_eq_of_lt (by omega)
     have hdimm : (IScalar.hcast UScalarTy.U64 d.imm).bv =
-        BitVec.signExtend 64 ($inp c).imm := by
+        BitVec.signExtend 64 c.imm := by
       simpa only [imm, BitVec.ofNat_toNat] using hdfields.2.2
     refine
       { h_idx := rawDecode.h_idx
@@ -1098,7 +1107,7 @@ local macro "load_copyb_program_decode" nm:ident "," inp:term "," f3:term ","
         h_bits_store_reg := by
           simp only [romFlagBitsOfExtract]
           rw [hstoreSelector, hdval]
-          by_cases hrd : ($inp c).rd.toNat = 0
+          by_cases hrd : (ZiskFv.Compliance.storeRegBits c.rd).toNat = 0
           · simp [hrd, zisk_inst.STORE_REG]
           · simp [hrd]
         h_bits_b_src_ind := by
@@ -1121,7 +1130,9 @@ local macro "load_copyb_program_decode" nm:ident "," inp:term "," f3:term ","
             simpa only [rd, rs1, imm] using hp
           obtain ⟨ho, hjo1, hjo2, hiwF, ext', hok', hieo', hm32', hsetpc',
               hstorepc', hf⟩ :=
-            $fieldsName rd rs1 imm ($inp c).rd.isLt ($inp c).r1.isLt
+            $fieldsName rd rs1 imm
+              (ZiskFv.Compliance.storeRegBits c.rd).isLt
+              (ZiskFv.Compliance.storeRegBits c.r1).isLt
               (addr k) (trace.program j) hbk
           have hext : ext' = ext :=
             Result.ok.inj (hok'.symm.trans (by simpa only [ext] using hok))
@@ -1129,23 +1140,23 @@ local macro "load_copyb_program_decode" nm:ident "," inp:term "," f3:term ","
           refine ⟨ho, hjo1, hjo2, hiwF, ?_, ?_, hf⟩
           · rw [hbk, romMessageOfRaw, hok]
             show signedOffset ext.row.b_offset_imm0 =
-              ((BitVec.signExtend 64 ($inp c).imm).toInt : FGL)
+              ((BitVec.signExtend 64 c.imm).toInt : FGL)
             rw [hbOff]
-            exact load_rom_offset ($inp c).imm d hdimm
+            exact load_rom_offset c.imm d hdimm
           · rw [hbk, romMessageOfRaw, hok]
             show (ext.row.store_offset.val : FGL) =
-              Transpiler.ind (Transpiler.regidxOfBitVec5 ($inp c).rd)
+              Transpiler.ind (Transpiler.regidxOfBitVec5 (ZiskFv.Compliance.storeRegBits c.rd))
             rw [hstoreOff]
-            exact load_rom_store_offset ($inp c).rd d (by
+            exact load_rom_store_offset (ZiskFv.Compliance.storeRegBits c.rd) d (by
               simpa only [rd, BitVec.ofNat_toNat] using hdfields.1) })
   return ⟨Lean.mkNullNode #[t1, t2]⟩
 
-load_copyb_program_decode ld, ZiskFv.Compliance.Claim_ld.ld_input, 3, RiscvOpcode.Ld
-load_copyb_program_decode lbu, ZiskFv.Compliance.Claim_lbu.lbu_input, 4, RiscvOpcode.Lbu
-load_copyb_program_decode lhu, ZiskFv.Compliance.Claim_lhu.lhu_input, 5, RiscvOpcode.Lhu
-load_copyb_program_decode lwu, ZiskFv.Compliance.Claim_lwu.lwu_input, 6, RiscvOpcode.Lwu
+load_copyb_program_decode ld, 3, RiscvOpcode.Ld
+load_copyb_program_decode lbu, 4, RiscvOpcode.Lbu
+load_copyb_program_decode lhu, 5, RiscvOpcode.Lhu
+load_copyb_program_decode lwu, 6, RiscvOpcode.Lwu
 
-local macro "load_sext_program_decode" nm:ident "," inp:term "," f3:term ","
+local macro "load_sext_program_decode" nm:ident "," f3:term ","
     rop:term : command => do
   let s := nm.getId.toString
   let rawName := Lean.mkIdent (Lean.Name.mkSimple ("RawProgramDecode_" ++ s))
@@ -1176,8 +1187,9 @@ local macro "load_sext_program_decode" nm:ident "," inp:term "," f3:term ","
         ∃ k : Fin rawLength,
           addr k = (trace.program j).line ∧
             rawProgram k =
-              ZiskFv.Completeness.Rv64imShapes.rawIType ($inp c).imm.toNat
-                ($inp c).r1.toNat $f3 ($inp c).rd.toNat 0x03)
+              ZiskFv.Completeness.Rv64imShapes.rawIType c.imm.toNat
+                (ZiskFv.Compliance.storeRegBits c.r1).toNat $f3
+                (ZiskFv.Compliance.storeRegBits c.rd).toNat 0x03)
   let t2 ← `(noncomputable def $ctorName {n rawLength : Nat}
       (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
       (i : Fin trace.numInstructions) (c : $claimName trace i)
@@ -1187,23 +1199,28 @@ local macro "load_sext_program_decode" nm:ident "," inp:term "," f3:term ","
       (hbind : ProgramRowsBinding trace start addr rawProgram)
       (rawDecode : $rawName trace i c addr rawProgram) :
       $programName trace i c := by
-    let rd := ($inp c).rd.toNat
-    let rs1 := ($inp c).r1.toNat
-    let imm := ($inp c).imm.toNat
-    let ext := ($transpileName rd rs1 imm ($inp c).rd.isLt ($inp c).r1.isLt).choose
+    let rd := (ZiskFv.Compliance.storeRegBits c.rd).toNat
+    let rs1 := (ZiskFv.Compliance.storeRegBits c.r1).toNat
+    let imm := c.imm.toNat
+    let ext := ($transpileName rd rs1 imm
+      (ZiskFv.Compliance.storeRegBits c.rd).isLt
+      (ZiskFv.Compliance.storeRegBits c.r1).isLt).choose
     obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hiw, hj1, hj2, hrow⟩ :=
-      ($transpileName rd rs1 imm ($inp c).rd.isLt ($inp c).r1.isLt).choose_spec
+      ($transpileName rd rs1 imm
+        (ZiskFv.Compliance.storeRegBits c.rd).isLt
+        (ZiskFv.Compliance.storeRegBits c.r1).isLt).choose_spec
     let d := hrow.choose
     obtain ⟨hdecode, hbSrc, hbOff, hstoreOff, hstoreInd, hstoreReg, hstoreSelector⟩ :=
       hrow.choose_spec
     have hdfields := decode_i_rawIType_fields imm rs1 $f3 rd 0x03
-      ($inp c).r1.isLt (by norm_num) ($inp c).rd.isLt (by norm_num) $rop d hdecode
-    have hdval : d.rd.val = ($inp c).rd.toNat := by
-      change d.rd.bv.toNat = ($inp c).rd.toNat
+      (ZiskFv.Compliance.storeRegBits c.r1).isLt (by norm_num)
+      (ZiskFv.Compliance.storeRegBits c.rd).isLt (by norm_num) $rop d hdecode
+    have hdval : d.rd.val = (ZiskFv.Compliance.storeRegBits c.rd).toNat := by
+      change d.rd.bv.toNat = (ZiskFv.Compliance.storeRegBits c.rd).toNat
       rw [hdfields.1, BitVec.toNat_ofNat]
       exact Nat.mod_eq_of_lt (by omega)
     have hdimm : (IScalar.hcast UScalarTy.U64 d.imm).bv =
-        BitVec.signExtend 64 ($inp c).imm := by
+        BitVec.signExtend 64 c.imm := by
       simpa only [imm, BitVec.ofNat_toNat] using hdfields.2.2
     refine
       { h_idx := rawDecode.h_idx
@@ -1223,7 +1240,7 @@ local macro "load_sext_program_decode" nm:ident "," inp:term "," f3:term ","
         h_bits_store_reg := by
           simp only [romFlagBitsOfExtract]
           rw [hstoreSelector, hdval]
-          by_cases hrd : ($inp c).rd.toNat = 0
+          by_cases hrd : (ZiskFv.Compliance.storeRegBits c.rd).toNat = 0
           · simp [hrd, zisk_inst.STORE_REG]
           · simp [hrd]
         h_bits_b_src_ind := by
@@ -1246,7 +1263,9 @@ local macro "load_sext_program_decode" nm:ident "," inp:term "," f3:term ","
             simpa only [rd, rs1, imm] using hp
           obtain ⟨ho, hjo1, hjo2, hiwF, ext', hok', hieo', hm32', hsetpc',
               hstorepc', hf⟩ :=
-            $fieldsName rd rs1 imm ($inp c).rd.isLt ($inp c).r1.isLt
+            $fieldsName rd rs1 imm
+              (ZiskFv.Compliance.storeRegBits c.rd).isLt
+              (ZiskFv.Compliance.storeRegBits c.r1).isLt
               (addr k) (trace.program j) hbk
           have hext : ext' = ext :=
             Result.ok.inj (hok'.symm.trans (by simpa only [ext] using hok))
@@ -1254,20 +1273,20 @@ local macro "load_sext_program_decode" nm:ident "," inp:term "," f3:term ","
           refine ⟨ho, hjo1, hjo2, hiwF, ?_, ?_, hf⟩
           · rw [hbk, romMessageOfRaw, hok]
             show signedOffset ext.row.b_offset_imm0 =
-              ((BitVec.signExtend 64 ($inp c).imm).toInt : FGL)
+              ((BitVec.signExtend 64 c.imm).toInt : FGL)
             rw [hbOff]
-            exact load_rom_offset ($inp c).imm d hdimm
+            exact load_rom_offset c.imm d hdimm
           · rw [hbk, romMessageOfRaw, hok]
             show (ext.row.store_offset.val : FGL) =
-              Transpiler.ind (Transpiler.regidxOfBitVec5 ($inp c).rd)
+              Transpiler.ind (Transpiler.regidxOfBitVec5 (ZiskFv.Compliance.storeRegBits c.rd))
             rw [hstoreOff]
-            exact load_rom_store_offset ($inp c).rd d (by
+            exact load_rom_store_offset (ZiskFv.Compliance.storeRegBits c.rd) d (by
               simpa only [rd, BitVec.ofNat_toNat] using hdfields.1) })
   return ⟨Lean.mkNullNode #[t1, t2]⟩
 
-load_sext_program_decode lb, ZiskFv.Compliance.Claim_lb.lb_input, 0, RiscvOpcode.Lb
-load_sext_program_decode lh, ZiskFv.Compliance.Claim_lh.lh_input, 1, RiscvOpcode.Lh
-load_sext_program_decode lw, ZiskFv.Compliance.Claim_lw.lw_input, 2, RiscvOpcode.Lw
+load_sext_program_decode lb, 0, RiscvOpcode.Lb
+load_sext_program_decode lh, 1, RiscvOpcode.Lh
+load_sext_program_decode lw, 2, RiscvOpcode.Lw
 
 /-! ## Current `ProgramDecode` retarget: store family. -/
 
@@ -1280,7 +1299,7 @@ private theorem store_rom_offset (imm : BitVec 12) (d : DecodedRv64im)
   rw [show BitVec.signExtend 64 d.imm.bv = BitVec.signExtend 64 imm by
     simpa only using hdimm]
 
-local macro "store_program_decode" nm:ident "," inp:term "," f3:term ","
+local macro "store_program_decode" nm:ident "," f3:term ","
     rop:term : command => do
   let s := nm.getId.toString
   let rawName := Lean.mkIdent (Lean.Name.mkSimple ("RawProgramDecode_" ++ s))
@@ -1301,8 +1320,9 @@ local macro "store_program_decode" nm:ident "," inp:term "," f3:term ","
         ∃ k : Fin rawLength,
           addr k = (trace.program j).line ∧
             rawProgram k =
-              ZiskFv.Completeness.Rv64imShapes.rawSType ($inp c).imm.toNat
-                ($inp c).r2.toNat ($inp c).r1.toNat $f3)
+              ZiskFv.Completeness.Rv64imShapes.rawSType c.imm.toNat
+                (ZiskFv.Compliance.storeRegBits c.r2).toNat
+                (ZiskFv.Compliance.storeRegBits c.r1).toNat $f3)
   let t2 ← `(noncomputable def $ctorName {n rawLength : Nat}
       (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
       (i : Fin trace.numInstructions) (c : $claimName trace i)
@@ -1312,18 +1332,23 @@ local macro "store_program_decode" nm:ident "," inp:term "," f3:term ","
       (hbind : ProgramRowsBinding trace start addr rawProgram)
       (rawDecode : $rawName trace i c addr rawProgram) :
       $programName trace i c := by
-    let rs1 := ($inp c).r1.toNat
-    let rs2 := ($inp c).r2.toNat
-    let imm := ($inp c).imm.toNat
-    let ext := ($transpileName rs1 rs2 imm ($inp c).r1.isLt ($inp c).r2.isLt).choose
+    let rs1 := (ZiskFv.Compliance.storeRegBits c.r1).toNat
+    let rs2 := (ZiskFv.Compliance.storeRegBits c.r2).toNat
+    let imm := c.imm.toNat
+    let ext := ($transpileName rs1 rs2 imm
+      (ZiskFv.Compliance.storeRegBits c.r1).isLt
+      (ZiskFv.Compliance.storeRegBits c.r2).isLt).choose
     obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hiw, hj1, hj2, hrowStore⟩ :=
-      ($transpileName rs1 rs2 imm ($inp c).r1.isLt ($inp c).r2.isLt).choose_spec
+      ($transpileName rs1 rs2 imm
+        (ZiskFv.Compliance.storeRegBits c.r1).isLt
+        (ZiskFv.Compliance.storeRegBits c.r2).isLt).choose_spec
     let d := hrowStore.choose
     obtain ⟨hdecode, hstore, hstoreOff⟩ := hrowStore.choose_spec
     have hdfields := $decodeFieldsName imm rs2 rs1 $f3
-      ($inp c).r2.isLt ($inp c).r1.isLt (by norm_num) $rop d hdecode
+      (ZiskFv.Compliance.storeRegBits c.r2).isLt
+      (ZiskFv.Compliance.storeRegBits c.r1).isLt (by norm_num) $rop d hdecode
     have hdimm : (IScalar.hcast UScalarTy.U64 d.imm).bv =
-        BitVec.signExtend 64 ($inp c).imm := by
+        BitVec.signExtend 64 c.imm := by
       simpa only [imm, BitVec.ofNat_toNat] using hdfields.2.2
     refine
       { h_idx := rawDecode.h_idx
@@ -1356,7 +1381,9 @@ local macro "store_program_decode" nm:ident "," inp:term "," f3:term ","
             simpa only [rs1, rs2, imm] using hp
           obtain ⟨ho, hjo1, hjo2, hiwF, ext', hok', hieo', hm32', hsetpc',
               hstorepc', hf⟩ :=
-            $fieldsName rs1 rs2 imm ($inp c).r1.isLt ($inp c).r2.isLt
+            $fieldsName rs1 rs2 imm
+              (ZiskFv.Compliance.storeRegBits c.r1).isLt
+              (ZiskFv.Compliance.storeRegBits c.r2).isLt
               (addr k) (trace.program j) hbk
           have hext : ext' = ext :=
             Result.ok.inj (hok'.symm.trans (by simpa only [ext] using hok))
@@ -1364,14 +1391,14 @@ local macro "store_program_decode" nm:ident "," inp:term "," f3:term ","
           refine ⟨ho, hjo1, hjo2, hiwF, ?_, hf⟩
           rw [hbk, romMessageOfRaw, hok]
           show (ext.row.store_offset.val : FGL) =
-            ((BitVec.signExtend 64 ($inp c).imm).toInt : FGL)
+            ((BitVec.signExtend 64 c.imm).toInt : FGL)
           rw [hstoreOff]
-          exact store_rom_offset ($inp c).imm d hdimm })
+          exact store_rom_offset c.imm d hdimm })
   return ⟨Lean.mkNullNode #[t1, t2]⟩
 
-store_program_decode sb, ZiskFv.Compliance.Claim_sb.sb_input, 0, RiscvOpcode.Sb
-store_program_decode sh, ZiskFv.Compliance.Claim_sh.sh_input, 1, RiscvOpcode.Sh
-store_program_decode sw, ZiskFv.Compliance.Claim_sw.sw_input, 2, RiscvOpcode.Sw
+store_program_decode sb, 0, RiscvOpcode.Sb
+store_program_decode sh, 1, RiscvOpcode.Sh
+store_program_decode sw, 2, RiscvOpcode.Sw
 
 structure RawProgramDecode_sd {n rawLength : Nat}
     (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
@@ -1384,8 +1411,9 @@ structure RawProgramDecode_sd {n rawLength : Nat}
       ∃ k : Fin rawLength,
         addr k = (trace.program j).line ∧
           rawProgram k =
-            ZiskFv.Completeness.Rv64imShapes.rawSType c.sd_input.imm.toNat
-              c.sd_input.r2.toNat c.sd_input.r1.toNat 3
+            ZiskFv.Completeness.Rv64imShapes.rawSType c.imm.toNat
+              (ZiskFv.Compliance.storeRegBits c.r2).toNat
+              (ZiskFv.Compliance.storeRegBits c.r1).toNat 3
 
 noncomputable def ProgramDecode_sd_from_rawProgram {n rawLength : Nat}
     (trace : ZiskFv.Compliance.AcceptedZiskTrace n)
@@ -1396,18 +1424,23 @@ noncomputable def ProgramDecode_sd_from_rawProgram {n rawLength : Nat}
     (hbind : ProgramRowsBinding trace start addr rawProgram)
     (rawDecode : RawProgramDecode_sd trace i c addr rawProgram) :
     ZiskFv.Compliance.RomDecodeBinding.ProgramDecode_sd trace i c := by
-  let rs1 := c.sd_input.r1.toNat
-  let rs2 := c.sd_input.r2.toNat
-  let imm := c.sd_input.imm.toNat
-  let ext := (transpile_sd rs1 rs2 imm c.sd_input.r1.isLt c.sd_input.r2.isLt).choose
+  let rs1 := (ZiskFv.Compliance.storeRegBits c.r1).toNat
+  let rs2 := (ZiskFv.Compliance.storeRegBits c.r2).toNat
+  let imm := c.imm.toNat
+  let ext := (transpile_sd rs1 rs2 imm
+    (ZiskFv.Compliance.storeRegBits c.r1).isLt
+    (ZiskFv.Compliance.storeRegBits c.r2).isLt).choose
   obtain ⟨hok, hop, hieo, hm32, hsetpc, hstorepc, hiw, hj1, hj2, hrowStore⟩ :=
-    (transpile_sd rs1 rs2 imm c.sd_input.r1.isLt c.sd_input.r2.isLt).choose_spec
+    (transpile_sd rs1 rs2 imm
+      (ZiskFv.Compliance.storeRegBits c.r1).isLt
+      (ZiskFv.Compliance.storeRegBits c.r2).isLt).choose_spec
   let d := hrowStore.choose
   obtain ⟨hdecode, hstore, hstoreOff⟩ := hrowStore.choose_spec
   have hdfields := decode_s_rawSType_fields imm rs2 rs1 3
-    c.sd_input.r2.isLt c.sd_input.r1.isLt (by norm_num) RiscvOpcode.Sd d hdecode
+    (ZiskFv.Compliance.storeRegBits c.r2).isLt
+    (ZiskFv.Compliance.storeRegBits c.r1).isLt (by norm_num) RiscvOpcode.Sd d hdecode
   have hdimm : (IScalar.hcast UScalarTy.U64 d.imm).bv =
-      BitVec.signExtend 64 c.sd_input.imm := by
+      BitVec.signExtend 64 c.imm := by
     simpa only [imm, BitVec.ofNat_toNat] using hdfields.2.2
   refine
     { h_idx := rawDecode.h_idx
@@ -1440,7 +1473,9 @@ noncomputable def ProgramDecode_sd_from_rawProgram {n rawLength : Nat}
           simpa only [rs1, rs2, imm] using hp
         obtain ⟨ho, hjo1, hjo2, ext', hok', hieo', hm32', hsetpc',
             hstorepc', hf⟩ :=
-          sd_decode_fields_of_binding rs1 rs2 imm c.sd_input.r1.isLt c.sd_input.r2.isLt
+          sd_decode_fields_of_binding rs1 rs2 imm
+            (ZiskFv.Compliance.storeRegBits c.r1).isLt
+            (ZiskFv.Compliance.storeRegBits c.r2).isLt
             (addr k) (trace.program j) hbk
         have hext : ext' = ext :=
           Result.ok.inj (hok'.symm.trans (by simpa only [ext] using hok))
@@ -1448,9 +1483,9 @@ noncomputable def ProgramDecode_sd_from_rawProgram {n rawLength : Nat}
         refine ⟨ho, hjo1, hjo2, ?_, hf⟩
         rw [hbk, romMessageOfRaw, hok]
         show (ext.row.store_offset.val : FGL) =
-          ((BitVec.signExtend 64 c.sd_input.imm).toInt : FGL)
+          ((BitVec.signExtend 64 c.imm).toInt : FGL)
         rw [hstoreOff]
-        exact store_rom_offset c.sd_input.imm d hdimm }
+        exact store_rom_offset c.imm d hdimm }
 
 section AxiomAudit
 #print axioms transpile_lbu

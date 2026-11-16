@@ -15,7 +15,7 @@ use crate::{
     const_operand_to_u64, format_basefield, hint_field_by_name,
     pilout::{
         constraint::Constraint as ConstraintKind, expression::Operation as ExprOp, hint_field,
-        operand::Operand as OperandKind, Air, Constraint, Hint, Operand, PilOut,
+        operand::Operand as OperandKind, Air, Constraint, Hint, Operand, PilOut, SymbolType,
     },
 };
 
@@ -171,6 +171,7 @@ const ROUTE_SCOPES: &[RouteScope] = &[
     RouteScope { route: MatchRoute::ClusterZeroTail, air: "BinaryAdd", constraints: &[5] },
     RouteScope { route: MatchRoute::ClusterZeroTail, air: "Arith", constraints: &[61] },
     RouteScope { route: MatchRoute::ClusterZeroTail, air: "Main", constraints: &[43, 44, 45] },
+    RouteScope { route: MatchRoute::ClusterZeroTail, air: "MemAlignWriteByte", constraints: &[7] },
     RouteScope { route: MatchRoute::DirectZeroTail, air: "MemAlign", constraints: ALL_CONSTRAINTS },
     RouteScope { route: MatchRoute::DirectZeroTail, air: "MemAlignByte", constraints: ALL_CONSTRAINTS },
     RouteScope { route: MatchRoute::DirectZeroTail, air: "MemAlignReadByte", constraints: ALL_CONSTRAINTS },
@@ -179,6 +180,7 @@ const ROUTE_SCOPES: &[RouteScope] = &[
     RouteScope { route: MatchRoute::DirectZeroTail, air: "BinaryAdd", constraints: &[5] },
     RouteScope { route: MatchRoute::DirectZeroTail, air: "Arith", constraints: &[61] },
     RouteScope { route: MatchRoute::DirectZeroTail, air: "Main", constraints: &[43, 44, 45] },
+    RouteScope { route: MatchRoute::DirectZeroTail, air: "MemAlignWriteByte", constraints: &[11, 13] },
     RouteScope { route: MatchRoute::DirectAssumesNeg, air: "MemAlign", constraints: ALL_CONSTRAINTS },
     RouteScope { route: MatchRoute::DirectAssumesNeg, air: "MemAlignByte", constraints: ALL_CONSTRAINTS },
     RouteScope { route: MatchRoute::DirectAssumesNeg, air: "MemAlignReadByte", constraints: ALL_CONSTRAINTS },
@@ -191,10 +193,11 @@ const ROUTE_SCOPES: &[RouteScope] = &[
     RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "MemAlignByte", constraints: ALL_CONSTRAINTS },
     RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "MemAlignReadByte", constraints: ALL_CONSTRAINTS },
     RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "Binary", constraints: ALL_CONSTRAINTS },
-    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "BinaryExtension", constraints: &[4] },
-    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "BinaryAdd", constraints: &[5] },
-    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "Arith", constraints: &[61] },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "BinaryExtension", constraints: &[4, 6] },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "BinaryAdd", constraints: &[5, 7] },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "Arith", constraints: &[61, 62] },
     RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "Main", constraints: &[43, 44, 45] },
+    RouteScope { route: MatchRoute::DirectAssumesNegZeroTail, air: "MemAlignWriteByte", constraints: &[12] },
 ];
 
 fn route_scope(route: MatchRoute, air_name: &str, constraint_index: usize) -> bool {
@@ -376,6 +379,7 @@ pub(crate) fn render(pilout: &PilOut) -> Result<String> {
 
     let mut out = String::new();
     write_prelude(&mut out);
+    write_source_schema(&mut out, pilout)?;
     for air in &airs {
         write_air_status(&mut out, air)?;
     }
@@ -436,6 +440,112 @@ pub(crate) fn render(pilout: &PilOut) -> Result<String> {
     }
     out.push_str("]\n\nend Extraction.LookupWiring\n");
     Ok(out)
+}
+
+/// Preserve symbol declarations separately from polynomial operands: fixed
+/// operands do not carry stages, and AIR-value operands do not carry names.
+/// This additive catalog never changes the Circuit or validated-link API.
+fn write_source_schema(out: &mut String, pilout: &PilOut) -> Result<()> {
+    let mut symbols = Vec::new();
+    for symbol in &pilout.symbols {
+        let kind = match SymbolType::try_from(symbol.r#type)
+            .map_err(|_| anyhow!("unknown symbol kind {} for {}", symbol.r#type, symbol.name))?
+        {
+            SymbolType::FixedCol => "fixed",
+            SymbolType::WitnessCol => "witness",
+            SymbolType::AirValue => "airValue",
+            SymbolType::AirGroupValue => "airGroupValue",
+            _ => continue,
+        };
+        if let Some(group_index) = symbol.air_group_id {
+            let group = pilout.air_groups.get(group_index as usize)
+                .ok_or_else(|| anyhow!("invalid group scope for symbol {}", symbol.name))?;
+            if let Some(air_index) = symbol.air_id {
+                if group.airs.get(air_index as usize).is_none() {
+                    bail!("invalid AIR scope for symbol {}", symbol.name);
+                }
+            }
+        } else if symbol.air_id.is_some() {
+            bail!("AIR scope without group scope for symbol {}", symbol.name);
+        }
+        symbols.push((symbol, kind));
+    }
+    out.push_str(r#"namespace SourceSchema
+
+inductive Kind where
+  | fixed | witness | airValue | airGroupValue
+  deriving BEq, DecidableEq, Repr
+
+/-- Raw source declarations, not inferred operand names. Array declarations
+retain their base index, rank and complete dimension roster. -/
+structure Symbol where
+  groupIndex : Option Nat
+  airIndex : Option Nat
+  name : String
+  kind : Kind
+  stage : Option Nat
+  index : Nat
+  dimensions : Nat
+  lengths : List Nat
+  deriving DecidableEq, Repr
+
+structure Air where
+  groupIndex : Nat
+  airIndex : Nat
+  groupName : String
+  airName : String
+  symbols : List Symbol
+  deriving DecidableEq, Repr
+
+"#);
+    for (group_index, group) in pilout.air_groups.iter().enumerate() {
+        let group_name = group.name.as_deref()
+            .ok_or_else(|| anyhow!("missing source group name at {group_index}"))?;
+        for (air_index, air) in group.airs.iter().enumerate() {
+            let air_name = air.name.as_deref()
+                .ok_or_else(|| anyhow!("missing source AIR name at {group_index}/{air_index}"))?;
+            writeln!(out, "def air_{} : Air := ⟨{}, {}, \"{}\", \"{}\", [",
+                ident(air_name), group_index, air_index, lean_string(group_name), lean_string(air_name))?;
+            for &(symbol, kind) in &symbols {
+                if symbol.air_group_id != Some(group_index as u32)
+                    || (symbol.air_id.is_some() && symbol.air_id != Some(air_index as u32)) {
+                    continue;
+                }
+                write_source_symbol(out, symbol, kind)?;
+            }
+            out.push_str("]⟩\n\n");
+        }
+    }
+    out.push_str("def unscopedSymbols : List Symbol := [\n");
+    for (symbol, kind) in symbols {
+        if symbol.air_group_id.is_none() {
+            write_source_symbol(out, symbol, kind)?;
+        }
+    }
+    out.push_str("]\n\nend SourceSchema\n\n");
+    Ok(())
+}
+
+fn write_source_symbol(out: &mut String, symbol: &crate::pilout::Symbol, kind: &str) -> Result<()> {
+    out.push_str("  ⟨");
+    for value in [symbol.air_group_id, symbol.air_id] {
+        match value {
+            Some(index) => write!(out, "some {index}, ")?,
+            None => out.push_str("none, "),
+        }
+    }
+    write!(out, "\"{}\", .{kind}, ", lean_string(&symbol.name))?;
+    match symbol.stage {
+        Some(stage) => write!(out, "some {stage}")?,
+        None => out.push_str("none"),
+    }
+    write!(out, ", {}, {}, [", symbol.id, symbol.dim)?;
+    for (index, length) in symbol.lengths.iter().enumerate() {
+        if index != 0 { out.push_str(", "); }
+        write!(out, "{length}")?;
+    }
+    out.push_str("]⟩,\n");
+    Ok(())
 }
 
 fn write_link_index_lists(out: &mut String, air: &AirManifest) -> Result<()> {
@@ -558,10 +668,19 @@ fn build_air_manifest(
         mixed_constraints
             .into_iter()
             .filter(|constraint| !linked_constraints.contains(&constraint.index))
-            .map(|constraint| UnlinkedConstraint {
-                index: constraint.index,
-                expression: constraint.expression,
-                reason: "no remaining gsum hint matched an audited link route".to_string(),
+            .map(|constraint| {
+                let (_, source) = crate::constraint_domain_and_debug(&air.constraints[constraint.index]);
+                let source = source.as_deref().unwrap_or("<no source debug line>");
+                let reason = if source.starts_with("std_sum.pil:") {
+                    format!("unrecognized standard-sum shape; no remaining hint matches an audited route; source: {source}")
+                } else {
+                    format!("AIR-value relation is not a standard-sum lookup template; separate model correspondence required; source: {source}")
+                };
+                UnlinkedConstraint {
+                    index: constraint.index,
+                    expression: constraint.expression,
+                    reason,
+                }
             })
             .collect()
     } else {
@@ -1952,6 +2071,27 @@ mod tests {
     use super::*;
 
     #[test]
+    fn source_schema_rejects_unknown_kinds_and_orphan_scopes() {
+        let mut pilout = PilOut {
+            symbols: vec![crate::pilout::Symbol {
+                name: "named_cell".to_string(),
+                r#type: i32::MAX,
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        assert!(write_source_schema(&mut String::new(), &pilout).unwrap_err()
+            .to_string().contains("unknown symbol kind"));
+        pilout.symbols[0].r#type = SymbolType::WitnessCol as i32;
+        pilout.symbols[0].air_id = Some(0);
+        assert!(write_source_schema(&mut String::new(), &pilout).unwrap_err()
+            .to_string().contains("AIR scope without group scope"));
+        pilout.symbols[0].air_group_id = Some(0);
+        assert!(write_source_schema(&mut String::new(), &pilout).unwrap_err()
+            .to_string().contains("invalid group scope"));
+    }
+
+    #[test]
     fn validated_link_carries_shape_computed_kernel_equalities() {
         let mut prelude = String::new();
         write_prelude(&mut prelude);
@@ -1968,6 +2108,51 @@ mod tests {
     }
 
     #[test]
+    fn reload_range_index_rejects_missing_or_shifted_source_links() {
+        let mut links = Vec::new();
+        for index in 0..31 {
+            for (constraint_index, name) in [
+                (49 + 3 * index, format!("(last_segment_reg_mem_step - Main.last_reg_mem_step[{index}]) - 1")),
+                (50 + 3 * index, format!("Main.last_reg_mem_step[{index}]")),
+            ] {
+                let mut source = hint(false, vec![Ast::AirValue(index as u32)]);
+                source.slots[0].name = name;
+                links.push(LinkedConstraint {
+                    constraint_index,
+                    constraint: Ast::constant("0"),
+                    accumulator: Ast::constant("0"),
+                    alpha: Ast::constant("0"),
+                    gamma: Ast::constant("0"),
+                    hints: vec![source],
+                    direct_terms: Vec::new(),
+                    shape: LinkShape::Direct,
+                });
+            }
+        }
+        let mut air = AirManifest {
+            group_index: 0,
+            air_index: 0,
+            group_name: "Zisk".to_string(),
+            air_name: "Main".to_string(),
+            emitted_constraint_file: true,
+            mixed_constraint_count: links.len(),
+            unlinked_mixed_constraint_count: 0,
+            unlinked_constraints: Vec::new(),
+            gsum_hint_count: links.len(),
+            links,
+        };
+        let mut output = String::new();
+        write_link_index_lists(&mut output, &air).unwrap();
+        assert!(output.contains("def link_Main_reloadRange (index : Fin 31)"));
+        assert!(output.contains("  link_Main_49,"));
+        assert!(output.contains("  link_Main_139,"));
+        air.links[0].constraint_index = 48;
+        assert!(write_link_index_lists(&mut String::new(), &air).is_err());
+        air.links.remove(0);
+        assert!(write_link_index_lists(&mut String::new(), &air).is_err());
+    }
+
+    #[test]
     fn recognizer_scope_is_per_route_and_air() {
         assert!(route_scope(MatchRoute::DirectZeroTail, "BinaryAdd", 5));
         assert!(route_scope(MatchRoute::DirectZeroTail, "BinaryExtension", 4));
@@ -1980,6 +2165,13 @@ mod tests {
             43,
         ));
         assert!(route_scope(MatchRoute::ClusterZeroTail, "BinaryAdd", 5));
+        assert!(route_scope(MatchRoute::DirectAssumesNegZeroTail, "Arith", 62));
+        assert!(route_scope(MatchRoute::DirectAssumesNegZeroTail, "BinaryAdd", 7));
+        assert!(route_scope(MatchRoute::DirectAssumesNegZeroTail, "BinaryExtension", 6));
+        assert!(route_scope(MatchRoute::ClusterZeroTail, "MemAlignWriteByte", 7));
+        assert!(route_scope(MatchRoute::DirectZeroTail, "MemAlignWriteByte", 11));
+        assert!(route_scope(MatchRoute::DirectAssumesNegZeroTail, "MemAlignWriteByte", 12));
+        assert!(route_scope(MatchRoute::DirectZeroTail, "MemAlignWriteByte", 13));
         assert!(!route_scope(MatchRoute::DirectZeroTail, "BinaryAdd", 4));
         assert!(!route_scope(MatchRoute::DirectZeroTail, "Arith", 62));
         assert!(!route_scope(
