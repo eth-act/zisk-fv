@@ -26,10 +26,12 @@ structure InstanceMeta where
   isPacked : Bool
   streamId : UInt64
 
-/-- The actual separate native buffers of one final AirInstance. -/
+/-- The actual separate buffers of one final AirInstance image. Trace retains
+native UInt64 words before field reduction, including packed/noncanonical bits.
+Actual Rust/FFI memory-to-image materialization is not proved by this type. -/
 structure Instance (F : Type) where
   metadata : InstanceMeta
-  trace : Array F
+  trace : Array UInt64
   auxTrace : Array F
   customCommitsFixed : Array F
   airgroupValues : Array F
@@ -127,7 +129,7 @@ inductive ChallengeOrigin where
 /-- Snapshot view of StepsParams's pointer sources. None means a null pointer,
 not a zero-filled array. Shared globals occur only once in Context.globals. -/
 structure Params (F : Type) where
-  trace : Array F
+  trace : Array UInt64
   auxTrace : Option (Array F)
   publicInputs : Array F
   proofValues : Array F
@@ -182,13 +184,14 @@ theorem paramsOf_constraint_mode (globals : Globals F) (slotData : Instance F) :
     (paramsOf globals slotData false).constPols = some slotData.fixed ∧
     (paramsOf globals slotData false).challenges = globals.challenges := ⟨rfl, rfl, rfl⟩
 
-inductive BufferKind where
-  | trace | auxTrace | customCommitsFixed | airValue | airGroupValue
+/-- Buffers interpreted as mathematical field values. Raw trace words have a
+distinct typed accessor; packed data cannot be field-reduced by this selector. -/
+inductive FieldBufferKind where
+  | auxTrace | customCommitsFixed | airValue | airGroupValue
   | challenge | fixed | evals | publicInput | proofValue | xdivxsub | constTree
   deriving DecidableEq, BEq
 
-def buffer? (params : Params F) : BufferKind → Option (Array F)
-  | .trace => some params.trace
+def buffer? (params : Params F) : FieldBufferKind → Option (Array F)
   | .auxTrace => params.auxTrace
   | .customCommitsFixed => some params.customCommitsFixed
   | .airValue => some params.airvalues
@@ -201,12 +204,17 @@ def buffer? (params : Params F) : BufferKind → Option (Array F)
   | .xdivxsub => params.xdivxsub
   | .constTree => params.constTree
 
-def readWord? (params : Params F) (kind : BufferKind) (index : Nat) : Option F := do
+def readWord? (params : Params F) (kind : FieldBufferKind) (index : Nat) : Option F := do
   let values ← buffer? params kind
   values[index]?
 
-/-- Raw native-word blocks, not an assumed custom/stage/extension decoding. -/
-def readBlock? (params : Params F) (kind : BufferKind) (offset width : Nat) :
+/-- The SAME original trace word store carried by Params, without canonical
+field conversion, cropping to a logical row count, or a decoded sidecar. -/
+def traceWord? (params : Params F) (index : Nat) : Option UInt64 :=
+  params.trace[index]?
+
+/-- Field-value blocks, not an assumed custom/stage/extension decoding. -/
+def readBlock? (params : Params F) (kind : FieldBufferKind) (offset width : Nat) :
     Option (Array F) := do
   if width = 0 then none else do
     let values ← buffer? params kind

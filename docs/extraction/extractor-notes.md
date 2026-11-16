@@ -831,8 +831,10 @@ Slot metadata labels are retained, not required equal to registry labels.
 The supporting source-image/readers are additive mathematical models, not new
 Accepted/Root premises. Native-to-image materialization, compiled-operand/PIL
 identity, machine addresses and actual full physical row coverage remain
-unproved. In particular their field-valued trace image is not a lossless
-representation of native packed UInt64 bits; packed stage-one readers remain
-explicitly unsupported. No missing word becomes zero. The source-profile
+unproved. The primary trace store retains UInt64 bits; only requested unpacked
+words are canonically field-projected. That projection is intentionally
+noninjective and never serves as a packed decoder. Packed stage-one readers
+remain explicitly unsupported, not excluded from Root. No missing word becomes
+zero. The source-profile
 metadata proves neither Rust/C ABI correctness nor final public-I/O/Sail binding,
 once-instance/provider composition, or completion of #371/#372/#413/#418.
