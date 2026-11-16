@@ -116,31 +116,59 @@ private theorem cm2_offset :
   simp [Constructibility.setup, Std.HashMap.getElem?_insert, Std.HashMap.getElem_insert,
     Nat.mul_comm]
 
+private theorem map0 : Stage2.witnessMapId? Constructibility.setup 2 0 = some 13 := by
+  simp only [Stage2.witnessMapId?, show 2 = 2 ∧ (0 : Nat) = 0 by decide, if_true,
+    SourceFinalizer.gsumMapId?]
+  rw [Array.findIdx?_eq_some_iff_getElem]
+  refine ⟨by decide, by decide, ?_⟩
+  intro index before
+  interval_cases index <;> decide
+
+private theorem map1 : Stage2.witnessMapId? Constructibility.setup 2 1 = some 14 := by
+  simp only [Stage2.witnessMapId?, show ¬(2 = 2 ∧ (1 : Nat) = 0) by decide, if_false]
+  rw [Array.findIdx?_eq_some_iff_getElem]
+  refine ⟨by decide, by decide, ?_⟩
+  intro index before
+  interval_cases index <;> decide
+
+private theorem map2 : Stage2.witnessMapId? Constructibility.setup 2 2 = some 15 := by
+  simp only [Stage2.witnessMapId?, show ¬(2 = 2 ∧ (2 : Nat) = 0) by decide, if_false]
+  rw [Array.findIdx?_eq_some_iff_getElem]
+  refine ⟨by decide, by decide, ?_⟩
+  intro index before
+  interval_cases index <;> decide
+
 private theorem entry0 : auxiliaryEntry? Constructibility.setup 0 =
     some (13, Constructibility.cmMap[13]) := by
   unfold auxiliaryEntry?
-  rw [show Stage2.witnessMapId? Constructibility.setup 2 0 = some 13 by decide]
+  rw [map0]
   rfl
 private theorem entry1 : auxiliaryEntry? Constructibility.setup 1 =
     some (14, Constructibility.cmMap[14]) := by
   unfold auxiliaryEntry?
-  rw [show Stage2.witnessMapId? Constructibility.setup 2 1 = some 14 by decide]
+  rw [map1]
   rfl
 private theorem entry2 : auxiliaryEntry? Constructibility.setup 2 =
     some (15, Constructibility.cmMap[15]) := by
   unfold auxiliaryEntry?
-  rw [show Stage2.witnessMapId? Constructibility.setup 2 2 = some 15 by decide]
+  rw [map2]
   rfl
 
 private theorem challenge0_map :
     Constructibility.setup.challengesMap.findIdx?
       (fun entry => entry.stage == 2 && entry.stageId == 0 && entry.dim == 3) = some 0 := by
-  decide
+  rw [Array.findIdx?_eq_some_iff_getElem]
+  refine ⟨by decide, by decide, ?_⟩
+  intro index before
+  omega
 
 private theorem challenge1_map :
     Constructibility.setup.challengesMap.findIdx?
       (fun entry => entry.stage == 2 && entry.stageId == 1 && entry.dim == 3) = some 1 := by
-  decide
+  rw [Array.findIdx?_eq_some_iff_getElem]
+  refine ⟨by decide, by decide, ?_⟩
+  intro index before
+  interval_cases index <;> decide
 
 theorem actual_alpha (packed : Bool) : Stage2.challenge? (occurrence packed) 2 0 =
     some (⟨29, 31, 37⟩ : Stage2.Ext3 FGL) := by
@@ -208,7 +236,7 @@ theorem constructor_nonvacuous (packed : Bool) :
             · rw [setupEqual]
               exact cm2_offset
             · intro column
-              fin_cases column <;> rw [setupEqual] <;> decide
+              fin_cases column <;> decide
             · rw [actual_auxiliary, auxiliaryBuffer_size]
               rfl
 
@@ -220,8 +248,8 @@ theorem auxiliary_coefficients (packed : Bool) (view : CompleteView (occurrence 
     view.auxiliary row column rotation = (⟨3, 4, 2⟩ : Stage2.Ext3 FGL) := by
   apply Stage2.Ext3.ext
   all_goals
-    simp only [CompleteView.auxiliary, CompleteView.auxiliaryAddress, actual_auxiliary,
-      auxiliaryBuffer, Array.getElem_ofFn]
+    simp only [CompleteView.auxiliary, getElem_fin, CompleteView.auxiliaryAddress,
+      actual_auxiliary, auxiliaryBuffer, Array.getElem_ofFn]
     have within := (view.base.rotate row rotation).isLt
     have col := column.isLt
     apply Fin.ext
