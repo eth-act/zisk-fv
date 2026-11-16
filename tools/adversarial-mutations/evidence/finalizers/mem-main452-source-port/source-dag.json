@@ -1,0 +1,307 @@
+{
+  "scope": "SOURCE ONLY; ordinary-main452 acceptance checks NOT run",
+  "base_main": "8e7a41d6fc58a93183e980e3bfc65cac7a1b7bf3",
+  "six_prerequisite_commit": "a037cdf3ffd1b58b97070303e4137d9701a78a6f",
+  "six_prerequisite_branch": "closure/mem-prereq-six452",
+  "dependent_ten_branch": "closure/mem-closure-ten452",
+  "topological_source_order": [
+    "ZiskFv.AirsClean.Mem.Stage1.SourceColumns",
+    "ZiskFv.AirsClean.Mem.Stage1.NativeProfile",
+    "ZiskFv.AirsClean.Mem.PhysicalSource.FixedScan",
+    "ZiskFv.AirsClean.Mem.PhysicalSource.Domain",
+    "ZiskFv.AirsClean.Mem.PhysicalSource.Constructibility",
+    "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection",
+    "ZiskFv.AirsClean.Mem.PhysicalSource.Rotation",
+    "ZiskFv.AirsClean.Mem.PhysicalSource.CompleteView",
+    "ZiskFv.AirsClean.Mem.PhysicalSource.Columns",
+    "ZiskFv.AirsClean.Mem.PhysicalSource.CompleteConstructibility",
+    "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Data",
+    "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Algebra",
+    "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceEquations",
+    "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceImage",
+    "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Recovery",
+    "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Satisfaction"
+  ],
+  "nodes": [
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage1.SourceColumns",
+      "path": "ZiskFv/AirsClean/Mem/Stage1/SourceColumns.lean",
+      "sha256": "0259bed582eff26c001230d61c1eecb28267c5e481a7213174df8099316cf59b",
+      "imports": [
+        "Extraction.LookupWiring",
+        "Extraction.SourceDimensions",
+        "Mathlib.Tactic.FinCases"
+      ],
+      "internal_port_prerequisites": [],
+      "existing_or_generated_imports": [
+        "Extraction.LookupWiring",
+        "Extraction.SourceDimensions",
+        "Mathlib.Tactic.FinCases"
+      ]
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage1.NativeProfile",
+      "path": "ZiskFv/AirsClean/Mem/Stage1/NativeProfile.lean",
+      "sha256": "c8f530c65fcc768accce9efa05560aff8c4674b1cc5591add370a1bf2679b96b",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.Stage1.SourceColumns",
+        "Extraction.RuntimeMemWriteByteTraceLayout"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.Stage1.SourceColumns"
+      ],
+      "existing_or_generated_imports": [
+        "Extraction.RuntimeMemWriteByteTraceLayout"
+      ]
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.FixedScan",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/FixedScan.lean",
+      "sha256": "ba757c88fc239820678b784988800037ce815980c8f18a0ec2124bb33cba3745",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.Stage1.SourceColumns",
+        "ZiskFv.Field.Goldilocks",
+        "Mathlib.Tactic"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.Stage1.SourceColumns"
+      ],
+      "existing_or_generated_imports": [
+        "ZiskFv.Field.Goldilocks",
+        "Mathlib.Tactic"
+      ]
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.Domain",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/Domain.lean",
+      "sha256": "3c997cb9abb63e8139184f15aa9e16558a626cebd96d73174af60516f8f2ec7d",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.FixedScan",
+        "ZiskFv.AirsClean.Mem.Stage1.NativeProfile",
+        "ZiskFv.AirsClean.Mem.Stage2.Cubic",
+        "ZiskFv.AirsClean.MemAlignWriteByte.SourceInstance",
+        "ZiskFv.AirsClean.NativeValuesLayout"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.FixedScan",
+        "ZiskFv.AirsClean.Mem.Stage1.NativeProfile"
+      ],
+      "existing_or_generated_imports": [
+        "ZiskFv.AirsClean.Mem.Stage2.Cubic",
+        "ZiskFv.AirsClean.MemAlignWriteByte.SourceInstance",
+        "ZiskFv.AirsClean.NativeValuesLayout"
+      ]
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.Constructibility",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/Constructibility.lean",
+      "sha256": "0184a0bd2fd5443fa656c4bc50a87e29cf6376e4bf1e996f71cfdc3e3b9ddc6b",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Domain",
+        "Std.Data.HashMap.Lemmas"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Domain"
+      ],
+      "existing_or_generated_imports": [
+        "Std.Data.HashMap.Lemmas"
+      ]
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/NativeProjection.lean",
+      "sha256": "2e3ee0593c362c43cd2a9ac99a118a07fda7cb755dc77ac219ceb3b5cd95a821",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Domain",
+        "ZiskFv.AirsClean.NativeTraceCells"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Domain"
+      ],
+      "existing_or_generated_imports": [
+        "ZiskFv.AirsClean.NativeTraceCells"
+      ]
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.Rotation",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/Rotation.lean",
+      "sha256": "daa34720b6244d1442afff66a9da073d03331ea05b1beff91f476b53eaa042df",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Domain"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Domain"
+      ],
+      "existing_or_generated_imports": []
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.CompleteView",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/CompleteView.lean",
+      "sha256": "f80a55855950251843a61886f7098515d8fb7260a7f2bb0a8008d8d13d840070",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Rotation",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection",
+        "ZiskFv.AirsClean.Mem.Stage2.Native"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Rotation",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection"
+      ],
+      "existing_or_generated_imports": [
+        "ZiskFv.AirsClean.Mem.Stage2.Native"
+      ]
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.Columns",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/Columns.lean",
+      "sha256": "f8f75bd01ef4c4e3120451cd028f57edb7f586fabeaba404e7b79f11147b06e9",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.CompleteView"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.CompleteView"
+      ],
+      "existing_or_generated_imports": []
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.CompleteConstructibility",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/CompleteConstructibility.lean",
+      "sha256": "6ebe677f6cef9a3f300126b18280085e574562e1a545563e189607762fc8437c",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Columns",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Constructibility"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Columns",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Constructibility"
+      ],
+      "existing_or_generated_imports": []
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Data",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/AirWitness/Data.lean",
+      "sha256": "6a2c77007a385ac924231c7960095d0aba0fd1abdc85897d8c89478de638684d",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Columns",
+        "ZiskFv.AirsClean.Mem.Stage2.PolynomialRow",
+        "ZiskFv.AirsClean.Mem.Stage2.Native",
+        "ZiskFv.AirsClean.Mem.Row"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Columns"
+      ],
+      "existing_or_generated_imports": [
+        "ZiskFv.AirsClean.Mem.Stage2.PolynomialRow",
+        "ZiskFv.AirsClean.Mem.Stage2.Native",
+        "ZiskFv.AirsClean.Mem.Row"
+      ]
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Algebra",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/AirWitness/Algebra.lean",
+      "sha256": "496c7b84f5de2615a03ad547760e220bf3bbe47e56800dc098faa2ca493c5810",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Data",
+        "ZiskFv.AirsClean.Mem.Spec"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Data"
+      ],
+      "existing_or_generated_imports": [
+        "ZiskFv.AirsClean.Mem.Spec"
+      ]
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceEquations",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/AirWitness/SourceEquations.lean",
+      "sha256": "cc19dc60cebce9df64df9ca42d053d83ea63890d2e4178667cfd3a9a88027524",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Data",
+        "ZiskFv.AirsClean.Mem.Stage2.Equations",
+        "ZiskFv.AirsClean.Mem.Stage2.Literals",
+        "ZiskFv.AirsClean.Mem.SourceFinalizerEquation",
+        "ZiskFv.AirsClean.MemMirrorWeld"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Data"
+      ],
+      "existing_or_generated_imports": [
+        "ZiskFv.AirsClean.Mem.Stage2.Equations",
+        "ZiskFv.AirsClean.Mem.Stage2.Literals",
+        "ZiskFv.AirsClean.Mem.SourceFinalizerEquation",
+        "ZiskFv.AirsClean.MemMirrorWeld"
+      ]
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceImage",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/AirWitness/SourceImage.lean",
+      "sha256": "6fb7cd7f15b90e893013ed8e59a80ac02ec5195d400a8f86bb815b66b25e1f31",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Data",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.CompleteConstructibility"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Data",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.CompleteConstructibility"
+      ],
+      "existing_or_generated_imports": []
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Recovery",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/AirWitness/Recovery.lean",
+      "sha256": "d4897025c7aa60efd78facf3c1c6cb8849011746723a62454fb88ab12959bfa2",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceImage"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceImage"
+      ],
+      "existing_or_generated_imports": []
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Satisfaction",
+      "path": "ZiskFv/AirsClean/Mem/PhysicalSource/AirWitness/Satisfaction.lean",
+      "sha256": "e85482feb7a4e06724f7212134772817e07ce39f5c508805aaebabddefc611a6",
+      "imports": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Recovery",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Algebra",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceEquations"
+      ],
+      "internal_port_prerequisites": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Recovery",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Algebra",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceEquations"
+      ],
+      "existing_or_generated_imports": []
+    }
+  ],
+  "omitted_unneeded_private_companion": "PhysicalSource.Comparison (original audit retained, source not ported)",
+  "historical_checked_evidence": [
+    "mem-physical-support-5b64f5c0",
+    "mem-physical-projection-6e7c2e57",
+    "mem-physical-complete-bf75d078",
+    "mem-air-satisfaction-cdd89503"
+  ],
+  "historical_checks_are_not_relabelled_main452_checks": true,
+  "already_landed_eight_literal_generator_core_sources_duplicated": false,
+  "protected_edits_applied": false,
+  "mcp": {
+    "command": "/home/cody/.local/bin/uvx lean-lsp-mcp",
+    "sdk": "uvx --from lean-lsp-mcp python; ClientSession/StdioServerParameters",
+    "project": "/home/cody/zisk-fv-mem-ten-main452",
+    "LEAN_NUM_THREADS": 2,
+    "LEAN_LSP_MAX_OPEN_FILES": 1,
+    "LEAN_MCP_PREWARM_FILES": "",
+    "LEAN_PATH": "/home/cody/zisk-fv-closure-extractor/build/mem-physical-source/logical-ci/lean",
+    "context": "existing previously verified read-only metadata; no original checkout/config/build writes or cache copies; not a proper-main acceptance lease",
+    "actual_queries": [
+      "Valid_Mem hover+outline",
+      "PermutationColumns hover",
+      "protected Mem1367-1497 diagnostics empty",
+      "RawSource.Native.SourceObject hover",
+      "physical Columns outline",
+      "PolynomialRow outline"
+    ],
+    "source_carrier_session_shutdown": "actual successful results and exit0; asyncio closed-loop cleanup warning retained verbatim in stderr"
+  }
+}

@@ -1,0 +1,57 @@
+Verified supplemental Mem AIR source image
+=========================================
+Checked source: cdd89503a1363cd0f02be508c344b627d298a207
+Base: 4edea8cf53ae75f105f33165d0b5cc6aef9e3391
+Branch: closure/mem-air-satisfaction-4ede
+
+Only six new internal modules plus this evidence and existing extractor notes.
+No protected Valid_Mem/Mirror/Circuit/extraction, Component/Table/Accepted/Root,
+framework/registration, existing frozen proof or canonical native getter edits.
+
+Stable namespace: ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness
+Data: primary, baseAir, extensionWitness, alpha, gamma, direct, groupResult,
+  segmentResidual, polynomialRow, LocalLookups, polynomial.
+Algebra: segment_satisfies, stage2_satisfies, local_lookups, primary_spec.
+SourceEquations: mixed_source_correspondence, nonlinear_source_correspondence,
+  finalizer_source_correspondence, local_generated_correspondence.
+Nested SourceImage: source, occurrence, complete, complete_recovers,
+  canonical_primary_recovery, stage1_recovery, stage2_recovery, fixed_recovery,
+  air_recovery, group_recovery, challenge_recovery, polynomial_recovery,
+  all_actual_clauses, all_required_local_lookups, constructed_source_satisfies.
+
+The computed complete constructor recovers the same source occurrence.
+All34 actual clauses hold at ALL4194304 physical rows, with the real source
+cyclic previous/next rotations and fixed L1, all three extension coefficients,
+actual GROUP0, six AIR direct blocks and global challenge blocks. All required
+source-local witness widths, distance16, increment22/16 and selected dual24
+lookups hold. Unsupported/opaque AST interpretation remains None.
+Chosen original unpacked primary storage has13*N+5 words (suffix preserved),
+original auxiliary storage22*N words, stage2 offset13*N and width9.
+Gsum is explicit (row+1)*(-1/104-1/105); GROUP0 independently equals
+-(N+4)/104-N/105-1/12. Alpha/gamma are the chosen [0,0,0]/[1,0,0].
+These chosen values are an existential supplemental image, NOT production
+mode/challenge restrictions or a native/source-world acceptance theorem.
+
+Pins: PIL b632 at /nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source;
+proofman ff0e at /nix/store/zqhhhzb9rq7gcbv46c1fz4k91pk42yni-source.
+Exact source targets: state-machines/mem/pil/mem.pil103-123,156,171,195-226,
+263-286,365-397,403-440; lib/std/pil/std_sum.pil302-307,350-351,571,599,
+640-658,694-696. CPU auxiliary offsets: stark_info.cpp281-284,327-330.
+Canonical native getter source205c4c19d5c58d331a657f43c2739272e246a478,
+immutable six-kind lease1e8c6bec9cb45b7f6951c578b47826a9bc5b742b7b7c62a57574fa5d38ab15c2.
+All immutable source/object/compiler inputs exact before and after.
+
+Actual six narrow checks GREEN, aggregate36.740s. Complete RAW audits GREEN,
+496 roots,716.374s: Data95, Algebra62, SourceEquations105, SourceImage95,
+Recovery120, Satisfaction19. Every actual defining-module declaration including
+private/compiler/type+value, opaque and inductive constructor dependencies was
+walked without pruning; EVERY root and EACH module union independently matches
+installed Lean.collectAxioms: only Classical.choice, Quot.sound, propext.
+No cap raises. All actual repaired-attempt failures retained in archive.
+Old frozen4/8/189/38 sources/evidence unchanged and not rerun. No Nix/Node gate.
+
+Remaining: production/native ABI, compiled PIL and expression r.id binding;
+authentic source-world/producer construction; provider/ensemble composition;
+full logUp algebra; explicitly held protected Valid_Mem/Mirror/Circuit/extraction
+cutover and its acceptance/default live gates. No Root/metric/issue closure
+credit or new trust claimed for those obligations. #371 remains open.

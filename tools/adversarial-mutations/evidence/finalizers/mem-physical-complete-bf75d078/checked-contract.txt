@@ -1,0 +1,29 @@
+CHECKED ADDITIVE MEM REPRESENTATION CONTRACT
+Source bf75d078b732e230f04d767f226a19a997a157ce, branch closure/mem-physical-source-27c.
+Actual narrow4 GREEN29.958s; FULL actual243 roots GREEN542.575s:
+Rotation18, CompleteView93, Columns70, CompleteConstructibility62.
+Every defining-module root/private/compiler/type+value/opaque/constructor/full path and every module union independently matched installed Lean.collectAxioms/std3. Actual source/compiler/dependency before/after guard all-exact, lease1e8c6bec,1660 immutable entries/1648 metadata links. No OLean/cache copy, foreign write, cap raise, Nix, Node, production registration or protected edit. Earlier support189/consumers38 and frozen8 were not rerun or changed.
+
+Exact namespace: ZiskFv.AirsClean.Mem.PhysicalSource.
+- View.rotate(view)(row:view.Index)(rotation:Int):view.Index; zero-rotation inline fast path retains existing typed row. View.native_rotation proves actual SAME setup.baseRow? returns exactly its val for arbitrary signed rotations.
+- View.previous(view)(row):view.Index =rotate(row,-1); native_previous, previous_first and previous_of_positive are checked. PhysicalIndex is the actual Fin4194304, not a populated-prefix row count or caller map.
+- completeFromResolved?(resolved:ResolvedOccurrence source):Option(CompleteView resolved), only data input resolved. CompleteView.mk is private. It computes fromResolved?, actual three metadata lookups, stage2/dim3/positions0,3,6, width9, offset13N, full original auxTrace capacity22N, and actual source partial-reader alpha/gamma blocks. Selection proofs are recovered internally from the successful metadata matches, not checked through redundant full-record equality, accepted from a caller or installed as Root promises.
+- CompleteView.auxiliary(view)(row:view.Index)(column:Fin3)(rotation:Int):Stage2.Ext3 FGL; direct bounded original-buffer words, no zero fallback or row copies.
+- auxiliary_source: Stage2.witness? resolved row.val 2 column.val rotation =some(auxiliary ...).
+- auxiliary_generic_source: Stage2.extensionWords?(resolved.cmAuxWords? false (view.mapId column) row.val rotation)=some(auxiliary ...). This retains the existing generic source-finalizer auxiliary branch.
+- auxiliary_coefficient_source and auxiliary_coeff recover EVERY Fin3 coefficient at the original bounded auxiliaryAddress. Whole original buffers/offsets remain intact; no cm2 rebasing.
+- CompleteView.challenge(view)(index:Fin2):Ext3 FGL; challenge_source and challenge_coeff_source recover the ACTUAL Stage2.challenge? stage2 map-selected blocks, not guessed word offsets. same_source ties Params.trace/auxTrace/challenges/AIR/GROUP to this same occurrence and source.globals. Compiled r.id/PIL/opening authenticity is NOT inferred from metadata matching.
+- CompleteView.scalar(view)(row)(column:Fin13):FGL calls ONLY canonical NativeProjection.sharedRow.cell? and its totality proof. scalar_checked/source/is_logicalRow prove native recovery and equality to the checked thirteen-cell logicalRow. Named scalar fields do not allocate a thirteen-cell vector per access. stage1 still exposes the whole Vector13 when that packet is requested.
+- CompleteView.memColumns:PhysicalMemColumns FGL; all13 primary fields PhysicalIndex->FGL, gsum/im_0/im_1 PhysicalIndex->Ext3 FGL.
+- CompleteView.permutationColumns:PhysicalPermutationColumns FGL; alpha/gamma and six direct values Ext3 FGL, l1 PhysicalIndex->FGL, distinct gsum_result Ext3 FGL from SAME existing base.group. No segment_id/AIR0 alias. named_stage2_source/named_challenges_source/named_global_source are checked.
+- finalizerResidual: exact full Ext3 linear boundary target using native next-row L1; finalizer_coefficients proves equality-to-zero iff ALL3 coefficient equations. It does NOT assert the image satisfies those equations or equate this total view to every compiled native operand.
+
+Actual representation constructor: CompleteConstructibility.source/slot/occurrence packed for BOTH Bool storage modes. constructor_nonvacuous proves actual completeFromResolved? success, no SourceValid/parse-success/coherence premise. Existing original UInt64 trace (packed4/unpacked13 words per physical row) retains its five-word suffix. Only the original auxiliary buffer is newly allocated, full22N; it is not a full decoded row map. Symbolic array getter lemmas prove every row/column/rotation triple=(3,4,2); original arrays are never enumerated in proof evaluation. Actual source global challenges=(29,31,37),(41,43,47), GROUP=(7,11,13), six AIR direct triples15..32 retained. Both discarded scalar coordinates are provably nonzero. Older Constructibility source with empty aux remains unchanged and retains its narrower representation claim.
+
+Pinned provenance: proofman ff0e33a9, /nix/store/zqhhhzb9rq7gcbv46c1fz4k91pk42yni-source:
+pil2-components/lib/std/pil/std_sum.pil302–307 (L1,stage2gsum,GROUP result),350–351(gamma),571(im_cluster),599(recurrence),640–658(direct extensions),694–696(finalizer); std_tools.pil9–10(alpha).
+pil2-stark/src/starkpil/stark_info.cpp281–284,327–330 CPU constraint-mode section-offset loop, together with source instance cm1=13,cm2=9 gives13N/22N.
+expressions_info.cpp545–552 uses3*r.id for challenges. The compiled r.id/PIL/ordered-map binding remains a stated gap.
+B632 Mem instantiation/PIL/native primary/fixed roster is retained in checked SourceColumns/NativeProfile and the sole six-kind native getter205c4c19; no alternate parser/Profile/Kind/getter was added.
+
+NOT CLOSED: all Mem AIR equation satisfiability; real native producer/execution/ABI/opening/compiled-id/PIL/snapshot/machine/source-world authentication; protected Valid/Mirror/Circuit/Component/Table/Accepted/Root cutover; numeric logUp semantics under unchanged assumed balance TCB. No Root acceptance binder or stronger acceptance validator was added. Old named sdLd prefix results are untouched and not relabeled full physical native proofs. #371 remains open.

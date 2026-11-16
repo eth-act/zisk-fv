@@ -1,0 +1,195 @@
+[
+  {
+    "tool": "lean_file_outline",
+    "args": {
+      "file_path": "ZiskFv/Airs/Mem.lean",
+      "max_declarations": 12
+    },
+    "result": {
+      "meta": null,
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"imports\": [\n    \"Mathlib\",\n    \"ZiskFv.Field.Goldilocks\"\n  ],\n  \"declarations\": [\n    {\n      \"name\": \"ZiskFv.Airs.Mem\",\n      \"kind\": \"Ns\",\n      \"start_line\": 49,\n      \"end_line\": 1497\n    },\n    {\n      \"name\": \"Valid_Mem\",\n      \"kind\": \"Struct\",\n      \"start_line\": 53,\n      \"end_line\": 86,\n      \"type_signature\": \"(F ExtF : Type) [Field F] [Field ExtF]\"\n    },\n    {\n      \"name\": \"Valid_Mem\",\n      \"kind\": \"Struct\",\n      \"start_line\": 54,\n      \"end_line\": 54,\n      \"type_signature\": \"(F ExtF : Type) [Field F] [Field ExtF]\"\n    },\n    {\n      \"name\": \"boolean_sel_dual\",\n      \"kind\": \"Def\",\n      \"start_line\": 90,\n      \"end_line\": 93,\n      \"type_signature\": \"(v : Valid_Mem F ExtF) (row : \u2115) : Prop\"\n    },\n    {\n      \"name\": \"boolean_sel_dual\",\n      \"kind\": \"Def\",\n      \"start_line\": 92,\n      \"end_line\": 92,\n      \"type_signature\": \"(v : Valid_Mem F ExtF) (row : \u2115) : Prop\"\n    },\n    {\n      \"name\": \"sel_dual_implies_sel\",\n      \"kind\": \"Def\",\n      \"start_line\": 95,\n      \"end_line\": 99,\n      \"type_signature\": \"(v : Valid_Mem F ExtF) (row : \u2115) : Prop\"\n    },\n    {\n      \"name\": \"sel_dual_implies_sel\",\n      \"kind\": \"Def\",\n      \"start_line\": 98,\n      \"end_line\": 98,\n      \"type_signature\": \"(v : Valid_Mem F ExtF) (row : \u2115) : Prop\"\n    },\n    {\n      \"name\": \"boolean_sel\",\n      \"kind\": \"Def\",\n      \"start_line\": 101,\n      \"end_line\": 104,\n      \"type_signature\": \"(v : Valid_Mem F ExtF) (row : \u2115) : Prop\"\n    },\n    {\n      \"name\": \"boolean_sel\",\n      \"kind\": \"Def\",\n      \"start_line\": 103,\n      \"end_line\": 103,\n      \"type_signature\": \"(v : Valid_Mem F ExtF) (row : \u2115) : Prop\"\n    },\n    {\n      \"name\": \"boolean_addr_changes\",\n      \"kind\": \"Def\",\n      \"start_line\": 106,\n      \"end_line\": 109,\n      \"type_signature\": \"(v : Valid_Mem F ExtF) (row : \u2115) : Prop\"\n    },\n    {\n      \"name\": \"boolean_addr_changes\",\n      \"kind\": \"Def\",\n      \"start_line\": 108,\n      \"end_line\": 108,\n      \"type_signature\": \"(v : Valid_Mem F ExtF) (row : \u2115) : Prop\"\n    },\n    {\n      \"name\": \"boolean_wr\",\n      \"kind\": \"Def\",\n      \"start_line\": 111,\n      \"end_line\": 114,\n      \"type_signature\": \"(v : Valid_Mem F ExtF) (row : \u2115) : Prop\"\n    }\n  ],\n  \"total_declarations\": 203\n}",
+          "annotations": null,
+          "meta": null
+        }
+      ],
+      "structured_content": {
+        "imports": [
+          "Mathlib",
+          "ZiskFv.Field.Goldilocks"
+        ],
+        "declarations": [
+          {
+            "name": "ZiskFv.Airs.Mem",
+            "kind": "Ns",
+            "start_line": 49,
+            "end_line": 1497
+          },
+          {
+            "name": "Valid_Mem",
+            "kind": "Struct",
+            "start_line": 53,
+            "end_line": 86,
+            "type_signature": "(F ExtF : Type) [Field F] [Field ExtF]"
+          },
+          {
+            "name": "Valid_Mem",
+            "kind": "Struct",
+            "start_line": 54,
+            "end_line": 54,
+            "type_signature": "(F ExtF : Type) [Field F] [Field ExtF]"
+          },
+          {
+            "name": "boolean_sel_dual",
+            "kind": "Def",
+            "start_line": 90,
+            "end_line": 93,
+            "type_signature": "(v : Valid_Mem F ExtF) (row : \u2115) : Prop"
+          },
+          {
+            "name": "boolean_sel_dual",
+            "kind": "Def",
+            "start_line": 92,
+            "end_line": 92,
+            "type_signature": "(v : Valid_Mem F ExtF) (row : \u2115) : Prop"
+          },
+          {
+            "name": "sel_dual_implies_sel",
+            "kind": "Def",
+            "start_line": 95,
+            "end_line": 99,
+            "type_signature": "(v : Valid_Mem F ExtF) (row : \u2115) : Prop"
+          },
+          {
+            "name": "sel_dual_implies_sel",
+            "kind": "Def",
+            "start_line": 98,
+            "end_line": 98,
+            "type_signature": "(v : Valid_Mem F ExtF) (row : \u2115) : Prop"
+          },
+          {
+            "name": "boolean_sel",
+            "kind": "Def",
+            "start_line": 101,
+            "end_line": 104,
+            "type_signature": "(v : Valid_Mem F ExtF) (row : \u2115) : Prop"
+          },
+          {
+            "name": "boolean_sel",
+            "kind": "Def",
+            "start_line": 103,
+            "end_line": 103,
+            "type_signature": "(v : Valid_Mem F ExtF) (row : \u2115) : Prop"
+          },
+          {
+            "name": "boolean_addr_changes",
+            "kind": "Def",
+            "start_line": 106,
+            "end_line": 109,
+            "type_signature": "(v : Valid_Mem F ExtF) (row : \u2115) : Prop"
+          },
+          {
+            "name": "boolean_addr_changes",
+            "kind": "Def",
+            "start_line": 108,
+            "end_line": 108,
+            "type_signature": "(v : Valid_Mem F ExtF) (row : \u2115) : Prop"
+          },
+          {
+            "name": "boolean_wr",
+            "kind": "Def",
+            "start_line": 111,
+            "end_line": 114,
+            "type_signature": "(v : Valid_Mem F ExtF) (row : \u2115) : Prop"
+          }
+        ],
+        "total_declarations": 203
+      },
+      "is_error": false,
+      "result_type": "complete"
+    }
+  },
+  {
+    "tool": "lean_hover_info",
+    "args": {
+      "file_path": "ZiskFv/Airs/Mem.lean",
+      "line": 54,
+      "column": 11
+    },
+    "result": {
+      "meta": null,
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"symbol\": \"Valid_Mem\",\n  \"info\": \"ZiskFv.Airs.Mem.Valid_Mem (F ExtF : Type) [Field F] [Field ExtF] : Type\\n***\\nNamed accessors for one row of ZisK's `Mem` AIR.\",\n  \"diagnostics\": []\n}",
+          "annotations": null,
+          "meta": null
+        }
+      ],
+      "structured_content": {
+        "symbol": "Valid_Mem",
+        "info": "ZiskFv.Airs.Mem.Valid_Mem (F ExtF : Type) [Field F] [Field ExtF] : Type\n***\nNamed accessors for one row of ZisK's `Mem` AIR.",
+        "diagnostics": []
+      },
+      "is_error": false,
+      "result_type": "complete"
+    }
+  },
+  {
+    "tool": "lean_hover_info",
+    "args": {
+      "file_path": "ZiskFv/Airs/Mem.lean",
+      "line": 1368,
+      "column": 11
+    },
+    "result": {
+      "meta": null,
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"symbol\": \"PermutationColumns\",\n  \"info\": \"ZiskFv.Airs.Mem.PermutationColumns (F : Type) [Field F] : Type\\n***\\nNon-witness Mem columns used by generated constraints 24-33.\",\n  \"diagnostics\": []\n}",
+          "annotations": null,
+          "meta": null
+        }
+      ],
+      "structured_content": {
+        "symbol": "PermutationColumns",
+        "info": "ZiskFv.Airs.Mem.PermutationColumns (F : Type) [Field F] : Type\n***\nNon-witness Mem columns used by generated constraints 24-33.",
+        "diagnostics": []
+      },
+      "is_error": false,
+      "result_type": "complete"
+    }
+  },
+  {
+    "tool": "lean_diagnostic_messages",
+    "args": {
+      "file_path": "ZiskFv/Airs/Mem.lean",
+      "start_line": 1367,
+      "end_line": 1497
+    },
+    "result": {
+      "meta": null,
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"partial\": false,\n  \"success\": true,\n  \"timed_out\": false,\n  \"items\": []\n}",
+          "annotations": null,
+          "meta": null
+        }
+      ],
+      "structured_content": {
+        "result": {
+          "partial": false,
+          "success": true,
+          "timed_out": false,
+          "items": []
+        }
+      },
+      "is_error": false,
+      "result_type": "complete"
+    }
+  }
+]

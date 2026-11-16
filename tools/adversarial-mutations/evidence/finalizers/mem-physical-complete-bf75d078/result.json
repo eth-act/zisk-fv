@@ -1,0 +1,94 @@
+{
+  "source_commit": "bf75d078b732e230f04d767f226a19a997a157ce",
+  "scope": "four additive source-only complete Mem representation leaves, not live interface/native execution/AIR/logUp/Root closure",
+  "narrow": {
+    "Rotation": {
+      "passed": true,
+      "attempt": 4,
+      "seconds": 7.585
+    },
+    "CompleteView": {
+      "passed": true,
+      "attempt": 7,
+      "seconds": 9.537
+    },
+    "Columns": {
+      "passed": true,
+      "attempt": 7,
+      "seconds": 6.624
+    },
+    "CompleteConstructibility": {
+      "passed": true,
+      "attempt": 10,
+      "seconds": 6.212
+    }
+  },
+  "narrow_total_seconds": 29.958,
+  "full_raw": {
+    "passed": true,
+    "root_counts": {
+      "ZiskFv.AirsClean.Mem.PhysicalSource.Columns": 70,
+      "ZiskFv.AirsClean.Mem.PhysicalSource.CompleteConstructibility": 62,
+      "ZiskFv.AirsClean.Mem.PhysicalSource.CompleteView": 93,
+      "ZiskFv.AirsClean.Mem.PhysicalSource.Rotation": 18
+    },
+    "total_roots": 243,
+    "seconds": 542.575,
+    "every_root_and_each_module_union_cross_checked_with_installed_Lean_collectAxioms": true,
+    "coverage": "all actual defining module declarations, private/compiler, full checked type/value including opaque, constructors and complete paths",
+    "axiom_union": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "dependencies_after": {
+    "status": "all-exact",
+    "lease_sha256": "1e8c6bec9cb45b7f6951c578b47826a9bc5b742b7b7c62a57574fa5d38ab15c2",
+    "immutable_entries": 1660,
+    "metadata_links": 1648,
+    "foreign_writes": false,
+    "object_copies": false,
+    "compiler_sha256": "3e0d0d3d801675359f2d4cf9815bfdb417b20b92fdd9d48b3b14c95bbae28bbf"
+  },
+  "actual_both_storage_modes": true,
+  "physical_rows": 4194304,
+  "logical_stage1_cells": 13,
+  "packed_bits": 252,
+  "packed_native_stride": 4,
+  "unpacked_native_stride": 13,
+  "auxiliary_width": 9,
+  "auxiliary_offset": "13*N",
+  "original_auxiliary_capacity": "22*N",
+  "original_primary_suffix_words": 5,
+  "actual_fixture_stage2_coefficients": [
+    3,
+    4,
+    2
+  ],
+  "actual_fixture_challenges": [
+    [
+      29,
+      31,
+      37
+    ],
+    [
+      41,
+      43,
+      47
+    ]
+  ],
+  "representation_only": true,
+  "frozen_eight_untouched": true,
+  "earlier_189_and_38_not_rerun": true,
+  "protected_or_registration_edits": false,
+  "new_trust_or_cap_raise": false,
+  "no_olean_cache_copies": true,
+  "remaining": [
+    "complete AIR satisfying construction",
+    "compiled operand/PIL and opening binding",
+    "native ABI/machine/execution/snapshot/source-world authentication",
+    "approved live Valid/Mirror/Circuit/Component/Table/Accepted/Root cutover",
+    "numeric logUp semantics under unchanged assumed balance TCB"
+  ]
+}

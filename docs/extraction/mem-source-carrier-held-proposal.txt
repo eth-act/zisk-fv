@@ -1,0 +1,118 @@
+HELD PROPOSAL ONLY — no protected edits authorized or applied
+===========================================================
+Actual base: main452,8e7a41d6fc58a93183e980e3bfc65cac7a1b7bf3.
+
+1. Smallest truthful live Mem c33/type correction
+
+Current protected Airs/Mem.lean types are:
+  Valid_Mem(F ExtF)[Field F][Field ExtF]: gsum/im_0/im_1 : Nat -> F.
+  PermutationColumns(F)[Field F]: alpha/gamma/direct0..5 : F;
+    l1 : Nat -> F; no GROUP0 field.
+  permutation_every_row(seg:SegmentColumns F)(perm:PermutationColumns F)
+    (v:Valid_Mem F F)(row:Nat):Prop.
+Its final conjunct incorrectly uses seg.segment_id for GROUP0; Nat(row-1)
+saturates instead of source cyclic predecessor. Changing only that scalar
+operand, adding a GROUP scalar, or replacing F by an assumed Field Ext3 does
+NOT fix the source-domain/type defect.
+
+The exact new types already exist additively (no Field Ext3 assumption):
+  PhysicalIndex = Fin4194304.
+  PhysicalMemColumns F: thirteen primary PhysicalIndex->F fields;
+    gsum/im_0/im_1 : PhysicalIndex -> Stage2.Ext3 F.
+  PhysicalPermutationColumns F: alpha/gamma/direct0..5/GROUP0 : Stage2.Ext3 F;
+    l1 : PhysicalIndex -> F.
+Root MUST NOT accept either column record freely. They are computed only by
+  CompleteView.memColumns : CompleteView resolved -> PhysicalMemColumns FGL
+  CompleteView.permutationColumns : CompleteView resolved ->
+    PhysicalPermutationColumns FGL.
+
+Proposed protected phase2 signature replacement, not an equivalence claim:
+  permutation_every_row {source : RawSource.Native.SourceObject FGL}
+    {resolved : RawSource.Native.ResolvedOccurrence source}
+    (view : Mem.PhysicalSource.CompleteView resolved)
+    (row : Mem.PhysicalSource.PhysicalIndex) : Prop.
+Its c33 conjunct is EXACTLY:
+  view.finalizerResidual row = 0,
+where the already defined independent target is
+  Ext3.ofBase(view.l1(view.base.next row)) *
+    (view.group - view.memColumns.gsum row -
+      (((((view.direct0+view.direct1)+view.direct2)+view.direct3)+view.direct4)+view.direct5)).
+Here direct0 means view.direct(0:Fin6), etc.; group is the actual GROUP0
+extension block, NEVER segment_id or AIR0. All three coefficients remain.
+The nine preceding phase2 conjuncts must be the genuine full-coefficient
+PolynomialRow residual24..32 built from this same view and real previous row.
+A generic view->PolynomialRow construction/correspondence is still missing:
+AirWitness.polynomialRow and the all34 satisfaction theorem prove the chosen
+image, not every CompleteView. That generic proof must be implemented, not
+replaced with a caller sourceHolds/coherence/native-auth hypothesis.
+
+On cutover retire the obsolete three scalar Valid_Mem fields and old scalar
+PermutationColumns/phase2 helpers; preserve the genuine thirteen-field local
+primary/core component. Migrate Bridge.validOfRow's three artificial zeros,
+GeneratedTransition's memSidecarGsum/Im0/Im1 materialization, generated-row
+bridges and phase2 extraction/mirror call sites coherently. Do not preserve
+scalar aliases/shims or pretend the row-local nine-constraint component now
+checks full physical AIR constraints. Component/Table and extraction changes
+needed for source-backed coefficientwise phase2 checks are separately HELD.
+
+2. ONE source carrier, not a second native world or eight free cells
+
+Use the SAME existing type already used by Main8 and WriteByte:
+  RawSource.Native.SourceObject FGL =
+    { globals : Globals FGL, registry : Registry,
+      slots : Array(Instance FGL),
+      setupRepository : HashMap(Nat*Nat) NativeSetup }.
+Use registry occurrence/global-slot resolution and its setupRepository lookup;
+slot metadata is NOT Registry authority. No metadata=Registry, rosterEq,
+free decoded values, success/coherence/sourceHolds certificates, or second
+independently chosen Context/EnsembleWitness accompanies this input.
+
+Smallest protected acceptance-carrier change is replacing the freely supplied
+AcceptedZiskTrace.witness with that source plus the actual existing mode
+selection, and computing the ensemble/table projections from it. Keep existing
+constraint/channel-balance obligations over the COMPUTED witness; do not add a
+Root sourceHolds/decoder-success premise. Unsupported decoding is an explicit
+failed acceptance case, not zero/default data or a hidden source exclusion.
+Main, Mem, WriteByte and other consumers must project the SAME source object.
+The registry may contain multiple occurrences: materialize and compose ALL
+actual slots; replace mem_replay_table/source_covers with source-keyed derived
+selection/coverage rather than enforcing a new unique-Mem roster promise.
+No Root theorem signature or Accepted structure is edited by this proposal.
+
+This is a corrected DOMAIN: source-owned accepted physical instances, not
+arbitrary old field-function/table witnesses with Nat indexing. No old=>new
+or iff theorem is asserted; no inverse for arbitrary old witnesses is claimed.
+The existing numerical/assumed channel-balance TCB remains unchanged; c33 is
+only its actual linear finalizer, NOT full logUp algebra.
+
+3. Exact remaining bindings and decision
+
+INTERNAL proof/implementation obligations (not external caller promises):
+* General same-source native leaf->typed AST/PIL operand correspondence;
+  retain/prove compiled expression r.id selects the exact native cm/fixed/
+  AIR/GROUP/challenge map entry and width/rotation. Current stage/stageId shape
+  matching is not this r.id theorem. Do not assume the metadata shape is PIL.
+* Packed phase1 typed-expression evaluation must use the canonical raw-bit
+  getter before field conversion. Current Stage2.Native stage1 scalar reader
+  explicitly rejects packed input; chosen UNPACKED existence is not coverage.
+* General physical segment/phase2 model assembly, all34 and exact local lookup
+  source correspondences, and source-derived Component/Table/provider
+  composition for all registry occurrences and source prefix/suffix geometry.
+* Prove the actual source setup/PIL selection and compiled-layout correspondence
+  from the pinned extraction recipe, not registry=slot metadata or an opaque
+  native-auth predicate. Present setup storage alone does not authenticate it.
+
+EXTERNAL intended-binary boundary, not silently discharged by these proofs:
+materialization of live Rust/C++ buffers, globals, setup repository and final
+registry into SourceObject; ABI/layout/lifetime and actual executed binary/
+compiled PIL provenance. The current project extraction/intended-binary
+boundary does not turn an arbitrary SourceObject into an authenticated runtime
+snapshot. Either prove that materialization or state an explicitly approved
+external intended-binary scope; no new axiom/assumption is proposed here.
+
+DECISION REQUIRED before any protected implementation: approve the above
+source-carrier/corrected-physical-domain cutover and retirement of the scalar
+Mem phase2 surface, with existing balance TCB unchanged and explicit external
+intended-binary boundary. Source-only additive feasibility is NOT that approval.
+No framework/Valid/Accepted/Root/extraction change is authorized by this file.
+No #371 completion or live Root credit is claimed.

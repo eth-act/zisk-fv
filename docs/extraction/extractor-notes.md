@@ -933,3 +933,34 @@ under `mem-physical-support-5b64f5c0/` and
 companion, not an additional claimed live component. These original checks
 are not relabeled as ordinary-main452 build evidence. Fresh proper-main
 ordinary checks remain pending the integration owner's resource slot.
+
+### Dependent ten-module complete-view/AIR image source freeze
+
+On the preceding six-prerequisite port, four unchanged modules add Rotation,
+CompleteView, Columns and CompleteConstructibility. Their computed view retains
+all4194304 physical rows, both canonical native primary-storage modes, actual
+fixed L1/cyclic rotations, full extension coefficients, GROUP0, six direct
+blocks, global challenges and original22N auxiliary storage. Six unchanged
+AirWitness modules then prove a CHOSEN unpacked existential same-source image:
+independent numeric GROUP0 `-(N+4)/104-N/105-1/12`, explicit gsum progression,
+all34 actual clauses and required local lookups at every physical row.
+This witness is not production/native/world authentication or a balance proof.
+
+Historical complete-view243-root and AIR-image496-root checks remain exactly
+under `mem-physical-complete-bf75d078/` and
+`mem-air-satisfaction-cdd89503/`. The latter six narrow checks took36.740s and
+complete per-root/per-module standard-three-axiom audits716.374s; the archived
+original contexts and source commits remain explicit, not relabeled main452
+verification. No already-landed eight-module literal/generator/core change is
+duplicated. No old RAW/global/Nix gate has been rerun for this source-only port.
+
+The actual16-node import DAG, source hashes, old-check provenance and installed
+Lean MCP semantic context are in `evidence/finalizers/mem-main452-source-port/`.
+Installed MCP successfully queried the protected Valid_Mem/PermutationColumns,
+the SAME existing RawSource.Native.SourceObject, physical Columns and
+PolynomialRow using this private worktree, one open file/Lean2/no prewarm and
+the existing read-only metadata dependencies. These semantic queries are not
+ordinary acceptance gates; the latter remain the integration owner's work.
+The exact non-applied protected type/domain proposal is
+`docs/extraction/mem-source-carrier-held-proposal.txt`. All protected edits
+remain HELD; additive feasibility is not approval and #371 remains open.

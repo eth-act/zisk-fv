@@ -1,0 +1,6 @@
+[11/16/26 10:13:42] INFO     Shared async LSP client         client_utils.py:133
+                             connected at                                       
+                             /home/cody/zisk-fv-mem-ten-main                    
+                             452                                                
+[11/16/26 10:14:09] INFO     Session ending — cleaning up          server.py:325
+                             per-session resources                              

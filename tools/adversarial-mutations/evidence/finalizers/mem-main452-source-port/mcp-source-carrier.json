@@ -1,0 +1,346 @@
+[
+  {
+    "tool": "lean_hover_info",
+    "args": {
+      "file_path": "ZiskFv/AirsClean/MemAlignWriteByte/SourceInstance.lean",
+      "line": 130,
+      "column": 11
+    },
+    "result": {
+      "meta": null,
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"symbol\": \"SourceObject\",\n  \"info\": \"ZiskFv.AirsClean.MemAlignWriteByte.RawSource.Native.SourceObject (F : Type) : Type\\n***\\nA source-owning image: arrays and setup maps are shared by all projections.\\nThis type has no independently chosen RawSource.Context or decoded scalar fields.\\nActual live-memory/ABI/producer materialization into this image remains unproved.\",\n  \"diagnostics\": []\n}",
+          "annotations": null,
+          "meta": null
+        }
+      ],
+      "structured_content": {
+        "symbol": "SourceObject",
+        "info": "ZiskFv.AirsClean.MemAlignWriteByte.RawSource.Native.SourceObject (F : Type) : Type\n***\nA source-owning image: arrays and setup maps are shared by all projections.\nThis type has no independently chosen RawSource.Context or decoded scalar fields.\nActual live-memory/ABI/producer materialization into this image remains unproved.",
+        "diagnostics": []
+      },
+      "is_error": false,
+      "result_type": "complete"
+    }
+  },
+  {
+    "tool": "lean_file_outline",
+    "args": {
+      "file_path": "ZiskFv/AirsClean/Mem/PhysicalSource/Columns.lean",
+      "max_declarations": 70
+    },
+    "result": {
+      "meta": null,
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"imports\": [\n    \"ZiskFv.AirsClean.Mem.PhysicalSource.CompleteView\"\n  ],\n  \"declarations\": [\n    {\n      \"name\": \"PhysicalMemColumns\",\n      \"kind\": \"Struct\",\n      \"start_line\": 14,\n      \"end_line\": 14,\n      \"type_signature\": \"(F : Type)\"\n    },\n    {\n      \"name\": \"PhysicalPermutationColumns\",\n      \"kind\": \"Struct\",\n      \"start_line\": 32,\n      \"end_line\": 32,\n      \"type_signature\": \"(F : Type)\"\n    },\n    {\n      \"name\": \"memColumns\",\n      \"kind\": \"Def\",\n      \"start_line\": 48,\n      \"end_line\": 48,\n      \"type_signature\": \"(view : CompleteView resolved) : PhysicalMemColumns FGL\"\n    },\n    {\n      \"name\": \"permutationColumns\",\n      \"kind\": \"Def\",\n      \"start_line\": 66,\n      \"end_line\": 66,\n      \"type_signature\": \"(view : CompleteView resolved) : PhysicalPermutationColumns FGL\"\n    },\n    {\n      \"name\": \"current_stage1_source\",\n      \"kind\": \"Thm\",\n      \"start_line\": 78,\n      \"end_line\": 78,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) (column : Fin 13) : ZiskFv.AirsClean.NativeTraceCells.cell? .mem resolved false row.val column.val = some (view.stage1 row)[column]\"\n    },\n    {\n      \"name\": \"named_stage2_source\",\n      \"kind\": \"Thm\",\n      \"start_line\": 84,\n      \"end_line\": 84,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) : Stage2.witness? resolved row.val 2 0 0 = some (view.memColumns.gsum row) \u2227 Stage2.witness? resolved row.val 2 1 0 = some (view.memColumns.im_0 row) \u2227 Stage2.witness? resolved row.val 2 2 0 = some (view.memColumns.im_1 row)\"\n    },\n    {\n      \"name\": \"named_challenges_source\",\n      \"kind\": \"Thm\",\n      \"start_line\": 91,\n      \"end_line\": 91,\n      \"type_signature\": \"(view : CompleteView resolved) : Stage2.challenge? resolved 2 0 = some view.permutationColumns.std_alpha \u2227 Stage2.challenge? resolved 2 1 = some view.permutationColumns.std_gamma\"\n    },\n    {\n      \"name\": \"named_global_source\",\n      \"kind\": \"Thm\",\n      \"start_line\": 96,\n      \"end_line\": 96,\n      \"type_signature\": \"(view : CompleteView resolved) : view.permutationColumns.gsum_result = view.base.group \u2227 view.permutationColumns.im_direct_0 = view.base.direct 0 \u2227 view.permutationColumns.im_direct_1 = view.base.direct 1 \u2227 view.permutationColumns.im_direct_2 = view.base.direct 2 \u2227 view.permutationColumns.im_direct_3 = view.base.direct 3 \u2227 view.permutationColumns.im_direct_4 = view.base.direct 4 \u2227 view.permutationColumns.im_direct_5 = view.base.direct 5\"\n    },\n    {\n      \"name\": \"finalizerResidual\",\n      \"kind\": \"Def\",\n      \"start_line\": 108,\n      \"end_line\": 108,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) : Stage2.Ext3 FGL\"\n    },\n    {\n      \"name\": \"finalizer_coefficients\",\n      \"kind\": \"Thm\",\n      \"start_line\": 114,\n      \"end_line\": 114,\n      \"type_signature\": \"(view : CompleteView resolved) (row : view.Index) : view.finalizerResidual row = 0 \u2194 \u2200 coordinate : Fin 3, (view.finalizerResidual row).coeff coordinate = 0\"\n    }\n  ]\n}",
+          "annotations": null,
+          "meta": null
+        }
+      ],
+      "structured_content": {
+        "imports": [
+          "ZiskFv.AirsClean.Mem.PhysicalSource.CompleteView"
+        ],
+        "declarations": [
+          {
+            "name": "PhysicalMemColumns",
+            "kind": "Struct",
+            "start_line": 14,
+            "end_line": 14,
+            "type_signature": "(F : Type)"
+          },
+          {
+            "name": "PhysicalPermutationColumns",
+            "kind": "Struct",
+            "start_line": 32,
+            "end_line": 32,
+            "type_signature": "(F : Type)"
+          },
+          {
+            "name": "memColumns",
+            "kind": "Def",
+            "start_line": 48,
+            "end_line": 48,
+            "type_signature": "(view : CompleteView resolved) : PhysicalMemColumns FGL"
+          },
+          {
+            "name": "permutationColumns",
+            "kind": "Def",
+            "start_line": 66,
+            "end_line": 66,
+            "type_signature": "(view : CompleteView resolved) : PhysicalPermutationColumns FGL"
+          },
+          {
+            "name": "current_stage1_source",
+            "kind": "Thm",
+            "start_line": 78,
+            "end_line": 78,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) (column : Fin 13) : ZiskFv.AirsClean.NativeTraceCells.cell? .mem resolved false row.val column.val = some (view.stage1 row)[column]"
+          },
+          {
+            "name": "named_stage2_source",
+            "kind": "Thm",
+            "start_line": 84,
+            "end_line": 84,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) : Stage2.witness? resolved row.val 2 0 0 = some (view.memColumns.gsum row) \u2227 Stage2.witness? resolved row.val 2 1 0 = some (view.memColumns.im_0 row) \u2227 Stage2.witness? resolved row.val 2 2 0 = some (view.memColumns.im_1 row)"
+          },
+          {
+            "name": "named_challenges_source",
+            "kind": "Thm",
+            "start_line": 91,
+            "end_line": 91,
+            "type_signature": "(view : CompleteView resolved) : Stage2.challenge? resolved 2 0 = some view.permutationColumns.std_alpha \u2227 Stage2.challenge? resolved 2 1 = some view.permutationColumns.std_gamma"
+          },
+          {
+            "name": "named_global_source",
+            "kind": "Thm",
+            "start_line": 96,
+            "end_line": 96,
+            "type_signature": "(view : CompleteView resolved) : view.permutationColumns.gsum_result = view.base.group \u2227 view.permutationColumns.im_direct_0 = view.base.direct 0 \u2227 view.permutationColumns.im_direct_1 = view.base.direct 1 \u2227 view.permutationColumns.im_direct_2 = view.base.direct 2 \u2227 view.permutationColumns.im_direct_3 = view.base.direct 3 \u2227 view.permutationColumns.im_direct_4 = view.base.direct 4 \u2227 view.permutationColumns.im_direct_5 = view.base.direct 5"
+          },
+          {
+            "name": "finalizerResidual",
+            "kind": "Def",
+            "start_line": 108,
+            "end_line": 108,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) : Stage2.Ext3 FGL"
+          },
+          {
+            "name": "finalizer_coefficients",
+            "kind": "Thm",
+            "start_line": 114,
+            "end_line": 114,
+            "type_signature": "(view : CompleteView resolved) (row : view.Index) : view.finalizerResidual row = 0 \u2194 \u2200 coordinate : Fin 3, (view.finalizerResidual row).coeff coordinate = 0"
+          }
+        ]
+      },
+      "is_error": false,
+      "result_type": "complete"
+    }
+  },
+  {
+    "tool": "lean_file_outline",
+    "args": {
+      "file_path": "ZiskFv/AirsClean/Mem/Stage2/PolynomialRow.lean",
+      "max_declarations": 28
+    },
+    "result": {
+      "meta": null,
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"imports\": [\n    \"ZiskFv.AirsClean.Mem.Stage2.Cubic\",\n    \"ZiskFv.Field.Goldilocks\"\n  ],\n  \"declarations\": [\n    {\n      \"name\": \"ZiskFv.AirsClean.Mem.Stage2\",\n      \"kind\": \"Ns\",\n      \"start_line\": 9,\n      \"end_line\": 160\n    },\n    {\n      \"name\": \"PolynomialRow\",\n      \"kind\": \"Struct\",\n      \"start_line\": 12,\n      \"end_line\": 51\n    },\n    {\n      \"name\": \"PolynomialRow\",\n      \"kind\": \"Ns\",\n      \"start_line\": 53,\n      \"end_line\": 159\n    },\n    {\n      \"name\": \"b\",\n      \"kind\": \"Def\",\n      \"start_line\": 54,\n      \"end_line\": 54\n    },\n    {\n      \"name\": \"highDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 56,\n      \"end_line\": 57,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"highDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 57,\n      \"end_line\": 57,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"dualStepDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 58,\n      \"end_line\": 58,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"lowDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 59,\n      \"end_line\": 59,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"primaryDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 61,\n      \"end_line\": 63,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"dualDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 65,\n      \"end_line\": 67,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"previousDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 69,\n      \"end_line\": 72,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"nextDen\",\n      \"kind\": \"Def\",\n      \"start_line\": 74,\n      \"end_line\": 77,\n      \"type_signature\": \"(r : PolynomialRow)\"\n    },\n    {\n      \"name\": \"residual24\",\n      \"kind\": \"Def\",\n      \"start_line\": 79,\n      \"end_line\": 81,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual25\",\n      \"kind\": \"Def\",\n      \"start_line\": 82,\n      \"end_line\": 84,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual26\",\n      \"kind\": \"Def\",\n      \"start_line\": 85,\n      \"end_line\": 86,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual27\",\n      \"kind\": \"Def\",\n      \"start_line\": 87,\n      \"end_line\": 87,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual28\",\n      \"kind\": \"Def\",\n      \"start_line\": 88,\n      \"end_line\": 88,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual29\",\n      \"kind\": \"Def\",\n      \"start_line\": 89,\n      \"end_line\": 89,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual30\",\n      \"kind\": \"Def\",\n      \"start_line\": 90,\n      \"end_line\": 90,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual31\",\n      \"kind\": \"Def\",\n      \"start_line\": 91,\n      \"end_line\": 91,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual32\",\n      \"kind\": \"Def\",\n      \"start_line\": 92,\n      \"end_line\": 92,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual\",\n      \"kind\": \"Def\",\n      \"start_line\": 94,\n      \"end_line\": 104,\n      \"type_signature\": \"(r : PolynomialRow) (equation : Fin 9) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"directSum\",\n      \"kind\": \"Def\",\n      \"start_line\": 106,\n      \"end_line\": 107,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"residual33\",\n      \"kind\": \"Def\",\n      \"start_line\": 109,\n      \"end_line\": 110,\n      \"type_signature\": \"(r : PolynomialRow) : Ext3 FGL\"\n    },\n    {\n      \"name\": \"Circuit\",\n      \"kind\": \"Def\",\n      \"start_line\": 112,\n      \"end_line\": 115,\n      \"type_signature\": \"(r : PolynomialRow) : Prop\"\n    },\n    {\n      \"name\": \"WithFinalizer\",\n      \"kind\": \"Def\",\n      \"start_line\": 117,\n      \"end_line\": 117,\n      \"type_signature\": \"(r : PolynomialRow) : Prop\"\n    },\n    {\n      \"name\": \"constructed\",\n      \"kind\": \"Def\",\n      \"start_line\": 119,\n      \"end_line\": 138,\n      \"type_signature\": \": PolynomialRow\"\n    },\n    {\n      \"name\": \"constructed\",\n      \"kind\": \"Def\",\n      \"start_line\": 122,\n      \"end_line\": 122,\n      \"type_signature\": \": PolynomialRow\"\n    }\n  ],\n  \"total_declarations\": 29\n}",
+          "annotations": null,
+          "meta": null
+        }
+      ],
+      "structured_content": {
+        "imports": [
+          "ZiskFv.AirsClean.Mem.Stage2.Cubic",
+          "ZiskFv.Field.Goldilocks"
+        ],
+        "declarations": [
+          {
+            "name": "ZiskFv.AirsClean.Mem.Stage2",
+            "kind": "Ns",
+            "start_line": 9,
+            "end_line": 160
+          },
+          {
+            "name": "PolynomialRow",
+            "kind": "Struct",
+            "start_line": 12,
+            "end_line": 51
+          },
+          {
+            "name": "PolynomialRow",
+            "kind": "Ns",
+            "start_line": 53,
+            "end_line": 159
+          },
+          {
+            "name": "b",
+            "kind": "Def",
+            "start_line": 54,
+            "end_line": 54
+          },
+          {
+            "name": "highDen",
+            "kind": "Def",
+            "start_line": 56,
+            "end_line": 57,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "highDen",
+            "kind": "Def",
+            "start_line": 57,
+            "end_line": 57,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "dualStepDen",
+            "kind": "Def",
+            "start_line": 58,
+            "end_line": 58,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "lowDen",
+            "kind": "Def",
+            "start_line": 59,
+            "end_line": 59,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "primaryDen",
+            "kind": "Def",
+            "start_line": 61,
+            "end_line": 63,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "dualDen",
+            "kind": "Def",
+            "start_line": 65,
+            "end_line": 67,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "previousDen",
+            "kind": "Def",
+            "start_line": 69,
+            "end_line": 72,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "nextDen",
+            "kind": "Def",
+            "start_line": 74,
+            "end_line": 77,
+            "type_signature": "(r : PolynomialRow)"
+          },
+          {
+            "name": "residual24",
+            "kind": "Def",
+            "start_line": 79,
+            "end_line": 81,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual25",
+            "kind": "Def",
+            "start_line": 82,
+            "end_line": 84,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual26",
+            "kind": "Def",
+            "start_line": 85,
+            "end_line": 86,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual27",
+            "kind": "Def",
+            "start_line": 87,
+            "end_line": 87,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual28",
+            "kind": "Def",
+            "start_line": 88,
+            "end_line": 88,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual29",
+            "kind": "Def",
+            "start_line": 89,
+            "end_line": 89,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual30",
+            "kind": "Def",
+            "start_line": 90,
+            "end_line": 90,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual31",
+            "kind": "Def",
+            "start_line": 91,
+            "end_line": 91,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual32",
+            "kind": "Def",
+            "start_line": 92,
+            "end_line": 92,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual",
+            "kind": "Def",
+            "start_line": 94,
+            "end_line": 104,
+            "type_signature": "(r : PolynomialRow) (equation : Fin 9) : Ext3 FGL"
+          },
+          {
+            "name": "directSum",
+            "kind": "Def",
+            "start_line": 106,
+            "end_line": 107,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "residual33",
+            "kind": "Def",
+            "start_line": 109,
+            "end_line": 110,
+            "type_signature": "(r : PolynomialRow) : Ext3 FGL"
+          },
+          {
+            "name": "Circuit",
+            "kind": "Def",
+            "start_line": 112,
+            "end_line": 115,
+            "type_signature": "(r : PolynomialRow) : Prop"
+          },
+          {
+            "name": "WithFinalizer",
+            "kind": "Def",
+            "start_line": 117,
+            "end_line": 117,
+            "type_signature": "(r : PolynomialRow) : Prop"
+          },
+          {
+            "name": "constructed",
+            "kind": "Def",
+            "start_line": 119,
+            "end_line": 138,
+            "type_signature": ": PolynomialRow"
+          },
+          {
+            "name": "constructed",
+            "kind": "Def",
+            "start_line": 122,
+            "end_line": 122,
+            "type_signature": ": PolynomialRow"
+          }
+        ],
+        "total_declarations": 29
+      },
+      "is_error": false,
+      "result_type": "complete"
+    }
+  }
+]
