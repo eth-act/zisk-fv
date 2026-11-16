@@ -1613,3 +1613,12 @@ execution/public-I/O relation and public mapped cutover remain separate work.
 Existing Root/PureSpec/Accepted/Valid/dispatch statements and InputsAgreeCore are
 unchanged. Any Root-dependent internal lemmas inherit the existing Root trust
 boundary; they are not advertised as standard-three or native-free Root proofs.
+
+The separate concrete JALR world constructs an actual Accepted4 witness with
+five physical Main rows, all31 register-boundary rows and the real ADD/AND/range
+providers. Its first and second Sail steps, input/lane facts and terminal
+physical-channel StepSound proofs are derived, not caller arguments. Only two
+architectural JALRs occur, at physical starts0/2; the real fifth lookahead row
+participates in the whole witness balances. Consumed source end4 is not physical
+completion, termination or a final public-I/O statement. This exercises the
+internal model nonvacuously without changing the public mapped Root interface.
