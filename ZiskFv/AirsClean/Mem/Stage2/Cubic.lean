@@ -130,10 +130,16 @@ instance : SMul F (Ext3 F) :=
 @[simp] theorem ofBase_one : ofBase (1 : F) = 1 := rfl
 
 @[simp] theorem ofBase_add (a b : F) : ofBase (a + b) = ofBase a + ofBase b := by
-  apply Ext3.ext <;> dsimp [ofBase] <;> ring
+  apply Ext3.ext
+  · rfl
+  · exact (add_zero (0 : F)).symm
+  · exact (add_zero (0 : F)).symm
 
 @[simp] theorem ofBase_sub (a b : F) : ofBase (a - b) = ofBase a - ofBase b := by
-  apply Ext3.ext <;> dsimp [ofBase] <;> ring
+  apply Ext3.ext
+  · rfl
+  · exact (sub_self (0 : F)).symm
+  · exact (sub_self (0 : F)).symm
 
 @[simp] theorem ofBase_neg (a : F) : ofBase (-a) = -ofBase a := by
   apply Ext3.ext <;> simp [ofBase, Neg.neg]
@@ -148,15 +154,24 @@ instance : SMul F (Ext3 F) :=
 /-- Mixed extension/base addition changes only the constant coefficient. -/
 theorem add_ofBase (a : Ext3 F) (c : F) :
     a + ofBase c = ⟨a.c0 + c, a.c1, a.c2⟩ := by
-  apply Ext3.ext <;> dsimp [ofBase] <;> ring
+  apply Ext3.ext
+  · rfl
+  · exact add_zero a.c1
+  · exact add_zero a.c2
 
  theorem sub_ofBase (a : Ext3 F) (c : F) :
     a - ofBase c = ⟨a.c0 - c, a.c1, a.c2⟩ := by
-  apply Ext3.ext <;> dsimp [ofBase] <;> ring
+  apply Ext3.ext
+  · rfl
+  · exact sub_zero a.c1
+  · exact sub_zero a.c2
 
  theorem ofBase_sub_block (c : F) (a : Ext3 F) :
     ofBase c - a = ⟨c - a.c0, -a.c1, -a.c2⟩ := by
-  apply Ext3.ext <;> dsimp [ofBase] <;> ring
+  apply Ext3.ext
+  · rfl
+  · exact zero_sub a.c1
+  · exact zero_sub a.c2
 
  theorem ofBase_mul_block (c : F) (a : Ext3 F) : ofBase c * a = c • a := by
   rw [mul_eq_convolutionMul]
