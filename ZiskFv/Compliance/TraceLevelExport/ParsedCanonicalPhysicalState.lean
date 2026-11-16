@@ -254,8 +254,7 @@ theorem repeated_jalr_actual_prefix_example
           (steps (0 : Fin 2)) start (fun _ => 0) repeatJalrRawProgram binding
           (rawDecodes (0 : Fin 2)))) := by
     apply (stepSound_iff _ _ _).mpr
-    rw [initial]
-    exact (stepSound_iff _ _ _).mp firstSound
+    simpa only [sailStepResult, initial] using (stepSound_iff _ _ _).mp firstSound
   have actual := nonfinal_expansion_parsed_physical_cut repeatJalrRawProgram repeatJalrSelected
     repeatJalrLowerings trace start (fun _ => 0) binding steps rawDecodes atPc
     (repeatJalrLowerings_width 0) init regBoot sound
