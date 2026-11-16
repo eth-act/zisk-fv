@@ -10,7 +10,7 @@ told to it about where to look. That is PART A.
 
 Four known cases cannot show the tool would catch a fifth, so PART B is the
 mutation half, in the style of `tools/pilout-roundtrip/selftest.py`: copy the
-mirrors into a temporary directory, apply exactly ONE edit to the copy, run the
+mirrors into a temporary directory, apply ONE conceptual mutation to the copy, run the
 gate against the REAL pilout and the REAL extraction, and require the reported
 findings to move in exactly the predicted way -- not merely to move, because "it
 noticed" and "it noticed the right thing" are different claims.
@@ -649,11 +649,10 @@ REPRODUCTIONS: tuple[Reproduction, ...] = (
     ),
     # The fourth 2026-07-28 hand finding -- RomBoolSpec, a 14-conjunct mirror with
     # no consumers anywhere -- is NOT a live reproduction any more: the #296 weld
-    # fan-out added `romBoolSpec_weld` (ZiskFv/AirsClean/MainMirrorWeld.lean) as its
-    # first consumer, so the tool now reports zero unreachable mirrors. The finding
-    # is RESOLVED, not silenced, and the detection it exercised is preserved by the
-    # `WELD_CONSUMER_REMOVED` mutation below, which strips that consumer and
-    # requires the tool to report RomBoolSpec unreachable again.
+    # fan-out added its first consumer, and the native Main gauge/projection now
+    # also consume it. The finding is RESOLVED, not silenced. Its detection is
+    # preserved by WELD_CONSUMER_REMOVED, which removes every current consumer
+    # while leaving the mirror definition intact and requires it unreachable.
 )
 
 
@@ -985,6 +984,9 @@ class Mutation:
     # establishes.
     # `(baseline_payload, run_payload) -> a problem string, or None`.
     excluded_by_check: Callable[[dict, dict], str | None] | None = None
+    # The same conceptual mutation may need every consumer in several files.
+    # All edits are staged and reported; no checker scope is excluded.
+    additional_files: tuple[str, ...] = ()
 
 
 MUTATIONS: tuple[Mutation, ...] = (
@@ -1264,16 +1266,16 @@ MUTATIONS: tuple[Mutation, ...] = (
     Mutation(
         name="WELD_CONSUMER_REMOVED",
         lean_file=MAIN_WELD,
-        target="RomBoolSpec's only consumers, renamed away in the weld file",
-        intent="a mirror whose sole consumer is a weld becomes unreachable when the "
-               "weld stops naming it -- the tool still detects unreachable mirrors",
-        # RomBoolSpec's `no consumers anywhere` hand finding was resolved by #296:
-        # its ONLY references outside its own definition are `romBoolSpec_weld` and
-        # `extracted_of_mainWithRomAndMemBus_constraints`, both in MainMirrorWeld.
-        # Renaming `RomBoolSpec` throughout the weld file leaves the definition (in
-        # Main/Circuit.lean) referenced by nothing, so it is unreachable again and
-        # the tool reports it -- the same detection the retired reproduction tested.
+        target="RomBoolSpec consumers in the weld and native Main gauge/projection",
+        intent="removing every current consumer while retaining the mirror "
+               "definition must make it unreachable",
+        # The native gauge/projection are genuine additional consumers. Removing
+        # only the historical weld no longer creates the defect this case tests.
         apply=replace_all("RomBoolSpec", "RomBoolSpecX"),
+        additional_files=(
+            "ZiskFv/AirsClean/PublicIoMainGauge.lean",
+            "ZiskFv/AirsClean/PublicIoMainNativeTrace.lean",
+        ),
         unreachable_added=("RomBoolSpec",),
     ),
     Mutation(
@@ -1632,14 +1634,20 @@ def run_case(mutation: Mutation, base: Path, work_dir: Path,
     result = CaseResult(mutation=mutation)
 
     if mutation.apply is not no_mutation:
-        path = case_dir / mutation.lean_file
-        if not path.is_file():
-            raise HarnessError(f"{mutation.name}: no {mutation.lean_file} staged")
-        original = path.read_text().split("\n")
-        mutated, result.before, result.after = mutation.apply(list(original))
-        if mutated == original:
-            raise HarnessError(f"{mutation.name}: the mutation changed nothing")
-        path.write_text("\n".join(mutated))
+        for relative in (mutation.lean_file, *mutation.additional_files):
+            path = case_dir / relative
+            if not path.is_file():
+                raise HarnessError(f"{mutation.name}: no {relative} staged")
+            original = path.read_text().split("\n")
+            mutated, before, after = mutation.apply(list(original))
+            if mutated == original:
+                raise HarnessError(f"{mutation.name}: no change in {relative}")
+            path.write_text("\n".join(mutated))
+            if relative == mutation.lean_file:
+                result.before, result.after = before, after
+            else:
+                result.before += f"\n{relative}: {before}"
+                result.after += f"\n{relative}: {after}"
     else:
         _, result.before, result.after = mutation.apply([])
 
