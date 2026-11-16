@@ -910,3 +910,26 @@ source c24–c33 already outside that checker's stage-1 polynomial comparison,
 not new source exclusions or changes to its 176 comparable entries. The typed
 AST/row proofs above provide their separate build-only correspondence; the
 live scalar Mem model is still not thereby repaired.
+
+### Source-only physical Mem prerequisite port on main452
+
+The six unchanged prerequisites are `Stage1.SourceColumns`,
+`Stage1.NativeProfile`, `PhysicalSource.FixedScan`, `PhysicalSource.Domain`,
+`PhysicalSource.Constructibility`, and `PhysicalSource.NativeProjection`.
+SourceColumns owns the exact13-cell252-bit physical profile and fixed source
+dimensions; NativeProfile connects the one shared generated native layout.
+FixedScan/Domain own the full4194304-row cyclic physical domain and actual
+fixed L1 scans, not a chosen trace prefix. Constructibility supplies real
+original packed and unpacked source buffers. NativeProjection uses the one
+canonical cached getter without an eager decoded physical-row map.
+
+Actual dependency order: SourceColumns → NativeProfile/FixedScan → Domain →
+Constructibility/NativeProjection. Existing Stage2.Cubic, SourceInstance,
+NativeValuesLayout, NativeTraceCells and generated metadata remain unchanged.
+Comparison is not a dependency and is deliberately not ported. Historical
+189-root support and38-root projection/comparison audits are retained exactly
+under `mem-physical-support-5b64f5c0/` and
+`mem-physical-projection-6e7c2e57/`; the latter includes its unported Comparison
+companion, not an additional claimed live component. These original checks
+are not relabeled as ordinary-main452 build evidence. Fresh proper-main
+ordinary checks remain pending the integration owner's resource slot.

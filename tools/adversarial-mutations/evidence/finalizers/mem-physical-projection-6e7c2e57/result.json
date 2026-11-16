@@ -1,0 +1,50 @@
+{
+  "source_commit": "6e7c2e57642a3fcca1d3358523e690c8be9d8651",
+  "scope": "two new source-only canonical Mem projection consumers, NOT live model/Root/logUp closure",
+  "narrow": {
+    "NativeProjection": {
+      "passed": true,
+      "seconds": 13.116
+    },
+    "Comparison": {
+      "passed": true,
+      "seconds": 4.665
+    },
+    "total_seconds": 17.781
+  },
+  "full_raw": {
+    "passed": true,
+    "root_counts": {
+      "NativeProjection": 31,
+      "Comparison": 7
+    },
+    "total_roots": 38,
+    "seconds": 251.922,
+    "every_root_and_each_module_union_matches_installed_Lean_collectAxioms": true,
+    "coverage": "all defining-module declarations, private/compiler, complete kernel type/value including opaque, inductive constructors, full paths",
+    "axiom_union": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "immutable_dependency_lease": "1e8c6bec9cb45b7f6951c578b47826a9bc5b742b7b7c62a57574fa5d38ab15c2",
+  "dependency_source": "205c4c19d5c58d331a657f43c2739272e246a478",
+  "compiler_sha256": "3e0d0d3d801675359f2d4cf9815bfdb417b20b92fdd9d48b3b14c95bbae28bbf",
+  "lean_options": [
+    "-j2",
+    "--tstack=400000"
+  ],
+  "foreign_writes": false,
+  "borrowed_olean_cache_copies": false,
+  "protected_changes": false,
+  "ordinary_production_registration_changes": false,
+  "warning": "unused pure simp argument retained in checked NativeProjection proof",
+  "remaining": [
+    "stage2 auxiliary/challenge coverage",
+    "PIL and compiled operand-id authentication",
+    "native ABI/opening/snapshot/machine/full source-world binding",
+    "explicit protected scalar-to-Ext3/GROUP0/cyclic-domain approval",
+    "live model finalizer and numeric logUp obligations"
+  ]
+}

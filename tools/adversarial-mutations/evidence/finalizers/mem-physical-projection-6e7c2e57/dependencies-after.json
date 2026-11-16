@@ -1,0 +1,8 @@
+{
+  "status": "all-exact",
+  "lease_sha256": "1e8c6bec9cb45b7f6951c578b47826a9bc5b742b7b7c62a57574fa5d38ab15c2",
+  "immutable_entries": 1660,
+  "compiler_sha256": "3e0d0d3d801675359f2d4cf9815bfdb417b20b92fdd9d48b3b14c95bbae28bbf",
+  "foreign_writes": false,
+  "object_copies": false
+}

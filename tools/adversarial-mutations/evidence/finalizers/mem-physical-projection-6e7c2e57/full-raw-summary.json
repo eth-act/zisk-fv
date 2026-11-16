@@ -1,0 +1,78 @@
+{
+  "modules": [
+    {
+      "roots": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Comparison.actual_predecessor_not_saturating",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Comparison.actual_projection_package",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Comparison.actual_projection_package._proof_1",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Comparison.actual_source_predecessor",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Comparison.group_not_air_zero",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Comparison.saturating_nat_predecessor",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.Comparison.scalar_projection_loses_coordinates"
+      ],
+      "root_count": 7,
+      "raw_axiom_union": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "nodes": 10108,
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.Comparison",
+      "edges": 156270,
+      "cross_check": "Union and EVERY individual root agree with the installed Lean.collectAxioms implementation",
+      "coverage": "Every module declaration, including private/compiler declarations; complete checked kernel type/value and inductive-constructor dependency closure; no namespace pruning or axiom allowlist"
+    },
+    {
+      "roots": [
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.actual_coordinates",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.actual_coordinates._proof_1",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.actual_pil_binding",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.all_current_stage1_cells",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.jointAt",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.logicalRow",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.logicalRow._proof_1",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.logicalRow.match_1",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.logicalRow_checked",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.physical_last_keeps_joint_source",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.physical_last_keeps_joint_source._proof_1_1",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.sharedRow",
+        "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.shared_row_base",
+        "ZiskFv.AirsClean.Mem.Stage1.SourceColumns.physicalRows.eq_1",
+        "ZiskFv.AirsClean.NativeTraceCells.profile.eq_1",
+        "ZiskFv.AirsClean.NativeTraceCells.profile.eq_2",
+        "ZiskFv.AirsClean.NativeTraceCells.profile.eq_3",
+        "ZiskFv.AirsClean.NativeTraceCells.profile.eq_4",
+        "ZiskFv.AirsClean.NativeTraceCells.profile.eq_5",
+        "ZiskFv.AirsClean.NativeTraceCells.profile.eq_6",
+        "ZiskFv.AirsClean.NativeTraceCells.rowBase?.eq_1",
+        "_private.ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.0.ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.logicalRow.match_1.eq_1",
+        "_private.ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.0.ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.logicalRow.match_1.eq_2",
+        "_private.ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.0.ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.logicalRow.match_1.splitter",
+        "_private.ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.0.ZiskFv.AirsClean.NativeTraceCells.profile.match_1.eq_1",
+        "_private.ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.0.ZiskFv.AirsClean.NativeTraceCells.profile.match_1.eq_2",
+        "_private.ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.0.ZiskFv.AirsClean.NativeTraceCells.profile.match_1.eq_3",
+        "_private.ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.0.ZiskFv.AirsClean.NativeTraceCells.profile.match_1.eq_4",
+        "_private.ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.0.ZiskFv.AirsClean.NativeTraceCells.profile.match_1.eq_5",
+        "_private.ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.0.ZiskFv.AirsClean.NativeTraceCells.profile.match_1.eq_6",
+        "_private.ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection.0.ZiskFv.AirsClean.NativeTraceCells.profile.match_1.splitter"
+      ],
+      "root_count": 31,
+      "raw_axiom_union": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "nodes": 4737,
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.NativeProjection",
+      "edges": 77751,
+      "cross_check": "Union and EVERY individual root agree with the installed Lean.collectAxioms implementation",
+      "coverage": "Every module declaration, including private/compiler declarations; complete checked kernel type/value and inductive-constructor dependency closure; no namespace pruning or axiom allowlist"
+    }
+  ],
+  "total_roots": 38,
+  "raw_axiom_union": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ]
+}
