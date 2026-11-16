@@ -232,7 +232,7 @@ theorem decode_polynomial_correspondence (resolved : ResolvedOccurrence source) 
         sourceAlpha, sourceGamma, sourceHornerStep, highIncrementDenominator,
         dualStepDenominator, primaryMemoryDenominator, dualMemoryDenominator,
         previousContinuationDenominator, nextContinuationDenominator,
-        polynomial?, literal_zero, literal_one, literal_eight, literal_ten,
+        polynomial?, bind, pure, literal_zero, literal_one, literal_eight, literal_ten,
         literal_eleven, literal_range24, literal_range16, literal_range22,
         literal_continuation, literal_negative_one, Option.bind_some,
         wa, ws, wsel, wd, wsd, wlo, whi, ww, wl, wh,
