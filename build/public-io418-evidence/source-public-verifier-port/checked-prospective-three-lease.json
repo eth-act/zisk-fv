@@ -1,0 +1,60 @@
+{
+  "source_commit": "13d9d01296961e984f73645fd23942547aede8e7",
+  "base": "622938be281db14470819a9fe752528221a2491d",
+  "source_sha256": {
+    "/home/cody/zisk-fv-source-public-verifier-port/ZiskFv/AirsClean/PublicIo.lean": "b4e033df8a4870ca3ec3017cf9c5117aa5bb8f7c6c0e45bcfe915ea1dac9ad46",
+    "/home/cody/zisk-fv-source-public-verifier-port/ZiskFv/AirsClean/PublicIoSource.lean": "200083485eb12bcc1e8da4610d37e08ffd5e0130ca182a6e350c92cd20c6e5f7",
+    "/home/cody/zisk-fv-source-public-verifier-port/ZiskFv/AirsClean/SourcePublicVerifier.lean": "8cf02c690a721cf44a4026a2c61fc925d22051555c9266a6b8ee9c46ea186afa",
+    "/home/cody/zisk-fv-source-public-verifier-port/ZiskFv.lean": "470ec3e9d5d5ca894f4561122ecb51920ff302be1bb64ba931f21a2a71dee6b4",
+    "/home/cody/zisk-fv-source-public-verifier-port/README.md": "5ccaa07262357419c6bae2f6fd5031f215faf7f1e7bdcc073377df12f45923a5",
+    "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/check_prospective.py": "1a0ddb5ac091e6ea724100aa86d737473c11f38a3475d7efe0be6fd9f4d97d36",
+    "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/MeasureStandalonePublicModelsRaw.lean": "b3148ab8fda4a3f2dbe9c88c41542a1eb172ca1cb726424f0014f69de61d85e3"
+  },
+  "borrowed_authoritative_lease": "/home/cody/zisk-fv-api-loads-approved/build/native-shared-proper448-evidence/readonly-source-public-verifier-lease.json",
+  "borrowed_lease_sha256": "85a9b2e0fd5941a87088947d7e0ee6d1c20fdbcdf73310b740b24a5512632a54",
+  "compiler": "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+  "compiler_sha256": "3e0d0d3d801675359f2d4cf9815bfdb417b20b92fdd9d48b3b14c95bbae28bbf",
+  "options": [
+    "-j2",
+    "--tstack=400000",
+    "-Dpp.unicode.fun=true"
+  ],
+  "LEAN_PATH": "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/prospective-gate/out",
+  "fresh_owned_objects": {
+    "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/prospective-gate/out/ZiskFv/AirsClean/PublicIo.olean": {
+      "sha256": "a9cda5b77bc2c31ed7f5f63594a396cee2a9b7a4680e103d872f9cfd83f61d7e",
+      "bytes": 1122672
+    },
+    "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/prospective-gate/out/ZiskFv/AirsClean/PublicIo.ilean": {
+      "sha256": "c5124d5abec475b6312ceab330f07df5b5ed28feedb658ee4c58c1c382c7c9ae",
+      "bytes": 62996
+    },
+    "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/prospective-gate/out/ZiskFv/AirsClean/SourcePublicVerifier.olean": {
+      "sha256": "5093d60b094318b5a5a3ec4252b5ca763349695faff5c56a1db00926dbd1a589",
+      "bytes": 389984
+    },
+    "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/prospective-gate/out/ZiskFv/AirsClean/PublicIoSource.olean": {
+      "sha256": "4e165f0f76b6a1fdc07ae120f0d46c783b56ad27f407a8d58f835c89d388265c",
+      "bytes": 917840
+    },
+    "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/prospective-gate/out/ZiskFv/AirsClean/PublicIoSource.ilean": {
+      "sha256": "cbe4fcef948cc04d9ad583cd981beb9f849e009b7eae02a2c2c8ce3474d128d5",
+      "bytes": 21175
+    },
+    "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/prospective-gate/out/ZiskFv/AirsClean/SourcePublicVerifier.ilean": {
+      "sha256": "a2239a7bcc359ea56cc040f1848843802cb86c4952b335bd62dc33315f907f10",
+      "bytes": 42575
+    }
+  },
+  "defining_modules": [
+    "ZiskFv.AirsClean.PublicIo",
+    "ZiskFv.AirsClean.PublicIoSource",
+    "ZiskFv.AirsClean.SourcePublicVerifier"
+  ],
+  "roots": 175,
+  "raw_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ]
+}

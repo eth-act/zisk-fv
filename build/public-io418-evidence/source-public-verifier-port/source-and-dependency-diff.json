@@ -1,0 +1,105 @@
+{
+  "base": "622938be281db14470819a9fe752528221a2491d",
+  "previous_checked_consumer": "f90725e1d7066872abc8a6e2bdde69a7125f0da9",
+  "previous_gate_scope": "76leafrootsONLY, NOTnew3scope/prospectiveworld",
+  "files": [
+    {
+      "path": "ZiskFv/AirsClean/PublicIo.lean",
+      "previous_source_sha256": "b4e033df8a4870ca3ec3017cf9c5117aa5bb8f7c6c0e45bcfe915ea1dac9ad46",
+      "prospective_source_sha256": "b4e033df8a4870ca3ec3017cf9c5117aa5bb8f7c6c0e45bcfe915ea1dac9ad46",
+      "identical": true
+    },
+    {
+      "path": "ZiskFv/AirsClean/PublicIoSource.lean",
+      "previous_source_sha256": "200083485eb12bcc1e8da4610d37e08ffd5e0130ca182a6e350c92cd20c6e5f7",
+      "prospective_source_sha256": "200083485eb12bcc1e8da4610d37e08ffd5e0130ca182a6e350c92cd20c6e5f7",
+      "identical": true
+    },
+    {
+      "path": "ZiskFv/AirsClean/SourcePublicVerifier.lean",
+      "previous_source_sha256": "8cf02c690a721cf44a4026a2c61fc925d22051555c9266a6b8ee9c46ea186afa",
+      "prospective_source_sha256": "8cf02c690a721cf44a4026a2c61fc925d22051555c9266a6b8ee9c46ea186afa",
+      "identical": true
+    },
+    {
+      "path": "ZiskFv/AirsClean/PublicIoMainNativeTrace.lean",
+      "previous_source_sha256": "9275e7c5db9f5db4109ba4c241b2510f53b0b742d203698890f288a28e06f9d1",
+      "prospective_source_sha256": "9275e7c5db9f5db4109ba4c241b2510f53b0b742d203698890f288a28e06f9d1",
+      "identical": true
+    },
+    {
+      "path": "ZiskFv/AirsClean/PublicIoMainGauge.lean",
+      "previous_source_sha256": "05ca413f900f80ba1b452caa2e2d74400d835a0fd6313430d1f7615f3b9cf1a2",
+      "prospective_source_sha256": "05ca413f900f80ba1b452caa2e2d74400d835a0fd6313430d1f7615f3b9cf1a2",
+      "identical": true
+    },
+    {
+      "path": "ZiskFv/AirsClean/PublicIoMainTraceLayout.lean",
+      "previous_source_sha256": "eea42b9a65d5076da34cb4984071fbd47b655dd90624459106f740f6fab40825",
+      "prospective_source_sha256": "eea42b9a65d5076da34cb4984071fbd47b655dd90624459106f740f6fab40825",
+      "identical": true
+    },
+    {
+      "path": "ZiskFv/AirsClean/NativeTraceCells.lean",
+      "previous_source_sha256": "4f87576ae8b5e020ed7ec48c6d315c11022eb4de0705178c3b46d38e6ba6e006",
+      "prospective_source_sha256": "d14fe37512cf9eb973f244becd6242bc515b25994e4999b9dfd44b7bd498234e",
+      "identical": false
+    },
+    {
+      "path": "ZiskFv/AirsClean/NativeTraceRules.lean",
+      "previous_source_sha256": "4087f5146bb870aa48ac6b686913a8956832e087b5e7339848764e6cef656134",
+      "prospective_source_sha256": "c2255dc2d3842fd32fd5e6df01e887315afa3e3b453e685fa1a8c0f25e38dd75",
+      "identical": false
+    },
+    {
+      "path": "ZiskFv/AirsClean/NativeValuesLayout.lean",
+      "previous_source_sha256": "3e2730fd9c5d530aa4dc699cde534b496368ce3d820e5f14dcb681619c20850c",
+      "prospective_source_sha256": "3e2730fd9c5d530aa4dc699cde534b496368ce3d820e5f14dcb681619c20850c",
+      "identical": true
+    },
+    {
+      "path": "ZiskFv/AirsClean/MemAlignWriteByte/RawSource.lean",
+      "previous_source_sha256": "aa3b7041d338b86692f1f9f65b2f190b4dd9a0ba22587d9f81d8551a79f20121",
+      "prospective_source_sha256": "aa3b7041d338b86692f1f9f65b2f190b4dd9a0ba22587d9f81d8551a79f20121",
+      "identical": true
+    },
+    {
+      "path": "ZiskFv/AirsClean/MemAlignWriteByte/SourceInstance.lean",
+      "previous_source_sha256": "ccd470c0321d6b1a056494c3801fa75f99dfda7077c6906e2c86e843874c684c",
+      "prospective_source_sha256": "ccd470c0321d6b1a056494c3801fa75f99dfda7077c6906e2c86e843874c684c",
+      "identical": true
+    },
+    {
+      "path": "ZiskFv/AirsClean/MemAlignWriteByte/NativeTraceWords.lean",
+      "previous_source_sha256": "1bcfebcbb2e01355e3551b6895ab11613fef28887823c4d52b68cf2fb8abf407",
+      "prospective_source_sha256": "1bcfebcbb2e01355e3551b6895ab11613fef28887823c4d52b68cf2fb8abf407",
+      "identical": true
+    },
+    {
+      "path": "ZiskFv/Channels/OperationBus.lean",
+      "previous_source_sha256": "0a27d1a3d5c075248b79d6d84d41c37f59a98cf2afb6efea6f2f63a0dbf00321",
+      "prospective_source_sha256": "0a27d1a3d5c075248b79d6d84d41c37f59a98cf2afb6efea6f2f63a0dbf00321",
+      "identical": true
+    },
+    {
+      "path": "lean-toolchain",
+      "previous_source_sha256": "db7bb24b756d745bbde83fe92718b51bd3625dae3701ba0f598d0eedcd3f3028",
+      "prospective_source_sha256": "db7bb24b756d745bbde83fe92718b51bd3625dae3701ba0f598d0eedcd3f3028",
+      "identical": true
+    },
+    {
+      "path": "lake-manifest.json",
+      "previous_source_sha256": "354d98ca220a909807af809fe71f5d611ad7db057f554942628ca6cb095bd835",
+      "prospective_source_sha256": "354d98ca220a909807af809fe71f5d611ad7db057f554942628ca6cb095bd835",
+      "identical": true
+    },
+    {
+      "path": "flake.lock",
+      "previous_source_sha256": "54559fd326574342bd2ce8c16191327e9e61bde78918d9d485d3928d47aea050",
+      "prospective_source_sha256": "54559fd326574342bd2ce8c16191327e9e61bde78918d9d485d3928d47aea050",
+      "identical": true
+    }
+  ],
+  "checks_run": false,
+  "source_or_cache_copies": "SOURCEONLY cp--reflinknever+CMP; noolean/cache"
+}

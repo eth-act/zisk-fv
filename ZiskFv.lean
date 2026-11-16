@@ -348,6 +348,9 @@ import ZiskFv.AirsClean.NativeTraceRules
 import ZiskFv.AirsClean.NativeTraceCells
 import ZiskFv.AirsClean.PublicIoMainGauge
 import ZiskFv.AirsClean.PublicIoMainNativeTrace
+import ZiskFv.AirsClean.PublicIo
+import ZiskFv.AirsClean.PublicIoSource
+import ZiskFv.AirsClean.SourcePublicVerifier
 import ZiskFv.AirsClean.Mem.SourceFinalizerEquation
 import ZiskFv.AirsClean.Mem.SourceFinalizer
 import ZiskFv.AirsClean.Mem.Stage2.Cubic

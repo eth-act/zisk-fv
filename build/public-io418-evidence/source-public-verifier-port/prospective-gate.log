@@ -1,0 +1,6 @@
+{"phase": "before", "status": "ALL_EXACT", "lease_sha256": "85a9b2e0fd5941a87088947d7e0ee6d1c20fdbcdf73310b740b24a5512632a54", "tracked_sources": 879, "generated_sources": 34, "objects_including_ir": 87845, "seconds": 8.976887405966409}
+{"label": "narrow-ZiskFv_AirsClean_PublicIo", "status": 0, "seconds": 11.274900433025323}
+{"label": "narrow-ZiskFv_AirsClean_PublicIoSource", "status": 0, "seconds": 6.493009255966172}
+{"label": "narrow-ZiskFv_AirsClean_SourcePublicVerifier", "status": 0, "seconds": 5.607448277063668}
+{"label": "full-all-three", "status": 0, "seconds": 163.1793797009159}
+{"phase": "after", "status": "ALL_EXACT", "lease_sha256": "85a9b2e0fd5941a87088947d7e0ee6d1c20fdbcdf73310b740b24a5512632a54", "tracked_sources": 879, "generated_sources": 34, "objects_including_ir": 87845, "seconds": 18.587550590978935}

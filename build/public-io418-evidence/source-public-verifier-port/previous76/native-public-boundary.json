@@ -1,0 +1,20 @@
+{
+  "profile": "actual immutable proofman ff0e33a9b40f2467b35ef26aa2aabb4a624dfed3, source /nix/store/zqhhhzb9rq7gcbv46c1fz4k91pk42yni-source; checked-in9ca and productionb632 not assumed equivalent",
+  "actual_source_chain": [
+    {"file":"common/src/global_info.rs","lines":"95-121","operation":"GlobalInfo::new/from_file reads pilout.globalInfo.json and serde-deserializes GlobalInfo n_publics/publics_map"},
+    {"file":"common/src/proof_ctx.rs","lines":"275-292","operation":"ProofCtx new selects global_info.n_publics and allocates ONE public_inputs Values vector"},
+    {"file":"common/src/proof_ctx.rs","lines":"704-705,733-734,768-770","operation":"set_public_value writes public_id; get_publics/get_publics_ptr access SAME public_inputs.values vector"},
+    {"file":"common/src/proof_ctx.rs","lines":"791-805","operation":"get_air_instance_params BOTH gen_proof modes puts self.get_publics_ptr into StepsParams.public_inputs; mode branches only otherbuffers"},
+    {"file":"proofman/src/verify_constraints.rs","lines":"81-112","operation":"verify_global_constraints_proof passes pctx.get_publics_ptr to verify_global_constraints_c alongwithselectedglobalbin andglobal_info_file"},
+    {"file":"provers/starks-lib-c/src/ffi_starks.rs","lines":"722-744","operation":"FFI forwards publics pointer to native verify_global_constraints; no different public vector constructed"},
+    {"file":"pil2-stark/src/starkpil/expressions_info.cpp","lines":"513-520","operation":"PublicValue operand public_ encodedbuffer1/global orbufferSize+2/native withDIRECT r.id, notpublicmaprank/prefix"},
+    {"file":"pil2-stark/src/starkpil/global_constraints.hpp","lines":"16,38-63","operation":"calculateGlobalExpression binds expressions_params[1]=publics andreadsindexedoperands"},
+    {"file":"pil2-stark/src/starkpil/expressions_pack.hpp","lines":"355-359","operation":"nativeordinaryexpression publicbuffer=Params.publicInputs"},
+    {"file":"pil2-stark/src/starkpil/stark_info.cpp","lines":"8-23,63,113-123","operation":"StarkInfo constructor loadsJSON thenload reads nPublics andorderedpublicsMap{name,lengths}; otherPolMapfields NOTinitializedbythisloop"}
+  ],
+  "checked_model_target": "SourcePublicVerifier computesexisting68PIOONLYfromSAMEtypedSourceObjectGlobals/Params/publicbuffer andactualresolvedsetup; samepublicsMap retained without guessednames/ranks/countvalidators; all68flatvalues/all32compiledsourceemissions+Cleanops+jointactualMain38/AIR8/GROUP3",
+  "not_formalized_as_native_execution": "These actual source observations/citations doNOTconstitute Rust/C++/compiler/FFI/CABI/pointer-lifetime/productionJSON materialization proofs. No native facts are axioms or premises of Accepted/Root",
+  "precise_remaining_invariant": "Need actualSetupCtx registry-selected StarkInfo::load/publicsMap+nPublics from the actual PIL/globalInfo JSON setup producer, tiedto compiled publicsymbol layout4ROM+64inputs; need actualProofCtx.public_inputs/StepsParams/publicsFFIpointer and opening-verifier authenticated publics to materialize SAME typedSourceObject.globals.publicInputs. Current SourceObject constructor/Accepted trace doesnotprove this livepointer/globalbin/publicopening correlation. Metadata labels alone cannot supply it",
+  "no_fabricated_bug_or_forgery": "No sourcebug/lifetimebug/acceptedforgery/nativecompilerproof claim; no extraGlobalInfo/SourceObjectfield or freeSourceComplete/equalitybinder added",
+  "separate_remaining_execution": "actualruntimeepilogue memory/register/PCcontinuity/termination/Sailfinalobservable androotUnit→68retarget remainoutside this standalone source consumer"
+}

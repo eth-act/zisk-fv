@@ -1,0 +1,16 @@
+{
+  "source_commit": "13d9d01296961e984f73645fd23942547aede8e7",
+  "base": "622938be281db14470819a9fe752528221a2491d",
+  "authoritative_lease": "/home/cody/zisk-fv-api-loads-approved/build/native-shared-proper448-evidence/readonly-source-public-verifier-lease.json",
+  "authoritative_lease_sha256": "85a9b2e0fd5941a87088947d7e0ee6d1c20fdbcdf73310b740b24a5512632a54",
+  "source_sha256": {
+    "/home/cody/zisk-fv-source-public-verifier-port/ZiskFv/AirsClean/PublicIo.lean": "b4e033df8a4870ca3ec3017cf9c5117aa5bb8f7c6c0e45bcfe915ea1dac9ad46",
+    "/home/cody/zisk-fv-source-public-verifier-port/ZiskFv/AirsClean/PublicIoSource.lean": "200083485eb12bcc1e8da4610d37e08ffd5e0130ca182a6e350c92cd20c6e5f7",
+    "/home/cody/zisk-fv-source-public-verifier-port/ZiskFv/AirsClean/SourcePublicVerifier.lean": "8cf02c690a721cf44a4026a2c61fc925d22051555c9266a6b8ee9c46ea186afa",
+    "/home/cody/zisk-fv-source-public-verifier-port/ZiskFv.lean": "470ec3e9d5d5ca894f4561122ecb51920ff302be1bb64ba931f21a2a71dee6b4",
+    "/home/cody/zisk-fv-source-public-verifier-port/README.md": "5ccaa07262357419c6bae2f6fd5031f215faf7f1e7bdcc073377df12f45923a5",
+    "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/check_prospective.py": "057b8913257f4aba98402317b4d2c2da5322aef201e2b235f1103b159995d5f2",
+    "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/MeasureStandalonePublicModelsRaw.lean": "b3148ab8fda4a3f2dbe9c88c41542a1eb172ca1cb726424f0014f69de61d85e3"
+  },
+  "scope": "NEW three defining modules, not previous leaf76; no canonical world retarget"
+}

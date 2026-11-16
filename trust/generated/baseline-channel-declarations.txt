@@ -39,6 +39,7 @@ channelsWithRequirements	channelsWithRequirements := [OpBusChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [OpBusChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [OpBusChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [OpBusChannel.toRaw]
+channelsWithRequirements	channelsWithRequirements := [OpBusChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [RegisterStepRangeChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [SpecifiedRangesSliceChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [ZiskRomBusChannel.toRaw]
@@ -49,6 +50,7 @@ exposedChannels	exposedChannels message _ := expose BinaryExtensionTableChannel 
 exposedChannels	exposedChannels message _ := expose BinaryTableChannel [BinaryTableChannel.pushed message]
 exposedChannels	exposedChannels message _ := expose MemAlignRangeChannel [MemAlignRangeChannel.pushed message]
 exposedChannels	exposedChannels message _ := expose MemAlignRomChannel [MemAlignRomChannel.pushed message]
+exposedChannels	exposedChannels publicIO _ := expose OpBusChannel ((List.finRange 32).map fun i => OpBusChannel.pushed (messageExpr publicIO i))
 exposedChannels	exposedChannels row _ := expose BinaryExtensionTableChannel [BinaryExtensionTableChannel.emitted row.multiplicity row.message]
 exposedChannels	exposedChannels row _ := expose BinaryTableChannel [BinaryTableChannel.emitted row.multiplicity row.message]
 exposedChannels	exposedChannels row _ := expose DualByteChannel [DualByteChannel.emitted row.multiplicity (messageExpr row)]
@@ -82,4 +84,4 @@ exposedChannels	exposedChannels row _ := expose OpBusChannel [OpBusChannel.pushe
 exposedChannels	exposedChannels row _ := expose ZiskRomBusChannel [ZiskRomBusChannel.emitted row.multiplicity row.message]
 exposedChannels	exposedChannels value _ := expose RegisterStepRangeChannel [RegisterStepRangeChannel.pushed (registerStepMessage value)]
 exposedChannels	exposedChannels value _ := expose SpecifiedRangesSliceChannel [SpecifiedRangesSliceChannel.pushed (memDistanceMessage value)]
-# total declarations: 84
+# total declarations: 86

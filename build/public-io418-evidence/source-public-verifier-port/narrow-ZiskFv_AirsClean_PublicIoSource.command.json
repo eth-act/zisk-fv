@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+    "-j2",
+    "--tstack=400000",
+    "-Dpp.unicode.fun=true",
+    "--root=/home/cody/zisk-fv-source-public-verifier-port",
+    "-o",
+    "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/prospective-gate/out/ZiskFv/AirsClean/PublicIoSource.olean",
+    "-i",
+    "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/prospective-gate/out/ZiskFv/AirsClean/PublicIoSource.ilean",
+    "/home/cody/zisk-fv-source-public-verifier-port/ZiskFv/AirsClean/PublicIoSource.lean"
+  ],
+  "cwd": "/home/cody/zisk-fv-source-public-verifier-port",
+  "LEAN_PATH": "/home/cody/zisk-fv-source-public-verifier-port/build/public-io418-evidence/source-public-verifier-port/prospective-gate/out",
+  "compiler_sha256": "3e0d0d3d801675359f2d4cf9815bfdb417b20b92fdd9d48b3b14c95bbae28bbf",
+  "source_sha256": "200083485eb12bcc1e8da4610d37e08ffd5e0130ca182a6e350c92cd20c6e5f7"
+}
