@@ -26,23 +26,18 @@ private theorem arbitrary_extension_source_old_stream (new : NewWitness p progra
     (newTable new 14).interactionsWith channel = [] := by
   apply BinaryTableBalance.interactionsWith_nil_of_channel_names
   rw [newTable_component]
+  change channel.name ∉ BinaryExtensionTableSlice.sourceComponent.circuit.channels.map (·.name)
   simp only [oldFinishedChannels, List.mem_cons, List.not_mem_nil, or_false] at hc
-  rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp [BinaryExtensionTableSlice.sourceComponent,
-      BinaryExtensionTableSlice.sourceCircuit, circuit_norm,
-      RegisterStepRangeChannel, MemAlignRangeChannel, MemBusChannel, OpBusChannel,
-      MemAlignRomChannel, SpecifiedRangesSliceChannel, BinaryExtensionTableChannel]
+  rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 private theorem arbitrary_binary_source_old_stream (new : NewWitness p program)
     (channel : RawChannel FGL) (hc : channel ∈ oldFinishedChannels) :
     (newTable new 15).interactionsWith channel = [] := by
   apply BinaryTableBalance.interactionsWith_nil_of_channel_names
   rw [newTable_component]
+  change channel.name ∉ BinaryTableSlice.sourceComponent.circuit.channels.map (·.name)
   simp only [oldFinishedChannels, List.mem_cons, List.not_mem_nil, or_false] at hc
-  rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp [BinaryTableSlice.sourceComponent, BinaryTableSlice.sourceCircuit, circuit_norm,
-      RegisterStepRangeChannel, MemAlignRangeChannel, MemBusChannel, OpBusChannel,
-      MemAlignRomChannel, SpecifiedRangesSliceChannel, BinaryTableChannel]
+  rcases hc with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 /-- Exact source order, messages and raw multiplicities on each old channel. -/
 theorem projected_old_channel_stream (new : NewWitness p program)

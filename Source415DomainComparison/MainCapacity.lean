@@ -1,10 +1,10 @@
 import Source415DomainComparison.WitnessSplice
 
 /-! Intrinsic old-domain capacity. Main already carries the source's fixed
-4194304-row domain; no accepted-trace premise is added here. The unresolved
-counting direction is to bound the old Binary/Extension row counts by that
-Main count using actual old OpBus balance and Arith's paired primary/remainder
-emissions. These numerical endpoint facts alone do not prove that direction. -/
+4194304-row domain; no accepted-trace premise is added here.
+`OldOperationCounts` proves the Binary/Extension row-count domination from
+actual old OpBus balance and Arith's paired primary/remainder emissions.
+These numerical endpoint facts alone do not assert that counting theorem. -/
 
 namespace ZiskFv.AirsClean.FullEnsemble.DomainComparison
 

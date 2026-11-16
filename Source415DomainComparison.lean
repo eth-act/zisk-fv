@@ -10,13 +10,23 @@ import Source415DomainComparison.SevenWitnesses
 import Source415DomainComparison.BalancedCounts
 import Source415DomainComparison.MainCapacity
 import Source415DomainComparison.ReplayFieldPreservation
+import Source415DomainComparison.OldOperationCounts
+import Source415DomainComparison.ForwardRequests
+import Source415DomainComparison.ForwardCompletion
+import Source415DomainComparison.ReverseProjection
+import Source415DomainComparison.ReverseStreams
+import Source415DomainComparison.ReverseFields
+import Source415DomainComparison.ProjectionRetraction
+import Source415DomainComparison.SourceCommitmentBoundary
 
 /-! PRIVATE comparative proof root. This deliberately does not change the
 production root or claim that the two Accepted contracts are interchangeable.
 All comparison declarations, including snapshots and seven genuine current
 constructions, are reachable for elaboration and complete raw trust auditing.
-The accepted-domain counting/request extraction and reverse-direction proof
-obligations remain explicit in the comparative evidence ledger. -/
+Forward completion chooses genuine ordered request histograms; it is not
+equality to an arbitrary committed source-provider raw. Reverse projection
+allows arbitrary accepted source prefixes. No definitional equality, equality
+of discarded provider commitments, or protected public cutover is claimed. -/
 
 namespace ZiskFv.AirsClean.FullEnsemble.DomainComparison
 

@@ -65,19 +65,29 @@ def extensionStaticTable (new : NewWitness p program) : Table FGL where
     change (none : Option _) = some columns at hc
     cases hc
 
+private theorem reverse_fixed_none_of_component_eq {component expected : Component FGL}
+    (equal : component = expected) (none : expected.fixedColumns = Option.none) :
+    component.fixedColumns = Option.none := by
+  cases equal
+  exact none
+
 theorem binaryStaticTable_table (new : NewWitness p program) :
     (binaryStaticTable new).table = (newTable new 12).table := by
   change (newTable new 12).rawRows = (newTable new 12).table
   unfold Table.table
-  rw [newTable_component]
-  rfl
+  have component : (newTable new 12).component = Binary.tableConsumerComponent :=
+    newTable_component new 12
+  have none := reverse_fixed_none_of_component_eq component rfl
+  simp only [none]
 
 theorem extensionStaticTable_table (new : NewWitness p program) :
     (extensionStaticTable new).table = (newTable new 11).table := by
   change (newTable new 11).rawRows = (newTable new 11).table
   unfold Table.table
-  rw [newTable_component]
-  rfl
+  have component : (newTable new 11).component = BinaryExtension.shiftTableConsumerComponent :=
+    newTable_component new 11
+  have none := reverse_fixed_none_of_component_eq component rfl
+  simp only [none]
 
 def projectedCommonTables (new : NewWitness p program) : List (Table FGL) :=
   [newTable new 0, newTable new 1, newTable new 2, newTable new 3,
@@ -171,19 +181,13 @@ theorem projected_publicInput (new : NewWitness p program) :
 
 private theorem binary_static_lookups :
     Binary.staticLookupComponent.operations.lookups = (List.finRange 8).map
-      (fun index => ({ table := (Table.fromStatic BinaryTable.binaryTable).toRaw,
-        entry := toElements (binaryMessage Binary.tableConsumerComponent.rowInputVar index) }
-        : Lookup FGL)) := by
+      (fun index => ({ table := (Table.fromStatic BinaryTable.binaryTable).toRaw, entry := toElements (binaryMessage Binary.tableConsumerComponent.rowInputVar index) } : Lookup FGL)) := by
   rw [Component.lookups_eq]
   rfl
 
 private theorem extension_static_lookups :
     BinaryExtension.staticLookupComponent.operations.lookups = (List.finRange 8).map
-      (fun index => ({ table :=
-          (Table.fromStatic BinaryExtensionTable.binaryExtensionTable).toRaw,
-        entry := toElements
-          (BinaryExtension.byteMessage BinaryExtension.tableConsumerComponent.rowInputVar index) }
-        : Lookup FGL)) := by
+      (fun index => ({ table := (Table.fromStatic BinaryExtensionTable.binaryExtensionTable).toRaw, entry := toElements (BinaryExtension.byteMessage BinaryExtension.tableConsumerComponent.rowInputVar index) } : Lookup FGL)) := by
   rw [Component.lookups_eq]
   rfl
 
@@ -206,8 +210,11 @@ theorem projected_binary_constraints (new : NewWitness p program)
   rw [binaryStaticTable_table] at hr
   have h := hc _ (newTable_mem new 12) row hr
   rw [newTable_component] at h
+  change Binary.staticLookupComponent.operations.ConstraintsHold
+    ((newTable new 12).environment row)
   constructor
-  · simpa only [← binary_constraint_projection] using h.1
+  · rw [← binary_constraint_projection]
+    exact h.1
   · intro lookup hl
     change lookup ∈ Binary.staticLookupComponent.operations.lookups at hl
     rw [binary_static_lookups] at hl
@@ -222,8 +229,11 @@ theorem projected_extension_constraints (new : NewWitness p program)
   rw [extensionStaticTable_table] at hr
   have h := hc _ (newTable_mem new 11) row hr
   rw [newTable_component] at h
+  change BinaryExtension.shiftStaticLookupComponent.operations.ConstraintsHold
+    ((newTable new 11).environment row)
   constructor
-  · simpa only [← extension_constraint_projection] using h.1
+  · rw [← extension_constraint_projection]
+    exact h.1
   · intro lookup hl
     change lookup ∈ BinaryExtension.shiftStaticLookupComponent.operations.lookups at hl
     rw [extension_lookup_projection] at hl

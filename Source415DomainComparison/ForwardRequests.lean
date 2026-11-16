@@ -26,6 +26,32 @@ def oldExtensionMessages (old : OldWitness p program) :
     extensionMessageRow (BinaryExtension.shiftStaticLookupComponent.rowInput
       ((oldTable old 11).environment row)) i
 
+private theorem binary_static_eight (row : Binary.BinaryRow FGL)
+    (facts : Binary.StaticBinaryTableSpecFacts row) (index : Fin 8) :
+    BinaryTable.binaryTable.Spec (binaryMessageRow row index) := by
+  fin_cases index <;> simp only [binaryMessageRow]
+  · exact facts.1
+  · exact facts.2.1
+  · exact facts.2.2.1
+  · exact facts.2.2.2.1
+  · exact facts.2.2.2.2.1
+  · exact facts.2.2.2.2.2.1
+  · exact facts.2.2.2.2.2.2.1
+  · exact facts.2.2.2.2.2.2.2
+
+private theorem extension_static_eight (row : BinaryExtension.BinaryExtensionRow FGL)
+    (facts : BinaryExtension.StaticBinaryExtensionTableSpecFacts row) (index : Fin 8) :
+    BinaryExtensionTable.binaryExtensionTable.Spec (extensionMessageRow row index) := by
+  fin_cases index <;> simp only [extensionMessageRow]
+  · exact facts.1
+  · exact facts.2.1
+  · exact facts.2.2.1
+  · exact facts.2.2.2.1
+  · exact facts.2.2.2.2.1
+  · exact facts.2.2.2.2.2.1
+  · exact facts.2.2.2.2.2.2.1
+  · exact facts.2.2.2.2.2.2.2
+
 theorem old_binary_messages_valid (old : OldWitness p program)
     (hc : old.Constraints) (hb : old.BalancedChannels) :
     ∀ message ∈ oldBinaryMessages old, BinaryTable.binaryTable.Spec message := by
@@ -36,7 +62,7 @@ theorem old_binary_messages_valid (old : OldWitness p program)
     (oldTable old 12) (oldTable_mem old 12) row hr
   rw [old_binary_component, Binary.staticLookupComponent_spec] at hs
   have h := hs.2
-  fin_cases i <;> simp only [binaryMessageRow] <;> tauto
+  exact binary_static_eight _ h i
 
 theorem old_extension_messages_valid (old : OldWitness p program)
     (hc : old.Constraints) (hb : old.BalancedChannels) :
@@ -49,7 +75,7 @@ theorem old_extension_messages_valid (old : OldWitness p program)
     (oldTable old 11) (oldTable_mem old 11) row hr
   rw [old_extension_component, BinaryExtension.shiftStaticLookupComponent_spec] at hs
   have h := hs.2.1
-  fin_cases i <;> simp only [extensionMessageRow] <;> tauto
+  exact extension_static_eight _ h i
 
 noncomputable def oldBinaryRequests (old : OldWitness p program)
     (hc : old.Constraints) (hb : old.BalancedChannels) :
@@ -81,7 +107,9 @@ private theorem eight_flatMap_length {α β : Type} (rows : List α) (f : α →
     (rows.flatMap fun row => List.ofFn (f row)).length = 8 * rows.length := by
   induction rows with
   | nil => simp
-  | cons row rows ih => simp [ih, Nat.mul_add, Nat.add_comm]
+  | cons row rows ih =>
+      rw [List.flatMap_cons, List.length_append, List.length_ofFn, ih, List.length_cons]
+      omega
 
 theorem oldBinaryRequests_length (old : OldWitness p program)
     (hc : old.Constraints) (hb : old.BalancedChannels) :
@@ -125,8 +153,16 @@ theorem binary_consumer_requests (old : OldWitness p program)
   rw [hops, List.map_ofFn]
   apply congrArg (fun f : Fin 8 → Interaction FGL => List.ofFn f)
   funext i
+  dsimp only [Function.comp_apply]
+  change ((BinaryTableChannel.pushedIf (-1)
+      (binaryMessage Binary.tableConsumerComponent.rowInputVar i)).toRaw).eval
+      ((oldTable old 12).environment row) =
+    BinaryTableChannel.pushedIfValue (-1)
+      (binaryMessageRow (Binary.staticLookupComponent.rowInput
+        ((oldTable old 12).environment row)) i)
   rw [Channel.eval_pushedIf, eval_binaryMessage]
-  simp only [Component.rowInputVar, eval_varFromOffset_valueFromOffset, Component.rowInput] <;> rfl
+  simp only [Component.rowInputVar, eval_varFromOffset_valueFromOffset, Component.rowInput]
+  with_unfolding_all rfl
 
 theorem extension_consumer_requests (old : OldWitness p program)
     (hc : old.Constraints) (hb : old.BalancedChannels) :
@@ -157,7 +193,15 @@ theorem extension_consumer_requests (old : OldWitness p program)
   rw [hops, List.map_ofFn]
   apply congrArg (fun f : Fin 8 → Interaction FGL => List.ofFn f)
   funext i
+  dsimp only [Function.comp_apply]
+  change ((BinaryExtensionTableChannel.pushedIf (-1)
+      (BinaryExtension.byteMessage BinaryExtension.tableConsumerComponent.rowInputVar i)).toRaw).eval
+      ((oldTable old 11).environment row) =
+    BinaryExtensionTableChannel.pushedIfValue (-1)
+      (extensionMessageRow (BinaryExtension.shiftStaticLookupComponent.rowInput
+        ((oldTable old 11).environment row)) i)
   rw [Channel.eval_pushedIf, eval_extensionMessage]
-  simp only [Component.rowInputVar, eval_varFromOffset_valueFromOffset, Component.rowInput] <;> rfl
+  simp only [Component.rowInputVar, eval_varFromOffset_valueFromOffset, Component.rowInput]
+  with_unfolding_all rfl
 
 end ZiskFv.AirsClean.FullEnsemble.DomainComparison

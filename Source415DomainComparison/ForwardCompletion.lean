@@ -59,8 +59,7 @@ private theorem oldTable_lookup_silent (old : OldWitness p program) (i : Fin 15)
 private theorem oldVerifier_lookup_silent (old : OldWitness p program)
     (channel : RawChannel FGL) : old.verifierTable.interactionsWith channel = [] := by
   apply Table.interactionsWith_nil_of_channel_not_mem
-  change channel ∉ (Legacy45.fullRv64imSoundEnsemble p program).ensemble.verifier.channels
-  rw [(Legacy45.fullRv64imSoundEnsemble p program).verifier_empty]
+  change channel ∉ ([] : List (RawChannel FGL))
   simp
 
 /-- Actual ordered allTables streams: consumer rows precede the full canonical
@@ -80,14 +79,47 @@ theorem completed_binary_request_stream (old : OldWitness p program)
     exact of_decide_eq_true (by with_unfolding_all rfl)
   have hp := extensionProviderTable_other_channel
     (forwardRaw old hc hb base) old.data BinaryTableChannel.toRaw (by decide)
-  change ((completedWitness old _).verifierTable :: completedTables old _).flatMap _ = _
-  rw [completedWitness_verifierTable]
-  simp only [completedTables, commonTables, List.cons_append, List.nil_append,
-    List.flatMap_cons, List.flatMap_nil,
-    oldVerifier_lookup_silent, oldTable_lookup_silent old _ _ (Or.inl rfl),
-    he, hp, binary_consumer_requests old hc hb, binaryProviderTable_interactionsWith,
-    forwardRaw, binaryInteractions_physicalOfRequests,
-    List.nil_append, List.append_nil]
+  have hprovider :
+      (binaryProviderTable (forwardRaw old hc hb base) old.data).interactionsWith
+        BinaryTableChannel.toRaw =
+      countedSourceInteractions BinaryTableChannel
+        (fun i : Fin BinaryTable.tableSize => BinaryTable.rowOfIndex i.val)
+        (oldBinaryRequests old hc hb) := by
+    rw [binaryProviderTable_interactionsWith]
+    exact binaryInteractions_physicalOfRequests base
+      (oldBinaryRequests old hc hb) (oldExtensionRequests old hc hb)
+  change ((completedWitness old _).verifierTable :: completedTables old _).flatMap
+    (fun table => table.interactionsWith BinaryTableChannel.toRaw) = _
+  rw [completedWitness_verifierTable, List.flatMap_cons, oldVerifier_lookup_silent, List.nil_append]
+  have spine := flatMap_seventeen_consumer12_source15
+    (fun table => table.interactionsWith BinaryTableChannel.toRaw)
+    (oldTable old 0) (oldTable old 1) (oldTable old 2) (oldTable old 3)
+    (oldTable old 4) (oldTable old 5) (oldTable old 6) (oldTable old 7)
+    (oldTable old 8) (oldTable old 9) (oldTable old 10)
+    (extensionConsumerTable old) (binaryConsumerTable old) (oldTable old 13)
+    (extensionProviderTable (forwardRaw old hc hb base) old.data)
+    (binaryProviderTable (forwardRaw old hc hb base) old.data) (oldTable old 14)
+    (consumedSourceRequests BinaryTableChannel
+      (fun i : Fin BinaryTable.tableSize => BinaryTable.rowOfIndex i.val)
+      (oldBinaryRequests old hc hb))
+    (oldTable_lookup_silent old 0 _ (Or.inl rfl))
+    (oldTable_lookup_silent old 1 _ (Or.inl rfl))
+    (oldTable_lookup_silent old 2 _ (Or.inl rfl))
+    (oldTable_lookup_silent old 3 _ (Or.inl rfl))
+    (oldTable_lookup_silent old 4 _ (Or.inl rfl))
+    (oldTable_lookup_silent old 5 _ (Or.inl rfl))
+    (oldTable_lookup_silent old 6 _ (Or.inl rfl))
+    (oldTable_lookup_silent old 7 _ (Or.inl rfl))
+    (oldTable_lookup_silent old 8 _ (Or.inl rfl))
+    (oldTable_lookup_silent old 9 _ (Or.inl rfl))
+    (oldTable_lookup_silent old 10 _ (Or.inl rfl))
+    he (binary_consumer_requests old hc hb)
+    (oldTable_lookup_silent old 13 _ (Or.inl rfl)) hp
+    (oldTable_lookup_silent old 14 _ (Or.inl rfl))
+  exact spine.trans (congrArg (fun provider =>
+    consumedSourceRequests BinaryTableChannel
+      (fun i : Fin BinaryTable.tableSize => BinaryTable.rowOfIndex i.val)
+      (oldBinaryRequests old hc hb) ++ provider) hprovider)
 
 theorem completed_extension_request_stream (old : OldWitness p program)
     (hc : old.Constraints) (hb : old.BalancedChannels) (base : Witness FGL) :
@@ -104,14 +136,47 @@ theorem completed_extension_request_stream (old : OldWitness p program)
     exact of_decide_eq_true (by with_unfolding_all rfl)
   have hp := binaryProviderTable_other_channel
     (forwardRaw old hc hb base) old.data BinaryExtensionTableChannel.toRaw (by decide)
-  change ((completedWitness old _).verifierTable :: completedTables old _).flatMap _ = _
-  rw [completedWitness_verifierTable]
-  simp only [completedTables, commonTables, List.cons_append, List.nil_append,
-    List.flatMap_cons, List.flatMap_nil,
-    oldVerifier_lookup_silent, oldTable_lookup_silent old _ _ (Or.inr rfl),
-    he, hp, extension_consumer_requests old hc hb, extensionProviderTable_interactionsWith,
-    forwardRaw, extensionInteractions_physicalOfRequests,
-    List.nil_append, List.append_nil]
+  have hprovider :
+      (extensionProviderTable (forwardRaw old hc hb base) old.data).interactionsWith
+        BinaryExtensionTableChannel.toRaw =
+      countedSourceInteractions BinaryExtensionTableChannel
+        (fun i : Fin BinaryExtensionTable.tableSize => BinaryExtensionTable.rowOfIndex i.val)
+        (oldExtensionRequests old hc hb) := by
+    rw [extensionProviderTable_interactionsWith]
+    exact extensionInteractions_physicalOfRequests base
+      (oldBinaryRequests old hc hb) (oldExtensionRequests old hc hb)
+  change ((completedWitness old _).verifierTable :: completedTables old _).flatMap
+    (fun table => table.interactionsWith BinaryExtensionTableChannel.toRaw) = _
+  rw [completedWitness_verifierTable, List.flatMap_cons, oldVerifier_lookup_silent, List.nil_append]
+  have spine := flatMap_seventeen_consumer11_source14
+    (fun table => table.interactionsWith BinaryExtensionTableChannel.toRaw)
+    (oldTable old 0) (oldTable old 1) (oldTable old 2) (oldTable old 3)
+    (oldTable old 4) (oldTable old 5) (oldTable old 6) (oldTable old 7)
+    (oldTable old 8) (oldTable old 9) (oldTable old 10)
+    (extensionConsumerTable old) (binaryConsumerTable old) (oldTable old 13)
+    (extensionProviderTable (forwardRaw old hc hb base) old.data)
+    (binaryProviderTable (forwardRaw old hc hb base) old.data) (oldTable old 14)
+    (consumedSourceRequests BinaryExtensionTableChannel
+      (fun i : Fin BinaryExtensionTable.tableSize => BinaryExtensionTable.rowOfIndex i.val)
+      (oldExtensionRequests old hc hb))
+    (oldTable_lookup_silent old 0 _ (Or.inr rfl))
+    (oldTable_lookup_silent old 1 _ (Or.inr rfl))
+    (oldTable_lookup_silent old 2 _ (Or.inr rfl))
+    (oldTable_lookup_silent old 3 _ (Or.inr rfl))
+    (oldTable_lookup_silent old 4 _ (Or.inr rfl))
+    (oldTable_lookup_silent old 5 _ (Or.inr rfl))
+    (oldTable_lookup_silent old 6 _ (Or.inr rfl))
+    (oldTable_lookup_silent old 7 _ (Or.inr rfl))
+    (oldTable_lookup_silent old 8 _ (Or.inr rfl))
+    (oldTable_lookup_silent old 9 _ (Or.inr rfl))
+    (oldTable_lookup_silent old 10 _ (Or.inr rfl))
+    (extension_consumer_requests old hc hb) he
+    (oldTable_lookup_silent old 13 _ (Or.inr rfl)) hp
+    (oldTable_lookup_silent old 14 _ (Or.inr rfl))
+  exact spine.trans (congrArg (fun provider =>
+    consumedSourceRequests BinaryExtensionTableChannel
+      (fun i : Fin BinaryExtensionTable.tableSize => BinaryExtensionTable.rowOfIndex i.val)
+      (oldExtensionRequests old hc hb) ++ provider) hprovider)
 
 private theorem consumed_counted_balanced {Message : TypeMap} [ProvableType Message]
     {n : Nat} (channel : Channel FGL Message) (row : Fin n → Message FGL)
