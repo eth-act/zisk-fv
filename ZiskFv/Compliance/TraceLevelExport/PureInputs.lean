@@ -1,21 +1,22 @@
 import ZiskFv.Compliance.TraceLevelExport.RegisterFileAgreement
 import ZiskFv.Compliance.TraceLevelExport.PureMMulInputs
 import ZiskFv.Compliance.TraceLevelExport.PureMDivInputs
+import ZiskFv.Compliance.TraceLevelExport.PureControlInputs
 
 namespace ZiskFv.Compliance
 
 variable {n : ℕ}
 
-/-- Reconstruct43 pure ALU inputs from decoded operands and current register/PC
-agreement, not caller operand values or operand proofs. The13 M-extension
-factories preserve the complete old runtime input and all provider, range,
-remainder, forge and ISA facts. Four store families and seven loads reconstruct
-successful-read witnesses from this same induction invariant and consume
+/-- Reconstruct all63 pure runtime input families from decoded fields and current
+register/PC agreement, not caller operand values or operand proofs. The13 M
+factories retain every provider, range, remainder, forge and ISA fact. Four store
+and seven load families reconstruct successful-read witnesses and consume
 complete-old-domain constructors AND whole-input equality certificates.
-Existing facts are retained on the unchanged opcode-predicate domain.
+The nine control factories preserve the complete old branch/jump/fence inputs,
+including JALR's genuine source-row bridge, success, misa, privilege and mseccfg.
 
-No public aggregate premise is removed here. The other9 families pass through
-unchanged. The construction uses current, never all-step, soundness. -/
+No public aggregate premise or opcode-domain condition is removed here.
+The construction uses current, never all-step, soundness. -/
 noncomputable def pureInputsOfRegAgree {trace : AcceptedZiskTrace n}
     (steps : ∀ i, ZiskStep trace i)
     (rowDecodes : ∀ i, RowDecode trace i (steps i))
@@ -311,12 +312,18 @@ noncomputable def pureInputsOfRegAgree {trace : AcceptedZiskTrace n}
       remuInputsCoreOfRegAgree steps rowDecodes init i h_reg pc hpc c ia
   | .remuw c, ia =>
       remuwInputsCoreOfRegAgree steps rowDecodes init i h_reg pc hpc c ia
-  | .beq _, ia => ia
-  | .bne _, ia => ia
-  | .blt _, ia => ia
-  | .bge _, ia => ia
-  | .bltu _, ia => ia
-  | .bgeu _, ia => ia
+  | .beq c, ia =>
+      canonicalBeqInputsCore steps rowDecodes init i h_reg c pc hpc ia
+  | .bne c, ia =>
+      canonicalBneInputsCore steps rowDecodes init i h_reg c pc hpc ia
+  | .blt c, ia =>
+      canonicalBltInputsCore steps rowDecodes init i h_reg c pc hpc ia
+  | .bge c, ia =>
+      canonicalBgeInputsCore steps rowDecodes init i h_reg c pc hpc ia
+  | .bltu c, ia =>
+      canonicalBltuInputsCore steps rowDecodes init i h_reg c pc hpc ia
+  | .bgeu c, ia =>
+      canonicalBgeuInputsCore steps rowDecodes init i h_reg c pc hpc ia
   | .lui c, _ => {
       lui_input := {
         imm := c.imm
@@ -333,8 +340,10 @@ noncomputable def pureInputsOfRegAgree {trace : AcceptedZiskTrace n}
       h_input_imm := rfl
       h_input_rd := rfl
       h_input_pc := hpc }
-  | .jal _, ia => ia
-  | .jalr _, ia => ia
+  | .jal c, ia =>
+      canonicalJalInputsCore steps init i c pc hpc ia
+  | .jalr c, ia =>
+      canonicalJalrInputsCore steps rowDecodes init i h_reg c pc hpc ia
   | .sb c, ia => by
       let h_r1 : ∃ value : BitVec 64,
           read_xreg (regidx_to_fin c.r1) (chainedSailTrace steps init i) =
@@ -554,6 +563,7 @@ noncomputable def pureInputsOfRegAgree {trace : AcceptedZiskTrace n}
                 (chainedSailTrace steps init i)
               rw [construction.property]
               exact ia.h_opcode_assumptions }
-  | .fence _, ia => ia
+  | .fence c, ia =>
+      canonicalFenceInputsCore steps init i c pc hpc ia
 
 end ZiskFv.Compliance
