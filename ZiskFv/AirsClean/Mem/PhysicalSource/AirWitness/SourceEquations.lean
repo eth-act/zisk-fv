@@ -120,6 +120,8 @@ theorem mixed_source_correspondence (view : View resolved) (row : Index)
       segmentResidual, primary, baseAir, View.previous,
       ← Ext3.ofBase_add, ← Ext3.ofBase_sub, ← Ext3.ofBase_mul,
       ← Ext3.ofBase_neg]
+  all_goals
+    apply Ext3.ext <;> dsimp [Ext3.ofBase, Ext3.sourceMul] <;> ring
 
 /-- Actual c24–c32 against the independent local polynomial row. No generated
 expression is used to define either the leaf data or the target residuals. -/
@@ -144,6 +146,8 @@ theorem nonlinear_source_correspondence (view : View resolved) (row : Index)
       PolynomialRow.previousDen, PolynomialRow.nextDen,
       ← Ext3.ofBase_add, ← Ext3.ofBase_sub, ← Ext3.ofBase_mul,
       ← Ext3.ofBase_neg]
+  all_goals
+    apply Ext3.ext <;> dsimp [Ext3.ofBase, Ext3.sourceMul] <;> ring
 
 /-- Source c33 reads GROUP0, not the legacy scalar exposed AIR0. Both signs,
 the next physical-row selector and all six direct terms remain in source order. -/
