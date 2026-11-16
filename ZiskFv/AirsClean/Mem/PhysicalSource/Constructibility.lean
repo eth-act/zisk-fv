@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.Mem.PhysicalSource.Domain
+import Std.Data.HashMap.Lemmas
 
 /-! Concrete mathematical SourceObject images for nonvacuity of the internal
 physical constructor in BOTH native storage modes. The original native trace
@@ -99,7 +100,7 @@ theorem exact_setup_selected (packed : Bool) :
     SourceObject.registryEntry, ResolvedOccurrence.registryEntry, source]
 
 theorem exact_cm1 : setup.mapSectionsN["cm1"]? = some 13 := by
-  decide
+  simp [setup, Std.HashMap.getElem?_insert]
 
 theorem exact_group (packed : Bool) :
     NativeValuesLayout.groupWords? .mem ((occurrence packed).params false) =
@@ -121,22 +122,38 @@ or native-world/AIR-validity assertion is used. -/
 theorem constructor_nonvacuous (packed : Bool) :
     (fromResolved? (occurrence packed)).isSome = true := by
   unfold fromResolved?
-  simp only [exact_setup_selected, exact_cm1]
-  split_ifs with checked
-  · simp only [exact_group, exact_directs]
-    rfl
-  · apply False.elim
-    apply checked
-    change 0 = 0 ∧ 14 = 14 ∧ false = false ∧ false = false ∧
-      4194304 = physicalRows ∧ physicalRows = 4194304 ∧
-      13 = 13 ∧ (if packed then 4 else 13) = (if packed then 4 else 13) ∧
-      0 < (if packed then 4 else 13) ∧
-      4194304 * (if packed then 4 else 13) ≤ (traceBuffer packed).size ∧
-      2 = 2 ∧ 2 * 4194304 ≤ fixedBuffer.size ∧
-      FixedScan.check fixedBuffer = true
-    refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, ?_, ?_, rfl, ?_, fixedBuffer_scan⟩
-    · cases packed <;> decide
-    · simp [traceBuffer, physicalRows]
-    · simp [fixedBuffer, physicalRows]
+  split
+  · rename_i absent
+    simp [exact_setup_selected] at absent
+  · rename_i selectedSetup selected
+    have equal := Option.some.inj (selected.symm.trans (exact_setup_selected packed))
+    subst selectedSetup
+    split
+    · rename_i absent
+      simp [exact_cm1] at absent
+    · rename_i selectedCm1 selected
+      have equal := Option.some.inj (selected.symm.trans exact_cm1)
+      subst selectedCm1
+      split_ifs with checked
+      · split
+        · rename_i absent
+          simp [exact_group] at absent
+        · split
+          · rename_i absent
+            simp [exact_directs] at absent
+          · rfl
+      · apply False.elim
+        apply checked
+        change 0 = 0 ∧ 14 = 14 ∧ false = false ∧ false = false ∧
+          4194304 = physicalRows ∧ physicalRows = 4194304 ∧
+          13 = 13 ∧ (if packed then 4 else 13) = (if packed then 4 else 13) ∧
+          0 < (if packed then 4 else 13) ∧
+          4194304 * (if packed then 4 else 13) ≤ (traceBuffer packed).size ∧
+          2 = 2 ∧ 2 * 4194304 ≤ fixedBuffer.size ∧
+          FixedScan.check fixedBuffer = true
+        refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, ?_, ?_, rfl, ?_, fixedBuffer_scan⟩
+        · cases packed <;> decide
+        · simp [traceBuffer, physicalRows]
+        · simp [fixedBuffer, physicalRows]
 
 end ZiskFv.AirsClean.Mem.PhysicalSource.Constructibility
