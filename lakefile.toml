@@ -38,6 +38,7 @@ globs = ["Extraction.Circuit", "Extraction.Mem", "Extraction.MemGeneratedArtifac
   "Extraction.Buses", "Extraction.MemoryBuses",
   "Extraction.ArithRangeTable", "Extraction.SourceDimensions", "Extraction.RomSource",
   "Extraction.PackedVirtualTables", "Extraction.PublicIo",
+  "Extraction.RuntimeNativeValuesLayout",
   "Extraction.Components.BinaryAdd.Row", "Extraction.Components.BinaryAdd.Constraints",
   "Extraction.Components.BinaryAdd.Manifest"]
 

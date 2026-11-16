@@ -165,6 +165,15 @@ stdenv.mkDerivation {
       --pilout ${zisk-pilout} \
       --output $out/PublicIo.lean
 
+    # Source-profile metadata from the same locked native declarations and
+    # macro/buffer implementations, not a Rust compiler or pointer theorem.
+    ${pil-extract}/bin/pil-extract runtime-native-values-layout \
+      --traces-source ${zisk-src}/pil/src/pil_helpers/traces.rs \
+      --macro-source ${pil2-proofman-src}/macros/src/trace.rs \
+      --air-instance-source ${pil2-proofman-src}/common/src/air_instance.rs \
+      --proof-context-source ${pil2-proofman-src}/common/src/proof_ctx.rs \
+      --output $out/RuntimeNativeValuesLayout.lean
+
     # Reviewed byte-identical Clean component source.  Maintained modules
     # re-export these generated declarations instead of carrying a weld copy.
     mkdir -p $out/Components/BinaryAdd

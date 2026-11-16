@@ -816,3 +816,23 @@ snapshots keep their original hashes and paths.
 This is a reproducible construction/data fixture, not universal serializer
 equivalence, a completed guest execution, source-witness correlation, or
 verifier-public-I/O/Sail binding.
+
+## Native value source-profile metadata
+
+`pil-extract runtime-native-values-layout` reads the locked ZisK trace-value
+declarations and the locked proofman's macro, AirInstance and ProofCtx sources.
+The normal extraction derivation emits `Extraction.RuntimeNativeValuesLayout`;
+the closed generated inventory and Lake graph compile it. `NativeValuesLayout`
+checks independent source-profile contracts for Main's eight AIR values, padding
+scalars, separate three-word GROUP values and Mem's six direct extension values.
+All projections select buffers from one registry-authoritative source object.
+Slot metadata labels are retained, not required equal to registry labels.
+
+The supporting source-image/readers are additive mathematical models, not new
+Accepted/Root premises. Native-to-image materialization, compiled-operand/PIL
+identity, machine addresses and actual full physical row coverage remain
+unproved. In particular their field-valued trace image is not a lossless
+representation of native packed UInt64 bits; packed stage-one readers remain
+explicitly unsupported. No missing word becomes zero. The source-profile
+metadata proves neither Rust/C ABI correctness nor final public-I/O/Sail binding,
+once-instance/provider composition, or completion of #371/#372/#413/#418.
