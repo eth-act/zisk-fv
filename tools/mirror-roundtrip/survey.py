@@ -388,6 +388,11 @@ CLASSIFICATION: dict[tuple[str, str], Entry] = {
            "Option-valued interpretation of a supplied Expr, not a row predicate; "
            "Model.lean:40 Source.eval fails closed and GsumBoundary.lean "
            "*_finalizer_typed_source_iff supplies the actual source bindings"),
+    ("ZiskFv/AirsClean/ByteMemoryPhysicalRows.lean", "Supported"):
+        _e("NEAR_DATA", note=
+           "checked selected-native setup/profile, finite buffer geometry and "
+           "fixed L1 scan; no row polynomial or source-authentication claim; "
+           "ByteMemoryDirectSource separately binds the actual typed Direct AST"),
     # Typed Mem source views restate only the already challenge/stage-2 c24-c33
     # protocol. These entries classify new predicates, not new source exclusions.
     ("ZiskFv/AirsClean/Mem/SourceFinalizer.lean", "Holds"):
