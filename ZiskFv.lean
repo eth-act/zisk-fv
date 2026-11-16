@@ -370,3 +370,12 @@ import ZiskFv.AirsClean.Mem.Stage2.Native
 import ZiskFv.AirsClean.Mem.Stage2.PolynomialRow
 import ZiskFv.AirsClean.Mem.Stage2.Literals
 import ZiskFv.AirsClean.Mem.Stage2.Local
+import ZiskFv.AirsClean.ByteMemoryCompiledPadding
+import ZiskFv.AirsClean.ByteMemoryPadding
+import ZiskFv.AirsClean.ByteMemoryTraceProfiles
+import ZiskFv.AirsClean.ByteMemoryLogicalRows
+import ZiskFv.AirsClean.ByteMemorySourceOperations
+import ZiskFv.AirsClean.ByteMemoryPhysicalRows
+import ZiskFv.AirsClean.ByteMemorySourceProjection
+import ZiskFv.AirsClean.ByteMemoryDirectSource
+import ZiskFv.AirsClean.NativeByteInstance
