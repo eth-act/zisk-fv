@@ -40,8 +40,6 @@ theorem checkFrom_sound (fixed : Array FGL) (first count : Nat)
       | succ index =>
         have tail := ih (first + 1) checked index (by omega)
         simpa [Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using tail
-    · contradiction
-    · contradiction
 
 theorem checkFrom_complete (fixed : Array FGL) (first count : Nat)
     (values : ∀ index, index < count →
