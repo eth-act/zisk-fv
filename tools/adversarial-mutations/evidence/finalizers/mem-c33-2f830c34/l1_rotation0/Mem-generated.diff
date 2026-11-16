@@ -1,0 +1,10 @@
+--- /tmp/mem-c33-real-source-controls.pk6x1Z/baseline/Extraction/Mem.lean	2026-11-15 23:42:43.062425138 -0500
++++ /tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/Extraction/Mem.lean	2026-11-15 23:49:48.174448241 -0500
+@@ -244,6 +244,6 @@
+   -- Mixed witness/challenge constraint emitted for single-field circuits.
+   def constraint_33_every_row {C : Type → Type → Sort u} {F : Type} [Field F] [Extraction.Circuit F F C] (c : C F F) (row: ℕ) :=
+     -- std_sum.pil:696 __L1__'*((Zisk.gsum_result-gsum)-(((((Mem.im_direct[0]+Mem.im_direct[1])+Mem.im_direct[2])+Mem.im_direct[3])+Mem.im_direct[4])+Mem.im_direct[5]))
+-    (((Extraction.Circuit.preprocessed c (column := 1) (row := row + 1) (rotation := 0)) * (((Extraction.Circuit.exposed c (index := 0)) - (Extraction.Circuit.main c (id := 2) (column := 0) (row := row) (rotation := 0))) - ((((((Extraction.Circuit.exposed c (index := 15)) + (Extraction.Circuit.exposed c (index := 16))) + (Extraction.Circuit.exposed c (index := 17))) + (Extraction.Circuit.exposed c (index := 18))) + (Extraction.Circuit.exposed c (index := 19))) + (Extraction.Circuit.exposed c (index := 20)))))) = 0
++    (((Extraction.Circuit.preprocessed c (column := 1) (row := row) (rotation := 0)) * (((Extraction.Circuit.exposed c (index := 0)) - (Extraction.Circuit.main c (id := 2) (column := 0) (row := row) (rotation := 0))) - ((((((Extraction.Circuit.exposed c (index := 15)) + (Extraction.Circuit.exposed c (index := 16))) + (Extraction.Circuit.exposed c (index := 17))) + (Extraction.Circuit.exposed c (index := 18))) + (Extraction.Circuit.exposed c (index := 19))) + (Extraction.Circuit.exposed c (index := 20)))))) = 0
+ 
+ end Mem.extraction

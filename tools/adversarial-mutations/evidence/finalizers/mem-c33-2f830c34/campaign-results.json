@@ -1,0 +1,1054 @@
+{
+  "scope": "actual compiled-source fidelity only",
+  "sourceHead": "19f0ba22e238dc87b226e99c0040cf5a36841ef1",
+  "independentEquationBaseline": "dc7cc4d6d692cf1067af769b1abb84158af0f73f",
+  "inputSHA256": "e816e4fd728fae4b0b55cac6da01312adf72afe152fe22a47da7610cf0338e6f",
+  "cliSHA256": "17fc67a03691ef4e42c3bcc5c5d17939e88c6d6ab42e44b8f6c352f4771e3585",
+  "mutatorSHA256": "73c160b49e0c60e9a65cf813f9a2aa70dbf576dfec8b4d7d8d96e55fcc9dbe0c",
+  "immutableProbeSHA256": "65961eb970658dfd9708e6ae7708e4f497cc502896834a5ceb8cd8f462ddfca4",
+  "proofTarget": "MemC33SourceFidelity.mem_c33_actual_compiled_source_fidelity",
+  "cases": {
+    "baseline": {
+      "steps": {
+        "source_mutation": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/mem-c33-pilout-mutate",
+            "--input",
+            "/home/cody/zisk-fv-closure-extractor/build/zisk.pilout",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/input.pilout",
+            "--case",
+            "baseline",
+            "--report",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/source-change.json"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.162,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/source_mutation.log"
+        },
+        "normal_lookup_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "lookup-wiring",
+            "--pilout",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/input.pilout",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/Extraction/LookupWiring.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.356,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/normal_lookup_producer.log"
+        },
+        "normal_full_mem_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "air",
+            "--pilout",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/input.pilout",
+            "--air",
+            "Mem",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/Extraction/Mem.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.15,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/normal_full_mem_producer.log"
+        },
+        "generated_LookupWiring": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/LookupWiring.olean\" \"$1/Extraction/LookupWiring.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline"
+          ],
+          "exit": 0,
+          "wallSeconds": 36.292,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/generated_LookupWiring.log"
+        },
+        "generated_Mem": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Mem.olean\" \"$1/Extraction/Mem.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline"
+          ],
+          "exit": 0,
+          "wallSeconds": 7.07,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/generated_Mem-attempt2.log"
+        },
+        "normal_circuit_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "circuit-shim",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/Extraction/Circuit.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.019,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/normal_circuit_producer.log"
+        },
+        "generated_Circuit": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Circuit.olean\" \"$1/Extraction/Circuit.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline"
+          ],
+          "exit": 0,
+          "wallSeconds": 25.542,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/generated_Circuit.log"
+        },
+        "named_source_fidelity": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" \"$1/MemC33SourceFidelity.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline"
+          ],
+          "exit": 0,
+          "wallSeconds": 7.455,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/named_source_fidelity.log"
+        }
+      },
+      "status": "GREEN_control",
+      "sourceSHA256": "e816e4fd728fae4b0b55cac6da01312adf72afe152fe22a47da7610cf0338e6f",
+      "lookupSHA256": "c44807d618d000f2a3456b5c0a9af9e2dbb728df31725df1cb2cd7a1d097ff8c",
+      "memSHA256": "749ea99f75482225cf14ddc0025766afe348b739d974ff7f8040d94d3ad63af3",
+      "mutation": {
+        "air": 14,
+        "case": "baseline",
+        "constraint": 33,
+        "generated_Lean_edited": false,
+        "group": 0,
+        "group_declarations": 1,
+        "input_bytes": 4417266,
+        "layer": "actual production compiled PilOut protobuf",
+        "new_expressions": 281,
+        "new_root": 239,
+        "original_expressions": 281,
+        "original_root": 239,
+        "output_bytes": 4417266,
+        "semantic_changes": 0,
+        "source_schema_and_reference_checks": "passed"
+      },
+      "failedAttempts": {
+        "normal_circuit_producer": [],
+        "generated_Circuit": [],
+        "generated_Mem": [
+          {
+            "command": [
+              "lake",
+              "env",
+              "bash",
+              "-c",
+              "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Mem.olean\" \"$1/Extraction/Mem.lean\"",
+              "_",
+              "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline"
+            ],
+            "exit": 1,
+            "wallSeconds": 2.725,
+            "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/baseline/generated_Mem.log"
+          }
+        ],
+        "named_source_fidelity": []
+      }
+    },
+    "neutral_clone": {
+      "steps": {
+        "source_mutation": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/mem-c33-pilout-mutate",
+            "--input",
+            "/home/cody/zisk-fv-closure-extractor/build/zisk.pilout",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/input.pilout",
+            "--case",
+            "neutral_clone",
+            "--report",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/source-change.json"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.386,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/source_mutation.log"
+        },
+        "normal_circuit_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "circuit-shim",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/Extraction/Circuit.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.002,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/normal_circuit_producer.log"
+        },
+        "normal_lookup_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "lookup-wiring",
+            "--pilout",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/input.pilout",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/Extraction/LookupWiring.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.35,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/normal_lookup_producer.log"
+        },
+        "normal_full_mem_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "air",
+            "--pilout",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/input.pilout",
+            "--air",
+            "Mem",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/Extraction/Mem.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.14,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/normal_full_mem_producer.log"
+        },
+        "generated_Circuit": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Circuit.olean\" \"$1/Extraction/Circuit.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone"
+          ],
+          "exit": 0,
+          "wallSeconds": 7.399,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/generated_Circuit.log"
+        },
+        "generated_LookupWiring": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/LookupWiring.olean\" \"$1/Extraction/LookupWiring.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone"
+          ],
+          "exit": 0,
+          "wallSeconds": 19.131,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/generated_LookupWiring.log"
+        },
+        "generated_Mem": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Mem.olean\" \"$1/Extraction/Mem.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone"
+          ],
+          "exit": 0,
+          "wallSeconds": 9.338,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/generated_Mem.log"
+        },
+        "named_source_fidelity": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" \"$1/MemC33SourceFidelity.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone"
+          ],
+          "exit": 0,
+          "wallSeconds": 6.664,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/neutral_clone/named_source_fidelity.log"
+        }
+      },
+      "status": "GREEN_control",
+      "failedAttempts": {
+        "source_mutation": [],
+        "normal_circuit_producer": [],
+        "normal_lookup_producer": [],
+        "normal_full_mem_producer": [],
+        "generated_Circuit": [],
+        "generated_LookupWiring": [],
+        "generated_Mem": [],
+        "named_source_fidelity": []
+      },
+      "sourceSHA256": "8352f6314dce58b5cce17beb5058abcb8109f422a1344bba504802c4bc14df6f",
+      "lookupSHA256": "c44807d618d000f2a3456b5c0a9af9e2dbb728df31725df1cb2cd7a1d097ff8c",
+      "memSHA256": "749ea99f75482225cf14ddc0025766afe348b739d974ff7f8040d94d3ad63af3",
+      "mutation": {
+        "air": 14,
+        "case": "neutral_clone",
+        "constraint": 33,
+        "generated_Lean_edited": false,
+        "group": 0,
+        "group_declarations": 1,
+        "input_bytes": 4417266,
+        "layer": "actual production compiled PilOut protobuf",
+        "new_expressions": 289,
+        "new_root": 288,
+        "original_expressions": 281,
+        "original_root": 239,
+        "output_bytes": 4265296,
+        "semantic_changes": 0,
+        "source_schema_and_reference_checks": "passed"
+      }
+    },
+    "group_to_air0": {
+      "steps": {
+        "source_mutation": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/mem-c33-pilout-mutate",
+            "--input",
+            "/home/cody/zisk-fv-closure-extractor/build/zisk.pilout",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/input.pilout",
+            "--case",
+            "group_to_air0",
+            "--report",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/source-change.json"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.395,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/source_mutation.log"
+        },
+        "normal_circuit_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "circuit-shim",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/Extraction/Circuit.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.005,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/normal_circuit_producer.log"
+        },
+        "normal_lookup_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "lookup-wiring",
+            "--pilout",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/input.pilout",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/Extraction/LookupWiring.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.358,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/normal_lookup_producer.log"
+        },
+        "normal_full_mem_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "air",
+            "--pilout",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/input.pilout",
+            "--air",
+            "Mem",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/Extraction/Mem.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.14,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/normal_full_mem_producer.log"
+        },
+        "generated_Circuit": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Circuit.olean\" \"$1/Extraction/Circuit.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0"
+          ],
+          "exit": 0,
+          "wallSeconds": 8.805,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/generated_Circuit.log"
+        },
+        "generated_LookupWiring": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/LookupWiring.olean\" \"$1/Extraction/LookupWiring.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0"
+          ],
+          "exit": 0,
+          "wallSeconds": 24.118,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/generated_LookupWiring.log"
+        },
+        "generated_Mem": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Mem.olean\" \"$1/Extraction/Mem.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0"
+          ],
+          "exit": 0,
+          "wallSeconds": 9.592,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/generated_Mem.log"
+        },
+        "named_source_fidelity": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" \"$1/MemC33SourceFidelity.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0"
+          ],
+          "exit": 1,
+          "wallSeconds": 8.302,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_to_air0/named_source_fidelity.log"
+        }
+      },
+      "status": "REJECTED_named_source_fidelity",
+      "failedAttempts": {
+        "source_mutation": [],
+        "normal_circuit_producer": [],
+        "normal_lookup_producer": [],
+        "normal_full_mem_producer": [],
+        "generated_Circuit": [],
+        "generated_LookupWiring": [],
+        "generated_Mem": [],
+        "named_source_fidelity": []
+      },
+      "sourceSHA256": "c015528f36440ee17951dcfd5cd031c3bdcf04a4cd120e5f7ddcce00be82b171",
+      "lookupSHA256": "d7e7b940f533374c3d4ea36bbdfb75bfa073a83acc36c39b113347dab59cd6bf",
+      "memSHA256": "749ea99f75482225cf14ddc0025766afe348b739d974ff7f8040d94d3ad63af3",
+      "mutation": {
+        "air": 14,
+        "case": "group_to_air0",
+        "constraint": 33,
+        "generated_Lean_edited": false,
+        "group": 0,
+        "group_declarations": 1,
+        "input_bytes": 4417266,
+        "layer": "actual production compiled PilOut protobuf",
+        "new_expressions": 289,
+        "new_root": 288,
+        "original_expressions": 281,
+        "original_root": 239,
+        "output_bytes": 4265296,
+        "semantic_changes": 1,
+        "source_schema_and_reference_checks": "passed"
+      },
+      "killLayer": "kernel-checked source fidelity of real compiled PilOut input, not native execution or numeric logUp"
+    },
+    "group_index1": {
+      "steps": {
+        "source_mutation": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/mem-c33-pilout-mutate",
+            "--input",
+            "/home/cody/zisk-fv-closure-extractor/build/zisk.pilout",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/input.pilout",
+            "--case",
+            "group_index1",
+            "--report",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/source-change.json"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.376,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/source_mutation.log"
+        },
+        "normal_circuit_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "circuit-shim",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/Extraction/Circuit.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.003,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/normal_circuit_producer.log"
+        },
+        "normal_lookup_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "lookup-wiring",
+            "--pilout",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/input.pilout",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/Extraction/LookupWiring.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.352,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/normal_lookup_producer.log"
+        },
+        "normal_full_mem_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "air",
+            "--pilout",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/input.pilout",
+            "--air",
+            "Mem",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/Extraction/Mem.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.14,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/normal_full_mem_producer.log"
+        },
+        "generated_Circuit": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Circuit.olean\" \"$1/Extraction/Circuit.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1"
+          ],
+          "exit": 0,
+          "wallSeconds": 6.696,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/generated_Circuit.log"
+        },
+        "generated_LookupWiring": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/LookupWiring.olean\" \"$1/Extraction/LookupWiring.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1"
+          ],
+          "exit": 0,
+          "wallSeconds": 14.612,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/generated_LookupWiring.log"
+        },
+        "generated_Mem": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Mem.olean\" \"$1/Extraction/Mem.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1"
+          ],
+          "exit": 0,
+          "wallSeconds": 6.554,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/generated_Mem.log"
+        },
+        "named_source_fidelity": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" \"$1/MemC33SourceFidelity.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1"
+          ],
+          "exit": 1,
+          "wallSeconds": 5.072,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/named_source_fidelity.log"
+        }
+      },
+      "status": "REJECTED_named_source_fidelity",
+      "failedAttempts": {
+        "source_mutation": [],
+        "normal_circuit_producer": [],
+        "normal_lookup_producer": [],
+        "normal_full_mem_producer": [],
+        "generated_Circuit": [],
+        "generated_LookupWiring": [],
+        "generated_Mem": [],
+        "named_source_fidelity": []
+      },
+      "sourceSHA256": "0a764da467476609791161c6f4317b0c763447cc5ae65112ab6139b12bac2eb4",
+      "lookupSHA256": "de70f36a68798d810f8eca2757e323d2e16548c28d7fad3046e798bb9d0737cf",
+      "memSHA256": "642ab5ae37d7dd610c17344df7fa6b47a326f890f62a703b0fe5c2ffaf16fc10",
+      "mutation": {
+        "air": 14,
+        "case": "group_index1",
+        "constraint": 33,
+        "generated_Lean_edited": false,
+        "group": 0,
+        "group_declarations": 2,
+        "input_bytes": 4417266,
+        "layer": "actual production compiled PilOut protobuf",
+        "new_expressions": 289,
+        "new_root": 288,
+        "original_expressions": 281,
+        "original_root": 239,
+        "output_bytes": 4265347,
+        "semantic_changes": 1,
+        "source_schema_and_reference_checks": "passed"
+      },
+      "killLayer": "kernel-checked source fidelity of real compiled PilOut input, not native execution or numeric logUp"
+    },
+    "direct_sign": {
+      "steps": {
+        "source_mutation": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/mem-c33-pilout-mutate",
+            "--input",
+            "/home/cody/zisk-fv-closure-extractor/build/zisk.pilout",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/input.pilout",
+            "--case",
+            "direct_sign",
+            "--report",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/source-change.json"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.374,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/source_mutation.log"
+        },
+        "normal_circuit_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "circuit-shim",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/Extraction/Circuit.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.002,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/normal_circuit_producer.log"
+        },
+        "normal_lookup_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "lookup-wiring",
+            "--pilout",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/input.pilout",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/Extraction/LookupWiring.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.357,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/normal_lookup_producer.log"
+        },
+        "normal_full_mem_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "air",
+            "--pilout",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/input.pilout",
+            "--air",
+            "Mem",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/Extraction/Mem.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.134,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/normal_full_mem_producer.log"
+        },
+        "generated_Circuit": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Circuit.olean\" \"$1/Extraction/Circuit.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign"
+          ],
+          "exit": 0,
+          "wallSeconds": 5.199,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/generated_Circuit.log"
+        },
+        "generated_LookupWiring": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/LookupWiring.olean\" \"$1/Extraction/LookupWiring.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign"
+          ],
+          "exit": 0,
+          "wallSeconds": 14.339,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/generated_LookupWiring.log"
+        },
+        "generated_Mem": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Mem.olean\" \"$1/Extraction/Mem.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign"
+          ],
+          "exit": 0,
+          "wallSeconds": 5.948,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/generated_Mem.log"
+        },
+        "named_source_fidelity": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" \"$1/MemC33SourceFidelity.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign"
+          ],
+          "exit": 1,
+          "wallSeconds": 4.579,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/direct_sign/named_source_fidelity.log"
+        }
+      },
+      "status": "REJECTED_named_source_fidelity",
+      "failedAttempts": {
+        "source_mutation": [],
+        "normal_circuit_producer": [],
+        "normal_lookup_producer": [],
+        "normal_full_mem_producer": [],
+        "generated_Circuit": [],
+        "generated_LookupWiring": [],
+        "generated_Mem": [],
+        "named_source_fidelity": []
+      },
+      "sourceSHA256": "3a8e403e949cea07660121be6cc7fdce8657f4ff3a8ad6e35dda4c9a587b9225",
+      "lookupSHA256": "9d06fe27465f70be5c5b1e97e6fde32c88fc2658e460350ebc4a63fa571b0f7f",
+      "memSHA256": "7804c239590e2ec92b38c0875a4d5fb976c3ae51e0ecb86bc088acf2c30ed4a2",
+      "mutation": {
+        "air": 14,
+        "case": "direct_sign",
+        "constraint": 33,
+        "generated_Lean_edited": false,
+        "group": 0,
+        "group_declarations": 1,
+        "input_bytes": 4417266,
+        "layer": "actual production compiled PilOut protobuf",
+        "new_expressions": 289,
+        "new_root": 288,
+        "original_expressions": 281,
+        "original_root": 239,
+        "output_bytes": 4265296,
+        "semantic_changes": 1,
+        "source_schema_and_reference_checks": "passed"
+      },
+      "killLayer": "kernel-checked source fidelity of real compiled PilOut input, not native execution or numeric logUp"
+    },
+    "drop_direct5": {
+      "steps": {
+        "source_mutation": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/mem-c33-pilout-mutate",
+            "--input",
+            "/home/cody/zisk-fv-closure-extractor/build/zisk.pilout",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/input.pilout",
+            "--case",
+            "drop_direct5",
+            "--report",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/source-change.json"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.369,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/source_mutation.log"
+        },
+        "normal_circuit_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "circuit-shim",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/Extraction/Circuit.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.003,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/normal_circuit_producer.log"
+        },
+        "normal_lookup_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "lookup-wiring",
+            "--pilout",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/input.pilout",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/Extraction/LookupWiring.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.343,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/normal_lookup_producer.log"
+        },
+        "normal_full_mem_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "air",
+            "--pilout",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/input.pilout",
+            "--air",
+            "Mem",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/Extraction/Mem.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.136,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/normal_full_mem_producer.log"
+        },
+        "generated_Circuit": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Circuit.olean\" \"$1/Extraction/Circuit.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5"
+          ],
+          "exit": 0,
+          "wallSeconds": 6.312,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/generated_Circuit.log"
+        },
+        "generated_LookupWiring": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/LookupWiring.olean\" \"$1/Extraction/LookupWiring.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5"
+          ],
+          "exit": 0,
+          "wallSeconds": 14.992,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/generated_LookupWiring.log"
+        },
+        "generated_Mem": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Mem.olean\" \"$1/Extraction/Mem.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5"
+          ],
+          "exit": 0,
+          "wallSeconds": 7.302,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/generated_Mem.log"
+        },
+        "named_source_fidelity": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" \"$1/MemC33SourceFidelity.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5"
+          ],
+          "exit": 1,
+          "wallSeconds": 5.565,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/named_source_fidelity.log"
+        }
+      },
+      "status": "REJECTED_named_source_fidelity",
+      "failedAttempts": {
+        "source_mutation": [],
+        "normal_circuit_producer": [],
+        "normal_lookup_producer": [],
+        "normal_full_mem_producer": [],
+        "generated_Circuit": [],
+        "generated_LookupWiring": [],
+        "generated_Mem": [],
+        "named_source_fidelity": []
+      },
+      "sourceSHA256": "ba22f57ad94a9fcb002c2a092688c29322e8362cd174bfb48f472e332236962e",
+      "lookupSHA256": "f0a76065865658968f7a621e5e05a833ca2d878e624d712ef3da3c61f1f01e9b",
+      "memSHA256": "feade3884293deb00e6907a7c84c184a4a765fd364f3a4f77daace1f90ab04a1",
+      "mutation": {
+        "air": 14,
+        "case": "drop_direct5",
+        "constraint": 33,
+        "generated_Lean_edited": false,
+        "group": 0,
+        "group_declarations": 1,
+        "input_bytes": 4417266,
+        "layer": "actual production compiled PilOut protobuf",
+        "new_expressions": 289,
+        "new_root": 288,
+        "original_expressions": 281,
+        "original_root": 239,
+        "output_bytes": 4265296,
+        "semantic_changes": 1,
+        "source_schema_and_reference_checks": "passed"
+      },
+      "killLayer": "kernel-checked source fidelity of real compiled PilOut input, not native execution or numeric logUp"
+    },
+    "l1_rotation0": {
+      "steps": {
+        "source_mutation": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/mem-c33-pilout-mutate",
+            "--input",
+            "/home/cody/zisk-fv-closure-extractor/build/zisk.pilout",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/input.pilout",
+            "--case",
+            "l1_rotation0",
+            "--report",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/source-change.json"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.374,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/source_mutation.log"
+        },
+        "normal_circuit_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "circuit-shim",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/Extraction/Circuit.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.002,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/normal_circuit_producer.log"
+        },
+        "normal_lookup_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "lookup-wiring",
+            "--pilout",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/input.pilout",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/Extraction/LookupWiring.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.376,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/normal_lookup_producer.log"
+        },
+        "normal_full_mem_producer": {
+          "command": [
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/bin/pil-extract",
+            "air",
+            "--pilout",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/input.pilout",
+            "--air",
+            "Mem",
+            "--output",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/Extraction/Mem.lean"
+          ],
+          "exit": 0,
+          "wallSeconds": 0.135,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/normal_full_mem_producer.log"
+        },
+        "generated_Circuit": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Circuit.olean\" \"$1/Extraction/Circuit.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0"
+          ],
+          "exit": 0,
+          "wallSeconds": 4.475,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/generated_Circuit.log"
+        },
+        "generated_LookupWiring": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/LookupWiring.olean\" \"$1/Extraction/LookupWiring.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0"
+          ],
+          "exit": 0,
+          "wallSeconds": 14.078,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/generated_LookupWiring.log"
+        },
+        "generated_Mem": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" -o \"$1/olean/Extraction/Mem.olean\" \"$1/Extraction/Mem.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0"
+          ],
+          "exit": 0,
+          "wallSeconds": 5.781,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/generated_Mem.log"
+        },
+        "named_source_fidelity": {
+          "command": [
+            "lake",
+            "env",
+            "bash",
+            "-c",
+            "export LEAN_PATH=\"$1/olean:$LEAN_PATH\"; exec lean -j2 -R \"$1\" \"$1/MemC33SourceFidelity.lean\"",
+            "_",
+            "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0"
+          ],
+          "exit": 1,
+          "wallSeconds": 4.814,
+          "log": "/tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/named_source_fidelity.log"
+        }
+      },
+      "status": "REJECTED_named_source_fidelity",
+      "failedAttempts": {
+        "source_mutation": [],
+        "normal_circuit_producer": [],
+        "normal_lookup_producer": [],
+        "normal_full_mem_producer": [],
+        "generated_Circuit": [],
+        "generated_LookupWiring": [],
+        "generated_Mem": [],
+        "named_source_fidelity": []
+      },
+      "sourceSHA256": "ecca3b507191947e3766db2ada0e8e198a85741ccabc4499914318594e6255de",
+      "lookupSHA256": "5fee7760e690cde36160a29714e45ae1be3cde09ce81b927586bb1131f83d761",
+      "memSHA256": "1725e1e48c01bb9d1741bca99f2baefaddc4c43a257c6b7071267ea3eb1c9e89",
+      "mutation": {
+        "air": 14,
+        "case": "l1_rotation0",
+        "constraint": 33,
+        "generated_Lean_edited": false,
+        "group": 0,
+        "group_declarations": 1,
+        "input_bytes": 4417266,
+        "layer": "actual production compiled PilOut protobuf",
+        "new_expressions": 289,
+        "new_root": 288,
+        "original_expressions": 281,
+        "original_root": 239,
+        "output_bytes": 4265294,
+        "semantic_changes": 1,
+        "source_schema_and_reference_checks": "passed"
+      },
+      "killLayer": "kernel-checked source fidelity of real compiled PilOut input, not native execution or numeric logUp"
+    }
+  },
+  "status": "GREEN_baseline_and_neutral_5_valid_source_mutants_rejected",
+  "noNixNoNode": true,
+  "noGeneratedLeanMutation": true,
+  "noNativeAuthOrLiveMemClosureClaim": true
+}

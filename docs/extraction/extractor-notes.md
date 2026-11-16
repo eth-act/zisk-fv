@@ -867,3 +867,46 @@ channels, not just a selected assertion slice. These internal constructors and
 proofs do not establish native materialization, full physical/once-instance
 coverage, accepted-world correlation, completion or verifier-public-I/O/Sail
 binding.
+
+## Internal typed Mem stage-2 source equations (build-only)
+
+The ordinary `ZiskFv` build imports eight additive `Mem.SourceFinalizer*` and
+`Mem.Stage2.*` leaves. They check exact pinned source c24–c32 polynomial
+equations and the separate c33 finalizer, preserving extension coefficients,
+AIR/GROUP kinds, challenge stages/indices, selectors, signs, multiplicities and
+signed row rotations. Cubic multiplication follows the pinned proofman's
+`X^3 - X - 1` arithmetic with base embedding `(a,0,0)`; no extension `Field` or
+invented inverse is assumed. The typed row factory reads one source occurrence,
+and its checked postcondition identifies all nine nonlinear residuals.
+
+This is build-only internal source/model evidence. Genuine local base-field
+inverse feasibility is not native or honest full-trace materialization. The
+existing public Mem c33 wrong-kind defect is **not repaired**. No protected
+`Valid_Mem`/component/table/Accepted/Root interface or numeric balance TCB is
+changed, and these imports claim no live Root/provider credit. Packed stage-one
+coverage, native/PIL operand and opening identity, snapshot/machine bindings and
+the protected Mem scalar-to-Ext3 proposal remain open.
+
+The genuine compiled-source c33 baseline/neutral/rejection campaign is retained
+under `tools/adversarial-mutations/evidence/finalizers/mem-c33-2f830c34/`.
+Historical changed-type 898-root evidence is retained separately under
+`tools/adversarial-mutations/evidence/finalizers/mem-sourceword-eea4dc86/`;
+it is not silently relabeled as this clean-base integration's CI evidence.
+
+On the exact clean `0e5ded41…` base, checkpoint `90ce939c…` builds all eight
+leaves plus ordinary `ZiskFv`/`ZiskFv.Audit` targets (9,247 jobs). A fresh
+opaque-aware RAW audit covers every defining-module declaration of all eight
+leaves, including the 44-declaration `SourceFinalizerEquation` module; every
+root and each union agree with Lean's collector with only the standard three
+axioms. Source inventory, exact normal 32-file generation-copy hashes and
+complete gate logs are retained under
+`tools/adversarial-mutations/evidence/finalizers/mem-clean-90ce939c/`.
+These are the clean internal-scope checks, not whole-production/V1/V2/Nix
+completion or a live Mem/public c33 repair.
+
+The mirror inventory explicitly classifies the six additional Mem protocol
+predicates under its existing challenge/stage-2 category. These are the same
+source c24–c33 already outside that checker's stage-1 polynomial comparison,
+not new source exclusions or changes to its 176 comparable entries. The typed
+AST/row proofs above provide their separate build-only correspondence; the
+live scalar Mem model is still not thereby repaired.

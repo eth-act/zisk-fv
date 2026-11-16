@@ -1,0 +1,143 @@
+{
+  "status": "not-used-independent-current-recipe-source3-raw-passed",
+  "owner_source": "34cae22f",
+  "owner_evidence": "62c21165",
+  "owner_directory": "/home/cody/zisk-fv-writebyte/tools/adversarial-mutations/evidence/writebyte/trace-word-34cae22f",
+  "requested_reuse_scope": [
+    "RawSource",
+    "NativeTraceWords",
+    "SourceInstance",
+    "SourceLiterals"
+  ],
+  "not_claimed_as_own_run": true,
+  "actual_owner_raw_roots": 923,
+  "actual_owner_constants": 12196,
+  "actual_owner_module_counts": {
+    "ZiskFv.AirsClean.MemAlignWriteByte.RawByteSource": 134,
+    "ZiskFv.AirsClean.MemAlignWriteByte.SourceLiterals": 15,
+    "ZiskFv.AirsClean.MemAlignWriteByte.RawSource": 309,
+    "ZiskFv.AirsClean.MemAlignWriteByte.CompiledOperand": 229,
+    "ZiskFv.AirsClean.MemAlignWriteByte.SourceInstance": 214,
+    "ZiskFv.AirsClean.MemAlignWriteByte.NativeTraceWords": 22
+  },
+  "raw_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "metadata": {
+    "checked_source_commit": "34cae22f",
+    "six_modules": [
+      "RawSource",
+      "SourceLiterals",
+      "RawByteSource",
+      "NativeTraceWords",
+      "SourceInstance",
+      "CompiledOperand"
+    ],
+    "capture": "Read-only provenance from actual successful six-module gate traces and frozen inputs; no verification rerun",
+    "lean_version": "Lean4.28.0 commit7e01a1bf5c70fc6167d49c345d3bf80596e9a79b",
+    "environment": {
+      "LEAN_NUM_THREADS": "2",
+      "CARGO_BUILD_JOBS": "2"
+    },
+    "raw_argv": "lake env lean -j2 build/writebyte-trace-word-evidence/raw-closure.lean",
+    "collector": "Installed Lean.Util.CollectAxioms; EACH root plus union independently crosschecked against full type/defn/thm/opaque/ctor reference graph",
+    "native_source_commit": "ff0e33a9b40f2467b35ef26aa2aabb4a624dfed3",
+    "native_source_nar": "sha256-d96RLAolTCoP2zs6R+Q6Zi/JpmvyJApgijZ5eoVVVNU=",
+    "native_source_hash_file": "../native-sources.sha256",
+    "native_conversion_contract": "goldilocks.rs19\u201323 UInt64 backing/P and246\u2013255 as_canonical_u64 subtracts P once iff raw>=P; canonicalNat_mod proves concrete FGL quotient on ALL UInt64 words",
+    "original_buffer_contract": "trace.rs129\u2013164 stores originallen/cap/element_size,175\u2013194 restores original full len not N*logicalwidth;235\u2013274 forwards SAME store and R::IS_PACKED; AirInstance/Params image retains metadata/store separately",
+    "unproved": "Rust/FFI ABI/native-memory-to-wordstore materialization, actual native/PILglobalid/serializedMemc33/setup binding, packed/GPU/machine address and physicaltable/publicInput/Accepted integration",
+    "historical_graphs": "Old5338/669/805/f1f are historical ONLY, not newtype evidence"
+  },
+  "checked_hashes": [
+    {
+      "path": "ZiskFv/AirsClean/MemAlignWriteByte/RawSource.lean",
+      "actual_sha256": "aa3b7041d338b86692f1f9f65b2f190b4dd9a0ba22587d9f81d8551a79f20121",
+      "owner_sha256": "aa3b7041d338b86692f1f9f65b2f190b4dd9a0ba22587d9f81d8551a79f20121",
+      "match": true
+    },
+    {
+      "path": "ZiskFv/AirsClean/MemAlignWriteByte/SourceLiterals.lean",
+      "actual_sha256": "40d19ab9a34501f34da3d52a223d2e9edb5ca4c7b0b2b4083ca2db6179a796dc",
+      "owner_sha256": "40d19ab9a34501f34da3d52a223d2e9edb5ca4c7b0b2b4083ca2db6179a796dc",
+      "match": true
+    },
+    {
+      "path": "ZiskFv/AirsClean/MemAlignWriteByte/NativeTraceWords.lean",
+      "actual_sha256": "1bcfebcbb2e01355e3551b6895ab11613fef28887823c4d52b68cf2fb8abf407",
+      "owner_sha256": "1bcfebcbb2e01355e3551b6895ab11613fef28887823c4d52b68cf2fb8abf407",
+      "match": true
+    },
+    {
+      "path": "ZiskFv/AirsClean/MemAlignWriteByte/SourceInstance.lean",
+      "actual_sha256": "ccd470c0321d6b1a056494c3801fa75f99dfda7077c6906e2c86e843874c684c",
+      "owner_sha256": "ccd470c0321d6b1a056494c3801fa75f99dfda7077c6906e2c86e843874c684c",
+      "match": true
+    },
+    {
+      "path": "build/extraction/Extraction/LookupWiring.lean",
+      "actual_sha256": "c44807d618d000f2a3456b5c0a9af9e2dbb728df31725df1cb2cd7a1d097ff8c",
+      "owner_sha256": "c44807d618d000f2a3456b5c0a9af9e2dbb728df31725df1cb2cd7a1d097ff8c",
+      "match": true
+    },
+    {
+      "path": "build/extraction/Extraction/Circuit.lean",
+      "actual_sha256": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+      "owner_sha256": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+      "match": true
+    },
+    {
+      "path": "lakefile.toml",
+      "actual_sha256": "af97fa2ff53043d301bfe1d7f4dd2993e4d837e0a3d4576e892c3d43f4729836",
+      "owner_sha256": "0c173f0bfe1848b5c17ad65ebfe2636ccd03560d24b1aa32cf496e336b4468a4",
+      "match": false
+    },
+    {
+      "path": "lake-manifest.json",
+      "actual_sha256": "354d98ca220a909807af809fe71f5d611ad7db057f554942628ca6cb095bd835",
+      "owner_sha256": "354d98ca220a909807af809fe71f5d611ad7db057f554942628ca6cb095bd835",
+      "match": true
+    },
+    {
+      "path": "flake.lock",
+      "actual_sha256": "54559fd326574342bd2ce8c16191327e9e61bde78918d9d485d3928d47aea050",
+      "owner_sha256": "54559fd326574342bd2ce8c16191327e9e61bde78918d9d485d3928d47aea050",
+      "match": true
+    },
+    {
+      "path": "lean-toolchain",
+      "actual_sha256": "db7bb24b756d745bbde83fe92718b51bd3625dae3701ba0f598d0eedcd3f3028",
+      "owner_sha256": "db7bb24b756d745bbde83fe92718b51bd3625dae3701ba0f598d0eedcd3f3028",
+      "match": true
+    },
+    {
+      "path": "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+      "actual_sha256": "3e0d0d3d801675359f2d4cf9815bfdb417b20b92fdd9d48b3b14c95bbae28bbf",
+      "owner_sha256": "3e0d0d3d801675359f2d4cf9815bfdb417b20b92fdd9d48b3b14c95bbae28bbf",
+      "match": true
+    },
+    {
+      "path": "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/src/lean/Lean/Util/CollectAxioms.lean",
+      "actual_sha256": "fe0ba1a33981c94719c9bd203227d1f300da8b2a70e2a2c67255071a0b60218b",
+      "owner_sha256": "fe0ba1a33981c94719c9bd203227d1f300da8b2a70e2a2c67255071a0b60218b",
+      "match": true
+    },
+    {
+      "path": "ZiskFv/Field/Goldilocks.lean",
+      "actual_sha256": "842ef4a7382574db6e4555f07845c7ef6163962e552227ae8828ddc89c7217e4",
+      "owner_sha256": "842ef4a7382574db6e4555f07845c7ef6163962e552227ae8828ddc89c7217e4",
+      "match": true
+    }
+  ],
+  "mismatches": [
+    {
+      "path": "lakefile.toml",
+      "actual_sha256": "af97fa2ff53043d301bfe1d7f4dd2993e4d837e0a3d4576e892c3d43f4729836",
+      "owner_sha256": "0c173f0bfe1848b5c17ad65ebfe2636ccd03560d24b1aa32cf496e336b4468a4",
+      "match": false
+    }
+  ],
+  "resolution": "Main authorized independent source3 RAW under unchanged current recipe because the sole lakefile root-list metadata delta was not silently treated as identical. The seven green Mem audits were NOT rerun."
+}
