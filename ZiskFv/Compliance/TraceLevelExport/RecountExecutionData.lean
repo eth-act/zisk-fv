@@ -80,17 +80,17 @@ def recountStep {n q : Nat} (trace : AcceptedZiskTrace n)
   | .auipc c => .auipc { imm := c.imm, rd := c.rd }
   | .jal c => .jal { imm := c.imm, rd := c.rd }
   | .jalr c => .jalr { imm := c.imm, rs1 := c.rs1, rd := c.rd, offset_bv := c.offset_bv }
-  | .sb c => .sb { sb_input := c.sb_input }
-  | .sh c => .sh { sh_input := c.sh_input }
-  | .sw c => .sw { sw_input := c.sw_input }
-  | .sd c => .sd { sd_input := c.sd_input }
-  | .ld c => .ld { ld_input := c.ld_input }
-  | .lbu c => .lbu { lbu_input := c.lbu_input }
-  | .lhu c => .lhu { lhu_input := c.lhu_input }
-  | .lwu c => .lwu { lwu_input := c.lwu_input }
-  | .lb c => .lb { lb_input := c.lb_input }
-  | .lh c => .lh { lh_input := c.lh_input }
-  | .lw c => .lw { lw_input := c.lw_input }
+  | .sb c => .sb { r1 := c.r1, r2 := c.r2, imm := c.imm }
+  | .sh c => .sh { r1 := c.r1, r2 := c.r2, imm := c.imm }
+  | .sw c => .sw { r1 := c.r1, r2 := c.r2, imm := c.imm }
+  | .sd c => .sd { r1 := c.r1, r2 := c.r2, imm := c.imm }
+  | .ld c => .ld { r1 := c.r1, rd := c.rd, imm := c.imm }
+  | .lbu c => .lbu { r1 := c.r1, rd := c.rd, imm := c.imm }
+  | .lhu c => .lhu { r1 := c.r1, rd := c.rd, imm := c.imm }
+  | .lwu c => .lwu { r1 := c.r1, rd := c.rd, imm := c.imm }
+  | .lb c => .lb { r1 := c.r1, rd := c.rd, imm := c.imm }
+  | .lh c => .lh { r1 := c.r1, rd := c.rd, imm := c.imm }
+  | .lw c => .lw { r1 := c.r1, rd := c.rd, imm := c.imm }
   | .fence c => .fence { fm := c.fm, fenceP := c.fenceP, fenceS := c.fenceS, rs := c.rs, rd := c.rd }
 
 /-- Retain the exact committed physical start and finish of a JALR lowering. -/

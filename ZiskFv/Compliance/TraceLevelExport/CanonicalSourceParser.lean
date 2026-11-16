@@ -228,12 +228,12 @@ theorem nonfinal_expansion_canonicalParse {rawLength : Nat}
   rw [← last]
   exact canonicalParse_at_source_starts rawProgram selected L trace start addr binding atPc
 
-/-- Complete public-caller projection, not an additional alignment assumption.
-The current433/438 public Root still explicitly takes programBinding,
-rawProgramDecodes, and rowsAligned (Soundness.lean at ade695c5:2100-2120).
-All other original caller inputs are retained here, but parsing needs only
-that existing structural subset and never invokes root_soundness. This proof
-is checked in the preserved schema; current-main integration is separate. -/
+/-- Complete current public-caller projection, not an additional alignment
+assumption. The public Root explicitly takes programBinding, rawProgramDecodes
+and rowsAligned (Soundness.lean at25a584e0:2098-2124). All other original
+caller inputs are retained, but parsing needs only that existing structural
+subset and never invokes root_soundness. This preserves the legacy public
+placement domain; it is not a mapped-domain or runtime-completion cutover. -/
 theorem root_domain_canonicalParse_total
     (n rawLength : Nat) (trace : AcceptedZiskTrace n)
     (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)

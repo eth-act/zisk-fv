@@ -1,5 +1,6 @@
 import ZiskFv.Compliance.TraceLevelExport.CanonicalSourceParser
 import ZiskFv.Compliance.TraceLevelExport.CanonicalPhysicalState
+import ZiskFv.Compliance.TraceLevelExport.RawProgramBindingJalrExpansionNonvacuity
 
 /-!
 # Checked parsing and actual physical state at the next source cut
@@ -127,5 +128,147 @@ theorem nonfinal_expansion_parsed_physical_cut {rawLength : Nat}
       (((actualMainMutablePhysicalSlots trace).take (rowPrefix (sourceWidth L) 1)).flatten)
     at memory
   simpa only [cutRow] using memory
+
+/-! ## A real repeating source JALR, not the imm2/NOP layout-only toy.
+
+Only the existing literal source-count proof is reused from the ROM-image
+module. Its empty Accepted0 witness is NOT used. The execution below remains
+conditional on an actual accepted trace, its real raw-decode providers, boot
+registers and the first actual Sail step; no Accepted4 existence is claimed.
+-/
+
+open Aeneas Aeneas.Std Result zisk_core
+open ZiskFv.Compliance.Extraction
+
+private theorem source_rows_accepted_of_two {raw : BitVec 32}
+    {rows : aeneas_extract.Rv64imTranspileRowsExtract}
+    (source : aeneas_extract.extract_transpile_rv64im_rows_raw
+      (ZiskFv.Compliance.Decode.toU32 raw) = .ok rows)
+    (two : rows.row_count = 2#u32) : rows.accepted = true := by
+  unfold aeneas_extract.extract_transpile_rv64im_rows_raw at source
+  obtain ⟨terminal, _, source⟩ := bind_eq_ok_imp source
+  simp only [lift, Bind.bind, bind_ok] at source
+  split at source
+  · split at source
+    · obtain ⟨_, _, source⟩ := bind_eq_ok_imp source
+      split at source
+      · obtain ⟨_, _, source⟩ := bind_eq_ok_imp source
+        obtain ⟨_, _, source⟩ := bind_eq_ok_imp source
+        obtain ⟨_, _, source⟩ := bind_eq_ok_imp source
+        rw [Result.ok.injEq] at source
+        subst rows
+        rfl
+      · rw [Result.ok.injEq] at source
+        subst rows
+        rfl
+    · rw [Result.ok.injEq] at source
+      subst rows
+      exact False.elim ((by decide : (1#u32 : Aeneas.Std.U32) ≠ 2#u32) two)
+  · rw [Result.ok.injEq] at source
+    subst rows
+    exact False.elim ((by decide : (1#u32 : Aeneas.Std.U32) ≠ 2#u32) two)
+
+/-- Real `JALR x1,x2,1`: x2 is not written and a zero x2 returns to PC0.
+Both executed occurrences have the source's two-row ADD/AND expansion. -/
+def repeatJalrRawProgram : Fin 1 → BitVec 32 := fun _ => jalrExpansionRaw
+
+def repeatJalrSelected : Fin 2 → Fin 1 := fun _ => 0
+
+noncomputable def repeatJalrLowering : SuccessfulRowLowering jalrExpansionRaw where
+  rows := jalrExpansionRows
+  source := jalrExpansionRows_spec.1
+  accepted := source_rows_accepted_of_two jalrExpansionRows_spec.1 jalrExpansionRows_spec.2
+
+noncomputable def repeatJalrLowerings :
+    ∀ i : Fin 2, SuccessfulRowLowering (repeatJalrRawProgram (repeatJalrSelected i)) :=
+  fun _ => repeatJalrLowering
+
+theorem repeatJalrLowerings_width (i : Fin 2) : (repeatJalrLowerings i).width = 2 := by
+  change jalrExpansionRows.row_count.val = 2
+  rw [jalrExpansionRows_spec.2]
+  rfl
+
+theorem repeatJalr_sourceEnd : sourceEnd repeatJalrLowerings = 4 := by
+  have next := prefix_succ (sourceWidth repeatJalrLowerings) (0 : Fin 2)
+  have second : sourceStart repeatJalrLowerings (1 : Fin 2) = 2 := by
+    simpa only [sourceStart, prefix_zero, sourceWidth, repeatJalrLowerings_width, zero_add]
+      using next
+  have last := prefix_succ (sourceWidth repeatJalrLowerings) (1 : Fin 2)
+  change sourceEnd repeatJalrLowerings =
+    sourceStart repeatJalrLowerings (1 : Fin 2) + (repeatJalrLowerings (1 : Fin 2)).width at last
+  simpa only [second, repeatJalrLowerings_width] using last
+
+/-- An actual two-occurrence JALR source-prefix example. PC selection is
+DERIVED from the real Fin1 raw-decode family, not an added alignment/atPc
+certificate. The first actual Sail step remains an explicit condition;
+neither bare Accepted nor the old empty-ROM witness is claimed to prove it. -/
+theorem repeated_jalr_actual_prefix_example
+    (trace : AcceptedZiskTrace (sourceEnd repeatJalrLowerings))
+    (start : Fin 1 → Fin trace.programLength)
+    (binding : ProgramRowsBinding trace start (fun _ => 0) repeatJalrRawProgram)
+    (claims : ∀ i : Fin 2, Claim_jalr trace (physicalStart repeatJalrLowerings i))
+    (rawDecodes : ∀ i : Fin 2,
+      RawProgramDecode trace (physicalStart repeatJalrLowerings i) (.jalr (claims i))
+        start (fun _ => 0) repeatJalrRawProgram)
+    (init : PreSail.SequentialState RegisterType Sail.trivialChoiceSource)
+    (regBoot : ∀ k : Fin 32, k ≠ 0 → init.regs.get? (reg_of_fin k) =
+      some (cast (by rw [register_type_reg_of_fin_equiv]) (0 : BitVec 64)))
+    (firstSound : StepSound trace (fun _ => init) (physicalStart repeatJalrLowerings (0 : Fin 2))
+      (.jalr (claims (0 : Fin 2)))
+      (rowDecode_of_programDecode trace (physicalStart repeatJalrLowerings (0 : Fin 2))
+        (programDecode_of_rawProgramDecode trace (physicalStart repeatJalrLowerings (0 : Fin 2))
+          (.jalr (claims (0 : Fin 2))) start (fun _ => 0) repeatJalrRawProgram binding
+          (rawDecodes (0 : Fin 2))))) :
+    sourceEnd repeatJalrLowerings = 4 ∧
+      sourceStart repeatJalrLowerings (1 : Fin 2) = 2 ∧
+      canonicalParse trace (fun _ => 0) repeatJalrRawProgram 2 =
+        some (List.ofFn (fun i => (⟨repeatJalrSelected i, repeatJalrLowerings i⟩ :
+          Σ k, SuccessfulRowLowering (repeatJalrRawProgram k))), 4) ∧
+      (mappedSailStates repeatJalrLowerings (fun i => .jalr (claims i)) init 1
+        (by decide)).regs.get? Register.PC = some (register_type_pc_equiv ▸ (0 : BitVec 64)) ∧
+      (mappedSailStates repeatJalrLowerings (fun i => .jalr (claims i)) init 1
+        (by decide)).mem =
+        replayMemoryAfterBusRows init.mem
+          (((actualMainMutablePhysicalSlots trace).take 2).flatten) ∧
+      (∀ k : Fin 32, k ≠ 0 →
+        (mappedSailStates repeatJalrLowerings (fun i => .jalr (claims i)) init 1
+          (by decide)).regs.get? (reg_of_fin k) =
+          some (cast (by rw [register_type_reg_of_fin_equiv])
+            (actualPhysicalRegFile trace 2 (by rw [repeatJalr_sourceEnd]; decide) k))) := by
+  let steps := fun i => ZiskStep.jalr (claims i)
+  have atPc : ∀ i : Fin 2, (mainOfTable trace.program trace.mainTable).pc
+      (physicalStart repeatJalrLowerings i).val = (0 : FGL) := by
+    intro i
+    obtain ⟨_, pc, _, _⟩ := RawDecodeRowLowering.sourceWidth_of_rawProgramDecode
+      trace (physicalStart repeatJalrLowerings i) (steps i) start (fun _ => 0)
+      repeatJalrRawProgram binding (rawDecodes i)
+    exact pc.symm
+  have initial : mappedSailTrace repeatJalrLowerings steps init
+      (physicalStart repeatJalrLowerings (0 : Fin 2)) = init := by
+    rw [state_at_start]
+    rfl
+  have sound : StepSound trace (mappedSailTrace repeatJalrLowerings steps init)
+      (physicalStart repeatJalrLowerings (0 : Fin 2)) (steps (0 : Fin 2))
+      (rowDecode_of_programDecode trace (physicalStart repeatJalrLowerings (0 : Fin 2))
+        (programDecode_of_rawProgramDecode trace (physicalStart repeatJalrLowerings (0 : Fin 2))
+          (steps (0 : Fin 2)) start (fun _ => 0) repeatJalrRawProgram binding
+          (rawDecodes (0 : Fin 2)))) := by
+    apply (stepSound_iff _ _ _).mpr
+    rw [initial]
+    exact (stepSound_iff _ _ _).mp firstSound
+  have actual := nonfinal_expansion_parsed_physical_cut repeatJalrRawProgram repeatJalrSelected
+    repeatJalrLowerings trace start (fun _ => 0) binding steps rawDecodes atPc
+    (repeatJalrLowerings_width 0) init regBoot sound
+  have cutRow : rowPrefix (sourceWidth repeatJalrLowerings) 1 = 2 := actual.1
+  refine ⟨repeatJalr_sourceEnd, actual.1, ?_, ?_, actual.2.2.2.1, ?_⟩
+  · simpa only [repeatJalrLowerings_width] using actual.2.1
+  · have pc := actual.2.2.1
+    rw [state_at_start] at pc
+    change (mappedSailStates repeatJalrLowerings steps init 1 (by decide)).regs.get? Register.PC =
+      some (register_type_pc_equiv ▸ BitVec.ofNat 64
+        ((mainOfTable trace.program trace.mainTable).pc
+          (physicalStart repeatJalrLowerings (1 : Fin 2)).val).val) at pc
+    simpa only [atPc] using pc
+  · simpa only [cutRow] using actual.2.2.2.2
 
 end ZiskFv.Compliance.CanonicalSourceParser
