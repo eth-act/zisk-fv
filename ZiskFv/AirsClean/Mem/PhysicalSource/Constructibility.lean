@@ -83,6 +83,8 @@ def occurrence (packed : Bool) : ResolvedOccurrence (source packed) :=
 
 theorem actual_slot (packed : Bool) : (occurrence packed).slotData = slot packed := rfl
 
+theorem slot_fixed (packed : Bool) : (slot packed).fixed = fixedBuffer := rfl
+
 theorem traceBuffer_size (packed : Bool) :
     (traceBuffer packed).size = physicalRows * (if packed then 4 else 13) + 5 := by
   simp only [traceBuffer, Array.size_replicate]
@@ -166,6 +168,6 @@ theorem constructor_nonvacuous (packed : Bool) :
           change 2 * physicalRows ≤ 2 * physicalRows
           rfl
         · rw [actual_slot]
-          exact fixedBuffer_scan
+          rw [slot_fixed, fixedBuffer_scan]
 
 end ZiskFv.AirsClean.Mem.PhysicalSource.Constructibility
