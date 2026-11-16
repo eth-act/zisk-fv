@@ -1,0 +1,8 @@
+{
+  "exit_code": 0,
+  "native_log_sha256": "1a6f6f5c0e1391ab254a02006d15ec2e50ee16f4ac1e3cddceef0d72da14ea2d",
+  "driver_source_sha256": "963cd52dfa0cc608017314c345cf0ca9ed9d59a15fd7206775a3f63b2077319c",
+  "elf_sha256": "21aa90738db750124f45babf712ed902e2d2036014d66b3447bac04a917dc263",
+  "recorded_after_metadata_failure": true,
+  "observation": "bg_776 passed native subprocess check=True and complete raw/prefix serialization checks; only later manifest sha(relative ld) failed"
+}

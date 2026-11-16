@@ -1,0 +1,538 @@
+{
+  "status": "UNTRUSTED_NATIVE_CAPTURE_NOT_A_CERTIFICATE",
+  "source_revision": "9ca88b5b182fd7d534343181354f5319528c82d2",
+  "source_archive_sha256": "e11712ecf601f704f9625a329e2adf613fd63fbdecdd782e2cbc683b1e4ca14f",
+  "source_files_sha256": {
+    "core/src/elf2rom.rs": "2569fbcbae8999ad6a4f14ea62c9406095586d24002458ce22854cf3ee7a037a",
+    "core/src/riscv2zisk.rs": "fe8865e18e2d0366ecdc8a76f73ad6c1e27c3e6ab5c7f158078f8e9f8aae1780",
+    "core/src/riscv2zisk_context.rs": "6b88dedf6758b4e1fb81d20e0c98565a325f47084ba955e0c18a1a676647d620",
+    "core/src/zisk_inst.rs": "c23fd16ac54353db6c8f227b62fbc11f10462469419b3180c6ad5b5e880a94af",
+    "core/src/zisk_inst_builder.rs": "7746c397f49866ae00c0c015cabecc79bbae8dafbc9ee6f1b220b8246d34dffd",
+    "core/src/zisk_rom.rs": "92330759e7a8c550c052a6218496cc229b4ed47f09699b4162a8a0ff7a029d47",
+    "state-machines/rom/src/rom.rs": "3307e5ad29a3d8696ba092b13d8ab7ec59a824b08cc9e74f5dda88b730ab8fb2",
+    "state-machines/rom/Cargo.toml": "9bbc1e352eb122e301234f002cf76f599e83ce86f9605689d0dde4f68ff9d082",
+    "pil/src/pil_helpers/traces.rs": "3bbd2fd7cd912e6d5cc5904547db3ed2a75dca04c7f111a8f30af17937041dad",
+    "Cargo.toml": "02bdafa10eac1a59ef48c8d42e2e4379e1551c5b8ed0022f97162a8aad738e78",
+    "Cargo.lock": "f41ed0e64983ab52b9284c2dcd7a127f68d18a931d17d33b8ea555d2936be738",
+    "lib-float/c/lib/ziskfloat.elf": "e0f7bc25a93658c9896d3a12e6d0f577c503b95d4011683db37134d6866f5b56"
+  },
+  "native_profile": "ordinary default features; no aeneas_extract, no source pruning",
+  "trace_producer": "sm_rom::RomSM::compute_custom_trace_rom::<fields::Goldilocks>",
+  "image_producer": "zisk_core::Riscv2zisk::new(same_elf_bytes).run()",
+  "independent_calls_correlation_proved": false,
+  "native_pointer_addresses_diagnostic_and_process_dependent": true,
+  "not_proved": [
+    "Root/Accepted",
+    "whole-image authentication",
+    "ELF compiler faithfulness",
+    "source provenance partition",
+    "kernel universal ROM erasure",
+    "9ca equals b632",
+    "full trace constructibility",
+    "execution or loop termination",
+    "32 dynamic PubOut executions"
+  ],
+  "elf": {
+    "file": "guest.elf",
+    "sha256": "21aa90738db750124f45babf712ed902e2d2036014d66b3447bac04a917dc263",
+    "entry": "2147483648",
+    "machine": "243",
+    "flags": "0",
+    "sections": [
+      {
+        "type": "0",
+        "flags": "0",
+        "address": "0",
+        "file_offset": "0",
+        "size": "0",
+        "link": "0",
+        "info": "0",
+        "alignment": "0",
+        "entry_size": "0",
+        "name": "",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "type": "1",
+        "flags": "6",
+        "address": "2147483648",
+        "file_offset": "4096",
+        "size": "8",
+        "link": "0",
+        "info": "0",
+        "alignment": "4",
+        "entry_size": "0",
+        "name": ".text",
+        "sha256": "7ecc7b5d330fa273a4ad924929798e0da9fc7a31a81e50a689399392848b81b0",
+        "bytes_hex": "9302100067800000"
+      },
+      {
+        "type": "2",
+        "flags": "0",
+        "address": "0",
+        "file_offset": "4104",
+        "size": "120",
+        "link": "3",
+        "info": "4",
+        "alignment": "8",
+        "entry_size": "24",
+        "name": ".symtab",
+        "sha256": "c1097b2c4fb7bec5c275e54ea4cbb1ea4b9764b5f9b9faa6e923b97b0a203354"
+      },
+      {
+        "type": "3",
+        "flags": "0",
+        "address": "0",
+        "file_offset": "4224",
+        "size": "44",
+        "link": "0",
+        "info": "0",
+        "alignment": "1",
+        "entry_size": "0",
+        "name": ".strtab",
+        "sha256": "07b9c3fd49a4abfaa38bfe1084bb9bbc5e71ce5cef7d820d53f10fd96d7bdd1a"
+      },
+      {
+        "type": "3",
+        "flags": "0",
+        "address": "0",
+        "file_offset": "4268",
+        "size": "33",
+        "link": "0",
+        "info": "0",
+        "alignment": "1",
+        "entry_size": "0",
+        "name": ".shstrtab",
+        "sha256": "29703eabd62cdcc635f7bc5349dd0caa22d4d5552386f37b29c00f44aaeece5c"
+      }
+    ],
+    "program_headers": [
+      {
+        "type": "1",
+        "flags": "5",
+        "offset": "4096",
+        "vaddr": "2147483648",
+        "paddr": "2147483648",
+        "filesz": "8",
+        "memsz": "8",
+        "align": "4096"
+      }
+    ]
+  },
+  "caller_lock_sha256": "cdb9ad89feb5d5b2aa5b3f7ebddaa61437d99bb9f94ea71a258f8e19881fd57a",
+  "source_lock_sha256": "f41ed0e64983ab52b9284c2dcd7a127f68d18a931d17d33b8ea555d2936be738",
+  "tools": {
+    "cross_cc_package": "/nix/store/rjma49ap3fv3zfs8bsd6vw72m867f13h-riscv64-none-elf-gcc-wrapper-15.2.0",
+    "gcc_sha256": "67773e5140b3b606baf1959508b6e05fb6d43d42efafa91cfee65097e4649f0c",
+    "gcc_version": "riscv64-none-elf-gcc (GCC) 15.2.0\nCopyright (C) 2025 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "compiler_reported_linker_name": "ld",
+    "exact_invoked_linker_path_observed": false,
+    "compiler_reported_absolute_linker_sha256": null,
+    "compiler_reported_absolute_linker_version": null,
+    "relative_linker_caveat": "No exec trace was captured; a relative name is not resolved using caller PATH",
+    "gcc_configuration": "Using built-in specs.\nCOLLECT_GCC=/nix/store/aypk625gb3li340sl0zi4hm3dd4p728b-riscv64-none-elf-gcc-15.2.0/bin/riscv64-none-elf-gcc\nCOLLECT_LTO_WRAPPER=/nix/store/aypk625gb3li340sl0zi4hm3dd4p728b-riscv64-none-elf-gcc-15.2.0/libexec/gcc/riscv64-none-elf/15.2.0/lto-wrapper\nTarget: riscv64-none-elf\nConfigured with: ../gcc-15.2.0/configure --prefix=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-riscv64-none-elf-gcc-15.2.0 --with-gmp-include=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-gmp-with-cxx-6.3.0-dev/include --with-gmp-lib=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-gmp-with-cxx-6.3.0/lib --with-mpfr-include=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-mpfr-4.2.2-dev/include --with-mpfr-lib=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-mpfr-4.2.2/lib --with-mpc=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-libmpc-1.4.0 --with-native-system-header-dir=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-newlib-riscv64-none-elf-4.5.0.20241231/riscv64-none-elf/include --with-build-sysroot=/ --with-gxx-include-dir=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-riscv64-none-elf-gcc-15.2.0/include/c++/15.2.0/ --program-prefix=riscv64-none-elf- --enable-lto --disable-libstdcxx-pch --without-included-gettext --with-system-zlib --enable-static --enable-languages=c,c++ --disable-multilib --disable-shared --enable-plugin --with-isl=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-isl-0.20 --with-as=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-riscv64-none-elf-binutils-wrapper-2.46/bin/riscv64-none-elf-as --with-headers=/nix/store/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee-newlib-riscv64-none-elf-4.5.0.20241231/riscv64-none-elf/include --enable-__cxa_atexit --enable-long-long --enable-threads=single --enable-nls --with-newlib --disable-bootstrap --build=x86_64-unknown-linux-gnu --host=x86_64-unknown-linux-gnu --target=riscv64-none-elf\nThread model: single\nSupported LTO compression algorithms: zlib\ngcc version 15.2.0 (GCC)",
+    "compiler_wrapper_add_flags_sha256": "d9e4fe5a9e4178eb45c165ebe96d9f4be0db643cdaada7c307e76dc2f4763ddd",
+    "compiler_declared_bintools_search_assignments": [
+      "path_backup=\"/nix/store/a5h5c3niqsv1pbs6pyv36g7n3008n6cd-riscv64-none-elf-binutils-wrapper-2.46/bin:$path_backup\""
+    ],
+    "compiler_declared_bintools_source_lines": [
+      "source /nix/store/a5h5c3niqsv1pbs6pyv36g7n3008n6cd-riscv64-none-elf-binutils-wrapper-2.46/nix-support/add-flags.sh"
+    ],
+    "rust_toolchain": "/nix/store/l6xfdil58bxy0gm42iljma77ff3841wp-rust-default-1.95.0-nightly-2026-02-07",
+    "rustc_sha256": "221a64c4169d20432d880d5c3ca7e1b9334a3340acf2622c3b741731800ed59f",
+    "rustc_version": "rustc 1.95.0-nightly (efc9e1b50 2026-02-06)\nbinary: rustc\ncommit-hash: efc9e1b50cbf2cede7ebe25f0a1fc64fd8b3e942\ncommit-date: 2026-02-06\nhost: x86_64-unknown-linux-gnu\nrelease: 1.95.0-nightly\nLLVM version: 22.1.0",
+    "cargo_sha256": "0974eea479d07242241b38cbbb505a10b547362bd6f2f18e7142de9a033eea12",
+    "cargo_version": "cargo 1.95.0-nightly (fe2f314ae 2026-01-30)",
+    "libclang": "/nix/store/wm3wq7p1a4wp5lw23b4rc8apak230f9f-clang-21.1.8-lib/lib",
+    "llvm_openmp": {
+      "actual_library": "/usr/lib/x86_64-pc-linux-gnu/libomp.so",
+      "sha256": "be90dc767710f1adc7d8a17e18710bbd65ed8bbf8f4a97ce72d3c65760b52739",
+      "private_compatibility_alias": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/openmp-runtime/libiomp5.so",
+      "alias_contract": "https://github.com/llvm/llvm-project/blob/main/openmp/runtime/src/CMakeLists.txt",
+      "soname_evidence": [
+        "0x000000000000000e (SONAME)             Library soname: [libomp.so]"
+      ],
+      "required_abi_exports_observed": {
+        "__kmpc_fork_call": true,
+        "omp_get_num_threads": true,
+        "GOMP_parallel": true
+      }
+    }
+  },
+  "provenance_schema": 2,
+  "native_stage_provenance": {
+    "status": "UNTRUSTED_NATIVE_STAGE_PROVENANCE",
+    "evidence_kind": "preserved_prelaunch_tool_source_and_command_transcript_not_process_environment_dump",
+    "native_orchestrator_source_snapshot": "capture.py#61B8",
+    "native_orchestrator_sha256": null,
+    "native_orchestrator_snapshot_file": null,
+    "native_process_environment": {
+      "status": "UNOBSERVED",
+      "values": null
+    },
+    "configured_child_environment_evidence_kind": "source_assignment_before_successful_launch_not_independently_observed_process_values",
+    "source_configured_child_environment": {
+      "CARGO_HOME": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/cargo-home",
+      "CARGO_TARGET_DIR": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target",
+      "CARGO_BUILD_JOBS": "2",
+      "MAKEFLAGS": "-j2",
+      "CMAKE_BUILD_PARALLEL_LEVEL": "2",
+      "NUM_JOBS": "2",
+      "RAYON_NUM_THREADS": "2",
+      "OMP_NUM_THREADS": "2",
+      "LIBCLANG_PATH": "/nix/store/wm3wq7p1a4wp5lw23b4rc8apak230f9f-clang-21.1.8-lib/lib",
+      "RUSTC": "/nix/store/l6xfdil58bxy0gm42iljma77ff3841wp-rust-default-1.95.0-nightly-2026-02-07/bin/rustc"
+    },
+    "source_configured_library_path_prefix": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/openmp-runtime",
+    "native_inherited_library_path_suffix": "UNOBSERVED",
+    "native_inherited_path_suffix": "UNOBSERVED",
+    "native_inherited_rustflags": "UNOBSERVED",
+    "native_inherited_cargo_encoded_rustflags": "UNOBSERVED",
+    "native_inherited_ld_library_path": "UNOBSERVED",
+    "source_evidence": [
+      {
+        "snapshot": "capture.py#1F44",
+        "chronology": "Original write before initial native job bg_771; not the later finalizer source",
+        "excerpt": "NUM_JOBS=\"2\", RAYON_NUM_THREADS=\"2\", LIBCLANG_PATH=str(args.libclang),"
+      },
+      {
+        "snapshot": "capture.py#61B8",
+        "chronology": "Successful edit response immediately before bg_776; history://ClosureTupleWelds entries at lines 469 and 473",
+        "line_range_in_edit_response": [
+          111,
+          114
+        ],
+        "excerpt": "env.update(CARGO_HOME=str(cargo_home), CARGO_TARGET_DIR=str(workspace / \"target\"),\n               CARGO_BUILD_JOBS=\"2\", MAKEFLAGS=\"-j2\", CMAKE_BUILD_PARALLEL_LEVEL=\"2\",\n               NUM_JOBS=\"2\", RAYON_NUM_THREADS=\"2\", OMP_NUM_THREADS=\"2\", LIBCLANG_PATH=str(args.libclang),\n               RUSTC=str(args.rust_toolchain / \"bin/rustc\"))"
+      },
+      {
+        "snapshot": "capture.py#61B8",
+        "excerpt": "subprocess.run(command, cwd=cwd or workspace, env=env, stdout=subprocess.PIPE if capture else log, stderr=log, check=True, text=capture)",
+        "scope": "The helper passes the configured env mapping to the actual Cargo child; no /proc environment snapshot or independent thread-count observation was captured."
+      }
+    ],
+    "launch_command_tool_id": "bg_776",
+    "launch_argv": [
+      "python3",
+      "tools/finite-return-rom/capture.py",
+      "--continue-native",
+      "--llvm-openmp",
+      "/usr/lib/libomp.so",
+      "--zisk-git",
+      "/home/cody/zisk-fv/zisk",
+      "--workspace",
+      "build/finite-return-rom",
+      "--output",
+      "tools/finite-return-rom/fixtures/minimal-return",
+      "--cross-cc",
+      "/nix/store/rjma49ap3fv3zfs8bsd6vw72m867f13h-riscv64-none-elf-gcc-wrapper-15.2.0",
+      "--libclang",
+      "/nix/store/wm3wq7p1a4wp5lw23b4rc8apak230f9f-clang-21.1.8-lib/lib",
+      "--rust-toolchain",
+      "/nix/store/l6xfdil58bxy0gm42iljma77ff3841wp-rust-default-1.95.0-nightly-2026-02-07"
+    ],
+    "correction": "The original bded85d9 manifest described finalizer-selected settings and the finalizer's current capture.py hash without a stage distinction. Neither is a launch-time environment measurement or a measured native-orchestrator hash. Frozen bded85d9 and its actual native data remain preserved."
+  },
+  "native_rust_driver_source_sha256": "963cd52dfa0cc608017314c345cf0ca9ed9d59a15fd7206775a3f63b2077319c",
+  "native_input_elf_sha256": "21aa90738db750124f45babf712ed902e2d2036014d66b3447bac04a917dc263",
+  "metadata_finalization": {
+    "stage": "metadata_only_no_native_or_compiler_execution",
+    "configured_child_environment": {
+      "CARGO_HOME": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/cargo-home",
+      "CARGO_TARGET_DIR": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target",
+      "CARGO_BUILD_JOBS": "2",
+      "MAKEFLAGS": "-j2",
+      "CMAKE_BUILD_PARALLEL_LEVEL": "2",
+      "NUM_JOBS": "2",
+      "RAYON_NUM_THREADS": "2",
+      "OMP_NUM_THREADS": "2",
+      "LIBCLANG_PATH": "/nix/store/wm3wq7p1a4wp5lw23b4rc8apak230f9f-clang-21.1.8-lib/lib",
+      "RUSTC": "/nix/store/l6xfdil58bxy0gm42iljma77ff3841wp-rust-default-1.95.0-nightly-2026-02-07/bin/rustc"
+    },
+    "configured_library_path": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/openmp-runtime",
+    "scope": "Finalization-stage configuration only; NOT a native-stage environment measurement",
+    "tool_sources_sha256": {
+      "main.rs": "963cd52dfa0cc608017314c345cf0ca9ed9d59a15fd7206775a3f63b2077319c",
+      "capture.py": "424f25309e6e0cdb002fff705d70fca2b561734e2510e147e4e6894184994ee6",
+      "guest.S": "f99075e3628255a50a36f09e34b46c761914aa5a62f50938bd784aca1be930aa",
+      "guest.ld": "b0cf0e6fd96d0980483716adb285b95482b2a19154491559d189935c50fb0891"
+    },
+    "tool_identity_evidence": "Preserved tool output logs and immutable files; no new tool execution during metadata-only finalization"
+  },
+  "commands": [
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/home/cody/zisk-fv/zisk",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "source-head.log"
+    },
+    {
+      "argv": [
+        "git",
+        "-C",
+        "/home/cody/zisk-fv/zisk",
+        "archive",
+        "--format=tar",
+        "--output=/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source.tar",
+        "9ca88b5b182fd7d534343181354f5319528c82d2"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "source-archive.log"
+    },
+    {
+      "argv": [
+        "/nix/store/rjma49ap3fv3zfs8bsd6vw72m867f13h-riscv64-none-elf-gcc-wrapper-15.2.0/bin/riscv64-none-elf-gcc",
+        "--version"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "gcc-version.log"
+    },
+    {
+      "argv": [
+        "/nix/store/rjma49ap3fv3zfs8bsd6vw72m867f13h-riscv64-none-elf-gcc-wrapper-15.2.0/bin/riscv64-none-elf-gcc",
+        "-print-prog-name=ld"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "linker-path.log"
+    },
+    {
+      "argv": [
+        "ld",
+        "--version"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "linker-version.log"
+    },
+    {
+      "argv": [
+        "/nix/store/l6xfdil58bxy0gm42iljma77ff3841wp-rust-default-1.95.0-nightly-2026-02-07/bin/rustc",
+        "-Vv"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "rustc-version.log"
+    },
+    {
+      "argv": [
+        "/nix/store/l6xfdil58bxy0gm42iljma77ff3841wp-rust-default-1.95.0-nightly-2026-02-07/bin/cargo",
+        "--version"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "cargo-version.log"
+    },
+    {
+      "argv": [
+        "/nix/store/rjma49ap3fv3zfs8bsd6vw72m867f13h-riscv64-none-elf-gcc-wrapper-15.2.0/bin/riscv64-none-elf-gcc",
+        "-march=rv64im",
+        "-mabi=lp64",
+        "-mno-relax",
+        "-nostdlib",
+        "-nostartfiles",
+        "-static",
+        "-Wl,--no-relax",
+        "-Wl,--build-id=none",
+        "-Wl,-T,/home/cody/zisk-fv-finite-return-rom/tools/finite-return-rom/guest.ld",
+        "/home/cody/zisk-fv-finite-return-rom/tools/finite-return-rom/guest.S",
+        "-o",
+        "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/guest.elf"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "guest-compile.log"
+    },
+    {
+      "argv": [
+        "/nix/store/l6xfdil58bxy0gm42iljma77ff3841wp-rust-default-1.95.0-nightly-2026-02-07/bin/cargo",
+        "run",
+        "--offline",
+        "--manifest-path",
+        "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/driver/Cargo.toml",
+        "--",
+        "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/guest.elf",
+        "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/raw"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "native-producer-initial.log"
+    },
+    {
+      "argv": [
+        "/nix/store/rjma49ap3fv3zfs8bsd6vw72m867f13h-riscv64-none-elf-gcc-wrapper-15.2.0/bin/riscv64-none-elf-gcc",
+        "--version"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "gcc-version.log"
+    },
+    {
+      "argv": [
+        "/nix/store/rjma49ap3fv3zfs8bsd6vw72m867f13h-riscv64-none-elf-gcc-wrapper-15.2.0/bin/riscv64-none-elf-gcc",
+        "-print-prog-name=ld"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "linker-path.log"
+    },
+    {
+      "argv": [
+        "ld",
+        "--version"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "linker-version.log"
+    },
+    {
+      "argv": [
+        "/nix/store/l6xfdil58bxy0gm42iljma77ff3841wp-rust-default-1.95.0-nightly-2026-02-07/bin/rustc",
+        "-Vv"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "rustc-version.log"
+    },
+    {
+      "argv": [
+        "/nix/store/l6xfdil58bxy0gm42iljma77ff3841wp-rust-default-1.95.0-nightly-2026-02-07/bin/cargo",
+        "--version"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "cargo-version.log"
+    },
+    {
+      "argv": [
+        "readelf",
+        "-d",
+        "/usr/lib/x86_64-pc-linux-gnu/libomp.so"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "openmp-dynamic.log"
+    },
+    {
+      "argv": [
+        "nm",
+        "-D",
+        "--defined-only",
+        "/usr/lib/x86_64-pc-linux-gnu/libomp.so"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "openmp-exports.log"
+    },
+    {
+      "argv": [
+        "/nix/store/l6xfdil58bxy0gm42iljma77ff3841wp-rust-default-1.95.0-nightly-2026-02-07/bin/cargo",
+        "run",
+        "--offline",
+        "--manifest-path",
+        "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/driver/Cargo.toml",
+        "--",
+        "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/guest.elf",
+        "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/raw"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "native-producer.log"
+    },
+    {
+      "argv": [
+        "/nix/store/rjma49ap3fv3zfs8bsd6vw72m867f13h-riscv64-none-elf-gcc-wrapper-15.2.0/bin/riscv64-none-elf-gcc",
+        "--version"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "gcc-version.log"
+    },
+    {
+      "argv": [
+        "/nix/store/rjma49ap3fv3zfs8bsd6vw72m867f13h-riscv64-none-elf-gcc-wrapper-15.2.0/bin/riscv64-none-elf-gcc",
+        "-print-prog-name=ld"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "linker-path.log"
+    },
+    {
+      "argv": [
+        "/nix/store/rjma49ap3fv3zfs8bsd6vw72m867f13h-riscv64-none-elf-gcc-wrapper-15.2.0/bin/riscv64-none-elf-gcc",
+        "-v"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "gcc-configuration.log"
+    },
+    {
+      "argv": [
+        "/nix/store/l6xfdil58bxy0gm42iljma77ff3841wp-rust-default-1.95.0-nightly-2026-02-07/bin/rustc",
+        "-Vv"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "rustc-version.log"
+    },
+    {
+      "argv": [
+        "/nix/store/l6xfdil58bxy0gm42iljma77ff3841wp-rust-default-1.95.0-nightly-2026-02-07/bin/cargo",
+        "--version"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "cargo-version.log"
+    },
+    {
+      "argv": [
+        "readelf",
+        "-d",
+        "/usr/lib/x86_64-pc-linux-gnu/libomp.so"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "openmp-dynamic.log"
+    },
+    {
+      "argv": [
+        "nm",
+        "-D",
+        "--defined-only",
+        "/usr/lib/x86_64-pc-linux-gnu/libomp.so"
+      ],
+      "cwd": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom",
+      "log": "openmp-exports.log"
+    }
+  ],
+  "files": {
+    "image.jsonl": {
+      "file": "image.jsonl.gz",
+      "raw_bytes": "15136962",
+      "raw_sha256": "5fb20a9a2a600e8de26812bd76e505ea57e821ed4026d248de85fde4de4f4c14",
+      "gzip_sha256": "931aa9e04a5b683fa997c305b9f2790d462794f824060d41deb74e4384a57984"
+    },
+    "trace-prefix.jsonl": {
+      "file": "trace-prefix.jsonl.gz",
+      "raw_bytes": "1598516",
+      "raw_sha256": "75e529f84c014b970fae34df24fe980e7cdb1906b07938d4972d72cd75ea6dd8",
+      "gzip_sha256": "18ffa10e1b85028280582cd0ab7a16df544525ae83e4ce7560efafe8c48a05f1"
+    },
+    "trace.u64le": {
+      "file": "trace.u64le.gz",
+      "raw_bytes": "369098752",
+      "raw_sha256": "39ea4ee9f2dcbed75e2de17953c09768fdcd2125f215ba6f5071076a513e504a",
+      "gzip_sha256": "88990125aa99bb51b5e55ec98cebc21beb8a20f6b37e82698761e97d0bbffd32"
+    },
+    "tail-deviations.jsonl": {
+      "file": "tail-deviations.jsonl.gz",
+      "raw_bytes": "0",
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "gzip_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "observations.json": {
+      "file": "observations.json",
+      "raw_sha256": "44ed064536ae579581dd18c0c24b71b3696707c9a0cc61be3a52a2f5e92ef4c5"
+    },
+    "pubout-sites.jsonl": {
+      "file": "pubout-sites.jsonl",
+      "raw_sha256": "04bf05daa18a276aea599d5760937f918bccda596880d4deab8c68ea59368267"
+    }
+  },
+  "native_log_sha256": "1a6f6f5c0e1391ab254a02006d15ec2e50ee16f4ac1e3cddceef0d72da14ea2d",
+  "initial_native_link_failure": {
+    "file": "native-producer-initial.log",
+    "sha256": "ffb43a6a25603ad771f474283b1e2580637b92a2c771ac8079305daddbd5f91e",
+    "classification": "native linker setup failure; not a source/data/proof kill"
+  },
+  "source_citations": {
+    "complete_image": "core/src/elf2rom.rs:16-68",
+    "actual_public_trace": "state-machines/rom/src/rom.rs:274-297",
+    "actual_private_trace": "state-machines/rom/src/rom.rs:204-267",
+    "observational_header_candidate": "core/src/riscv2zisk_context.rs:2654-2899"
+  }
+}
