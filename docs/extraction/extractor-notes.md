@@ -102,6 +102,9 @@ the flags themselves.
   Their materialization, constructibility and interaction correspondences do
   not install providers into `FullEnsemble`, change the accepted-world witness,
   or discharge root/channel finishing.
+  Their three source providers deliberately add three channel requirements
+  and three weighted exposures to the declaration snapshot (78 to 84).
+  These local interfaces do not change the accepted ensemble's channel roster.
 - `public-io`: emit `Extraction.PublicIo` from the compiled GLOBAL expression
   graph and cleared sum. Hints identify tuples, but every operation-bus tuple is
   linked to an actual denominator and positive-unit numerator term; generated
