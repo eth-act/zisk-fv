@@ -78,7 +78,7 @@ def runningCoordinate? (resolved : ResolvedOccurrence source)
     (row : Nat) (coordinate : Fin 3) : Option F := do
   let setup ← resolved.setup?
   let mapId ← gsumMapId? setup
-  extensionWord? (resolved.cmWords? false mapId row 0) coordinate
+  extensionWord? (resolved.cmAuxWords? false mapId row 0) coordinate
 
 /-- c33's supported source cells, not a total arbitrary-polynomial decoder.
 Every field comes from the SAME resolved occurrence; all other witness cells

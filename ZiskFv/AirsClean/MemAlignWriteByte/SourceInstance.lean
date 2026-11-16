@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.MemAlignWriteByte.RawSource
+import ZiskFv.AirsClean.MemAlignWriteByte.NativeTraceWords
 
 /-! Source-owned images of the ff0e33a9 ProofCtx/Dctx/SetupCtx boundary.
 
@@ -20,6 +21,8 @@ That remaining binding must identify each final global slot, registry-selected
 post-setup object, every source buffer and shared global vector. No Accepted,
 Component, Table, Circuit, Valid or Root interface is changed here. -/
 namespace ZiskFv.AirsClean.MemAlignWriteByte.RawSource.Native
+
+open Goldilocks
 
 open Extraction.LookupWiring
 
@@ -294,23 +297,75 @@ def NativeSetup.baseRow? (setup : NativeSetup) (row : Nat) (rotation : Int) : Op
     some (((row : Int) + rotation) % (setup.rowCount : Int)).toNat
   else none
 
-/-- Selects a native cmPolsMap entry, not a guessed stage-relative word column.
-Consumers must establish the actual stage/stageId/PIL correspondence separately.
-Packed stage1 trace decoding is unsupported, never guessed from raw words. -/
-def ResolvedOccurrence.cmWords? {source : SourceObject F}
+/-- Shared actual auxiliary branch, using metadata already selected from the
+same source occurrence. Field trace decoding is not smuggled into generic F. -/
+def cmAuxAt? {source : SourceObject F} (resolved : ResolvedOccurrence source)
+    (mode : Bool) (setup : NativeSetup) (entry : PolMap) (row : Nat) (rotation : Int) :
+    Option (Array F) := do
+  let shifted ← setup.baseRow? row rotation
+  let width ← setup.mapSectionsN["cm" ++ toString entry.stage]?
+  let offset ← setup.mapOffsets[("cm" ++ toString entry.stage, false)]?
+  readBlock? (resolved.params mode) .auxTrace
+    (offset + shifted * width + entry.stagePos) entry.dim
+
+/-- Generic stage>1 reader for native finalizer consumers. The actual selected
+map, row, section width and post-setup offset are unchanged. Stage1 is handled
+by the separate concrete FGL/raw-word route, not a generic conversion oracle. -/
+def ResolvedOccurrence.cmAuxWords? {source : SourceObject F}
     (resolved : ResolvedOccurrence source) (mode : Bool) (mapId row : Nat)
     (rotation : Int) : Option (Array F) := do
   let setup ← resolved.setup?
   let entry ← setup.cmPolsMap[mapId]?
-  let shifted ← setup.baseRow? row rotation
-  let width ← setup.mapSectionsN["cm" ++ toString entry.stage]?
+  if 1 < entry.stage then cmAuxAt? resolved mode setup entry row rotation else none
+
+/-- Actual cmPolsMap selection with a concrete UNPACKED FGL stage1 view of the
+same primary UInt64 store. Only the requested word is reduced, not a whole
+trace copy. Packed bit decoding remains unsupported here, never field-reduced
+as a fake lossless representation or excluded from Root's supported scope. -/
+def ResolvedOccurrence.cmWords? {source : SourceObject FGL}
+    (resolved : ResolvedOccurrence source) (mode : Bool) (mapId row : Nat)
+    (rotation : Int) : Option (Array FGL) := do
+  let setup ← resolved.setup?
+  let entry ← setup.cmPolsMap[mapId]?
   if entry.stage = 1 then
     if resolved.slotData.metadata.isPacked then none
-    else readBlock? (resolved.params mode) .trace (shifted * width + entry.stagePos) 1
-  else
-    let offset ← setup.mapOffsets[("cm" ++ toString entry.stage, false)]?
-    readBlock? (resolved.params mode) .auxTrace
-      (offset + shifted * width + entry.stagePos) entry.dim
+    else do
+      let shifted ← setup.baseRow? row rotation
+      let width ← setup.mapSectionsN["cm" ++ toString entry.stage]?
+      NativeTraceWords.unpackedBlock? (resolved.params mode)
+        (shifted * width + entry.stagePos) 1
+  else if 1 < entry.stage then cmAuxAt? resolved mode setup entry row rotation else none
+
+/-- Generic finalizer and concrete FGL readers share the exact same auxiliary
+branch for every actual selected stage>1 entry. No trace cast is involved. -/
+theorem ResolvedOccurrence.cmWords_aux {source : SourceObject FGL}
+    (resolved : ResolvedOccurrence source) (mode : Bool) (mapId row : Nat)
+    (rotation : Int) (setup : NativeSetup) (entry : PolMap)
+    (hs : resolved.setup? = some setup) (he : setup.cmPolsMap[mapId]? = some entry)
+    (hstage : 1 < entry.stage) :
+    resolved.cmWords? mode mapId row rotation = resolved.cmAuxWords? mode mapId row rotation := by
+  have hnot : entry.stage ≠ 1 := by omega
+  simp [ResolvedOccurrence.cmWords?, ResolvedOccurrence.cmAuxWords?, hs, he, hnot, hstage]
+
+/-- The unpacked branch projects only actual requested trace words from this
+same occurrence's Params; there is no independently supplied decoded image. -/
+theorem ResolvedOccurrence.cmWords_unpacked_source {source : SourceObject FGL}
+    (resolved : ResolvedOccurrence source) (mode : Bool) (mapId row : Nat)
+    (rotation : Int) (setup : NativeSetup) (entry : PolMap)
+    (hs : resolved.setup? = some setup) (he : setup.cmPolsMap[mapId]? = some entry)
+    (hstage : entry.stage = 1) (hpacked : resolved.slotData.metadata.isPacked = false) :
+    resolved.cmWords? mode mapId row rotation = (do
+      let shifted ← setup.baseRow? row rotation
+      let width ← setup.mapSectionsN["cm" ++ toString entry.stage]?
+      NativeTraceWords.unpackedBlock? (resolved.params mode)
+        (shifted * width + entry.stagePos) 1) := by
+  simp [ResolvedOccurrence.cmWords?, hs, he, hstage, hpacked]
+
+/-- Raw primary trace access preserves every native bit, even where field
+canonicalization is noninjective. Original buffer length is not cropped. -/
+theorem ResolvedOccurrence.traceWord_source {source : SourceObject F}
+    (resolved : ResolvedOccurrence source) (mode : Bool) (index : Nat) :
+    traceWord? (resolved.params mode) index = resolved.slotData.trace[index]? := rfl
 
 /-- Native fixed operands push r.id directly, not constPolsMap.stagePos
 (expressions_info.cpp466–474); the load is one scalar word. -/
@@ -383,7 +438,7 @@ theorem ResolvedOccurrence.airGroupValue_zero {source : SourceObject F}
 
 /-- Successful bounded reads contain exactly the requested number of native
 words. This is not a semantic extension-field or source-expression theorem. -/
-theorem readBlock_size {F : Type} (params : Params F) (kind : BufferKind)
+theorem readBlock_size {F : Type} (params : Params F) (kind : FieldBufferKind)
     (offset width : Nat) (words : Array F)
     (h : readBlock? params kind offset width = some words) :
     words.size = width := by
