@@ -921,7 +921,7 @@ private theorem worldAnd_emissions (channel : RawChannel FGL) :
     worldBinaryAndTable.interactionsWith channel =
       (binaryConsumerSingleRowTable worldBinaryAndRow).interactionsWith channel ++
         (binaryConsumerSingleRowTable worldBinaryAndRow).interactionsWith channel := by
-  simp [worldBinaryAndTable, binaryConsumerSingleRowTable,
+  simp [worldBinaryAndTable, binaryConsumerSingleRowTable, binaryRowArray,
     ZiskFv.AirsClean.FullEnsemble.binaryConsumerRowsTable,
     Table.interactionsWith, Table.table,
     Table.environment, ZiskFv.AirsClean.Binary.tableConsumerComponent]
@@ -940,11 +940,15 @@ private theorem worldMem_emissions :
     (table := worldBinaryAndTable) rfl
   have add := ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_memBus_nil
     (table := worldBinaryAddTable) rfl
-  simp [worldWitness, worldTables, worldMemEmissions, boundary, binary, add,
-    worldBinarySourceTable_other_channel MemBusChannel.toRaw (by decide),
-    worldExtensionSourceTable_other_channel MemBusChannel.toRaw (by decide),
+  simp only [worldWitness, worldTables, List.flatMap_cons, List.flatMap_nil,
+    worldMemEmissions, boundary, binary, add,
+    worldBinarySourceTable_other_channel MemBusChannel.toRaw
+      (mt (congrArg RawChannel.name) (by decide)),
+    worldExtensionSourceTable_other_channel MemBusChannel.toRaw
+      (mt (congrArg RawChannel.name) (by decide)),
     emptyComponentTable_interactionsWith, worldMain_mem,
-    registerStepRangeRowsTable_interactionsWith_memBus_nil]
+    registerStepRangeRowsTable_interactionsWith_memBus_nil,
+    List.nil_append, List.append_nil, List.append_assoc]
 
 private def worldOpEmissions : List (Interaction FGL) :=
   [binaryOpBusInteraction worldBinaryAndRow, binaryOpBusInteraction worldBinaryAndRow,
@@ -957,12 +961,16 @@ private theorem worldOp_emissions :
     worldWitness.tables.flatMap (·.interactionsWith OpBusChannel.toRaw) = worldOpEmissions := by
   have boundary := ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_opBus_nil
     (table := worldBoundaryTable) rfl
-  simp [worldWitness, worldTables, worldOpEmissions, boundary, emptyComponentTable_interactionsWith,
-    worldBinarySourceTable_other_channel OpBusChannel.toRaw (by decide),
-    worldExtensionSourceTable_other_channel OpBusChannel.toRaw (by decide),
+  simp only [worldWitness, worldTables, List.flatMap_cons, List.flatMap_nil,
+    worldOpEmissions, boundary, emptyComponentTable_interactionsWith,
+    worldBinarySourceTable_other_channel OpBusChannel.toRaw
+      (mt (congrArg RawChannel.name) (by decide)),
+    worldExtensionSourceTable_other_channel OpBusChannel.toRaw
+      (mt (congrArg RawChannel.name) (by decide)),
     worldAnd_emissions, binaryConsumerSingleRowTable_interactionsWith_opBus,
     worldBinaryAddTable, binaryAddRowsTable_interactionsWith_opBus, worldMain_ops,
-    registerStepRangeRowsTable_interactionsWith_opBus_nil]
+    registerStepRangeRowsTable_interactionsWith_opBus_nil,
+    List.map_cons, List.map_nil, List.nil_append, List.append_nil, List.append_assoc]
 
 private def worldRangeEmissions : List (Interaction FGL) :=
   worldBoundaryRows.map registerBoundaryRangeInteraction ++
@@ -984,13 +992,16 @@ private theorem worldRange_emissions :
     (table := worldBinaryAddTable) rfl
   have binary := ZiskFv.AirsClean.FullEnsemble.staticBinary_table_interactionsWith_registerStepRange_nil
     (table := worldBinaryAndTable) rfl
-  simp [worldWitness, worldTables, worldRangeEmissions, emptyComponentTable_interactionsWith,
+  simp only [worldWitness, worldTables, List.flatMap_cons, List.flatMap_nil,
+    worldRangeEmissions, emptyComponentTable_interactionsWith,
     worldBinarySourceTable_other_channel
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw (by decide),
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+      (mt (congrArg RawChannel.name) (by decide)),
     worldExtensionSourceTable_other_channel
-      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw (by decide),
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+      (mt (congrArg RawChannel.name) (by decide)),
     boundary, add, binary, registerStepRangeRowsTable_interactionsWith,
-    worldMain_ranges, List.map_append, List.append_assoc]
+    worldMain_ranges, List.map_append, List.nil_append, List.append_nil, List.append_assoc]
 
 private theorem worldOther_emissions (channel : RawChannel FGL)
     (mem : channel ≠ MemBusChannel.toRaw) (op : channel ≠ OpBusChannel.toRaw)
@@ -1102,8 +1113,9 @@ private theorem worldSource_emissions (channel : RawChannel FGL)
       And.intro mem (And.intro op range)
   have provider := registerStepRangeRowsTable_interactionsWith_of_ne
     (worldMainRangeValues ++ registerBoundaryRangeValues worldBoundaryRows) channel range
-  simp [worldWitness, worldTables, boundary, add, main, provider,
-    emptyComponentTable_interactionsWith]
+  simp only [worldWitness, worldTables, List.flatMap_cons, List.flatMap_nil,
+    boundary, add, main, provider, emptyComponentTable_interactionsWith,
+    List.nil_append, List.append_nil, List.append_assoc]
 
 private theorem worldBinary_consumer_requests :
     worldBinaryAndTable.interactionsWith
@@ -1133,7 +1145,10 @@ private theorem worldBinary_consumer_requests :
         (Environment.fromInput worldBinaryAndRow emptyData) := by
     rw [ZiskFv.AirsClean.FullEnsemble.binary_consumer_interactions_fromInput]
     simp only [ZiskFv.AirsClean.PackedVirtualTableSources.consumedSourceRequests,
-      List.map_ofFn, Function.comp_apply, worldBinarySourceRequests_weld]
+      List.map_ofFn]
+    apply congrArg List.ofFn
+    funext index
+    simp only [Function.comp_apply, worldBinarySourceRequests_weld]
   simpa only [worldAnd_emissions, worldBinaryRequests,
     ZiskFv.AirsClean.PackedVirtualTableSources.consumedSourceRequests,
     List.map_append] using
@@ -1145,9 +1160,13 @@ counted across both rows in the one physical provider witness. -/
 theorem worldWitness_binaryTableChannel_balanced :
     BalancedInteractions (worldWitness.tables.flatMap
       (·.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw)) := by
-  rw [worldSource_emissions _ (by decide) (by decide) (by decide),
-    worldExtensionSourceTable_other_channel _ (by decide),
-    List.nil_append, worldBinary_consumer_requests]
+  rw [worldSource_emissions _
+      (mt (congrArg RawChannel.name) (by decide))
+      (mt (congrArg RawChannel.name) (by decide))
+      (mt (congrArg RawChannel.name) (by decide)),
+    worldExtensionSourceTable_other_channel _
+      (mt (congrArg RawChannel.name) (by decide)),
+    List.append_nil, worldBinary_consumer_requests]
   change BalancedInteractions
     (ZiskFv.AirsClean.PackedVirtualTableSources.consumedSourceRequests
       ZiskFv.Channels.BinaryTable.BinaryTableChannel
@@ -1173,8 +1192,12 @@ theorem worldWitness_extensionTableChannel_balanced :
     apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
       (table := worldBinaryAndTable)
     decide
-  rw [worldSource_emissions _ (by decide) (by decide) (by decide),
-    binary, worldBinarySourceTable_other_channel _ (by decide),
+  rw [worldSource_emissions _
+      (mt (congrArg RawChannel.name) (by decide))
+      (mt (congrArg RawChannel.name) (by decide))
+      (mt (congrArg RawChannel.name) (by decide)),
+    binary, worldBinarySourceTable_other_channel _
+      (mt (congrArg RawChannel.name) (by decide)),
     List.nil_append, List.append_nil]
   change BalancedInteractions
     ((ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable
