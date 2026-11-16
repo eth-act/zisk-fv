@@ -54,9 +54,9 @@ def recountStep {n q : Nat} (trace : AcceptedZiskTrace n)
   | .sllw c => .sllw { r1 := c.r1, r2 := c.r2, rd := c.rd }
   | .srlw c => .srlw { r1 := c.r1, r2 := c.r2, rd := c.rd }
   | .sraw c => .sraw { r1 := c.r1, r2 := c.r2, rd := c.rd }
-  | .slliw c => .slliw { slliw_input := c.slliw_input, r1 := c.r1, rd := c.rd }
-  | .srliw c => .srliw { srliw_input := c.srliw_input, r1 := c.r1, rd := c.rd }
-  | .sraiw c => .sraiw { sraiw_input := c.sraiw_input, r1 := c.r1, rd := c.rd }
+  | .slliw c => .slliw { shamt := c.shamt, r1 := c.r1, rd := c.rd }
+  | .srliw c => .srliw { shamt := c.shamt, r1 := c.r1, rd := c.rd }
+  | .sraiw c => .sraiw { shamt := c.shamt, r1 := c.r1, rd := c.rd }
   | .mul c => .mul { r1 := c.r1, r2 := c.r2, rd := c.rd, srs1 := c.srs1, srs2 := c.srs2 }
   | .mulh c => .mulh { r1 := c.r1, r2 := c.r2, rd := c.rd }
   | .mulhsu c => .mulhsu { r1 := c.r1, r2 := c.r2, rd := c.rd }

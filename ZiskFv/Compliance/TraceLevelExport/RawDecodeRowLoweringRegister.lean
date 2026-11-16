@@ -91,7 +91,7 @@ immediate_source_width slti
 immediate_source_width sltiu
 immediate_source_width andi
 
-local macro "shift_source_width" nm:ident "," shget:term : command => do
+local macro "shift_source_width" nm:ident : command => do
   let s := nm.getId.toString
   let theoremName := Lean.mkIdent (Lean.Name.mkSimple ("sourceWidth_" ++ s))
   let rawName := Lean.mkIdent ((`ZiskFv.Compliance.RawProgramBinding).str
@@ -105,8 +105,8 @@ local macro "shift_source_width" nm:ident "," shget:term : command => do
       (rawDecode : $rawName trace i c addr rawProgram) :
       SourceWidthAt trace i addr rawProgram 1 := by
     obtain ⟨ext, hok, hop, _⟩ := $transpileName
-      (regidx_to_fin c.rd).val (regidx_to_fin c.r1).val ($shget c).shamt.toNat
-      (regidx_to_fin c.rd).isLt (regidx_to_fin c.r1).isLt ($shget c).shamt.isLt
+      (regidx_to_fin c.rd).val (regidx_to_fin c.r1).val c.shamt.toNat
+      (regidx_to_fin c.rd).isLt (regidx_to_fin c.r1).isLt c.shamt.isLt
     refine at_pc_of_word trace i addr rawProgram _ 1 rawDecode.hLine ?_
     have haccepted := accepted_of_live_terminal _ ext hok
       (Or.inl (by rw [hop]; decide))
@@ -115,12 +115,12 @@ local macro "shift_source_width" nm:ident "," shget:term : command => do
       ZiskFv.Compliance.Decode.rawIType_opcode]
     all_goals decide)
 
-shift_source_width slli, (fun c => c)
-shift_source_width srli, (fun c => c)
-shift_source_width srai, (fun c => c)
-shift_source_width slliw, ZiskFv.Compliance.Claim_slliw.slliw_input
-shift_source_width srliw, ZiskFv.Compliance.Claim_srliw.srliw_input
-shift_source_width sraiw, ZiskFv.Compliance.Claim_sraiw.sraiw_input
+shift_source_width slli
+shift_source_width srli
+shift_source_width srai
+shift_source_width slliw
+shift_source_width srliw
+shift_source_width sraiw
 
 /-! These are the source-special dispatcher families. All guard evidence is
 already present in their corresponding `RawProgramDecode_<op>` structures. -/
