@@ -104,7 +104,7 @@ instance : SMul F (Ext3 F) :=
 
 @[simp] theorem coeff_one_block (i : Fin 3) :
     coeff (1 : Ext3 F) i = if i = 0 then 1 else 0 := by
-  fin_cases i <;> simp [coeff, One.one]
+  fin_cases i <;> rfl
 
 @[simp] theorem coeff_add (a b : Ext3 F) (i : Fin 3) :
     coeff (a + b) i = coeff a i + coeff b i := by
@@ -130,10 +130,10 @@ instance : SMul F (Ext3 F) :=
 @[simp] theorem ofBase_one : ofBase (1 : F) = 1 := rfl
 
 @[simp] theorem ofBase_add (a b : F) : ofBase (a + b) = ofBase a + ofBase b := by
-  apply Ext3.ext <;> simp [ofBase, HAdd.hAdd, Add.add]
+  apply Ext3.ext <;> dsimp [ofBase] <;> ring
 
 @[simp] theorem ofBase_sub (a b : F) : ofBase (a - b) = ofBase a - ofBase b := by
-  apply Ext3.ext <;> simp [ofBase, HSub.hSub, Sub.sub]
+  apply Ext3.ext <;> dsimp [ofBase] <;> ring
 
 @[simp] theorem ofBase_neg (a : F) : ofBase (-a) = -ofBase a := by
   apply Ext3.ext <;> simp [ofBase, Neg.neg]
@@ -148,15 +148,15 @@ instance : SMul F (Ext3 F) :=
 /-- Mixed extension/base addition changes only the constant coefficient. -/
 theorem add_ofBase (a : Ext3 F) (c : F) :
     a + ofBase c = ⟨a.c0 + c, a.c1, a.c2⟩ := by
-  apply Ext3.ext <;> simp [ofBase, HAdd.hAdd, Add.add]
+  apply Ext3.ext <;> dsimp [ofBase] <;> ring
 
  theorem sub_ofBase (a : Ext3 F) (c : F) :
     a - ofBase c = ⟨a.c0 - c, a.c1, a.c2⟩ := by
-  apply Ext3.ext <;> simp [ofBase, HSub.hSub, Sub.sub]
+  apply Ext3.ext <;> dsimp [ofBase] <;> ring
 
  theorem ofBase_sub_block (c : F) (a : Ext3 F) :
     ofBase c - a = ⟨c - a.c0, -a.c1, -a.c2⟩ := by
-  apply Ext3.ext <;> simp [ofBase, HSub.hSub, Sub.sub]
+  apply Ext3.ext <;> dsimp [ofBase] <;> ring
 
  theorem ofBase_mul_block (c : F) (a : Ext3 F) : ofBase c * a = c • a := by
   rw [mul_eq_convolutionMul]
