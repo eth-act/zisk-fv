@@ -1,0 +1,126 @@
+{
+  "source_commit": "b28f7e25",
+  "base": "622938be281db14470819a9fe752528221a2491d",
+  "actual_new5_sources": [
+    {
+      "module": "ZiskFv/AirsClean/MemAlignWriteByte/NativeRow",
+      "path": "/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeRow.lean",
+      "sha256": "817605de0a38bcdbca79f8241a4a3e95ccc39363060e0ee8c58cf6ecdd29cdbf"
+    },
+    {
+      "module": "ZiskFv/AirsClean/MemAlignWriteByte/NativeTupleSource",
+      "path": "/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeTupleSource.lean",
+      "sha256": "f2617a01684471bd7418dff3070584218a6c85359026d002432ff57f6ab878ba"
+    },
+    {
+      "module": "ZiskFv/AirsClean/MemAlignWriteByte/NativeValues",
+      "path": "/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeValues.lean",
+      "sha256": "a7cb6f89910c3973f8c55f35294956b62c300955a6901e1836a71150831c34a0"
+    },
+    {
+      "module": "ZiskFv/AirsClean/MemAlignWriteByte/NativeSource",
+      "path": "/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeSource.lean",
+      "sha256": "8c86c323c38005a457661fd2980973430181dd0618e2bbadd040d755b6cb1e0f"
+    },
+    {
+      "module": "ZiskFv/AirsClean/MemAlignWriteByte/NativeSourceRecovery",
+      "path": "/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeSourceRecovery.lean",
+      "sha256": "12f00dd5710d39a3a838754c5e7e4ad14500838b145d0175a8cc2cbea0667bdb"
+    }
+  ],
+  "actual_narrow": {
+    "fresh_canonical_prerequisites_and_targets": 22,
+    "all_green": true,
+    "attempt1": "Row+Spec GREEN; generatedArithRangeTable failed CLI outside-root path before elaboration",
+    "attempt2": "ONLYfailedArith retry: readonlysource-symlink+--root also CLI realPath outside-root setup failure",
+    "approved_copy_repair": "Main approved EXACT4immutablejad generatedSOURCE copies cp--reflink=never+CMP; privateExtraction moduleprefix, samehashes/options, no object/pin/cachecopy",
+    "attempt3": "ONLYArithRangeTable+remainingdependent20 targets:GREEN; initialRow/Specnotrerun",
+    "canonical_source_or_proof_repairs": false
+  },
+  "actual_full": {
+    "returncode": 0,
+    "seconds": 191.52726289001293,
+    "roots": 326,
+    "actual_defining_module_counts": {
+      "ZiskFv.AirsClean.MemAlignWriteByte.NativeTupleSource": 67,
+      "ZiskFv.AirsClean.MemAlignWriteByte.NativeRow": 99,
+      "ZiskFv.AirsClean.MemAlignWriteByte.NativeSource": 44,
+      "ZiskFv.AirsClean.MemAlignWriteByte.NativeSourceRecovery": 47,
+      "ZiskFv.AirsClean.MemAlignWriteByte.NativeValues": 69
+    },
+    "constants": 13528,
+    "opaque_values": [
+      "Lean.opaqueId",
+      "String.Internal.append",
+      "String.hash",
+      "System.Platform.getNumBits",
+      "_private.Init.Data.Iterators.Basic.0.Std.Internal.idOpaque",
+      "_private.Init.WFExtrinsicFix.0.WellFounded.opaqueFix",
+      "mixHash"
+    ],
+    "axioms": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "every_root_and_union_independentCollector": true,
+    "missing_constants": [],
+    "mismatched_roots": [],
+    "scope": "ALLNEW5actualdefining/private/compiler/ctors/type+value/OPAQUE/fullpaths/EACHroot+union; noexternal/namespacepruning/depthcutoff/allowlistchange",
+    "initial_full_harness_failure": "Before Lean invoked: planexclusioncontained5dottedaliasesplusactualslashpaths; normalizeequivalentnamesonly, retainoriginalplanandfailedrunner/log. Actual22pathswerealreadycorrectlyexcluded/compiled."
+  },
+  "actual_changed_inputs": [
+    "canonical6229RangeTables rebuiltwithactualjadArithRangeTable",
+    "canonicalSourceMirrorWeld notobsoleteSource",
+    "canonicalExtractedWiring importedSourceMirrorWeld; existingproof/helperbodiesunchanged",
+    "ALLdependentWBcomponentmodulesfresh;17actualreusedsource-CImatchesfromfrozen1e8recordedparentchain",
+    "exact4immutablejadgeneratedsourcecopiesand4canonicalPIO/coredependentmodulesfresh"
+  ],
+  "after_integrity": {
+    "lease_sha256": "1e8c6bec9cb45b7f6951c578b47826a9bc5b742b7b7c62a57574fa5d38ab15c2",
+    "all_actual_source_and_object_input_hashes_preserved": true,
+    "all_canonical22_source_and_object_hashes_preserved": true,
+    "no_foreign_write_cache_or_olean_copy": true,
+    "actual_new5_roots": 326,
+    "actual_constants": 13528,
+    "actual_opaque_values": [
+      "Lean.opaqueId",
+      "String.Internal.append",
+      "String.hash",
+      "System.Platform.getNumBits",
+      "_private.Init.Data.Iterators.Basic.0.Std.Internal.idOpaque",
+      "_private.Init.WFExtrinsicFix.0.WellFounded.opaqueFix",
+      "mixHash"
+    ],
+    "actual_axioms": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "every_actual_root_and_union_independent_crosscheck": true,
+    "actual_raw_report_sha256": "d35bc82a3267c9aa446a9ad80f83f51647b55ecc1724eeca3fb926c53b4f3eb2"
+  },
+  "old_evidence_not_relabelled": [
+    "old91",
+    "old166",
+    "old69",
+    "Main603",
+    "preservedactual3PILcampaignnotrerun"
+  ],
+  "invariants": [
+    "samecanonicalSourceObject/registry0air20/ResolvedParams/originalUInt64buffer; noreaderoracle/SourceValid/rostercertificate/newRootsuccessbinder",
+    "14actualWBcells,7polys,all8routes; c8dual88/c9LOAD/c10writtenByte107 decodedslots LOADBEARINGinactual4rowops; staticlookupsretainednotcompositionproof",
+    "rawAIR0p unrestricted including0/nontrivial\u22121; inverseExt3prefix1+3*i; separateGROUP0;3Directp,-p,p distinctfrom4rowmessages",
+    "actualnativeprefixconstructibility andfinite13valuewordsreadoriginalbuffers; entireUInt64traceandnonvacuousinboundsSOMEsuffixpreserved; nofullNcopies",
+    "all18canonicalWB/DualByte/prereqsourceunchanged;NOproductionSource.lean/copiedoldworld/Accepted/Root/OpEnvelope/providercutover",
+    "ordinaryexports+existingdocs only; NOnewcompiler/aliases/validator/interfaceorlimitweakening"
+  ],
+  "remaining_real_invariants": [
+    "nativeABI/actualproducer-verifierSnapshot\u2192SourceObject materialization/authentication and currentPIL\u2192serializedglobalPolID/sameSetupimage",
+    "existingComponent/Circuit/Table/Flat/publicInput/AcceptedworldbindingmustbeprovedfromSAMEactualsourceimage, notadditionalcallerpromise",
+    "actualonce-per-final-registry-occurrenceDirectroster/ext3std_sum/finalizer/globalbalance withgenuinebyte/Mem timestamp0counterparts",
+    "actualsourceweightedbus88providermultiplicity/consumerbalancetransport; staticlookup/localtypedchannelnotcompositioncredit"
+  ],
+  "whole_413_414_418_closed": false,
+  "main_checks_remaining": "Mainownsproductionfull lake/V1/V2/complete nix test/cache/merge; no such global checkrunhere"
+}

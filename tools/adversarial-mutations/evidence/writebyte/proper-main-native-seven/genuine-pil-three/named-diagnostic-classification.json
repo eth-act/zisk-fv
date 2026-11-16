@@ -1,0 +1,44 @@
+{
+  "wb-c8-dual88-order": {
+    "expected_declaration": "dualByteHint_decode_success",
+    "same_named_declaration_actual_rfl_equation_reject": true,
+    "matching_full_diagnostics": [
+      {
+        "declaration": "dualByteHint_decode_success",
+        "line": 115,
+        "column": 2,
+        "unchanged_source_sha256": "f061b544d0f70999c396feec5d456d049e97632fe777b5cb72373aaf620bbef4",
+        "actual_kernel_diagnostic": "/home/cody/zisk-fv-writebyte/ZiskFv/AirsClean/MemAlignWriteByte/ExtractedWiring.lean:115:2: error: Tactic `rfl` failed: The left-hand side\n  decodeSourceSlots row padding hint_MemAlignWriteByte_8_1.slots\nis not definitionally equal to the right-hand side\n  some [(dualByteMessageExpr row).byte_a, (dualByteMessageExpr row).byte_b]\n\nrow : Var MemAlignWriteByteRow (Fin 18446744069414584321)\npadding : Expression (Fin 18446744069414584321)\n\u22a2 decodeSourceSlots row padding hint_MemAlignWriteByte_8_1.slots =\n    some [(dualByteMessageExpr row).byte_a, (dualByteMessageExpr row).byte_b]\n"
+      }
+    ],
+    "classification_note": "Unknown identifier/setup/compiler errors never inherit a kill from some OTHER rfl failure in the file."
+  },
+  "wb-c9-aligned-load-timestamp": {
+    "expected_declaration": "alignedLoadHint_decode_success",
+    "same_named_declaration_actual_rfl_equation_reject": true,
+    "matching_full_diagnostics": [
+      {
+        "declaration": "alignedLoadHint_decode_success",
+        "line": 132,
+        "column": 2,
+        "unchanged_source_sha256": "f061b544d0f70999c396feec5d456d049e97632fe777b5cb72373aaf620bbef4",
+        "actual_kernel_diagnostic": "/home/cody/zisk-fv-writebyte/ZiskFv/AirsClean/MemAlignWriteByte/ExtractedWiring.lean:132:2: error: Tactic `rfl` failed: The left-hand side\n  decodeSourceSlots row padding hint_MemAlignWriteByte_9_0.slots\nis not definitionally equal to the right-hand side\n  some (memoryMessageTuple (memReadMessageExpr row))\n\nrow : Var MemAlignWriteByteRow (Fin 18446744069414584321)\npadding : Expression (Fin 18446744069414584321)\n\u22a2 decodeSourceSlots row padding hint_MemAlignWriteByte_9_0.slots = some (memoryMessageTuple (memReadMessageExpr row))\n"
+      }
+    ],
+    "classification_note": "Unknown identifier/setup/compiler errors never inherit a kill from some OTHER rfl failure in the file."
+  },
+  "wb-c10-written-byte-slot": {
+    "expected_declaration": "writtenByteHint_decode_success",
+    "same_named_declaration_actual_rfl_equation_reject": true,
+    "matching_full_diagnostics": [
+      {
+        "declaration": "writtenByteHint_decode_success",
+        "line": 149,
+        "column": 2,
+        "unchanged_source_sha256": "f061b544d0f70999c396feec5d456d049e97632fe777b5cb72373aaf620bbef4",
+        "actual_kernel_diagnostic": "/home/cody/zisk-fv-writebyte/ZiskFv/AirsClean/MemAlignWriteByte/ExtractedWiring.lean:149:2: error: Tactic `rfl` failed: The left-hand side\n  decodeSourceSlots row padding hint_MemAlignWriteByte_10_0.slots\nis not definitionally equal to the right-hand side\n  some [row.written_byte_value]\n\nrow : Var MemAlignWriteByteRow (Fin 18446744069414584321)\npadding : Expression (Fin 18446744069414584321)\n\u22a2 decodeSourceSlots row padding hint_MemAlignWriteByte_10_0.slots = some [row.written_byte_value]\n"
+      }
+    ],
+    "classification_note": "Unknown identifier/setup/compiler errors never inherit a kill from some OTHER rfl failure in the file."
+  }
+}

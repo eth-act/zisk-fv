@@ -1,0 +1,59 @@
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/writebyte-instance-gate/lean/ZiskFv/AirsClean/MemAlignWriteByte/NativeInstance.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeInstance.lean
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeInstance.lean:95:2: error: Tactic `generalize` failed: result is not type correct
+  ∀
+    (x :
+      Option
+        (Vector (Fin 18446744069414584321) (NativeTraceCells.profile NativeTraceCells.Kind.writeByte).unpackedWords)),
+    x = some (x.get ⋯)
+
+source : SourceObject (Fin 18446744069414584321)
+resolved : ResolvedOccurrence source
+mode : Bool
+index : ℕ
+view : NativeTraceCells.Row NativeTraceCells.Kind.writeByte resolved mode index
+⊢ view.values? = some (view.values?.get ⋯)
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeInstance.lean:110:33: warning: This simp argument is unused:
+  pure
+
+Hint: Omit it from the simp argument list.
+  simp [NativeSource.cells?, rowAt_source anchor index, cellsAt,
+  ̵  ̵ ̵ ̵cellsFromRow_recovers, bind,̵ ̵p̵u̵r̵e̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeInstance.lean:131:28: warning: This simp argument is unused:
+  pure
+
+Hint: Omit it from the simp argument list.
+  simp [hv, bind,̵ ̵p̵u̵r̵e̵] at hc
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeInstance.lean:229:4: warning: This simp argument is unused:
+  Vector.map_map
+
+Hint: Omit it from the simp argument list.
+  simp [literalInteraction, AbstractInteraction.eval, Interaction.msgVector, V̵e̵c̵t̵o̵r̵.̵m̵a̵p̵_̵m̵a̵p̵,̵ ̵Function.comp_def,
+  ̲  ̲ ̲ ̲circuit_norm]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeInstance.lean:271:56: error: unsolved goals
+source : SourceObject (Fin 18446744069414584321)
+resolved : ResolvedOccurrence source
+mode : Bool
+zero : NativeSource.Projection
+hzero : NativeSource.project? resolved mode 0 = some zero
+⊢ ∃ factory,
+    (match hz : NativeSource.project? resolved mode 0 with
+      | none => none
+      | some zero =>
+        some
+          { zero := zero, zeroSource := hz, directs := (NativeTupleSource.directValues? (resolved.params mode)).get ⋯,
+            directsSource := ⋯ }) =
+      some factory
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeInstance.lean:272:18: warning: This simp argument is unused:
+  hzero
+
+Hint: Omit it from the simp argument list.
+  simp [factory?,̵ ̵h̵z̵e̵r̵o̵]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeInstance.lean:361:40: error(lean.unknownIdentifier): Unknown identifier `OccurrenceKey.globalSlot`

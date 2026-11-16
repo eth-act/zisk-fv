@@ -1,0 +1,31 @@
+{
+  "status": "SOURCE_INSPECTION_AND_EXPLICIT_UNPROVED_BINDING_NOT_COMPOSITION_PROOF",
+  "sources": [
+    {"path": "/nix/store/zqhhhzb9rq7gcbv46c1fz4k91pk42yni-source/pil2-components/lib/std/rs/src/std_virtual_table.rs", "sha256": "00f32259de8e6ddf4208af7773a1282e9939612b78c89c830a320700340ff009", "pin": "ff0e33a9"},
+    {"path": "/nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source/pil/src/pil_helpers/traces.rs", "sha256": "3bbd2fd7cd912e6d5cc5904547db3ed2a75dca04c7f111a8f30af17937041dad", "pin": "b632745", "lines": "504-513"},
+    {"path": "/nix/store/jadjdsv2y69gq6mq6xfiqx5cvas5l82x-zisk-fv-extracted-lean-1.0/PackedVirtualTables.lean", "sha256": "8a80734b2725e89530b1c8e86d3f0160b1da9021b4572355476720a5622cfc37", "lines": "7-34,64-66"},
+    {"path": "/nix/store/jadjdsv2y69gq6mq6xfiqx5cvas5l82x-zisk-fv-extracted-lean-1.0/LookupWiring.lean", "sha256": "c44807d618d000f2a3456b5c0a9af9e2dbb728df31725df1cb2cd7a1d097ff8c", "lines": "1536-1547"}
+  ],
+  "actual_declarations": [
+    "PackedVirtualTables.physicalRows=2097152; source88 tableId=busId=88,width2,rows65536,air0,start4456448",
+    "Source.location divides/mods start+i by physicalRows; arithmetic consequence source88.location(i)=(air0,lane2,row262144+i)",
+    "b632 VirtualTable0TraceRow<F> multiplicity:[F;8]; GenericTrace<...,2097152,0,33>",
+    "LookupWiring.SourceSchema.air_VirtualTable0 registry0/33; multiplicity witness stage1, local index0,dim1,lengths[8]"
+  ],
+  "native_producer_dataflow": [
+    "std_virtual_table.rs66-96: registry-selected setup's actual virtual_table_data binary hint supplies table_ids/acc_heights/num_muls; these are not inferred from a name-only fallback",
+    "98-125: UID mapping retains actual table offset; num_rows from global_info; shift=trailing_zeros(num_rows),mask=num_rows-1,num_cols=num_muls",
+    "193-211: increment maps actual table_offset+row to multiplicities[offset>>shift][offset&mask]",
+    "301-316: actual Dctx table lookup/add determines table_instance_id; this is not a semantic segment ordinal",
+    "341-369: stage1 calculates actual process/global instance; optional MPI distribution, then buffer[row*num_cols+col]=F::from_u64(multiplicities[col][row])",
+    "370-377: all-zero native table may be skipped by explicit source branch; absence of a local trace alone does NOT prove all weights zero and gives no absent-table fallback",
+    "379-390: same setup cm1 width labels TraceInfo::new(...,num_rows,buffer,false,false), then pctx.add_air_instance(...,instance_id) overwrites that actual global slot"
+  ],
+  "exact_missing_invariant": "Derive from the actual producer/verifier materialization step, NOT a new caller equality/certificate: the runtime virtual_table_data table88/offset/num_muls and global-info rows coincide with the observed source88 layout; the same actual Dctx global instance selects final registry0/33 and its original SourceObject slot/setup; source88 logical i reads the original unpacked field/native word at (262144+i)*8+2 with the real F::from_u64/native representation conversion. Shared/remote/skip status must follow actual source control flow, not None-to-zero. Bind this derived source multiplicity projection to existing DualBytePackedSource.providerTable, then derive actual native global-sum/finalizer/once-roster transport to the existing channel balance. None is currently taken as a premise or certificate.",
+  "not_claimed": ["actual native ABI/source materialization", "serialized binary-hint/PIL-to-same-setup equality", "all production-profile coverage", "native global balance or provider range transport", "Accepted/root embedding", "live #413/#414 closure"],
+  "genuine_future_mutation_recipes_not_run": [
+    "After a genuinely source-owned provider adapter exists, mutate source88 lane2 selection to lane1 or row262144+i to row262145+i; an unchanged original-buffer correspondence theorem must reject, not a name/text tautology.",
+    "Mutate actual std_virtual_table.rs buffer transpose row*num_cols+col to col*num_rows+row through the approved real source/compiler path; unchanged native materialization/layout proof must reject. This is not covered by the current pure model-body/kernel gates.",
+    "For the new local factory only, mutate emitted Direct multiplicity sign in literalInteraction or drop the singleton Direct branch; unchanged literal evaluation/once exact-values/whole-family theorems must reject after a separately assigned mutation baseline. No mutation gate was run for these new modules."
+  ]
+}
