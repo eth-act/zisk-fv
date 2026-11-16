@@ -202,14 +202,18 @@ theorem native_next_row (view : View resolved) (row : view.Index) :
   simp [next, view.setup_rows]
 
 def last (view : View resolved) : view.Index :=
-  ⟨view.count - 1, by have := view.count_pos; omega⟩
+  ⟨view.count - 1, by
+    change view.count - 1 < view.count
+    have := view.count_pos
+    omega⟩
 
 theorem shifted_l1 (view : View resolved) (row : view.Index) :
     view.l1? (view.next row) = some (if row.val + 1 = view.count then 1 else 0) := by
   rw [actual_l1]
   by_cases atLast : row.val + 1 = view.count
   · simp [next, atLast]
-  · have before : row.val + 1 < view.count := by omega
+  · have within : row.val < view.count := row.isLt
+    have before : row.val + 1 < view.count := by omega
     simp [next, Nat.mod_eq_of_lt before, atLast]
 
 /-- A unique PHYSICAL last row, derived from the full native/pulse scan. -/
