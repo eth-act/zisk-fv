@@ -1812,7 +1812,7 @@ theorem bootWalk_mem_of_regPre_ptr_wrap_eq_of_timestamp_lt
     (earlier : q.timestamp.val < p.timestamp.val) : q ∈ path := by
   obtain ⟨index, inTable, rowEq⟩ := isActiveWitnessMainRow_eq_mainTableRow trace active
   have rowEval : q.1 = eval
-      (trace.mainTable.environment (trace.mainTable.table.get ⟨index, inTable⟩))
+      (trace.mainTable.environment trace.mainTable.table[index])
       (ZiskFv.AirsClean.Main.componentWithRomMemAndOpBus
         trace.programLength trace.program).rowInputVar :=
     rowEq.trans (mainTableRowAtOrZero_get trace.program trace.mainTable ⟨index, inTable⟩)
@@ -1881,7 +1881,7 @@ theorem cMemMessage_reg_selectors_of_memop3
   all_goals first
     | exact ⟨register, memory, indirect⟩
     | (exfalso
-       simp only [cMemMessage, memory, indirect, register] at registerOp
+       simp only [memory, indirect, register] at registerOp
        revert registerOp
        decide)
 
