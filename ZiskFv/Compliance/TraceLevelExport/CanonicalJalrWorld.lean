@@ -59,8 +59,18 @@ def worldProgram : Program 2
 /-- Exact source serialization, not only a decoder shape or an opcode claim. -/
 theorem worldProgram_actual_source :
     romMessagesOfRaw 0 jalrExpansionRaw = (worldAddProgramRow, some worldAndProgramRow) := by
-  run_tac Lean.Elab.Tactic.liftMetaFinishingTactic fun goal =>
-    Lean.Meta.withTransparency .all goal.refl
+  rcases System.Platform.numBits_eq with bits | bits
+  all_goals norm_num [romMessagesOfRaw, jalrExpansionRaw, bits,
+    zisk_core.aeneas_extract.extract_transpile_rv64im_rows_raw,
+    zisk_core.aeneas_extract.extract_transpile_rv64im_raw,
+    worldAddProgramRow, worldAndProgramRow, worldAddBits, worldAndBits,
+    JalrSpinWitness.jalrAddBits, JalrSpinWitness.jalrAndBits,
+    romRowOf, signedOffset, romFlagBitsOfExtract, packFlags,
+    zisk_core.zisk_inst.SRC_IMM, zisk_core.zisk_inst.SRC_MEM,
+    zisk_core.zisk_inst.SRC_REG, zisk_core.zisk_inst.SRC_IND,
+    zisk_core.zisk_inst.SRC_C, zisk_core.zisk_inst.STORE_REG,
+    zisk_core.zisk_inst.STORE_MEM, zisk_core.zisk_inst.STORE_IND,
+    zisk_core.riscv2zisk_context.Riscv2ZiskContext.jalr.JALR_MASK]
 
 @[reducible] def worldInitial (reg : FGL) : MemBusMessage FGL :=
   ZiskFv.AirsClean.RegisterBoundary.bootMessage (boundaryRowIdle reg)
@@ -136,7 +146,7 @@ theorem worldRegisterHistories :
     bRegPreMessage worldRow2 = bMemMessage worldRow0 ∧
     cRegPreMessage worldRow3 = cMemMessage worldRow1 ∧
     bRegPreMessage worldRow4 = bMemMessage worldRow2 := by
-  repeat constructor <;> rfl
+  exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 def worldBoundaryRows : List (ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL) :=
   [ registerBoundaryRowFromLast 1 worldRow3WithLast.1,
@@ -176,7 +186,7 @@ private theorem eval_world_b_distance (env : Environment FGL) (row : Var MainRow
   cases rom
   simp [bRegStepDistanceExpr, Expression.eval, ProvableStruct.eval_eq_eval,
     ProvableStruct.eval, ProvableStruct.fromComponents, ProvableStruct.components,
-    ProvableStruct.toComponents, ProvableStruct.eval.go, CircuitType.eval_expr]
+    ProvableStruct.toComponents, ProvableStruct.eval.go, CircuitType.eval_expr, sub_eq_add_neg]
 
 private theorem eval_world_c_distance (env : Environment FGL) (row : Var MainRowWithRom FGL) :
     Expression.eval env (cRegStepDistanceExpr row) =
@@ -185,7 +195,7 @@ private theorem eval_world_c_distance (env : Environment FGL) (row : Var MainRow
   cases rom
   simp [cRegStepDistanceExpr, Expression.eval, ProvableStruct.eval_eq_eval,
     ProvableStruct.eval, ProvableStruct.fromComponents, ProvableStruct.components,
-    ProvableStruct.toComponents, ProvableStruct.eval.go, CircuitType.eval_expr]
+    ProvableStruct.toComponents, ProvableStruct.eval.go, CircuitType.eval_expr, sub_eq_add_neg]
 
 theorem worldMainRangeValues_actual : worldMainRangeValues = [1, 6, 7, 7, 7] := by
   simp only [worldMainRangeValues, eval_world_b_distance, eval_world_c_distance,
@@ -484,6 +494,218 @@ private theorem balanced_of_all_actual_payloads (emitted : List (Interaction FGL
     obtain ⟨interaction, present, rfl⟩ := List.mem_map.mp member
     exact of_decide_eq_true ((List.all_eq_true.mp checks) interaction present)
 
+private theorem worldMain_effectiveRows :
+    worldMainTable.table =
+      [ mainFixedColumns.materialize 0 (mainRawRow worldRow0),
+        mainFixedColumns.materialize 1 (mainRawRow worldRow1),
+        mainFixedColumns.materialize 2 (mainRawRow worldRow2),
+        mainFixedColumns.materialize 3 (mainRawRow worldRow3),
+        mainFixedColumns.materialize 4 (mainRawRow worldRow4) ] := by
+  simp [worldMainTable, mainRowsTable, Table.table, componentWithRomMemAndOpBus, worldMainRows]
+
+private theorem worldMainOp_eval (env : Environment FGL) (row : MainRowWithRom FGL)
+    (input : eval env (componentWithRomMemAndOpBus 2 worldProgram).rowInputVar = row) :
+    (((OpBusChannel.emitted
+      (-(componentWithRomMemAndOpBus 2 worldProgram).rowInputVar.core.is_external_op)
+      (opBusMessageExpr (componentWithRomMemAndOpBus 2 worldProgram).rowInputVar.core)).toRaw).eval env) =
+        mainOpBusInteraction row := by
+  let rowVar := (componentWithRomMemAndOpBus 2 worldProgram).rowInputVar
+  have core : eval env rowVar.core = row.core := by
+    rw [ZiskFv.AirsClean.FullEnsemble.mainRowWithRom_eval_core]
+    exact congrArg MainRowWithRom.core input
+  have field := ZiskFv.AirsClean.FullEnsemble.mainRow_eval_is_external_op env rowVar.core
+  simp [mainOpBusInteraction, AbstractInteraction.eval, ChannelInteraction.toRaw]
+  constructor
+  · change Expression.eval env (-rowVar.core.is_external_op) = -row.core.is_external_op
+    simp [Expression.eval, field, core]
+  constructor
+  · have message : eval env (opBusMessageExpr rowVar.core) = opBusMessage row.core := by
+      rw [eval_opBusMessageExpr, core]
+    rw [toElements_eval_toArray]
+    change (toElements (eval env (opBusMessageExpr rowVar.core))).toArray =
+      (toElements (opBusMessage row.core)).toArray
+    rw [message]
+  · rfl
+
+private theorem worldMain_ops :
+    worldMainTable.interactionsWith OpBusChannel.toRaw =
+      [mainOpBusInteraction worldRow0, mainOpBusInteraction worldRow1,
+       mainOpBusInteraction worldRow2, mainOpBusInteraction worldRow3,
+       mainOpBusInteraction worldRow4] := by
+  rw [Table.interactionsWith, worldMain_effectiveRows]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  have atRow (index : Nat) (row : MainRowWithRom FGL)
+      (segment : row.core.segment_l1 = mainFixedColumns.fixedAt 0 index)
+      (step : row.rom.main_step = mainFixedColumns.fixedAt 1 index) :
+      worldMainTable.component.operations.interactionValuesWith OpBusChannel.toRaw
+        (worldMainTable.environment (mainFixedColumns.materialize index (mainRawRow row))) =
+          [mainOpBusInteraction row] := by
+    simp only [worldMainTable, mainRowsTable, Table.environment]
+    simp [Operations.interactionValuesWith_eq_map,
+      componentWithRomMemAndOpBus_interactionsWith_opBus]
+    exact worldMainOp_eval _ row (eval_mainRawRow_materialize index emptyData row segment step)
+  rw [atRow 0 worldRow0 (by rfl) (by rfl), atRow 1 worldRow1 (by rfl) (by rfl),
+    atRow 2 worldRow2 (by rfl) (by rfl), atRow 3 worldRow3 (by rfl) (by rfl),
+    atRow 4 worldRow4 (by rfl) (by rfl)]
+  rfl
+
+private theorem worldMain_mem :
+    worldMainTable.interactionsWith MemBusChannel.toRaw =
+      worldMainRows.flatMap mainValueMemBusInteractions := by
+  rw [Table.interactionsWith, worldMain_effectiveRows]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  have atRow (index : Nat) (row : MainRowWithRom FGL)
+      (segment : row.core.segment_l1 = mainFixedColumns.fixedAt 0 index)
+      (step : row.rom.main_step = mainFixedColumns.fixedAt 1 index) :
+      worldMainTable.component.operations.interactionValuesWith MemBusChannel.toRaw
+        (worldMainTable.environment (mainFixedColumns.materialize index (mainRawRow row))) =
+          mainValueMemBusInteractions row := by
+    calc
+      _ = mainMemBusInteractionsAt 2 worldProgram
+          (Environment.fromArray (mainFixedColumns.materialize index (mainRawRow row)) emptyData) := by
+        simpa [worldMainTable, mainRowsTable] using mainMemBusInteractionsAt_eq_component
+          2 worldProgram (Environment.fromArray
+            (mainFixedColumns.materialize index (mainRawRow row)) emptyData)
+      _ = mainValueMemBusInteractions row := mainMemBusInteractionsAt_eq_valueLevel
+        2 worldProgram _ row (eval_mainRawRow_materialize index emptyData row segment step)
+  rw [atRow 0 worldRow0 (by rfl) (by rfl), atRow 1 worldRow1 (by rfl) (by rfl),
+    atRow 2 worldRow2 (by rfl) (by rfl), atRow 3 worldRow3 (by rfl) (by rfl),
+    atRow 4 worldRow4 (by rfl) (by rfl)]
+  rfl
+
+private theorem worldMain_ranges :
+    worldMainTable.interactionsWith
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+      worldMainRows.flatMap (fun row =>
+        [mainARegStepInteraction row, mainBRegStepInteraction row, mainCRegStepInteraction row]) := by
+  rw [Table.interactionsWith, worldMain_effectiveRows]
+  simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+  have atRow (index : Nat) (row : MainRowWithRom FGL)
+      (segment : row.core.segment_l1 = mainFixedColumns.fixedAt 0 index)
+      (step : row.rom.main_step = mainFixedColumns.fixedAt 1 index) :
+      worldMainTable.component.operations.interactionValuesWith
+        ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+        (worldMainTable.environment (mainFixedColumns.materialize index (mainRawRow row))) =
+          [mainARegStepInteraction row, mainBRegStepInteraction row, mainCRegStepInteraction row] := by
+    simpa [worldMainTable, mainRowsTable] using mainRegisterStepInteractionsAt
+      2 worldProgram (Environment.fromArray
+        (mainFixedColumns.materialize index (mainRawRow row)) emptyData)
+      row (eval_mainRawRow_materialize index emptyData row segment step)
+  rw [atRow 0 worldRow0 (by rfl) (by rfl), atRow 1 worldRow1 (by rfl) (by rfl),
+    atRow 2 worldRow2 (by rfl) (by rfl), atRow 3 worldRow3 (by rfl) (by rfl),
+    atRow 4 worldRow4 (by rfl) (by rfl)]
+  rfl
+
+private theorem worldAnd_emissions (channel : RawChannel FGL) :
+    worldBinaryAndTable.interactionsWith channel =
+      (binarySingleRowTable worldBinaryAndRow).interactionsWith channel ++
+        (binarySingleRowTable worldBinaryAndRow).interactionsWith channel := by
+  simp [worldBinaryAndTable, binarySingleRowTable, Table.interactionsWith, Table.table,
+    ZiskFv.AirsClean.Binary.staticLookupComponent]
+
+private def worldMemEmissions : List (Interaction FGL) :=
+  worldBoundaryRows.flatMap registerBoundaryMemBusInteractions ++
+    worldMainRows.flatMap mainValueMemBusInteractions
+
+private theorem worldMem_emissions :
+    worldWitness.tables.flatMap (·.interactionsWith MemBusChannel.toRaw) = worldMemEmissions := by
+  have boundary : worldBoundaryTable.interactionsWith MemBusChannel.toRaw =
+      worldBoundaryRows.flatMap registerBoundaryMemBusInteractions := by
+    simpa [worldBoundaryTable] using registerBoundaryRowsTableOf_interactionsWith_memBus
+      worldBoundaryRows worldBoundaryRows_length worldBoundaryRows_enumerated
+  have binary := ZiskFv.AirsClean.FullEnsemble.staticBinary_table_interactionsWith_memBus_nil
+    (table := worldBinaryAndTable) rfl
+  have add := ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_memBus_nil
+    (table := worldBinaryAddTable) rfl
+  simp [worldWitness, worldTables, worldMemEmissions, boundary, binary, add,
+    emptyComponentTable_interactionsWith, worldMain_mem,
+    registerStepRangeRowsTable_interactionsWith_memBus_nil]
+
+private def worldOpEmissions : List (Interaction FGL) :=
+  [binaryOpBusInteraction worldBinaryAndRow, binaryOpBusInteraction worldBinaryAndRow,
+    binaryAddOpBusInteraction worldBinaryAddRow, binaryAddOpBusInteraction worldBinaryAddRow,
+    binaryAddOpBusInteraction worldBinaryAddRow,
+    mainOpBusInteraction worldRow0, mainOpBusInteraction worldRow1,
+    mainOpBusInteraction worldRow2, mainOpBusInteraction worldRow3, mainOpBusInteraction worldRow4]
+
+private theorem worldOp_emissions :
+    worldWitness.tables.flatMap (·.interactionsWith OpBusChannel.toRaw) = worldOpEmissions := by
+  have boundary := ZiskFv.AirsClean.FullEnsemble.registerBoundary_table_interactionsWith_opBus_nil
+    (table := worldBoundaryTable) rfl
+  simp [worldWitness, worldTables, worldOpEmissions, boundary, emptyComponentTable_interactionsWith,
+    worldAnd_emissions, binarySingleRowTable_interactionsWith_opBus,
+    worldBinaryAddTable, binaryAddRowsTable_interactionsWith_opBus, worldMain_ops,
+    registerStepRangeRowsTable_interactionsWith_opBus_nil]
+
+private def worldRangeEmissions : List (Interaction FGL) :=
+  worldBoundaryRows.map registerBoundaryRangeInteraction ++
+    (worldMainRangeValues ++ registerBoundaryRangeValues worldBoundaryRows).map
+      registerStepRangeInteraction ++
+    worldMainRows.flatMap (fun row =>
+      [mainARegStepInteraction row, mainBRegStepInteraction row, mainCRegStepInteraction row])
+
+private theorem worldRange_emissions :
+    worldWitness.tables.flatMap
+      (·.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) =
+        worldRangeEmissions := by
+  have boundary : worldBoundaryTable.interactionsWith
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw =
+        worldBoundaryRows.map registerBoundaryRangeInteraction := by
+    simpa [worldBoundaryTable] using registerBoundaryRowsTableOf_interactionsWith_registerStepRange
+      worldBoundaryRows worldBoundaryRows_length worldBoundaryRows_enumerated emptyData
+  have add := ZiskFv.AirsClean.FullEnsemble.binaryAdd_table_interactionsWith_registerStepRange_nil
+    (table := worldBinaryAddTable) rfl
+  have binary := ZiskFv.AirsClean.FullEnsemble.staticBinary_table_interactionsWith_registerStepRange_nil
+    (table := worldBinaryAndTable) rfl
+  simp [worldWitness, worldTables, worldRangeEmissions, emptyComponentTable_interactionsWith,
+    boundary, add, binary, registerStepRangeRowsTable_interactionsWith,
+    worldMain_ranges, List.map_append, List.append_assoc]
+
+private theorem worldOther_emissions (channel : RawChannel FGL)
+    (mem : channel ≠ MemBusChannel.toRaw) (op : channel ≠ OpBusChannel.toRaw)
+    (range : channel ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) :
+    worldWitness.tables.flatMap (·.interactionsWith channel) = [] := by
+  have boundary : worldBoundaryTable.interactionsWith channel = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change channel ∉ [MemBusChannel.toRaw, ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
+    simpa only [List.mem_cons, List.not_mem_nil, or_false, not_or] using And.intro mem range
+  have binary : worldBinaryAndTable.interactionsWith channel = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change channel ∉ [OpBusChannel.toRaw]
+    simpa only [List.mem_singleton] using op
+  have add : worldBinaryAddTable.interactionsWith channel = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change channel ∉ [OpBusChannel.toRaw]
+    simpa only [List.mem_singleton] using op
+  have main : worldMainTable.interactionsWith channel = [] := by
+    apply Table.interactionsWith_nil_of_channel_not_mem
+    change channel ∉ [MemBusChannel.toRaw, OpBusChannel.toRaw,
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw]
+    simpa only [List.mem_cons, List.not_mem_nil, or_false, not_or] using And.intro mem (And.intro op range)
+  have provider := registerStepRangeRowsTable_interactionsWith_of_ne
+    (worldMainRangeValues ++ registerBoundaryRangeValues worldBoundaryRows) channel range
+  simp [worldWitness, worldTables, boundary, binary, add, main, provider,
+    emptyComponentTable_interactionsWith]
+
+private theorem worldChannel_ne
+    (channel : RawChannel FGL) (name : String) (named : channel.name = name)
+    (other : RawChannel FGL) (otherName : String) (otherNamed : other.name = otherName)
+    (different : name ≠ otherName) : channel ≠ other := by
+  intro equal
+  apply different
+  exact named.symm.trans ((congrArg (fun raw : RawChannel FGL => raw.name) equal).trans otherNamed)
+
+private theorem worldOther_balanced (channel : RawChannel FGL)
+    (mem : channel ≠ MemBusChannel.toRaw) (op : channel ≠ OpBusChannel.toRaw)
+    (range : channel ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) :
+    BalancedInteractions (worldWitness.tables.flatMap (·.interactionsWith channel)) := by
+  rw [worldOther_emissions channel mem op range]
+  apply balanced_of_all_actual_payloads
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide +kernel
+  · decide +kernel
+
 /-- Full actual emissions, INCLUDING the real fifth row and all31 reload rows.
 The finite certificate checks every present payload, not a handpicked partition. -/
 theorem worldWitness_balancedChannels : worldWitness.BalancedChannels := by
@@ -493,12 +715,38 @@ theorem worldWitness_balancedChannels : worldWitness.BalancedChannels := by
     SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_channels,
     SoundEnsemble.addTable_channels, SoundEnsemble.empty_channels] at hchannel
   rcases hchannel with rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals
+  · rw [worldRange_emissions]
+    unfold worldRangeEmissions
+    rw [worldMainRangeValues_actual]
     apply balanced_of_all_actual_payloads
     · left
       rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
       decide +kernel
     · decide +kernel
+  · exact worldOther_balanced _
+      (worldChannel_ne _ _ rfl _ _ rfl (by decide))
+      (worldChannel_ne _ _ rfl _ _ rfl (by decide))
+      (worldChannel_ne _ _ rfl _ _ rfl (by decide))
+  · rw [worldMem_emissions]
+    apply balanced_of_all_actual_payloads
+    · left
+      rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+      decide +kernel
+    · decide +kernel
+  · rw [worldOp_emissions]
+    apply balanced_of_all_actual_payloads
+    · left
+      rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+      decide +kernel
+    · decide +kernel
+  · exact worldOther_balanced _
+      (worldChannel_ne _ _ rfl _ _ rfl (by decide))
+      (worldChannel_ne _ _ rfl _ _ rfl (by decide))
+      (worldChannel_ne _ _ rfl _ _ rfl (by decide))
+  · exact worldOther_balanced _
+      (worldChannel_ne _ _ rfl _ _ rfl (by decide))
+      (worldChannel_ne _ _ rfl _ _ rfl (by decide))
+      (worldChannel_ne _ _ rfl _ _ rfl (by decide))
 
 theorem worldWitness_transitions : worldWitness.TransitionConstraints := by
   intro table h_table
