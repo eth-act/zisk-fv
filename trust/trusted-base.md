@@ -1586,3 +1586,13 @@ their existing statements.
 The redundant Core fields remain: this is proof-source consumption, not numeric
 premise removal, load-predicate repair, new boot evidence, full Sail decode
 grounding, or committed-ROM source-world/provider completion.
+
+## Raw physical register-read coverage
+
+The additive `RegisterCoverageBridge` helpers place an earlier actual Main
+C-register access on the boot-anchored backward A/B read walk. Register mode
+and direct addressing follow from accepted Main Booleanity/address equations;
+timestamp order follows from actual physical row indices and fixed capacity.
+No architectural `ZiskStep`/`RowDecode` is fabricated for auxiliary rows.
+These lemmas do not yet identify the full physical last-write fold with Sail's
+four operand lanes, repair the public row-map interface, or close #417.
