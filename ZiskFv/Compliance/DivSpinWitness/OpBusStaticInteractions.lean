@@ -16,7 +16,7 @@ theorem divSpinBoundaryTable_opBusInteractions :
 theorem divSpinRemainderBoundTable_opBusInteractions :
     divSpinRemainderBoundTable.interactionsWith OpBusChannel.toRaw =
       [binaryOpBusInteraction divSpinRemainderBoundRow] :=
-  binarySingleRowTable_interactionsWith_opBus _
+  binaryConsumerSingleRowTable_interactionsWith_opBus _
 
 theorem divSpinBinaryAddTable_opBusInteractions :
     divSpinBinaryAddTable.interactionsWith OpBusChannel.toRaw =

@@ -12,7 +12,7 @@ These are the NEEDS-WORK families: unlike SUB/AND/OR/XOR/… they are **not**
 clones of `construction_and_sound`, because `OP_ADD = 0x0A = 10` may be served by
 EITHER of two distinct providers with two distinct `opBusMessage` shapes:
 
-* the lookup-aware Binary provider (`staticLookupComponent`), or
+* the row-native Binary consumer (`tableConsumerComponent`), or
 * the dedicated `BinaryAdd` provider (`BinaryAdd.component`).
 
 The salvaged Layer-A wrapper `main_request_add_provided`
@@ -37,7 +37,7 @@ carried — the conclusion holds regardless of which provider served the op.
   `logic_row_mode_pins_of_emit_op_lt_16_of_static_spec` (`OP_ADD = 10 < 16`) +
   `byte_chain_discharge_64_of_static_row`, then the lane→Sail binding
   (`input_r1_packed_a_row` / `input_r2_packed_b_row`), then calls
-  `Compliance.equiv_ADD` (the lookup-arm wrapper).
+  `EquivCore.Add.equiv_ADD_of_static_row` directly on the actual source row.
 * **BinaryAdd arm** — calls `Compliance.equiv_ADD_via_binaryadd`, which consumes
   the `add_subset_holds` conjunct (derived, NOT a binder), the r1/r2 lane bridges,
   `m32 = 0`, and the BinaryAdd component facts (all derived from the provider's
@@ -439,15 +439,12 @@ theorem construction_add_sound_claimed_dead
     obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_lookup
     let providerInput :=
-      ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
         (providerTable.environment providerRow)
-    obtain ⟨h_core, h_facts⟩ :=
-      ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-        h_component h_table_spec h_provider_row
-    have h_static :
-        ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-      ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-        h_component h_table_spec h_provider_row
+    obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+    have h_facts :=
+      ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
     have h_emit :
         providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
           (ZiskFv.Airs.Tables.BinaryTable.OP_ADD : FGL) := by
@@ -472,7 +469,8 @@ theorem construction_add_sound_claimed_dead
     have h_matches :
         ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
           providerInput ZiskFv.Airs.Tables.BinaryTable.OP_ADD :=
-      allByteMatchesOfStaticOut64_local h_out
+      allByteMatchesOfStaticOut64_local
+        (row := providerInput) (op := ZiskFv.Airs.Tables.BinaryTable.OP_ADD) h_out
     have h_input_r1_row :
         add_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
       simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
@@ -485,11 +483,10 @@ theorem construction_add_sound_claimed_dead
         ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
           m providerInput i.val (regidx_to_fin r2) add_input.r2_val
           h_matches h_m32_zero h_b_lo h_b_hi h_match h_input_r2
-    exact ZiskFv.Compliance.equiv_ADD
-      state add_input r1 r2 rd m
-      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      i.val bus pins h_match
-      h_input_r1_row h_input_r2_row h_lane_rd promises
+    exact ZiskFv.EquivCore.Add.equiv_ADD_of_static_row
+      state add_input r1 r2 rd m providerInput i.val bus promises pins
+      h_match h_core h_facts h_row_m32 h_bop
+      h_input_r1_row h_input_r2_row h_lane_rd
   · -- BinaryAdd arm: discharge via `equiv_ADD_via_binaryadd`.
     obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_binaryadd
@@ -647,15 +644,12 @@ theorem construction_addi_sound_claimed_dead
     obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_lookup
     let providerInput :=
-      ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
         (providerTable.environment providerRow)
-    obtain ⟨h_core, h_facts⟩ :=
-      ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-        h_component h_table_spec h_provider_row
-    have h_static :
-        ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-      ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-        h_component h_table_spec h_provider_row
+    obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+    have h_facts :=
+      ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
     have h_emit :
         providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
           (ZiskFv.Airs.Tables.BinaryTable.OP_ADD : FGL) := by
@@ -680,7 +674,8 @@ theorem construction_addi_sound_claimed_dead
     have h_matches :
         ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
           providerInput ZiskFv.Airs.Tables.BinaryTable.OP_ADD :=
-      allByteMatchesOfStaticOut64_local h_out
+      allByteMatchesOfStaticOut64_local
+        (row := providerInput) (op := ZiskFv.Airs.Tables.BinaryTable.OP_ADD) h_out
     have h_input_r1_row :
         addi_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
       simpa [ZiskFv.EquivCore.Add.binaryRowA64] using
@@ -696,11 +691,10 @@ theorem construction_addi_sound_claimed_dead
         ZiskFv.EquivCore.Bridge.Binary.itype_imm_subset_binary_row_of_main_row
           m providerInput i.val addi_input.imm h_matches h_m32_zero h_match
           h_addi_subset
-    exact ZiskFv.Compliance.equiv_ADDI
-      state addi_input r1 rd imm m
-      ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-      i.val bus pins h_match
-      h_addi_subset h_input_r1_row h_input_imm_row h_lane_rd promises
+    exact ZiskFv.EquivCore.Addi.equiv_ADDI_of_static_row
+      state addi_input r1 rd imm m providerInput i.val bus promises pins
+      h_match h_addi_subset h_core h_facts h_row_m32 h_bop
+      h_input_r1_row h_input_imm_row h_lane_rd
   · -- BinaryAdd arm: discharge via `equiv_ADDI_via_binaryadd`.
     obtain ⟨providerTable, _h_pt_mem, providerRow, h_provider_row,
         h_component, h_table_spec, h_match⟩ := h_binaryadd

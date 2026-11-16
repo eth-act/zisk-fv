@@ -26,6 +26,11 @@ import ZiskFv.AirsClean.BinaryExtension.Wiring
 import ZiskFv.AirsClean.BinaryTableSlice
 import ZiskFv.AirsClean.BinaryExtensionTableSlice
 import ZiskFv.AirsClean.PackedVirtualTableSources
+import ZiskFv.AirsClean.BinaryTablePrefix
+import ZiskFv.AirsClean.BinaryTableRequests
+import ZiskFv.AirsClean.BinaryTableBalance
+import ZiskFv.AirsClean.FullEnsemble.Balance.BinaryTableProviderMatch
+import ZiskFv.AirsClean.FullEnsemble.Balance.BinaryTableWitnessConstruction
 import ZiskFv.AirsClean.DualByteTable
 import ZiskFv.AirsClean.DualByteSlice
 import ZiskFv.AirsClean.DualBytePackedSource

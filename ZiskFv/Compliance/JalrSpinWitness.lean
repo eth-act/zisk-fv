@@ -1,5 +1,6 @@
 import ZiskFv.Compliance.AddSpinWitness
 import ZiskFv.AirsClean.Binary.Circuit
+import ZiskFv.AirsClean.FullEnsemble.Balance.BinaryTableWitnessConstruction
 
 /-!
 # Concrete unaligned JALR lowering witness
@@ -342,8 +343,79 @@ def jalrBinaryAndRow : ZiskFv.AirsClean.Binary.BinaryRow FGL :=
     jalrAndMiddleIndex jalrAndMiddleIndex jalrAndMiddleIndex
     jalrAndLastIndex
 
+/-- The eight actual bus-125 requests use the same source indices as the
+honest row constructor, including the final-byte position and six repeated
+middle-byte rows. -/
+def jalrBinarySourceRequests : Fin 8 → ZiskFv.AirsClean.Binary.BinaryTableIndex
+  | ⟨0, _⟩ => jalrAndByte0Index
+  | ⟨7, _⟩ => jalrAndLastIndex
+  | _ => jalrAndMiddleIndex
+
+theorem jalrBinarySourceRequests_weld (index : Fin 8) :
+    ZiskFv.AirsClean.BinaryTable.rowOfIndex (jalrBinarySourceRequests index).val =
+      ZiskFv.AirsClean.BinaryTableBalance.binaryMessageRow jalrBinaryAndRow index := by
+  have h_elements :
+      toElements
+          (ZiskFv.AirsClean.BinaryTable.rowOfIndex (jalrBinarySourceRequests index).val) =
+        toElements
+          (ZiskFv.AirsClean.BinaryTableBalance.binaryMessageRow jalrBinaryAndRow index) := by
+    fin_cases index <;> decide
+  simpa only [ProvableType.fromElements_toElements] using
+    congrArg (fun elements =>
+      (fromElements elements : ZiskFv.Channels.BinaryTable.BinaryTableMessage FGL)) h_elements
+
+/-- Both real source providers are projections of this one physical packed
+witness. Unrelated source cells retain the chosen zero base witness. -/
+def jalrPackedSources : ZiskFv.AirsClean.PackedVirtualTableSources.Witness FGL :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.physicalOfRequests (fun _ => 0)
+    (List.ofFn jalrBinarySourceRequests) []
+
+def jalrBinarySourceTable : Table FGL :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable jalrPackedSources emptyData
+
+def jalrExtensionSourceTable : Table FGL :=
+  ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable jalrPackedSources emptyData
+
+-- Keep full canonical source rows sealed when simplifying the outer ensemble.
+@[simp] private theorem jalrBinarySourceTable_component :
+    jalrBinarySourceTable.component = ZiskFv.AirsClean.BinaryTableSlice.sourceComponent := rfl
+
+@[simp] private theorem jalrExtensionSourceTable_component :
+    jalrExtensionSourceTable.component =
+      ZiskFv.AirsClean.BinaryExtensionTableSlice.sourceComponent := rfl
+
+@[simp] private theorem jalrBinarySourceTable_other_channel (channel : RawChannel FGL)
+    (h : channel.name ≠ ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw.name) :
+    jalrBinarySourceTable.interactionsWith channel = [] :=
+  ZiskFv.AirsClean.FullEnsemble.binaryProviderTable_other_channel jalrPackedSources emptyData channel h
+
+@[simp] private theorem jalrExtensionSourceTable_other_channel (channel : RawChannel FGL)
+    (h : channel.name ≠
+      ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw.name) :
+    jalrExtensionSourceTable.interactionsWith channel = [] :=
+  ZiskFv.AirsClean.FullEnsemble.extensionProviderTable_other_channel jalrPackedSources emptyData channel h
+
+theorem jalrBinarySource_actual_consumer_balanced :
+    BalancedInteractions
+      (jalrBinarySourceTable.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw ++
+        ZiskFv.AirsClean.Binary.tableConsumerComponent.operations.interactionValuesWith
+          ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+          (Environment.fromInput jalrBinaryAndRow emptyData)) := by
+  have h_balance := ZiskFv.AirsClean.FullEnsemble.binary_actual_row_requests_balanced
+    (fun _ => 0) emptyData jalrBinaryAndRow jalrBinarySourceRequests []
+    jalrBinarySourceRequests_weld
+  have h_source :=
+    ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_interactionsWith
+      jalrPackedSources emptyData
+  exact (congrArg
+    (fun sourceInteractions : List (Interaction FGL) =>
+      BalancedInteractions (sourceInteractions ++
+        ZiskFv.AirsClean.Binary.tableConsumerComponent.operations.interactionValuesWith
+          ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+          (Environment.fromInput jalrBinaryAndRow emptyData))) h_source).mpr h_balance
+
 def jalrBinaryAndTable : Table FGL :=
-  binarySingleRowTable jalrBinaryAndRow
+  binaryConsumerSingleRowTable jalrBinaryAndRow
 
 theorem jalrSetupMain_proverAssumptions :
     (componentWithRomMemAndOpBus 3 jalrProgram).circuit.ProverAssumptions
@@ -452,7 +524,8 @@ theorem jalrBinaryAddTable_constraints : jalrBinaryAddTable.Constraints := by
   · exact ⟨2, 2, by decide, by decide, rfl⟩
 
 theorem jalrBinaryAndTable_constraints : jalrBinaryAndTable.Constraints := by
-  apply binarySingleRowTable_constraints_of_proverAssumptions
+  apply binaryConsumerSingleRowTable_constraints_of_proverAssumptions
+  apply ZiskFv.AirsClean.FullEnsemble.binary_consumer_prover_of_static
   refine ⟨false, false, false, false, false,
     jalrAndByte0Index,
     jalrAndMiddleIndex, jalrAndMiddleIndex, jalrAndMiddleIndex,
@@ -544,9 +617,11 @@ def jalrTables : List (Table FGL) :=
   , emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component
   , emptyComponentTable ZiskFv.AirsClean.ArithDiv.component
   , emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete
-  , emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+  , emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
   , jalrBinaryAndTable
   , jalrBinaryAddTable
+  , jalrExtensionSourceTable
+  , jalrBinarySourceTable
   , jalrMainTable ]
 
 def jalrEnsemble : Ensemble FGL unit :=
@@ -566,31 +641,28 @@ def jalrWitness : EnsembleWitness jalrEnsemble where
       SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable]
   same_circuits := by
     intro i hi
-    have hi' : i < 15 := by simpa [jalrTables] using hi
+    have hi' : i < 17 := by simpa [jalrTables] using hi
     interval_cases i <;>
       simp [jalrEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
         jalrTables, SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_tables,
         SoundEnsemble.addTable, SoundEnsemble.empty_tables, Ensemble.addTable, registerStepRangeRowsTable,
         jalrBoundaryTable, registerBoundaryRowsTableOf, emptyComponentTable,
-        jalrBinaryAndTable, binarySingleRowTable, jalrBinaryAddTable,
+        jalrBinaryAndTable, binaryConsumerSingleRowTable, jalrBinaryAddTable,
         binaryAddRowsTable, jalrMainTable,
         ZiskFv.Compliance.AddSpinWitness.mainRowsTable]
   same_data := by
     intro table h_table
-    simp [jalrTables, jalrBoundaryTable, registerBoundaryRowsTableOf,
-      emptyComponentTable, jalrBinaryAndTable, binarySingleRowTable,
-      jalrBinaryAddTable, binaryAddRowsTable, jalrMainTable,
-      ZiskFv.Compliance.AddSpinWitness.mainRowsTable] at h_table
+    simp only [jalrTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
 
 theorem jalrWitness_table_constraints :
     ∀ table ∈ jalrWitness.tables, table.Constraints := by
   intro table h_table
-  simp [jalrWitness, jalrTables] at h_table
+  simp only [jalrWitness, jalrTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
   rcases h_table with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl | rfl | rfl | rfl | rfl | rfl | rfl
   · exact jalrBoundaryTable_constraints
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignReadByte.component
@@ -599,7 +671,8 @@ theorem jalrWitness_table_constraints :
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignRangeSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.MemAlignRomSlice.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.Mem.componentWithDualMemBus
-  · refine registerStepRangeRowsTable_constraints _ ?_
+  · refine registerStepRangeRowsTable_constraints
+      ([2, 2, 10, 7] ++ registerBoundaryRangeValues jalrBoundaryRows) ?_
     intro v hv
     rcases (List.mem_append (s := ([2, 2, 10, 7] : List FGL))
       (t := registerBoundaryRangeValues jalrBoundaryRows)).mp hv with hv | hv
@@ -612,9 +685,13 @@ theorem jalrWitness_table_constraints :
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithDiv.component
   · exact emptyComponentTable_constraints ZiskFv.AirsClean.ArithMul.componentComplete
   · exact emptyComponentTable_constraints
-      ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+      ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
   · exact jalrBinaryAndTable_constraints
   · exact jalrBinaryAddTable_constraints
+  · exact ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_constraints
+      jalrPackedSources emptyData
+  · exact ZiskFv.AirsClean.PackedVirtualTableSources.binaryProviderTable_constraints
+      jalrPackedSources emptyData
   · exact jalrMainTable_constraints
 
 theorem jalrWitness_constraints : jalrWitness.Constraints :=
@@ -629,9 +706,9 @@ theorem jalrWitness_transitions : jalrWitness.TransitionConstraints := by
     rw [Table.TransitionConstraints]
     intro index
     simp [EnsembleWitness.verifierTable]
-  · simp [jalrWitness, jalrTables] at h_table
+  · simp only [jalrWitness, jalrTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [Table.TransitionConstraints]
       intro index
@@ -650,15 +727,19 @@ theorem jalrWitness_transitions : jalrWitness.TransitionConstraints := by
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithDiv.component
     · exact emptyComponentTable_transitions ZiskFv.AirsClean.ArithMul.componentComplete
     · exact emptyComponentTable_transitions
-        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+        ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
     · rw [Table.TransitionConstraints]
       intro index
-      simp [jalrBinaryAndTable, binarySingleRowTable,
-        ZiskFv.AirsClean.Binary.staticLookupComponent]
+      simp [jalrBinaryAndTable, binaryConsumerSingleRowTable,
+        ZiskFv.AirsClean.Binary.tableConsumerComponent]
     · rw [Table.TransitionConstraints]
       intro index
       simp [jalrBinaryAddTable, binaryAddRowsTable,
         ZiskFv.AirsClean.BinaryAdd.component]
+    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_transitions
+        (table := jalrExtensionSourceTable) rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_transitions
+        (table := jalrBinarySourceTable) rfl
     · exact jalrMainTable_transitions
 
 theorem jalrWitness_cyclicSuccessorTransitions :
@@ -670,9 +751,9 @@ theorem jalrWitness_cyclicSuccessorTransitions :
     rw [Table.CyclicSuccessorTransitionConstraints]
     intro index
     simp [EnsembleWitness.verifierTable]
-  · simp [jalrWitness, jalrTables] at h_table
+  · simp only [jalrWitness, jalrTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · rw [Table.CyclicSuccessorTransitionConstraints]
       intro index
@@ -698,15 +779,19 @@ theorem jalrWitness_cyclicSuccessorTransitions :
     · exact emptyComponentTable_cyclicSuccessorTransitions
         ZiskFv.AirsClean.ArithMul.componentComplete
     · exact emptyComponentTable_cyclicSuccessorTransitions
-        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+        ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
     · rw [Table.CyclicSuccessorTransitionConstraints]
       intro index
-      simp [jalrBinaryAndTable, binarySingleRowTable,
-        ZiskFv.AirsClean.Binary.staticLookupComponent]
+      simp [jalrBinaryAndTable, binaryConsumerSingleRowTable,
+        ZiskFv.AirsClean.Binary.tableConsumerComponent]
     · rw [Table.CyclicSuccessorTransitionConstraints]
       intro index
       simp [jalrBinaryAddTable, binaryAddRowsTable,
         ZiskFv.AirsClean.BinaryAdd.component]
+    · exact ZiskFv.AirsClean.FullEnsemble.extension_source_cyclicSuccessorTransitions
+        (table := jalrExtensionSourceTable) rfl
+    · exact ZiskFv.AirsClean.FullEnsemble.binary_source_cyclicSuccessorTransitions
+        (table := jalrBinarySourceTable) rfl
     · exact jalrMainTable_cyclicSuccessorTransitions
 
 private theorem jalrMainOpBusInteraction_eval_at
@@ -824,7 +909,9 @@ theorem jalrOpBus_interactions :
         (table := jalrBoundaryTable) rfl
   rw [show jalrWitness.tables = jalrTables from rfl]
   simp [jalrTables, h_boundary, emptyComponentTable_interactionsWith,
-    jalrBinaryAndTable, binarySingleRowTable_interactionsWith_opBus,
+    jalrBinarySourceTable_other_channel OpBusChannel.toRaw (by decide),
+    jalrExtensionSourceTable_other_channel OpBusChannel.toRaw (by decide),
+    jalrBinaryAndTable, binaryConsumerSingleRowTable_interactionsWith_opBus,
     jalrBinaryAddTable, binaryAddRowsTable_interactionsWith_opBus,
     jalrMainTable_interactionsWith_opBus,
     registerStepRangeRowsTable_interactionsWith_opBus_nil]
@@ -882,6 +969,8 @@ theorem jalrWitness_memBus_interactions :
         (table := jalrBinaryAddTable) rfl
   rw [show jalrWitness.tables = jalrTables from rfl]
   simp [jalrTables, jalrMemBusInteractions, h_boundary, h_binary, h_binaryAdd,
+    jalrBinarySourceTable_other_channel MemBusChannel.toRaw (by decide),
+    jalrExtensionSourceTable_other_channel MemBusChannel.toRaw (by decide),
     emptyComponentTable_interactionsWith, jalrMainTable_interactionsWith_memBus,
     registerStepRangeRowsTable_interactionsWith_memBus_nil]
 
@@ -1175,7 +1264,9 @@ private theorem jalrWitness_otherChannel_balanced
     (channel : RawChannel FGL)
     (hne_mem : channel ≠ MemBusChannel.toRaw)
     (hne_op : channel ≠ OpBusChannel.toRaw)
-    (hne_rsr : channel ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw) :
+    (hne_rsr : channel ≠ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw)
+    (h_binary_name : channel.name ≠ ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw.name)
+    (h_extension_name : channel.name ≠ ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw.name) :
     BalancedInteractions
       (jalrWitness.tables.flatMap (·.interactionsWith channel)) := by
   have h_boundary : jalrBoundaryTable.interactionsWith channel = [] := by
@@ -1186,8 +1277,9 @@ private theorem jalrWitness_otherChannel_balanced
     exact not_or_intro hne_mem hne_rsr
   have h_binary : jalrBinaryAndTable.interactionsWith channel = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
-    change channel ∉ [OpBusChannel.toRaw]
-    simpa only [List.mem_singleton] using hne_op
+    change channel ∉ [OpBusChannel.toRaw, ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw]
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
+    exact ⟨hne_op, fun he => h_binary_name (congrArg RawChannel.name he)⟩
   have h_binaryAdd : jalrBinaryAddTable.interactionsWith channel = [] := by
     apply Table.interactionsWith_nil_of_channel_not_mem
     change channel ∉ [OpBusChannel.toRaw]
@@ -1204,14 +1296,16 @@ private theorem jalrWitness_otherChannel_balanced
     registerStepRangeRowsTable_interactionsWith_of_ne _ channel hne_rsr
   simp only [List.cons_append, List.nil_append] at h_provider
   rw [show jalrWitness.tables = jalrTables from rfl]
-  simp [jalrTables, h_boundary, h_binary, h_binaryAdd, h_main, h_provider,
+  simp [h_binary_name, h_extension_name, jalrTables, h_boundary, h_binary, h_binaryAdd, h_main, h_provider,
+    jalrBinarySourceTable_other_channel channel h_binary_name,
+    jalrExtensionSourceTable_other_channel channel h_extension_name,
     emptyComponentTable_interactionsWith]
   refine ⟨?_, ?_⟩
   · left
     rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
     decide
   · intro msg
-    simp [balanceOf]
+    simp [h_binary_name, h_extension_name, balanceOf]
 
 private theorem jalrRangeChannel_ne_memBus :
     SpecifiedRangesSliceChannel.toRaw ≠ MemBusChannel.toRaw := by
@@ -1254,19 +1348,19 @@ theorem jalrWitness_rangeChannel_balanced :
       (jalrWitness.tables.flatMap
         (·.interactionsWith SpecifiedRangesSliceChannel.toRaw)) :=
   jalrWitness_otherChannel_balanced _ jalrRangeChannel_ne_memBus
-    jalrRangeChannel_ne_opBus jalrRangeChannel_ne_registerStepRange
+    jalrRangeChannel_ne_opBus jalrRangeChannel_ne_registerStepRange (by decide) (by decide)
 
 theorem jalrWitness_memAlignRangeChannel_balanced :
     BalancedInteractions
       (jalrWitness.tables.flatMap (·.interactionsWith MemAlignRangeChannel.toRaw)) :=
   jalrWitness_otherChannel_balanced _ jalrMemAlignRangeChannel_ne_memBus
-    jalrMemAlignRangeChannel_ne_opBus jalrMemAlignRangeChannel_ne_registerStepRange
+    jalrMemAlignRangeChannel_ne_opBus jalrMemAlignRangeChannel_ne_registerStepRange (by decide) (by decide)
 
 theorem jalrWitness_memAlignRomChannel_balanced :
     BalancedInteractions
       (jalrWitness.tables.flatMap (·.interactionsWith MemAlignRomChannel.toRaw)) :=
   jalrWitness_otherChannel_balanced _ jalrMemAlignRomChannel_ne_memBus
-    jalrMemAlignRomChannel_ne_opBus jalrMemAlignRomChannel_ne_registerStepRange
+    jalrMemAlignRomChannel_ne_opBus jalrMemAlignRomChannel_ne_registerStepRange (by decide) (by decide)
 
 /-- Main's bus-102 pulls for all four rows. -/
 theorem jalrMainTable_interactionsWith_registerStepRange :
@@ -1331,6 +1425,10 @@ theorem jalrRegisterStepRange_interactions :
       (table := jalrBinaryAndTable) rfl
   rw [show jalrWitness.tables = jalrTables from rfl]
   simp [jalrTables, emptyComponentTable_interactionsWith, h_boundary, h_binaryAdd, h_binary,
+    jalrBinarySourceTable_other_channel
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw (by decide),
+    jalrExtensionSourceTable_other_channel
+      ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw (by decide),
     registerStepRangeRowsTable_interactionsWith,
     jalrMainTable_interactionsWith_registerStepRange, List.map_append, List.append_assoc]
 
@@ -1381,13 +1479,178 @@ theorem jalrWitness_registerStepRangeChannel_balanced :
       , registerStepRangeInteraction (10 : FGL), registerStepRangeInteraction (7 : FGL) ]) _
       (by decide) jalrMainRegisterStepRange_balanced)
 
+/-- Actual bus-125 balance, including the full fixed-domain provider. -/
+theorem jalrWitness_binaryTableChannel_balanced :
+    BalancedInteractions
+      (jalrWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw)) := by
+  have h_silent_0 : (jalrBoundaryTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := jalrBoundaryTable) ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+    decide
+  have h_silent_1 : (emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignReadByte.component ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+  have h_silent_2 : (emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignByte.component ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+  have h_silent_3 : (emptyComponentTable ZiskFv.AirsClean.MemAlign.component).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlign.component ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+  have h_silent_4 : (emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignRangeSlice.component ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+  have h_silent_5 : (emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignRomSlice.component ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+  have h_silent_6 : (emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.Mem.componentWithDualMemBus ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+  have h_silent_7 : (registerStepRangeRowsTable ([2, 2, 10, 7] ++ registerBoundaryRangeValues jalrBoundaryRows)).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := registerStepRangeRowsTable ([2, 2, 10, 7] ++ registerBoundaryRangeValues jalrBoundaryRows)) ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+    decide
+  have h_silent_8 : (emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.SpecifiedRangesSlice.component ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+  have h_silent_9 : (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.ArithDiv.component ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+  have h_silent_10 : (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.ArithMul.componentComplete ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+  have h_silent_11 : (emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+  have h_silent_13 : (jalrBinaryAddTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := jalrBinaryAddTable) ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+    decide
+  have h_silent_14 : (jalrExtensionSourceTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    exact jalrExtensionSourceTable_other_channel _ (by decide)
+  have h_silent_16 : (jalrMainTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw = [] := by
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := jalrMainTable) ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+    decide
+  have h_list :
+      jalrWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw) =
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.operations.interactionValuesWith
+        ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw (Environment.fromInput jalrBinaryAndRow emptyData)) ++
+      (jalrBinarySourceTable).interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw := by
+    have h_consumer :
+        jalrBinaryAndTable.interactionsWith
+            ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw =
+          ZiskFv.AirsClean.Binary.tableConsumerComponent.operations.interactionValuesWith
+            ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+            (Environment.fromInput jalrBinaryAndRow emptyData) := by
+      change (ZiskFv.AirsClean.FullEnsemble.binaryConsumerRowsTable
+        emptyData [jalrBinaryAndRow]).interactionsWith _ = _
+      rw [ZiskFv.AirsClean.FullEnsemble.binaryConsumerRowsTable_interactionsWith
+        emptyData [jalrBinaryAndRow] ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw]
+      simp only [List.flatMap_cons, List.flatMap_nil, List.append_nil]
+    have h := ZiskFv.AirsClean.FullEnsemble.flatMap_seventeen_consumer12_source15
+      (fun table : Table FGL =>
+        table.interactionsWith ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw)
+      jalrBoundaryTable
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlign.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component)
+      (emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+      (registerStepRangeRowsTable ([2, 2, 10, 7] ++ registerBoundaryRangeValues jalrBoundaryRows))
+      (emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component)
+      (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component)
+      (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete)
+      (emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent)
+      jalrBinaryAndTable jalrBinaryAddTable
+      jalrExtensionSourceTable jalrBinarySourceTable jalrMainTable
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.operations.interactionValuesWith
+        ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+        (Environment.fromInput jalrBinaryAndRow emptyData))
+      h_silent_0 h_silent_1 h_silent_2 h_silent_3 h_silent_4 h_silent_5
+      h_silent_6 h_silent_7 h_silent_8 h_silent_9 h_silent_10 h_silent_11
+      h_consumer h_silent_13 h_silent_14 h_silent_16
+    exact h
+  rw [h_list]
+  exact balancedInteractions_of_perm jalrBinarySource_actual_consumer_balanced List.perm_append_comm
+
+/-- Actual bus-124 balance, including the full fixed-domain provider. -/
+theorem jalrWitness_extensionTableChannel_balanced :
+    BalancedInteractions
+      (jalrWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw)) := by
+  have h_silent_0 : (jalrBoundaryTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := jalrBoundaryTable) ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+    decide
+  have h_silent_1 : (emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignReadByte.component ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+  have h_silent_2 : (emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignByte.component ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+  have h_silent_3 : (emptyComponentTable ZiskFv.AirsClean.MemAlign.component).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlign.component ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+  have h_silent_4 : (emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignRangeSlice.component ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+  have h_silent_5 : (emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.MemAlignRomSlice.component ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+  have h_silent_6 : (emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.Mem.componentWithDualMemBus ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+  have h_silent_7 : (registerStepRangeRowsTable ([2, 2, 10, 7] ++ registerBoundaryRangeValues jalrBoundaryRows)).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := registerStepRangeRowsTable ([2, 2, 10, 7] ++ registerBoundaryRangeValues jalrBoundaryRows)) ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+    decide
+  have h_silent_8 : (emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.SpecifiedRangesSlice.component ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+  have h_silent_9 : (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.ArithDiv.component ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+  have h_silent_10 : (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.ArithMul.componentComplete ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+  have h_silent_11 : (emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    exact emptyComponentTable_interactionsWith ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+  have h_silent_12 : (jalrBinaryAndTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := jalrBinaryAndTable) ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+    decide
+  have h_silent_13 : (jalrBinaryAddTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := jalrBinaryAddTable) ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+    decide
+  have h_silent_15 : (jalrBinarySourceTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    exact jalrBinarySourceTable_other_channel _ (by decide)
+  have h_silent_16 : (jalrMainTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw = [] := by
+    apply ZiskFv.AirsClean.BinaryTableBalance.interactionsWith_nil_of_channel_names
+      (table := jalrMainTable) ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+    decide
+  have h_list :
+      jalrWitness.tables.flatMap (·.interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw) =
+      (jalrExtensionSourceTable).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw := by
+    have h := ZiskFv.AirsClean.FullEnsemble.flatMap_seventeen_source14
+      (fun table : Table FGL =>
+        table.interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw)
+      jalrBoundaryTable
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlign.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component)
+      (emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component)
+      (emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus)
+      (registerStepRangeRowsTable ([2, 2, 10, 7] ++ registerBoundaryRangeValues jalrBoundaryRows))
+      (emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component)
+      (emptyComponentTable ZiskFv.AirsClean.ArithDiv.component)
+      (emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete)
+      (emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent)
+      jalrBinaryAndTable jalrBinaryAddTable
+      jalrExtensionSourceTable jalrBinarySourceTable jalrMainTable
+      h_silent_0 h_silent_1 h_silent_2 h_silent_3 h_silent_4 h_silent_5
+      h_silent_6 h_silent_7 h_silent_8 h_silent_9 h_silent_10 h_silent_11
+      h_silent_12 h_silent_13 h_silent_15 h_silent_16
+    exact h
+  rw [h_list]
+  change BalancedInteractions
+    ((ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable
+      jalrPackedSources emptyData).interactionsWith ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw)
+  rw [ZiskFv.AirsClean.PackedVirtualTableSources.extensionProviderTable_interactionsWith
+    jalrPackedSources emptyData]
+  exact ZiskFv.AirsClean.FullEnsemble.extension_no_requests_balanced (fun _ => 0) (List.ofFn jalrBinarySourceRequests)
+
 theorem jalrWitness_balancedChannels : jalrWitness.BalancedChannels := by
   refine jalrWitness.balancedChannels_of_tables jalrEnsemble_verifier ?_
   intro channel h_channel
   simp [jalrEnsemble, fullRv64imEnsemble, fullRv64imSoundEnsemble,
     SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_channels,
     SoundEnsemble.addTable_channels, SoundEnsemble.empty_channels] at h_channel
-  rcases h_channel with rfl | rfl | rfl | rfl | rfl | rfl
+  rcases h_channel with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact jalrWitness_extensionTableChannel_balanced
+  · exact jalrWitness_binaryTableChannel_balanced
   · exact jalrWitness_registerStepRangeChannel_balanced
   · exact jalrWitness_memAlignRangeChannel_balanced
   · exact jalrWitness_memBus_balanced
@@ -1433,10 +1696,14 @@ private theorem jalrWitness_main_component_cases
   · subst table
     exfalso
     exact not_jalr_main_component_of_width_ne (by decide) h_component
-  · simp [jalrWitness, jalrTables] at h_table
+  · simp only [jalrWitness, jalrTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exfalso
+      exact not_jalr_main_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_jalr_main_component_of_name_ne (by decide) h_component
     · exfalso
       exact not_jalr_main_component_of_name_ne (by decide) h_component
     · exfalso
@@ -1484,9 +1751,9 @@ private theorem jalrWitness_mutable_mem_component_tables_empty
     rw [h_component,
       ZiskFv.AirsClean.Mem.componentWithDualMemBus_interactionsWith_memBus] at h_verifier_nil
     exact absurd h_verifier_nil (by simp)
-  · simp [jalrWitness, jalrTables] at h_table
+  · simp only [jalrWitness, jalrTables, List.mem_cons, List.not_mem_nil, or_false] at h_table
     rcases h_table with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
+      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
       rfl | rfl | rfl | rfl | rfl | rfl | rfl
     · exfalso
       exact not_jalr_mutable_mem_component_of_name_ne (by decide) h_component
@@ -1502,7 +1769,11 @@ private theorem jalrWitness_mutable_mem_component_tables_empty
     · exact emptyComponentTable_table ZiskFv.AirsClean.ArithDiv.component
     · exact emptyComponentTable_table ZiskFv.AirsClean.ArithMul.componentComplete
     · exact emptyComponentTable_table
-        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent
+        ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent
+    · exfalso
+      exact not_jalr_mutable_mem_component_of_name_ne (by decide) h_component
+    · exfalso
+      exact not_jalr_mutable_mem_component_of_name_ne (by decide) h_component
     · exfalso
       exact not_jalr_mutable_mem_component_of_name_ne (by decide) h_component
     · exfalso

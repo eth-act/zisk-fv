@@ -292,17 +292,15 @@ theorem construction_sub_sound_claimed_dead
       m2_as := by rfl
       rd_idx := h_rd_idx }
   -- (a) circuit-internal arithmetic + lane→Sail binding.
-  -- Provider correctness facts, recomputed from the table Spec.
+  -- Project the actual consumer row's retained full semantic facts.
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_static :
-      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core :=
+    ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   -- m32 = 0 on `m` at `i.val` (needed by the lane-packing lemmas)
   have h_m32_zero : m.m32 i.val = 0 := h_m32
   -- Derive the all-byte-matches fact from the provider match + Spec.
@@ -344,10 +342,9 @@ theorem construction_sub_sound_claimed_dead
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) sub_input.r2_val
         h_matches h_m32_zero h_b_lo h_b_hi h_match h_input_r2
-  exact ZiskFv.Compliance.equiv_SUB
-    state sub_input r1 r2 rd m
-    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-    i.val bus pins h_match
-    h_input_r1_row h_input_r2_row h_lane_rd promises
+  exact ZiskFv.EquivCore.Sub.equiv_SUB_of_static_row
+    state sub_input r1 r2 rd m providerInput i.val bus promises pins
+    h_match h_core h_facts h_row_m32 h_bop
+    h_input_r1_row h_input_r2_row h_lane_rd
 
 end ZiskFv.Compliance
