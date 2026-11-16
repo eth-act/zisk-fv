@@ -81,6 +81,15 @@ def source (packed : Bool) : SourceObject FGL :=
 def occurrence (packed : Bool) : ResolvedOccurrence (source packed) :=
   ⟨⟨0, by change 0 < 1; decide⟩, by change 0 < 1; decide⟩
 
+theorem actual_slot (packed : Bool) : (occurrence packed).slotData = slot packed := rfl
+
+theorem traceBuffer_size (packed : Bool) :
+    (traceBuffer packed).size = physicalRows * (if packed then 4 else 13) + 5 := by
+  simp only [traceBuffer, Array.size_replicate]
+
+theorem fixedBuffer_size : fixedBuffer.size = 2 * physicalRows := by
+  simp only [fixedBuffer, Array.size_ofFn]
+
 theorem fixedBuffer_pulse (row : Fin physicalRows) :
     fixedBuffer[2 * row.val + 1]? = some (FixedScan.pulse row.val) := by
   have bound : 2 * row.val + 1 < 2 * physicalRows := by omega
@@ -147,10 +156,16 @@ theorem constructor_nonvacuous (packed : Bool) :
         refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, ?_, ?_, rfl, ?_, ?_⟩
         · change 0 < (if packed then 4 else 13)
           cases packed <;> decide
-        · change 4194304 * (if packed then 4 else 13) ≤ (traceBuffer packed).size
-          simp [traceBuffer, physicalRows]
-        · change 2 * physicalRows ≤ fixedBuffer.size
-          simp [fixedBuffer]
-        · exact fixedBuffer_scan
+        · rw [actual_slot]
+          simp only [slot, traceBuffer_size]
+          change physicalRows * (if packed then 4 else 13) ≤
+            physicalRows * (if packed then 4 else 13) + 5
+          omega
+        · rw [actual_slot]
+          simp only [slot, fixedBuffer_size]
+          change 2 * physicalRows ≤ 2 * physicalRows
+          rfl
+        · rw [actual_slot]
+          exact fixedBuffer_scan
 
 end ZiskFv.AirsClean.Mem.PhysicalSource.Constructibility
