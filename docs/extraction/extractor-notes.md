@@ -93,8 +93,10 @@ the flags themselves.
   The ordinary byte-table checker additionally materializes the independent
   canonical Binary/Extension source components and the complete 65,536-row
   DualByte source component. It compares every tuple column and opcode block
-  with both virtual and packed compiler observations, including raw zero
-  multiplicity and generated physical source ownership. The standalone
+  with both virtual and packed compiler observations. The streamers retain
+  every physical row even with zero raw multiplicity; local kernel
+  correspondences preserve arbitrary raw multiplicities and source ownership.
+  The standalone
   `PackedVirtualTableSources` and `DualByteTable`/`DualByteSlice`/
   `DualBytePackedSource` declarations are local, uncomposed source models.
   Their materialization, constructibility and interaction correspondences do
