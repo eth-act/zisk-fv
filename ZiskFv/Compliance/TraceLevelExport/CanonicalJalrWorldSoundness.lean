@@ -135,13 +135,13 @@ noncomputable def worldRawDecode (i : Fin 2) :
       worldRow1, worldRow3, worldRow1Template, worldRow3Template, mainRomRowOf]
   · intro j hline
     fin_cases i <;> fin_cases j
-    all_goals simp [worldSourceIndex, mainOfTable,
+    all_goals norm_num [worldSourceIndex, mainOfTable,
       worldAddProgramRow, worldAndProgramRow, worldRow0, worldRow2,
       worldRow0Template, worldRow2Template, mainRomRowOf] at hline
     all_goals exact ⟨0, rfl, rfl, rfl⟩
   · intro j hline
     fin_cases i <;> fin_cases j
-    all_goals simp [worldSourceIndex, mainOfTable,
+    all_goals norm_num [worldSourceIndex, mainOfTable,
       worldAddProgramRow, worldAndProgramRow, worldRow1, worldRow3,
       worldRow1Template, worldRow3Template, mainRomRowOf] at hline
     all_goals exact ⟨0, rfl, rfl, rfl⟩
