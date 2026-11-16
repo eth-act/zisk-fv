@@ -1661,3 +1661,8 @@ and this partial does not close #354, #416 or #418. The existing external
 intended-binary commitment boundary is not expanded into a new cryptographic
 or compiler-correctness claim.
 
+The verifier's OpBus requirement and 32-message exposure are local and
+uncomposed. Their two deliberate channel declarations are recorded in the
+channel snapshot; that inventory update is not an accepted-balance or Root
+provider-composition proof.
+
