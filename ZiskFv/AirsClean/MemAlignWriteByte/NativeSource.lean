@@ -191,7 +191,8 @@ theorem local_spec (projection : Projection) (offset : Nat) (ops : Operations FG
 
 theorem local_residuals (projection : Projection) (offset : Nat) (ops : Operations FGL)
     (env : Environment FGL) (hops : projection.operations? offset = some ops)
-    (hholds : ConstraintsHold.Soundness env ops) : NativeRow.ResidualsHold projection.cells :=
+    (hholds : ConstraintsHold.Soundness env ops) :
+    NativeRow.ResidualsHold (NativeRow.ofCells projection.cells) :=
   (NativeRow.residuals_iff_polynomialSpec projection.cells).mpr
     (local_spec projection offset ops env hops hholds).1
 

@@ -1,0 +1,47 @@
+{
+  "initial_source_checkpoint": "39857e2a",
+  "scope": "sole NEW NativeProvider88; old7/canonical prerequisites and protected interfaces unchanged",
+  "actual_attempts": [
+    {
+      "attempt": 1,
+      "result": "FAILED_NEW_LEAF_AFTER_ALL18_FRESH_PREREQUISITES_GREEN",
+      "retained": "narrow-attempt1.log/narrow-result-attempt1.json/narrow-before-attempt1.json/narrow-after-attempt1.json",
+      "actual_diagnostics": [
+        "View.cmWords_source simplification retained native map key cm ++ toString1 rather than cm1",
+        "View.constructor_recovers needed explicit elimination of actual supported-layout conjunction before constructor equality",
+        "PackedPair.leftView declared View resolved0 did not expose Factory abbreviation dot methods weight/providerRow/interactionAt",
+        "providerTable_rawRows change/unification reached existing recursion depth",
+        "PackedPair.constructor_recovers redundant trailing tactics after simp closed the goal"
+      ],
+      "same_contract_repairs": [
+        "prove concrete string-key normalization by rfl and use it in the same C-reader equality",
+        "destruct already computed guard evidence; no new assumption or validator",
+        "spell leftView as Factory leftResolved, definitionally EXACTLY View leftResolved0; not a changed field/type contract or compatibility shim",
+        "remove redundant post-simp tactics"
+      ]
+    },
+    {
+      "attempt": 2,
+      "result": "FAILED_NEW_LEAF_ONLY;18GREEN_PREREQUISITES_NOT_RERUN",
+      "retained": "narrow-attempt2.log/narrow-result-attempt2.json/narrow-before-attempt2.json/narrow-after-attempt2.json",
+      "actual_diagnostics": [
+        "View.constructor_recovers congr already closed the goal after guard elimination; remaining cases/rfl redundant",
+        "providerTable_rawRows change still reached existing maximum recursion depth"
+      ],
+      "same_contract_repairs": [
+        "remove redundant cases/rfl",
+        "use existing providerTable structural dsimp projection before function extensionality instead of expanding change/unification; full Fin65536 domain unchanged"
+      ]
+    },
+    {
+      "attempt": 3,
+      "result": "ACTUAL_NEW_LEAF_NARROW_GREEN;18GREEN_PREREQUISITES_NOT_RERUN",
+      "retained": "narrow-attempt3.log/narrow-result-attempt3.json/narrow-before-attempt3.json/narrow-after-attempt3.json",
+      "observed_runner_wall_seconds": 13.20,
+      "strict_source_compiler_all3leases_readonly_and_actual_CI_before_after": "PRESERVED"
+    }
+  ],
+  "prohibited_repairs_NOT_used": ["maxRecDepth/maxHeartbeats/tstack/thread cap increase", "source/spec/predicate weakening", "new guard or range/count/histogram validator", "caller equality/success/pairing certificate", "default0/absenttable completion", "canonical/shared/protected/sourcepin edit", "rerun of already GREEN unchanged prerequisites"],
+  "full_RAW_status_at_this_record": "SEPARATE_ASSIGNED_GATE_IN_FLIGHT; this narrow record is NOT a RAW pass or semantic mutation kill",
+  "runtime_boundaries_unchanged": "actual runtime hints/globalinfo/Dctx instance pairing/ABI/source materialization/native compiled-pol source correlation/global balance/Accepted remain unproved"
+}

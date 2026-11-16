@@ -1663,3 +1663,17 @@ materialization or the new factory's unrun mutation controls. No Root, Valid,
 Accepted, caller or source-constraint contract is strengthened; #412, #413 and
 #414 remain open for their exact remaining acceptance.
 
+The additive native88 projection now obtains all 65536 provider weights from
+the same original VirtualTable0 source buffer at lane2, row262144+i, retaining
+zero weights. A separate optional pair-indexed view of both actual33/34 slots
+relates the computed buffer witness to the existing provider table; missing34
+never changes the primary33 projection or creates a default. This is not proof
+of runtime hint/global-info agreement, Dctx instance pairing, compiled operand
+identity, native materialization or actual balanced-world membership.
+
+The native seven-equation residual predicate uses the ordinary row-mirror
+grammar and is definitionally tied to all seven indexed residuals over the
+same fourteen cells. It is compared against c0-c6, not classified out. The
+three source-slot predicates record only the already challenge-mixed c8-c10
+lookup boundaries; they introduce no new source exclusion.
+

@@ -1,0 +1,53 @@
+{
+  "status": "SOURCE_ONLY_NO_BUILD_KERNEL_RAW_OR_MUTATION_CHECK_RUN",
+  "base_commit": "3faa1251",
+  "branch": "closure/writebyte-provider88-3faa1251",
+  "module": "ZiskFv.AirsClean.MemAlignWriteByte.NativeProvider88",
+  "source": "ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean",
+  "source_sha256": "396e354f4e6c26f4286fe797a21bf9e47c353196d05fb3900dff6ed5e38bffa9",
+  "old_seven_sources_and_evidence": "UNCHANGED; no previous result relabelled as verification of this new module",
+  "computed_primary_projection": {
+    "inputs": "same SourceObject resolved final occurrence ONLY; no weight/hint/field/equality callback or success certificate",
+    "factory": "factory? resolved = view? resolved Fin2.zero; solely registry0/AIR33",
+    "supported_layout": "actual registry-selected CPU/non-GPU NativeSetup; setup rowCount equals generated PackedVirtualTables.physicalRows; actual cm1 width8; original slot unpacked/stride8; entire original buffer covers physicalRows*8 words",
+    "not_added_validators": "No slot task-air=registry equality, padding/count/positivity/native-weight-range/aggregate-histogram or Root predicate",
+    "native_source": "all requested UInt64 words are selected FIRST from original slot.trace, then existing NativeTraceWords.unpackedField projects that same word",
+    "all_domain_totality": "View.word_bound/word_source/field_source/block_source derive every finite physical row/lane from computed coverage, with no full-N arrays/maps/lists",
+    "native_c_reader_relation": "View.cmWords_source uses the SAME selected NativeSetup and existing native cmWords_unpacked_source; actual map entry/stage1/stagePos relation is a comparison theorem, NOT a factory field or guessed global polynomial id",
+    "source88_location": "generated source88.location/sourceIndex remains load-bearing; source88_coordinates/wordIndex identify physicalAIR0/lane2/row262144+i and original word(262144+i)*8+2",
+    "lazy_provider": "Factory.providerRow index has actual native weight and existing fixed tuple A=i/256,B=i%256; membership/constructibility derived from existing sourceRows, not an oracle",
+    "weights": "all65536 requested weights, includingzeros; interactionAt always retains its actual field multiplicity; no eager nativeTable is built"
+  },
+  "bounded_auxiliary34_approval": {
+    "scope": "pair-indexed conditional INTERNAL representation, not runtime instance pairing",
+    "inputs": "same SourceObject plus explicit actual left/right final registry positions",
+    "computed_data": "pair? resolves BOTH source slots itself; decodes registry0/AIR33 and0/AIR34 supported views; retains both ResolvedOccurrence identities, source.resolve? recovery proofs and both real full-buffer/setup dimensions",
+    "no_pair_guess": "No first-match search, air-label-only assertion of corresponding instances, semantic segment ordinal, unique-roster premise or independently supplied base witness",
+    "full_witness": "PackedPair.rawWitness reads real AIR0 and AIR1 buffers separately for EVERY Location; no cross-AIR alias/default/absent-table fallback",
+    "missing34": "None affects ONLY auxiliary pair?/whole witness export, NEVER an extra primary AIR33 factory guard or Root exclusion",
+    "existing_provider_relation": "project88/providerRow_eq/providerTable_rawRows/providerTable_materialized/providerTable_constraints/providerTable_interactions relate the COMPUTED actual pair witness to existing DualBytePackedSource providerTable and evaluated interactions; no caller rawWitness/equality premise",
+    "identity": "left_slot/right_slot/registry_authority retain real final global-slot identity; distinct_positions is derived rather than assumed"
+  },
+  "source_materialization_boundary": {
+    "computational_projection_missing_fields": "NONE: current SourceObject/ResolvedOccurrence/NativeSetup/original UInt64 trace suffice for this partial physical CM1 projection",
+    "actual_runtime_facts_NOT_inferred": [
+      "std_virtual_table.rs66-125 actual runtime table_ids/acc_heights/num_muls and global-info num_rows equal the observed source88 metadata",
+      "actual Dctx table_instance_id and dctx_get_table_instance_idx select these exact final source slots/process owners; two decoded views do NOT prove native instance pairing",
+      "actual calculate_witness row-major F::from_u64 buffer and initialize/add_air_instance/FFI steps materialize this SAME SourceObject trace/setup/registry/globals",
+      "actual native compiled-polynomial operand ids/stagePos/fixed columns correspond to the same intended source layout; no native globalId2 or name-only fallback was guessed",
+      "source sharing/remote/allzero skip control flow and physical once occurrence/finalizer/global-sum balance transport into Accepted"
+    ],
+    "smallest_future_producer_step": "Bind the already-computed projection to actual std_virtual_table.new/calculate_witness and the same Dctx final-slot overwrite/materialization step. Existing SourceObject does not retain virtual_table_data binary-hint payload/global-info/table_instance_id-to-global-slot origin. If a future standalone decoder is approved, decode bounded actual table_ids/acc_heights/num_muls/global-info/table-instance indices from their SAME producer-owned input object and return None on missing/unsupported data; do not add SourceObject/Root fields, free hint callbacks, caller equality/success certificates or an arbitrary default completion. No such new carrier/field is implemented here."
+  },
+  "dependency_scope": {
+    "direct_imports": ["ZiskFv.AirsClean.MemAlignWriteByte.SourceInstance", "ZiskFv.AirsClean.DualBytePackedSource"],
+    "ordinary_existing_paths_reused": ["SourceInstance.NativeSetup/baseRow?/cmWords?", "NativeTraceWords.unpackedField/unpackedWord?/unpackedBlock?", "Extraction.PackedVirtualTables.source88/location", "Extraction.LookupWiring.SourceSchema.air_VirtualTable0/1", "DualByteSlice.sourceRows/sourceComponent", "DualBytePackedSource.providerRow/providerTable"],
+    "no_CI_reuse_claim": "No build was run; actual source/CI/compiler/options matching for any future borrowed provider prerequisite must be established in the assigned gate, never borrowed from active Main/API caches."
+  },
+  "prospective_checks_NOT_run": [
+    "narrow new NativeProvider88 with source/CI-matched immutable dependencies and any genuinely necessary fresh canonical prerequisites, Lean2/options unchanged",
+    "FULL ALL actual defining/private/compiler/constructor/opaque/type+value roots, EVERYroot/EACHmoduleunion/combinedunion independent installed Collector/std3/fullpaths",
+    "only after a separately assigned baseline: real named model-body mutation of row-major wordIndex/lane/source88 offset or original-buffer choice; no source-regeneration/native-runtime proof credit"
+  ],
+  "no_closure_claim": "No native authentication/materialization/runtime pairing/global balance/Accepted/root/Valid/shared-generator/interface change; not live #414 or issue418 closure"
+}

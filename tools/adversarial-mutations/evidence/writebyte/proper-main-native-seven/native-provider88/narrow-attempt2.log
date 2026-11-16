@@ -1,0 +1,5 @@
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:248:8: error: No goals to be solved
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:366:2: error: maximum recursion depth has been reached
+use `set_option maxRecDepth <num>` to increase limit
+use `set_option diagnostics true` to get diagnostic information

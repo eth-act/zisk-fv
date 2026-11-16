@@ -61,37 +61,58 @@ theorem rows_injective : Function.Injective toCells := by
   have := congrArg ofCells h
   simpa only [of_to] using this
 
-/-- Source expression factors written over actual column positions, independent
-of the existing row Spec. No stage2/public/exposed/default-zero reader is used. -/
-def sourceByteFactor (cells : Cells) : FGL :=
-  16777216 * cells[1] * cells[2] + 65536 * cells[1] * (1 - cells[2]) +
-    256 * (1 - cells[1]) * cells[2] + (1 - cells[1]) * (1 - cells[2])
+/-- Source expression factors over the actual selector values, independent of
+the existing row Spec. Scalar arguments also use the ordinary mirror grammar. -/
+def sourceByteFactor (high2 high1 : FGL) : FGL :=
+  16777216 * high2 * high1 + 65536 * high2 * (1 - high1) +
+    256 * (1 - high2) * high1 + (1 - high2) * (1 - high1)
 
-def source8Factor (cells : Cells) : FGL :=
-  16777216 * cells[1] * (1 - cells[2]) + 65536 * cells[1] * cells[2] +
-    256 * (1 - cells[1]) * (1 - cells[2]) + (1 - cells[1]) * cells[2]
+def source8Factor (high2 high1 : FGL) : FGL :=
+  16777216 * high2 * (1 - high1) + 65536 * high2 * high1 +
+    256 * (1 - high2) * (1 - high1) + (1 - high2) * high1
 
-def source16Factor (cells : Cells) : FGL := 65536 * (1 - cells[1]) + cells[1]
+def source16Factor (high2 : FGL) : FGL := 65536 * (1 - high2) + high2
 
 /-- Exactly source c0..c6, in order, without ranges or extra input validators. -/
 def residuals (cells : Cells) : Vector FGL 7 :=
   #v[cells[0] * (1 - cells[0]), cells[1] * (1 - cells[1]),
     cells[2] * (1 - cells[2]),
-    cells[4] - (cells[9] * sourceByteFactor cells + cells[8] * source8Factor cells +
-      cells[7] * source16Factor cells),
-    cells[5] - (cells[6] * sourceByteFactor cells + cells[8] * source8Factor cells +
-      cells[7] * source16Factor cells),
+    cells[4] - (cells[9] * sourceByteFactor cells[1] cells[2] +
+      cells[8] * source8Factor cells[1] cells[2] + cells[7] * source16Factor cells[1]),
+    cells[5] - (cells[6] * sourceByteFactor cells[1] cells[2] +
+      cells[8] * source8Factor cells[1] cells[2] + cells[7] * source16Factor cells[1]),
     cells[12] - (cells[0] * (cells[3] - cells[5]) + cells[5]),
     cells[13] - (cells[0] * (cells[5] - cells[3]) + cells[3])]
 
-def ResidualsHold (cells : Cells) : Prop :=
-  (residuals cells)[0] = 0 ∧ (residuals cells)[1] = 0 ∧
-  (residuals cells)[2] = 0 ∧ (residuals cells)[3] = 0 ∧
-  (residuals cells)[4] = 0 ∧ (residuals cells)[5] = 0 ∧ (residuals cells)[6] = 0
+/-- The same seven residuals over the actual row carrier, so the ordinary
+mirror checker compares them rather than excluding an indexed data predicate. -/
+def ResidualsHold (row : MemAlignWriteByteRow FGL) : Prop :=
+  row.sel_high_4b * (1 - row.sel_high_4b) = 0 ∧
+  row.sel_high_2b * (1 - row.sel_high_2b) = 0 ∧
+  row.sel_high_b * (1 - row.sel_high_b) = 0 ∧
+  row.composed_value - (row.byte_value * sourceByteFactor row.sel_high_2b row.sel_high_b +
+    row.value_8b * source8Factor row.sel_high_2b row.sel_high_b +
+    row.value_16b * source16Factor row.sel_high_2b) = 0 ∧
+  row.written_composed_value -
+    (row.written_byte_value * sourceByteFactor row.sel_high_2b row.sel_high_b +
+      row.value_8b * source8Factor row.sel_high_2b row.sel_high_b +
+      row.value_16b * source16Factor row.sel_high_2b) = 0 ∧
+  row.mem_write_values_0 -
+    (row.sel_high_4b * (row.direct_value - row.written_composed_value) +
+      row.written_composed_value) = 0 ∧
+  row.mem_write_values_1 -
+    (row.sel_high_4b * (row.written_composed_value - row.direct_value) +
+      row.direct_value) = 0
+
+theorem residuals_zero_iff_hold (cells : Cells) :
+    ((residuals cells)[0] = 0 ∧ (residuals cells)[1] = 0 ∧
+      (residuals cells)[2] = 0 ∧ (residuals cells)[3] = 0 ∧
+      (residuals cells)[4] = 0 ∧ (residuals cells)[5] = 0 ∧
+      (residuals cells)[6] = 0) ↔ ResidualsHold (ofCells cells) := Iff.rfl
 
 theorem residuals_iff_polynomialSpec (cells : Cells) :
-    ResidualsHold cells ↔ PolynomialSpec (ofCells cells) := by
-  simp [ResidualsHold, residuals, PolynomialSpec, ofCells, sourceByteFactor,
+    ResidualsHold (ofCells cells) ↔ PolynomialSpec (ofCells cells) := by
+  simp [ResidualsHold, PolynomialSpec, ofCells, sourceByteFactor,
     source8Factor, source16Factor, byte_value_factor, value_8b_factor,
     value_16b_factor, sub_eq_zero]
 
@@ -106,12 +127,21 @@ theorem spec_of_operations (cells : Cells) (offset : Nat) (env : Environment FGL
   simpa only [ProvableStruct.eval_eq_eval, eval_rowVar] using hs
 
 theorem residuals_of_operations (cells : Cells) (offset : Nat) (env : Environment FGL)
-    (h : ConstraintsHold.Soundness env (operations cells offset)) : ResidualsHold cells :=
+    (h : ConstraintsHold.Soundness env (operations cells offset)) :
+    ResidualsHold (ofCells cells) :=
   (residuals_iff_polynomialSpec cells).mpr (spec_of_operations cells offset env h).1
+
+theorem residuals_zero_of_operations (cells : Cells) (offset : Nat) (env : Environment FGL)
+    (h : ConstraintsHold.Soundness env (operations cells offset)) :
+    (residuals cells)[0] = 0 ∧ (residuals cells)[1] = 0 ∧
+      (residuals cells)[2] = 0 ∧ (residuals cells)[3] = 0 ∧
+      (residuals cells)[4] = 0 ∧ (residuals cells)[5] = 0 ∧
+      (residuals cells)[6] = 0 :=
+  (residuals_zero_iff_hold cells).mpr (residuals_of_operations cells offset env h)
 
 /-- All eight byte routes, classified from source equations, not from a stronger
 source-shape validator or a supplied Boolean-route oracle. -/
-theorem byte_routes (cells : Cells) (h : ResidualsHold cells) :
+theorem byte_routes (cells : Cells) (h : ResidualsHold (ofCells cells)) :
     ∃ high4 high2 high1 : Bool,
       (ofCells cells).sel_high_4b = boolF high4 ∧
       (ofCells cells).sel_high_2b = boolF high2 ∧
@@ -133,7 +163,8 @@ def honestCells (high4 high2 high1 : Bool)
 
 theorem honest_polynomials (high4 high2 high1 : Bool)
     (byte writtenByte direct value16 value8 addr step : FGL) :
-    ResidualsHold (honestCells high4 high2 high1 byte writtenByte direct value16 value8 addr step) := by
+    ResidualsHold (ofCells
+      (honestCells high4 high2 high1 byte writtenByte direct value16 value8 addr step)) := by
   apply (residuals_iff_polynomialSpec _).mpr
   rw [honestCells, of_to]
   cases high4 <;> cases high2 <;> cases high1 <;>
