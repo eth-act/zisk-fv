@@ -78,6 +78,7 @@ private theorem sourceJalr_remaining_fields
     (ctx : riscv2zisk_context.Riscv2ZiskContext)
     (first : aeneas_extract.ZiskInstExtract) (last : zisk_inst_builder.ZiskInstBuilder)
     (rd : input.rd = 1#u32) (rs1 : input.rs1 = 2#u32) (imm : input.imm = 1#i32)
+    (rom : input.rom_address = 0#u64)
     (source : riscv2zisk_context.Riscv2ZiskContext.jalr
       { defCtx with extract_marker := () } input 4#u64 = ok ctx)
     (firstRecorded : ctx.extract_first_inst = some first)
@@ -111,7 +112,13 @@ private theorem sourceJalr_remaining_fields
   have aboveU : ¬ (2#u64 : Std.U64) > 31#u64 := by decide
   have belowI : ¬ (1#i64 : Std.I64) < 1#i64 := by decide
   have aboveI : ¬ (1#i64 : Std.I64) > 31#i64 := by decide
-  simp [riscv2zisk_context.Riscv2ZiskContext.jalr, immRem, immCast, rs1Cast, rdCast,
+  have immNonzero : (1#i32 : Std.I32) ≠ 0#i32 := by decide
+  have rs1Nonzero : (2#u64 : Std.U64) ≠ 0#u64 := by decide
+  have rdNonzero : (1#i64 : Std.I64) ≠ 0#i64 := by decide
+  have fourCast : UScalar.hcast IScalarTy.I64 (4#u64 : Std.U64) = 4#i64 := by decide
+  have three : (4#i64 : Std.I64) - 1#i64 = ok 3#i64 := rfl
+  have successor : (0#u64 : Std.U64) + 1#u64 = ok 1#u64 := rfl
+  simp only [riscv2zisk_context.Riscv2ZiskContext.jalr, immRem, immCast, rs1Cast, rdCast,
     riscv2zisk_context.Riscv2ZiskContext.jalr.JALR_MASK,
     zisk_inst_builder.ZiskInstBuilder.new_for_rv64im_lowering,
     zisk_inst_builder.ZiskInstBuilder.new,
@@ -136,6 +143,8 @@ private theorem sourceJalr_remaining_fields
     HShiftRight.hShiftRight, UScalar.shiftRight_IScalar, UScalar.shiftRight,
     i32_32_nonnegative, i32_32_toNat_lt_u64_numBits,
     fromU, toU, fromI, toI, belowU, aboveU, belowI, aboveI,
+    immNonzero, rs1Nonzero, rdNonzero, fourCast, three, successor, rom,
+    Bool.false_eq_true, if_false, if_true, reduceIte, bind_ok, Result.ok.injEq,
     lift, Bind.bind, defCtx] at source
   subst ctx
   simp only [Option.some.injEq] at firstRecorded lastRecorded
@@ -215,7 +224,7 @@ theorem worldProgram_actual_source :
       firstPins, lastPins⟩ := unaligned
     obtain ⟨firstWidth, firstStoreOffset, firstPrecompiled, lastASrc, lastAHi, lastALo,
       lastWidth, lastPrecompiled⟩ := sourceJalr_remaining_fields
-      input ctx first last rd rs1 imm source firstRecorded lastRecorded
+      input ctx first last rd rs1 imm rfl source firstRecorded lastRecorded
     obtain ⟨lastRow, extracted, aSrc, aHi, aLo, bSrc, bHi, bLo, indWidth,
       op, store, storeOffset, jmp1, jmp2, setPc, storePc, external, m32⟩ :=
       from_inst_full_fields last.i
@@ -281,7 +290,10 @@ theorem worldProgram_actual_source :
     rcases firstB with ⟨zero, _⟩ | ⟨_, firstBSrc, firstBHi, firstBLo⟩
     · rw [rs1] at zero
       cases zero
-    · have firstBLo' : first.b_offset_imm0 = 2#u64 := by
+    · change first.b_src = zisk_inst.SRC_REG at firstBSrc
+      change first.b_use_sp_imm1 = 0#u64 at firstBHi
+      change first.b_offset_imm0 = UScalar.cast UScalarTy.U64 input.rs1 at firstBLo
+      have firstBLo' : first.b_offset_imm0 = 2#u64 := by
         rw [firstBLo, rs1]
         decide
       rcases lastPins with ⟨lastOp, lastJ1, lastJ2, destination, lastBSrc,
@@ -293,9 +305,14 @@ theorem worldProgram_actual_source :
       · have lastStoreOffset' : last.i.store_offset = 1#i64 := by
           rw [lastStoreOffset, rd]
           decide
+        have offsetZero : signedOffset (0#u64 : Std.U64) = 0 := by decide +kernel
+        have offsetOne : signedOffset (1#u64 : Std.U64) = 1 := by decide +kernel
+        have offsetTwo : signedOffset (2#u64 : Std.U64) = 2 := by decide +kernel
+        have offsetMask : signedOffset (4294967294#u64 : Std.U64) = 4294967294 := by decide +kernel
         change romMessagesOfRaw 0 raw = _
         simp only [romMessagesOfRaw, actualRows]
-        norm_num [rows, worldAddProgramRow, worldAndProgramRow, romRowOf, signedOffset,
+        norm_num [rows, worldAddProgramRow, worldAndProgramRow, romRowOf,
+          offsetZero, offsetOne, offsetTwo, offsetMask,
           romFlagBitsOfExtract, packFlags, worldAddBits, worldAndBits,
           JalrSpinWitness.jalrAddBits, JalrSpinWitness.jalrAndBits,
           firstOp, firstJ1, firstJ2, firstASrc, firstAHi, firstALo,
