@@ -24,9 +24,9 @@ def table : StaticTable FGL DualByteMessage where
     · rintro ⟨i, rfl⟩
       have hi := i.isLt
       dsimp [sourceRow]
-      constructor <;> rw [Fin.val_natCast, Nat.mod_eq_of_lt (by omega)]
-      · omega
-      · exact Nat.mod_lt _ (by omega)
+      constructor
+      · exact lt_of_le_of_lt (Nat.mod_le _ _) (by omega)
+      · exact lt_of_le_of_lt (Nat.mod_le _ _) (Nat.mod_lt _ (by decide))
     · rintro ⟨ha, hb⟩
       let i : Fin 65536 := ⟨256 * t.byte_a.val + t.byte_b.val, by omega⟩
       refine ⟨i, ?_⟩
