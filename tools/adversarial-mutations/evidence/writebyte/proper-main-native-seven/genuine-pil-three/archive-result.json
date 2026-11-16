@@ -1,0 +1,605 @@
+{
+  "source_freeze_commit": "716c4408",
+  "source_freeze_sha256": "0805fd7baf6c02d0c3afb490b708622a1345a848c23a509283f980a39425e6d9",
+  "producer_source_commit": "599d039d2b0ae2bba1383f71b3a8d0c5febd30e2",
+  "verified_copy_compiler_helper_commit": "527a76ed31a218ebbfe8cd78032e3713e07a8340",
+  "upstream": {
+    "revision": "b63274507a040bf9e09d22214df43066e8f80cb7",
+    "root": "/nix/store/ma4jf8qlafpzsiv644h0jxz3pkw69d7w-source",
+    "relative_path": "state-machines/mem/pil/mem_align_byte.pil",
+    "sha256": "759d4f499649b1e17d316d2ff2298e45d4075f46f0e37887eb6dd7a5180b44ca"
+  },
+  "actual_outcomes": [
+    {
+      "case": "baseline",
+      "classification": "CONTROL_PASS",
+      "named_kernel_failures": [],
+      "strict_same_named_rfl_equation_reject": false,
+      "actual_normal34_bytecmp": true,
+      "pilout_sha256": "324dc09b3ca641e721dd726db6f0f39193234695930c04e7bddae7008a535369",
+      "generated_sha256": {
+        "Circuit.lean": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+        "LookupWiring.lean": "c44807d618d000f2a3456b5c0a9af9e2dbb728df31725df1cb2cd7a1d097ff8c",
+        "MemAlignWriteByte.lean": "97b5093c60a8bc4d4459d86adc21e9bad8e5fa11e8939f8c1e68141c29a4640f"
+      },
+      "all_frozen_inputs_preserved": true
+    },
+    {
+      "case": "comment-neutral",
+      "classification": "CONTROL_PASS",
+      "named_kernel_failures": [],
+      "strict_same_named_rfl_equation_reject": false,
+      "actual_normal34_bytecmp": true,
+      "pilout_sha256": "324dc09b3ca641e721dd726db6f0f39193234695930c04e7bddae7008a535369",
+      "generated_sha256": {
+        "Circuit.lean": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+        "LookupWiring.lean": "c44807d618d000f2a3456b5c0a9af9e2dbb728df31725df1cb2cd7a1d097ff8c",
+        "MemAlignWriteByte.lean": "97b5093c60a8bc4d4459d86adc21e9bad8e5fa11e8939f8c1e68141c29a4640f"
+      },
+      "all_frozen_inputs_preserved": true
+    },
+    {
+      "case": "wb-c8-dual88-order",
+      "classification": "NAMED_SOURCE_TUPLE_KERNEL_REJECT",
+      "named_kernel_failures": [
+        "dualByteHint_decode_success"
+      ],
+      "strict_same_named_rfl_equation_reject": true,
+      "actual_normal34_bytecmp": false,
+      "pilout_sha256": "2131c812730ba9ae85b41fa33f2d1fb14a4a4d0f9ca84448d737ef198eaa5e4e",
+      "generated_sha256": {
+        "Circuit.lean": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+        "LookupWiring.lean": "4a644241fdbc54348b64c9cea5b242b85f40ebdefb6b16da60d6ce777d789124",
+        "MemAlignWriteByte.lean": "7e56b16a3d8e1f5524e36f1c9e349ec1f23f8db0c471f3a9bfdd508df5a30a24"
+      },
+      "all_frozen_inputs_preserved": true
+    },
+    {
+      "case": "wb-c9-aligned-load-timestamp",
+      "classification": "NAMED_SOURCE_TUPLE_KERNEL_REJECT",
+      "named_kernel_failures": [
+        "alignedLoadHint_decode_success"
+      ],
+      "strict_same_named_rfl_equation_reject": true,
+      "actual_normal34_bytecmp": false,
+      "pilout_sha256": "cab9fe59e2115e352d752280413feacf866b9d73623065d592e687d0d1915284",
+      "generated_sha256": {
+        "Circuit.lean": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+        "LookupWiring.lean": "062e0a91778c8f8cd34b419aa830600f99698a7205c0c5a257e3fc49a732293c",
+        "MemAlignWriteByte.lean": "846f424fc87c5c6cb18890d801383018b71293090c87edda6daaa590d701d2e6"
+      },
+      "all_frozen_inputs_preserved": true
+    },
+    {
+      "case": "wb-c10-written-byte-slot",
+      "classification": "NAMED_SOURCE_TUPLE_KERNEL_REJECT",
+      "named_kernel_failures": [
+        "writtenByteHint_decode_success"
+      ],
+      "strict_same_named_rfl_equation_reject": true,
+      "actual_normal34_bytecmp": false,
+      "pilout_sha256": "112211fbf972c2abe745066a4b0e19132a4c81e47218dce6e3919f0e2114b830",
+      "generated_sha256": {
+        "Circuit.lean": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+        "LookupWiring.lean": "ff8be31fc6b830dbefaca13b83fdefb5446faf87e923e3fd83f3adf9280ee39d",
+        "MemAlignWriteByte.lean": "b135196326bd66122af6304e58e1c19ce5ddb90ad740b7a750ed91c01643bfce"
+      },
+      "all_frozen_inputs_preserved": true
+    }
+  ],
+  "controls_pass": true,
+  "named_kernel_kills": 3,
+  "expected_three_cases": [
+    "wb-c8-dual88-order",
+    "wb-c9-aligned-load-timestamp",
+    "wb-c10-written-byte-slot"
+  ],
+  "complete": true,
+  "archive": {
+    "path": "/home/cody/zisk-fv-writebyte/build/writebyte-pil-412-campaign/pil412-genuine-source-0805fd7b.tar.gz",
+    "sha256": "dc965699de1c7d2baef26871ae62ee02b2ff3d4129cd4a2eb5cdaa2306d8cbb4",
+    "bytes": 4382593,
+    "members": [
+      {
+        "path": "campaign-results.json",
+        "sha256": "9e3386cdb583124e17b2641fa0530131bfb7c62350157b37582adb6afc7f808e",
+        "bytes": 41259
+      },
+      {
+        "path": "campaign.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+        "bytes": 2
+      },
+      {
+        "path": "campaign.log",
+        "sha256": "605256eecc697fed0f325dd80a9ddb20d5b78320c1161eb1fb1eb0bd96dc08fd",
+        "bytes": 24012
+      },
+      {
+        "path": "cases-source-spec.json",
+        "sha256": "d0edebb6a9d21bd0f61b4ed75a29f7616c50259b5e866bf0dca9d740ecc2b861",
+        "bytes": 4585
+      },
+      {
+        "path": "cases/baseline/01-actual-pil-compiler.log",
+        "sha256": "5536790abf4c0e956b00d326194baa0430c303c11ba51a9b803d8c9412d319a5",
+        "bytes": 35907
+      },
+      {
+        "path": "cases/baseline/02-generator-0.log",
+        "sha256": "6f871dc5f9794e0046be1e54d6fefa178406cd64fac1b0a9a9ccb36ca2bdc38b",
+        "bytes": 180
+      },
+      {
+        "path": "cases/baseline/02-generator-1.log",
+        "sha256": "c9cecfa7a4bd8560787a2ff5e6f2e8ea89a46067a77359473fd07dfae8258ddf",
+        "bytes": 185
+      },
+      {
+        "path": "cases/baseline/02-generator-2.log",
+        "sha256": "5811af4b0ccafc80158b2b47a270e6c8efcf8dd874c9d43fee65cf760dbe8952",
+        "bytes": 190
+      },
+      {
+        "path": "cases/baseline/03-kernel-Extraction-Circuit.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/baseline/03-kernel-Extraction-LookupWiring.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/baseline/03-kernel-Extraction-MemAlignWriteByte.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/baseline/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-ExtractedWiring.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/baseline/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-NativeTupleSource.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/baseline/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-Source.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/baseline/actual-source.pilout",
+        "sha256": "324dc09b3ca641e721dd726db6f0f39193234695930c04e7bddae7008a535369",
+        "bytes": 4417275
+      },
+      {
+        "path": "cases/baseline/generated/Extraction/Circuit.lean",
+        "sha256": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+        "bytes": 740
+      },
+      {
+        "path": "cases/baseline/generated/Extraction/LookupWiring.lean",
+        "sha256": "c44807d618d000f2a3456b5c0a9af9e2dbb728df31725df1cb2cd7a1d097ff8c",
+        "bytes": 519569
+      },
+      {
+        "path": "cases/baseline/generated/Extraction/MemAlignWriteByte.lean",
+        "sha256": "97b5093c60a8bc4d4459d86adc21e9bad8e5fa11e8939f8c1e68141c29a4640f",
+        "bytes": 19338
+      },
+      {
+        "path": "cases/baseline/result.json",
+        "sha256": "f318d119cedebd50b1b7a719e66f73c0ad9788e752b26d828d5923ecf5b3c032",
+        "bytes": 8025
+      },
+      {
+        "path": "cases/baseline/source/state-machines/mem/pil/mem_align_byte.pil",
+        "sha256": "759d4f499649b1e17d316d2ff2298e45d4075f46f0e37887eb6dd7a5180b44ca",
+        "bytes": 4496
+      },
+      {
+        "path": "cases/comment-neutral/01-actual-pil-compiler.log",
+        "sha256": "b23a4a56f25b7dc94a834dbd8b64811c008388b4dfa50b180baebe0b27c0d4ed",
+        "bytes": 35889
+      },
+      {
+        "path": "cases/comment-neutral/02-generator-0.log",
+        "sha256": "9d7b657c3c8a395631a2727b7c06cb2d9c244ce7135a1209a65e6e6f225d0faf",
+        "bytes": 187
+      },
+      {
+        "path": "cases/comment-neutral/02-generator-1.log",
+        "sha256": "58f8320f7db031d13dfc04d709d561fadd0cb7aec869a24800b491456e196902",
+        "bytes": 192
+      },
+      {
+        "path": "cases/comment-neutral/02-generator-2.log",
+        "sha256": "ce6f6e8085451c2e4f6868a174c9f42797dea728738f7a5f0ea6e679ae290d18",
+        "bytes": 197
+      },
+      {
+        "path": "cases/comment-neutral/03-kernel-Extraction-Circuit.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/comment-neutral/03-kernel-Extraction-LookupWiring.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/comment-neutral/03-kernel-Extraction-MemAlignWriteByte.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/comment-neutral/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-ExtractedWiring.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/comment-neutral/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-NativeTupleSource.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/comment-neutral/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-Source.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/comment-neutral/actual-source.pilout",
+        "sha256": "324dc09b3ca641e721dd726db6f0f39193234695930c04e7bddae7008a535369",
+        "bytes": 4417275
+      },
+      {
+        "path": "cases/comment-neutral/generated/Extraction/Circuit.lean",
+        "sha256": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+        "bytes": 740
+      },
+      {
+        "path": "cases/comment-neutral/generated/Extraction/LookupWiring.lean",
+        "sha256": "c44807d618d000f2a3456b5c0a9af9e2dbb728df31725df1cb2cd7a1d097ff8c",
+        "bytes": 519569
+      },
+      {
+        "path": "cases/comment-neutral/generated/Extraction/MemAlignWriteByte.lean",
+        "sha256": "97b5093c60a8bc4d4459d86adc21e9bad8e5fa11e8939f8c1e68141c29a4640f",
+        "bytes": 19338
+      },
+      {
+        "path": "cases/comment-neutral/result.json",
+        "sha256": "ef338e6e24c251c8ebd8317472c80b54f7609f77edabb86421741eab2d4060c8",
+        "bytes": 8222
+      },
+      {
+        "path": "cases/comment-neutral/source/state-machines/mem/pil/mem_align_byte.pil",
+        "sha256": "795655b74dcd87898843b646debd317c9e08a669ee8e7bf89f7bc0aff947306c",
+        "bytes": 4586
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/01-actual-pil-compiler.log",
+        "sha256": "d5038dc323bda608030dbd11b5bf2540c202f28e6559e9026a01ad6d91ed1f0c",
+        "bytes": 35875
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/02-generator-0.log",
+        "sha256": "9db10ecc2bdc161b3f3bd166cf0896b72748f5db25a64adbbd0a84428ea78415",
+        "bytes": 196
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/02-generator-1.log",
+        "sha256": "cdb85fe51e6285d5378eefe8a259ce9f8def588bfaa4e5bafcf828ff2304452c",
+        "bytes": 201
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/02-generator-2.log",
+        "sha256": "24f3a51a7980221c9f64e4dad1e68da6ec80ecbbea69c716a5940b33f198b745",
+        "bytes": 206
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/03-kernel-Extraction-Circuit.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/03-kernel-Extraction-LookupWiring.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/03-kernel-Extraction-MemAlignWriteByte.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-ExtractedWiring.log",
+        "sha256": "80cdcf733119d565233a832a7e9351aabc041e824d9a08b6e7251a42268bdac1",
+        "bytes": 495
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-Source.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/actual-source.pilout",
+        "sha256": "112211fbf972c2abe745066a4b0e19132a4c81e47218dce6e3919f0e2114b830",
+        "bytes": 4417279
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/generated/Extraction/Circuit.lean",
+        "sha256": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+        "bytes": 740
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/generated/Extraction/LookupWiring.lean",
+        "sha256": "ff8be31fc6b830dbefaca13b83fdefb5446faf87e923e3fd83f3adf9280ee39d",
+        "bytes": 519573
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/generated/Extraction/MemAlignWriteByte.lean",
+        "sha256": "b135196326bd66122af6304e58e1c19ce5ddb90ad740b7a750ed91c01643bfce",
+        "bytes": 19338
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/result.json",
+        "sha256": "d9bab41a5d0b9e6f8ba30a7be857918be3b91038666d5c180b6278da89cbd684",
+        "bytes": 7876
+      },
+      {
+        "path": "cases/wb-c10-written-byte-slot/source/state-machines/mem/pil/mem_align_byte.pil",
+        "sha256": "e7d72ba521f080983d7c186f72de6ccaad37f592884fec7fb569a34129427815",
+        "bytes": 4650
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/01-actual-pil-compiler.log",
+        "sha256": "8dddba22b89c52e478a5a611fac87881fd16acab9a722c63dbf54bbab65d5446",
+        "bytes": 35870
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/02-generator-0.log",
+        "sha256": "deb8bc5a2d7e181caa9f6a1b60834616d01f7cb5ba357ef7c0514f067f419228",
+        "bytes": 190
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/02-generator-1.log",
+        "sha256": "30fbbac2207ca21548ca35c34036bd10571e8b4e761cf45a834551aef5255f84",
+        "bytes": 195
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/02-generator-2.log",
+        "sha256": "262d5a1169a49d07cfc87c363285fc2daaf89ea7b5c97219055fb5574a31bfe0",
+        "bytes": 200
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/03-kernel-Extraction-Circuit.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/03-kernel-Extraction-LookupWiring.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/03-kernel-Extraction-MemAlignWriteByte.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-ExtractedWiring.log",
+        "sha256": "28fab3afd6e3ff5754f3a03e15276eb82a9485f759be5370d608640e263dc9ec",
+        "bytes": 585
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-Source.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/actual-source.pilout",
+        "sha256": "2131c812730ba9ae85b41fa33f2d1fb14a4a4d0f9ca84448d737ef198eaa5e4e",
+        "bytes": 4417275
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/generated/Extraction/Circuit.lean",
+        "sha256": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+        "bytes": 740
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/generated/Extraction/LookupWiring.lean",
+        "sha256": "4a644241fdbc54348b64c9cea5b242b85f40ebdefb6b16da60d6ce777d789124",
+        "bytes": 519569
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/generated/Extraction/MemAlignWriteByte.lean",
+        "sha256": "7e56b16a3d8e1f5524e36f1c9e349ec1f23f8db0c471f3a9bfdd508df5a30a24",
+        "bytes": 19338
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/result.json",
+        "sha256": "5e4baf3738ad7cd88e232d80caec05157c39fc606beb41b22d32a464128a642f",
+        "bytes": 7712
+      },
+      {
+        "path": "cases/wb-c8-dual88-order/source/state-machines/mem/pil/mem_align_byte.pil",
+        "sha256": "a8d05d7ebad639e7ebed88da61d47de1045ffcd5617dbea41d66093a02947464",
+        "bytes": 4601
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/01-actual-pil-compiler.log",
+        "sha256": "0b6d7561ab16300c0b2c54c3c1b61dc39f42bab4d6fd43a198c6d2df7f6f897c",
+        "bytes": 35898
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/02-generator-0.log",
+        "sha256": "1735c3a9b57f57014ab9d378f199c9140810de85f2c06ac0a18c206da1848b07",
+        "bytes": 200
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/02-generator-1.log",
+        "sha256": "dbc29c7378bcd82059e3b886ce75121a8f4c8add1a01e0e2e6f5edac2bcccb73",
+        "bytes": 205
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/02-generator-2.log",
+        "sha256": "2371b814eca258423e5e798aae3e78130ed65e03f54ff7937fffe27ea5a6af6b",
+        "bytes": 210
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/03-kernel-Extraction-Circuit.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/03-kernel-Extraction-LookupWiring.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/03-kernel-Extraction-MemAlignWriteByte.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-ExtractedWiring.log",
+        "sha256": "1099640d16659529a237dbfb0e943651a4fa8e71cbd8cf6c589979f4f2c40db2",
+        "bytes": 535
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-Source.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/actual-source.pilout",
+        "sha256": "cab9fe59e2115e352d752280413feacf866b9d73623065d592e687d0d1915284",
+        "bytes": 4417298
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/generated/Extraction/Circuit.lean",
+        "sha256": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+        "bytes": 740
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/generated/Extraction/LookupWiring.lean",
+        "sha256": "062e0a91778c8f8cd34b419aa830600f99698a7205c0c5a257e3fc49a732293c",
+        "bytes": 519604
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/generated/Extraction/MemAlignWriteByte.lean",
+        "sha256": "846f424fc87c5c6cb18890d801383018b71293090c87edda6daaa590d701d2e6",
+        "bytes": 19344
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/result.json",
+        "sha256": "db261bd9f029a56e0fdab03e48bbd0ce6563aa563489d9e1ebcddbf88ef14ac6",
+        "bytes": 7982
+      },
+      {
+        "path": "cases/wb-c9-aligned-load-timestamp/source/state-machines/mem/pil/mem_align_byte.pil",
+        "sha256": "dee8dcef4dbbb6b48474b8d5bdee97938d253a3acf440cb1a5bfd997a13b998c",
+        "bytes": 4656
+      },
+      {
+        "path": "cohesive-freeze.json",
+        "sha256": "0805fd7baf6c02d0c3afb490b708622a1345a848c23a509283f980a39425e6d9",
+        "bytes": 2100511
+      },
+      {
+        "path": "copied-source-freeze.json",
+        "sha256": "293396140e00b24469169641452c68850f0c7a34c38cb65804dc2b82a9cf7270",
+        "bytes": 3324
+      },
+      {
+        "path": "freeze.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+        "bytes": 2
+      },
+      {
+        "path": "freeze.log",
+        "sha256": "07d0df0c46763b7ca6f1a41f48e1efeb77d0f95e3477afd7b9fd2bbd3e9b9101",
+        "bytes": 72
+      },
+      {
+        "path": "immutable-store-provenance.json",
+        "sha256": "1ec61efea5b58a4e9dfa1a4a76968818063bc5fbe0bb672b6c6936e3d37f2bf1",
+        "bytes": 3029
+      },
+      {
+        "path": "named-diagnostic-classification.json",
+        "sha256": "17a36708be94811af92e80cb13c95595a2c2c162377177f9475d55cf23964cd7",
+        "bytes": 3423
+      },
+      {
+        "path": "package-results.py",
+        "sha256": "6fa10e8a88a174a14921e29a4c884c2457491a09e9ac3891f9cd74f329c29beb",
+        "bytes": 6869
+      },
+      {
+        "path": "run-campaign.py",
+        "sha256": "ef1872a5aa83f49adab767fe0233f4e2b0917abbfd2b948e44b3c1392f5055e0",
+        "bytes": 13109
+      },
+      {
+        "path": "scoped-pil-hashes.json",
+        "sha256": "9ef22368c19d461791d3f6699faeb9a1586ea086ac42264b4fd85c08a2f0f08b",
+        "bytes": 1769
+      },
+      {
+        "path": "scoped-pil/baseline.pil",
+        "sha256": "759d4f499649b1e17d316d2ff2298e45d4075f46f0e37887eb6dd7a5180b44ca",
+        "bytes": 4496
+      },
+      {
+        "path": "scoped-pil/comment-neutral.pil",
+        "sha256": "795655b74dcd87898843b646debd317c9e08a669ee8e7bf89f7bc0aff947306c",
+        "bytes": 4586
+      },
+      {
+        "path": "scoped-pil/wb-c10-written-byte-slot.pil",
+        "sha256": "e7d72ba521f080983d7c186f72de6ccaad37f592884fec7fb569a34129427815",
+        "bytes": 4650
+      },
+      {
+        "path": "scoped-pil/wb-c8-dual88-order.pil",
+        "sha256": "a8d05d7ebad639e7ebed88da61d47de1045ffcd5617dbea41d66093a02947464",
+        "bytes": 4601
+      },
+      {
+        "path": "scoped-pil/wb-c9-aligned-load-timestamp.pil",
+        "sha256": "dee8dcef4dbbb6b48474b8d5bdee97938d253a3acf440cb1a5bfd997a13b998c",
+        "bytes": 4656
+      },
+      {
+        "path": "unchanged-consumer/ExtractedWiring.lean",
+        "sha256": "f061b544d0f70999c396feec5d456d049e97632fe777b5cb72373aaf620bbef4",
+        "bytes": 9153
+      },
+      {
+        "path": "unchanged-consumer/NativeTupleSource.lean",
+        "sha256": "f2617a01684471bd7418dff3070584218a6c85359026d002432ff57f6ab878ba",
+        "bytes": 10119
+      },
+      {
+        "path": "unchanged-consumer/Source.lean",
+        "sha256": "f0eff7e03666a9ca52a72ccef7f9aab8629e0a8a3645cf3e641dc3fbd0f1a25b",
+        "bytes": 3852
+      }
+    ],
+    "contains_actual_compiler_pilout": true,
+    "contains_compiled_objects_cache_or_foreign_links": false,
+    "unmodified_upstream_rest": "Reconstructed from exact frozen immutable b632/NAR/tree member hashes, not duplicated as 5 full Rust trees"
+  },
+  "prior_gates_separate": "4fde7ffe BOTH91 actual unfiltered RAW/std3 and old166/69 are not relabelled or rerun by source campaign",
+  "held_boundary": [
+    "All actual3Direct sourcePIL messages and originalAIR0 zero/negative invariants unchanged; no source count conversion",
+    "No upstream/pin/shared generator/core205/expected consumer proof/model/Root changes",
+    "No nativeABI/sourceWorld/Accepted/Root/provider/weightedbus88/#413closure claim"
+  ],
+  "kill_rule": "Actual pinned copied PIL compiler \u2192 same real GEN LookupWiring \u2192 unchanged named decoder kernel failure. Setup/compiler/generator/timeout/unknown-identifier failures are not kills."
+}

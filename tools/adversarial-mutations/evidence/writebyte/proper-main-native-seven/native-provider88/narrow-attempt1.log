@@ -1,0 +1,176 @@
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 --root=/home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/generated-source -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/Extraction/PackedVirtualTables.olean /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/generated-source/Extraction/PackedVirtualTables.lean
+/home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/generated-source/Extraction/PackedVirtualTables.lean:241:14: warning: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+/home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/generated-source/Extraction/PackedVirtualTables.lean:241:4: warning: 'all_goals omega' tactic does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/Airs/Tables/BinaryTable.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/Airs/Tables/BinaryTable.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/Channels/BinaryTable.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/Channels/BinaryTable.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/AirsClean/BinaryTable.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/BinaryTable.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/AirsClean/BinaryTableSlice.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/BinaryTableSlice.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/Airs/Main/Main.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/Airs/Main/Main.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/RowShape/Contract.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/RowShape/Contract.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/Bits/PackedBitVec.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/Bits/PackedBitVec.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/Channels/MemoryBusBytes.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/Channels/MemoryBusBytes.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/Airs/MemoryBus.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/Airs/MemoryBus.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/Airs/Tables/BinaryExtensionTable.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/Airs/Tables/BinaryExtensionTable.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/Channels/BinaryExtensionTable.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/Channels/BinaryExtensionTable.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/AirsClean/BinaryExtensionTable.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/BinaryExtensionTable.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/AirsClean/BinaryExtensionTableSlice.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/BinaryExtensionTableSlice.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/AirsClean/PackedVirtualTableSources.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/PackedVirtualTableSources.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/AirsClean/DualByteTable.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/DualByteTable.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/AirsClean/DualByteSlice.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/DualByteSlice.lean
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/DualByteSlice.lean:128:16: warning: this tactic is never executed
+
+Note: This linter can be disabled with `set_option linter.unreachableTactic false`
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/DualByteSlice.lean:128:6: warning: 'all_goals rfl' tactic does nothing
+
+Note: This linter can be disabled with `set_option linter.unusedTactic false`
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/AirsClean/DualBytePackedSource.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/DualBytePackedSource.lean
+RUN /home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean -j2 --tstack=400000 -o /home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.olean /home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:164:2: error: Type mismatch: After simplification, term
+  block_source view row lane mode
+ has type
+  RawSource.NativeTraceWords.unpackedBlock? (resolved.params mode) (↑row * 8 + ↑lane) 1 =
+    some (Array.ofFn fun x => view.field row lane)
+but is expected to have type
+  (view.setup.mapSectionsN["cm" ++ toString 1]?.bind fun a =>
+      RawSource.NativeTraceWords.unpackedBlock? (resolved.params mode) (↑row * a + ↑lane) 1) =
+    some (Array.ofFn fun x => view.field row lane)
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:246:8: error: Tactic `rfl` failed: The left-hand side
+  And.casesOn h✝ fun hg right =>
+    And.casesOn right fun ha right =>
+      And.casesOn right fun hv right =>
+        And.casesOn right fun hgpu right =>
+          And.casesOn right fun hr right =>
+            And.casesOn right fun hw right =>
+              And.casesOn right fun hp right =>
+                And.casesOn right fun hc8 hb =>
+                  {
+                    setup :=
+                      { setup := setup✝, setupSource := setupSource✝, registryGroup := registryGroup✝,
+                          registryAir := registryAir✝, cpuVerify := cpuVerify✝, cpuGpu := cpuGpu✝, rows := rows✝,
+                          cm1Source := cm1Source✝, unpacked := unpacked✝, stride := stride✝,
+                          coverage := coverage✝ }.setup,
+                    setupSource := ⋯, registryGroup := hg, registryAir := ha, cpuVerify := hv, cpuGpu := hgpu,
+                    rows := hr, cm1Source := ⋯, unpacked := hp, stride := hc8, coverage := hb }
+is not definitionally equal to the right-hand side
+  { setup := setup✝, setupSource := setupSource✝, registryGroup := registryGroup✝, registryAir := registryAir✝,
+    cpuVerify := cpuVerify✝, cpuGpu := cpuGpu✝, rows := rows✝, cm1Source := cm1Source✝, unpacked := unpacked✝,
+    stride := stride✝, coverage := coverage✝ }
+
+case h_2.isTrue.e_val._private.ZiskFv.AirsClean.MemAlignWriteByte.NativeProvider88.0.ZiskFv.AirsClean.MemAlignWriteByte.NativeProvider88.View.mk
+source : SourceObject (Fin 18446744069414584321)
+resolved : ResolvedOccurrence source
+air : Fin 2
+setup✝ : NativeSetup
+setupSource✝ : resolved.setup? = some setup✝
+registryGroup✝ : resolved.registryEntry.airgroupId = 0
+registryAir✝ : resolved.registryEntry.airId = (schema air).airIndex
+cpuVerify✝ : setup✝.profile.verify = false
+cpuGpu✝ : setup✝.profile.gpu = false
+rows✝ : setup✝.rowCount = physicalRows
+cm1Source✝ : setup✝.mapSectionsN["cm1"]? = some 8
+unpacked✝ : resolved.slotData.metadata.isPacked = false
+stride✝ : resolved.slotData.metadata.nColsTrace = 8
+coverage✝ : physicalRows * 8 ≤ resolved.slotData.trace.size
+hs :
+  resolved.setup? =
+    some
+      { setup := setup✝, setupSource := setupSource✝, registryGroup := registryGroup✝, registryAir := registryAir✝,
+          cpuVerify := cpuVerify✝, cpuGpu := cpuGpu✝, rows := rows✝, cm1Source := cm1Source✝, unpacked := unpacked✝,
+          stride := stride✝, coverage := coverage✝ }.setup
+hc :
+  { setup := setup✝, setupSource := setupSource✝, registryGroup := registryGroup✝, registryAir := registryAir✝,
+            cpuVerify := cpuVerify✝, cpuGpu := cpuGpu✝, rows := rows✝, cm1Source := cm1Source✝, unpacked := unpacked✝,
+            stride := stride✝, coverage := coverage✝ }.setup.mapSectionsN["cm1"]? =
+    some 8
+h✝ :
+  resolved.registryEntry.airgroupId = 0 ∧
+    resolved.registryEntry.airId = (schema air).airIndex ∧
+      { setup := setup✝, setupSource := setupSource✝, registryGroup := registryGroup✝, registryAir := registryAir✝,
+                  cpuVerify := cpuVerify✝, cpuGpu := cpuGpu✝, rows := rows✝, cm1Source := cm1Source✝,
+                  unpacked := unpacked✝, stride := stride✝, coverage := coverage✝ }.setup.profile.verify =
+          false ∧
+        { setup := setup✝, setupSource := setupSource✝, registryGroup := registryGroup✝, registryAir := registryAir✝,
+                    cpuVerify := cpuVerify✝, cpuGpu := cpuGpu✝, rows := rows✝, cm1Source := cm1Source✝,
+                    unpacked := unpacked✝, stride := stride✝, coverage := coverage✝ }.setup.profile.gpu =
+            false ∧
+          { setup := setup✝, setupSource := setupSource✝, registryGroup := registryGroup✝, registryAir := registryAir✝,
+                    cpuVerify := cpuVerify✝, cpuGpu := cpuGpu✝, rows := rows✝, cm1Source := cm1Source✝,
+                    unpacked := unpacked✝, stride := stride✝, coverage := coverage✝ }.setup.rowCount =
+              physicalRows ∧
+            8 = 8 ∧
+              resolved.slotData.metadata.isPacked = false ∧
+                resolved.slotData.metadata.nColsTrace = 8 ∧ physicalRows * 8 ≤ resolved.slotData.trace.size
+⊢ (And.casesOn h✝ fun hg right =>
+      And.casesOn right fun ha right =>
+        And.casesOn right fun hv right =>
+          And.casesOn right fun hgpu right =>
+            And.casesOn right fun hr right =>
+              And.casesOn right fun hw right =>
+                And.casesOn right fun hp right =>
+                  And.casesOn right fun hc8 hb =>
+                    {
+                      setup :=
+                        { setup := setup✝, setupSource := setupSource✝, registryGroup := registryGroup✝,
+                            registryAir := registryAir✝, cpuVerify := cpuVerify✝, cpuGpu := cpuGpu✝, rows := rows✝,
+                            cm1Source := cm1Source✝, unpacked := unpacked✝, stride := stride✝,
+                            coverage := coverage✝ }.setup,
+                      setupSource := ⋯, registryGroup := hg, registryAir := ha, cpuVerify := hv, cpuGpu := hgpu,
+                      rows := hr, cm1Source := ⋯, unpacked := hp, stride := hc8, coverage := hb }) =
+    { setup := setup✝, setupSource := setupSource✝, registryGroup := registryGroup✝, registryAir := registryAir✝,
+      cpuVerify := cpuVerify✝, cpuGpu := cpuGpu✝, rows := rows✝, cm1Source := cm1Source✝, unpacked := unpacked✝,
+      stride := stride✝, coverage := coverage✝ }
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:343:63: error(lean.invalidField): Invalid field `weight`: The environment does not contain `ZiskFv.AirsClean.MemAlignWriteByte.NativeProvider88.View.weight`, so it is not possible to project the field `weight` from an expression
+  pair.leftView
+of type `View pair.leftResolved 0`
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:343:79: error: unsolved goals
+source : SourceObject (Fin 18446744069414584321)
+left right : source.Occurrence
+pair : PackedPair source left right
+index : Fin 65536
+⊢ pair.leftView.field (source88.location (DualBytePackedSource.sourceIndex index)).row
+      (source88.location (DualBytePackedSource.sourceIndex index)).lane =
+    sorry ()
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:344:66: warning: This simp argument is unused:
+  Factory.weight
+
+Hint: Omit it from the simp argument list.
+  simp [PackedVirtualTableSources.project, PackedPair.rawWitness, F̵a̵c̵t̵o̵r̵y̵.̵w̵e̵i̵g̵h̵t̵,̵
+  ̵ ̵ ̵ ̵ ̵(source88_coordinates index).1]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:352:75: error(lean.invalidField): Invalid field `providerRow`: The environment does not contain `ZiskFv.AirsClean.MemAlignWriteByte.NativeProvider88.View.providerRow`, so it is not possible to project the field `providerRow` from an expression
+  pair.leftView
+of type `View pair.leftResolved 0`
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:352:96: error: unsolved goals
+source : SourceObject (Fin 18446744069414584321)
+left right : source.Occurrence
+pair : PackedPair source left right
+index : Fin 65536
+⊢ { byte_a := (DualByteTable.sourceRow index).byte_a, byte_b := (DualByteTable.sourceRow index).byte_b,
+      multiplicity := sorry } =
+    sorry
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:353:47: warning: This simp argument is unused:
+  Factory.providerRow
+
+Hint: Omit it from the simp argument list.
+  simp only [DualBytePackedSource.providerRow, F̵a̵c̵t̵o̵r̵y̵.̵p̵r̵o̵v̵i̵d̵e̵r̵R̵o̵w̵,̵
+  ̵ ̵ ̵ ̵ ̵DualByteSlice.sourceRows, pair.project88]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:362:58: error(lean.invalidField): Invalid field `weight`: The environment does not contain `ZiskFv.AirsClean.MemAlignWriteByte.NativeProvider88.View.weight`, so it is not possible to project the field `weight` from an expression
+  pair.leftView
+of type `View pair.leftResolved 0`
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:363:2: error: maximum recursion depth has been reached
+use `set_option maxRecDepth <num>` to increase limit
+use `set_option diagnostics true` to get diagnostic information
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:375:35: error(lean.invalidField): Invalid field `providerRow`: The environment does not contain `ZiskFv.AirsClean.MemAlignWriteByte.NativeProvider88.View.providerRow`, so it is not possible to project the field `providerRow` from an expression
+  pair.leftView
+of type `View pair.leftResolved 0`
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:394:30: error(lean.invalidField): Invalid field `interactionAt`: The environment does not contain `ZiskFv.AirsClean.MemAlignWriteByte.NativeProvider88.View.interactionAt`, so it is not possible to project the field `interactionAt` from an expression
+  pair.leftView
+of type `View pair.leftResolved 0`
+/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean:427:6: error: No goals to be solved

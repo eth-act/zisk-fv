@@ -897,6 +897,7 @@ BINARY_SPEC = "ZiskFv/AirsClean/Binary/Spec.lean"
 MEMALIGNBYTE_SPEC = "ZiskFv/AirsClean/MemAlignByte/Spec.lean"
 MEM_OUT_OF_ROOT = "ZiskFv/Airs/Mem.lean"
 WRITEBYTE_SPEC = "ZiskFv/AirsClean/MemAlignWriteByte/Spec.lean"
+WRITEBYTE_NATIVE_ROW = "ZiskFv/AirsClean/MemAlignWriteByte/NativeRow.lean"
 # The weld files (#296): `MemAlignByteMirrorWeld` welds the three MemAlignByte-family
 # AIRs, `ArithMirrorWeld` the Arith AIR (and carries `gen36`).
 MEMALIGNBYTE_WELD = "ZiskFv/AirsClean/MemAlignByteMirrorWeld.lean"
@@ -951,6 +952,9 @@ class Mutation:
     # mutation that defeats a scope check produces no finding at all, so its
     # prediction lives here rather than in `added`.
     scope_added: tuple[str, ...] = ()
+    # Exact new parser failures (AIR, definition, diagnostic fragment). These
+    # remain observable even when another independent mirror covers the source.
+    unparsed_added: tuple[tuple[str, str, str], ...] = ()
     # Mirror names this mutation must newly make UNREACHABLE. An unreachable mirror
     # is in `payload["unreachable"]`, not in `airs[].findings`, so a signature delta
     # does not see it; its prediction lives here.
@@ -1386,6 +1390,24 @@ MUTATIONS: tuple[Mutation, ...] = (
 # Every newly inventoried WB base equation is exercised, not merely counted.
 # Its surviving kernel weld may rescue the generated side, but cannot hide a
 # perturbed MIRROR clause: each mutation must add a real STRENGTHENING.
+def perturb_writebyte_polynomial(index: int, anchor: str,
+                                before: str, after: str) -> Mutator:
+    """Perturb the same equation in both actual independently checked mirrors."""
+    def apply(lines: list[str]) -> Applied:
+        original = any(line.startswith("def PolynomialSpec ") for line in lines)
+        native = any(line.startswith("def ResidualsHold ") for line in lines)
+        if original == native:
+            raise HarnessError("expected exactly one actual WriteByte polynomial mirror")
+        if native and index == 6:
+            return replace_in_line(
+                "row.direct_value) = 0", "row.direct_value", "row.composed_value")(lines)
+        selected = anchor.replace("byte_value_factor", "sourceByteFactor") if native else anchor
+        if native:
+            # The same residual is written as lhs-rhs=0, not lhs=rhs.
+            selected = {3: "row.composed_value - (", 4: "(", 5: "("}.get(index, "") + selected
+        return replace_in_line(selected, before, after)(lines)
+    return apply
+
 WRITEBYTE_POLYNOMIAL_MUTATIONS = (
     (0, "row.sel_high_4b * (1 - row.sel_high_4b) = 0 ∧",
      "1 - row.sel_high_4b", "1 - row.sel_high_2b"),
@@ -1406,12 +1428,14 @@ MUTATIONS += tuple(
     Mutation(
         name=f"WRITEBYTE_POLYNOMIAL_{index}_PERTURBED",
         lean_file=WRITEBYTE_SPEC,
-        target=f"PolynomialSpec#{index}, actual MemAlignWriteByte c{index}",
-        intent="the actual fourteen-field source mirror must compare this "
-               "equation even when an independent kernel weld survives",
-        apply=replace_in_line(anchor, before, after),
-        added=(strengthening("MemAlignWriteByte", "PolynomialSpec"),
+        target=f"PolynomialSpec#{index} and native ResidualsHold#{index}, "
+               f"actual MemAlignWriteByte c{index}",
+        intent="both independent source mirrors must reject the same perturbed "
+               "equation, while the surviving kernel weld rescues only the generated side",
+        apply=perturb_writebyte_polynomial(index, anchor, before, after),
+        added=(strengthening("MemAlignWriteByte", "PolynomialSpec", "ResidualsHold"),
                weld_covered("MemAlignWriteByte", index)),
+        additional_files=(WRITEBYTE_NATIVE_ROW,),
     )
     for index, anchor, before, after in WRITEBYTE_POLYNOMIAL_MUTATIONS
 )
@@ -1544,7 +1568,7 @@ MUTATIONS += (
         apply=replace_in_line(
             "open ZiskFv.AirsClean.MemAlignByte (byte_value_factor value_8b_factor value_16b_factor)",
             "byte_value_factor ", ""),
-        added=(weld_covered("MemAlignWriteByte", 3), weld_covered("MemAlignWriteByte", 4)),
+        unparsed_added=(("MemAlignWriteByte", "PolynomialSpec", "byte_value_factor"),),
         expect_exit=1,
     ),
     Mutation(
@@ -1559,7 +1583,10 @@ MUTATIONS += (
                 "open ZiskFv.AirsClean.MemAlignByte (byte_value_factor value_8b_factor value_16b_factor)",
                 "open ZiskFv.AirsClean.MemAlignReadByte (byte_value_factor)"),
         ),
-        added=tuple(weld_covered("MemAlignWriteByte", index) for index in range(7)),
+        # Import ambiguity is rejected before any clause/predicate is parsed.
+        unparsed_added=(("MemAlignWriteByte",
+                         "ZiskFv/AirsClean/MemAlignWriteByte/Spec.lean",
+                         "ambiguous explicitly opened field helper"),),
         expect_exit=1,
     ),
 )
@@ -1578,6 +1605,7 @@ class CaseResult:
     removed: Counter = field(default_factory=Counter)
     scope_added: Counter = field(default_factory=Counter)
     unreachable_added: list[str] = field(default_factory=list)
+    unparsed_added: list[str] = field(default_factory=list)
     totals_moved: list[str] = field(default_factory=list)
     summary: str = ""
     evidence: list[str] = field(default_factory=list)
@@ -1591,9 +1619,10 @@ class CaseResult:
     def uncaught(self) -> bool:
         """A mutation the gate was supposed to notice and did not notice at all."""
         return (bool(self.mutation.added or self.mutation.removed
-                     or self.mutation.scope_added or self.mutation.unreachable_added)
+                     or self.mutation.scope_added or self.mutation.unreachable_added
+                     or self.mutation.unparsed_added)
                 and not self.added and not self.removed and not self.scope_added
-                and not self.unreachable_added)
+                and not self.unreachable_added and not self.unparsed_added)
 
     @property
     def blind(self) -> bool:
@@ -1687,6 +1716,24 @@ def run_case(mutation: Mutation, base: Path, work_dir: Path,
         result.problems.append(
             f"unpredicted new scope failure(s) in {', '.join(sorted(unexpected))}")
 
+    base_unparsed = {
+        (air["air"], message)
+        for air in baseline.payload["airs"] for message in air["unparsed"]
+    }
+    for air, definition, diagnostic in mutation.unparsed_added:
+        messages = [
+            message for entry in run.payload["airs"] if entry["air"] == air
+            for message in entry["unparsed"]
+            if (air, message) not in base_unparsed
+            and definition in message and diagnostic in message
+        ]
+        if not messages:
+            result.problems.append(
+                f"expected new UNPARSED {air} {definition}: {diagnostic}")
+        else:
+            result.unparsed_added.extend(f"{air}: {message}" for message in messages)
+            result.evidence.extend(f"UNPARSED {air}: {message}" for message in messages)
+
     base_unreachable = {e["name"] for e in baseline.payload["unreachable"]}
     result.unreachable_added = sorted(
         {e["name"] for e in run.payload["unreachable"]} - base_unreachable)
@@ -1732,7 +1779,7 @@ def run_case(mutation: Mutation, base: Path, work_dir: Path,
         expected_exit = EXIT_FAILED if (
             baseline.exit_code == EXIT_FAILED
             or any(sig[0] in FAILING_KINDS for sig in result.added)
-            or result.scope_added or mutation.unreachable_added
+            or result.scope_added or mutation.unreachable_added or result.unparsed_added
         ) else EXIT_OK
     if run.exit_code != expected_exit:
         result.problems.append(
@@ -1793,12 +1840,15 @@ def print_mutation_table(results: list[CaseResult]) -> None:
         expected = "; ".join(part for part in (
             fmt_signed(Counter(result.mutation.added),
                        Counter(result.mutation.removed)).replace("(nothing)", ""),
-            scope, unreach) if part)
+            scope, unreach,
+            "; ".join(f"+unparsed:{air}:{definition}"
+                      for air, definition, _ in result.mutation.unparsed_added)) if part)
         observed = "; ".join(part for part in (
             fmt_signed(result.added, result.removed).replace("(nothing)", ""),
             "; ".join(f"+scope:{b}" for b in sorted(result.scope_added)),
             "; ".join(f"+unreachable:{n}"
-                      for n in sorted(result.unreachable_added))) if part)
+                      for n in sorted(result.unreachable_added)),
+            "; ".join(f"+unparsed:{message}" for message in result.unparsed_added)) if part)
         print(_TABLE.format(
             result.mutation.name,
             (expected or "(nothing)")[:46]
@@ -1830,6 +1880,8 @@ def print_mutation_details(results: list[CaseResult]) -> None:
         if result.scope_added:
             print(f"  scope      new failure(s) in "
                   f"{', '.join(f'{b} x{n}' for b, n in sorted(result.scope_added.items()))}")
+        if result.unparsed_added:
+            print(f"  unparsed   {'; '.join(result.unparsed_added)}")
         if result.totals_moved:
             print(f"  totals     {'; '.join(result.totals_moved)}")
         if mutation.blind_spot:

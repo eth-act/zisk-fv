@@ -1,0 +1,365 @@
+{
+  "status": "ACTUAL_NATIVE_PROVIDER88_NARROW_AND_FULL_RAW_GREEN_NOT_LIVE_CLOSURE",
+  "initial_source_checkpoint": "39857e2a",
+  "base_commit": "3faa1251",
+  "actual_source": "/home/cody/zisk-fv-writebyte-canonical/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.lean",
+  "actual_source_sha256": "beb1e2473ae576b2f3e235226f2c653a9157c11157fb10d823332422eed27f43",
+  "actual_compiled_object": "/home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/lean/ZiskFv/AirsClean/MemAlignWriteByte/NativeProvider88.olean",
+  "actual_compiled_object_sha256": "96d0c7c05dd3c32ef2f067130c38638e428c71fbf172be80adf8d300e400f1ef",
+  "scope": "ALL actual defining/private/compiler/constructor/opaque TYPE+VALUE roots in sole NativeProvider88; EVERYroot+moduleunion+combinedunion independent installed Collector/std3/fullpaths; no pruning/cutoff",
+  "actual_fresh_count_including_target": 19,
+  "actual_roots": 118,
+  "actual_constants": 15646,
+  "actual_opaque_values": [
+    "Lean.opaqueId",
+    "Real.wrapped._@.Mathlib.Data.Real.Basic.1138242547._hygCtx._hyg.8",
+    "Real.wrapped._@.Mathlib.Data.Real.Basic.1175651576._hygCtx._hyg.8",
+    "Real.wrapped._@.Mathlib.Data.Real.Basic.1279875089._hygCtx._hyg.8",
+    "Real.wrapped._@.Mathlib.Data.Real.Basic.1850581184._hygCtx._hyg.8",
+    "Real.wrapped._@.Mathlib.Data.Real.Basic.1934218611._hygCtx._hyg.8",
+    "Real.wrapped._@.Mathlib.Data.Real.Basic.2451848184._hygCtx._hyg.8",
+    "Real.wrapped._@.Mathlib.Data.Real.Basic.3793047190._hygCtx._hyg.8",
+    "Real.wrapped._@.Mathlib.Data.Real.Basic.4214226450._hygCtx._hyg.8",
+    "Real.wrapped._@.Mathlib.Data.Real.Basic.4277896327._hygCtx._hyg.8",
+    "Real.wrapped._@.Mathlib.Data.Real.Basic.702802587._hygCtx._hyg.8",
+    "String.Internal.append",
+    "String.hash",
+    "System.Platform.getNumBits",
+    "mixHash",
+    "wrapped._@.Mathlib.Topology.Defs.Filter.2998874748._hygCtx._hyg.2"
+  ],
+  "actual_axiom_union": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "actual_full_seconds": 149.76481138705276,
+  "readonly_lease": "/home/cody/zisk-fv-writebyte-canonical/build/native-provider88-gate/checked-native-provider88-lease.json",
+  "readonly_lease_sha256": "586ee098687ee0244dce390b20a47314f085655db5d9aa7a13242185a975096c",
+  "all_source_compiler_parent_leaf_six_lease_readonly_and_fresh_CI_hashes_preserved": true,
+  "source_and_interface_dispositions": [
+    "old7 sources/evidence unchanged; no old pass relabelled",
+    "primary33 factory computes actual registry-selected CPU/unpacked/full CM1 original-buffer view; no extra34 guard/hint/weight/equality callback/success certificate",
+    "all physical FinN/lane totality from internally checked metadata/full-buffer bound, source88 lane2 row262144+i word(row*8+2) load-bearing",
+    "nativeUInt64 selected before concrete existing nativefield conversion, no N-array map/crop/default0/count validator",
+    "fixed A=i/256,B=i%256 tuple plus original source weight for all65536 includingzeros; actual existing providerTable operations/materialization/constraints related",
+    "auxiliary34 pair-indexed partial image retains both actual same-source final registry/slot/setup identities and dimensions; no first-match/pairing/unique-roster premise/absenttable completion",
+    "existing modeled native C-reader equality uses actual selected map entry/stage1/stagePos; not a derived runtime r.id/PIL-map identity"
+  ],
+  "explicit_unproved_runtime_boundaries": [
+    "actual virtual_table_data offsets/tableIDs/num_muls/global-info rows correlation with observed source88 layout",
+    "actual Dctx table_instance_id-to-final-global-slot selection and runtime pairing/ownership/remote/skip handling",
+    "actual native ABI/from_u64/TraceInfo/initialize/add overwrite materialization into same SourceObject",
+    "native compiled operand/fixed/nativeSetup correspondence and global-sum/finalizer/once balance transport",
+    "Accepted/root integration/live #414/418 closure"
+  ],
+  "no_new_mutation_run": "no new semantic/native-source mutation campaign; initial actual failure logs retained; historical campaigns unchanged",
+  "files": [
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/Extraction-PackedVirtualTables-attempt1.log",
+      "sha256": "49ab555d939e164270a8221d324f092b47325c32e5b29fa376a00b8800e12ab5",
+      "bytes": 506,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-Airs-Main-Main-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-Airs-MemoryBus-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-Airs-Tables-BinaryExtensionTable-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-Airs-Tables-BinaryTable-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-AirsClean-BinaryExtensionTable-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-AirsClean-BinaryExtensionTableSlice-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-AirsClean-BinaryTable-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-AirsClean-BinaryTableSlice-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-AirsClean-DualBytePackedSource-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-AirsClean-DualByteSlice-attempt1.log",
+      "sha256": "be150da4f5bb055ab0f9e7fd35eb73e19ab39debbe52a9b3dc320dbcbf57095e",
+      "bytes": 412,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-AirsClean-DualByteTable-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-AirsClean-MemAlignWriteByte-NativeProvider88-attempt1.log",
+      "sha256": "f1d00cd87fc9d5ec270c0dc0274ac851b43d4dcb55cfc0577054a68fe6164697",
+      "bytes": 10401,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-AirsClean-MemAlignWriteByte-NativeProvider88-attempt2.log",
+      "sha256": "75757ff54f53baf95c5170f8c5e0336274f30d1d936ab381998bf698e7ba7f69",
+      "bytes": 400,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-AirsClean-MemAlignWriteByte-NativeProvider88-attempt3.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-AirsClean-PackedVirtualTableSources-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-Bits-PackedBitVec-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-Channels-BinaryExtensionTable-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-Channels-BinaryTable-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-Channels-MemoryBusBytes-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/ZiskFv-RowShape-Contract-attempt1.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/full-after-attempt1.json",
+      "sha256": "ec2969049c06794e134956fc43d93bc4917a6b4aada69416fdafa9ae3538f567",
+      "bytes": 1412,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/full-attempt1.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/full-attempt1.log",
+      "sha256": "cc901e0c1de4d2f0e63f268418cf0dddca80df175f4ecc92d2fd9fc67404f236",
+      "bytes": 180,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/full-before-attempt1.json",
+      "sha256": "a5f7b8e6bef164eb8f141b7d4be6ac80fe0f12235240d5753ee8c8171b9a3964",
+      "bytes": 65866,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/full-result-attempt1.json",
+      "sha256": "231e97c398902dfcdfbb54c720f2149d72715ebb16127c98078a671907aeb3f9",
+      "bytes": 272,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/full-runner-attempt1.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/full-runner-attempt1.log",
+      "sha256": "c25d3b7c395935dc56054c8fd12d2451bee437171109358bc4926a5faf08fef7",
+      "bytes": 355,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-after-attempt1.json",
+      "sha256": "b9442f0be05ece66a338614a9097846b351638a08d191d41d24ad38ff254cf3b",
+      "bytes": 26247,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-after-attempt2.json",
+      "sha256": "7ce357120ca0c489c7f5bdab95a0079a89bdd13cd8aa95fdd920a0482dfefd2c",
+      "bytes": 1676,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-after-attempt3.json",
+      "sha256": "a993348bcec89bdcac2a8dbf299b766f319dbac520fbe21d05fe02a4903b757d",
+      "bytes": 1739,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-attempt1.exit",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-attempt1.log",
+      "sha256": "b77906a50a1d09e60af00592768227c6f6f710c8255bbec2e764dfa062149a03",
+      "bytes": 16804,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-attempt2.exit",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-attempt2.log",
+      "sha256": "ac1d41d41b44d8cef521b5d52e2d400ee7c1988d2253aa5508fa60cf306d45f7",
+      "bytes": 719,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-attempt3.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-attempt3.log",
+      "sha256": "78b6402b48fca09c709c0882139d336abf9d3beb92d8881cd30af28f326798fc",
+      "bytes": 424,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-before-attempt1.json",
+      "sha256": "fa9b9eea3c8ca98e4dc999afed2f2bbfb92e7dea86b066261a1877b1e993effb",
+      "bytes": 511080,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-before-attempt2.json",
+      "sha256": "95a382af79c3e8e0ab160d31c020d015123dbc8d2e97e0d3175fd01a1c4b02b7",
+      "bytes": 511080,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-before-attempt3.json",
+      "sha256": "342371c8f5c0d991772a44a86b1c850bf33277067933cc2dade98f61f6b85e01",
+      "bytes": 511080,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-repair-dispositions.json",
+      "sha256": "fc411b64bfb3b04149445c773198af284f5b71e8ab78e9e3d400a6ce806184a7",
+      "bytes": 3197,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-result-attempt1.json",
+      "sha256": "453554b2e4754e8154bd02fdc2ca6846b70728f42c4eb06be488585e0a09952d",
+      "bytes": 24973,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-result-attempt2.json",
+      "sha256": "162a61f34e0c4608684b7331792f67724947e9003398c495b95fff972a36670f",
+      "bytes": 1468,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/narrow-result-attempt3.json",
+      "sha256": "dfef18123f917123dca12bd798b15ecaabbb120b09ca4d17968cf821368e1715",
+      "bytes": 1531,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/plan.py",
+      "sha256": "0dad8698ccbe8b71bc5b0f9cba14e90c610b12414693bc2a820aee18f8e5ad15",
+      "bytes": 4196,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/private-lean-path.txt",
+      "sha256": "7db6384accdae0e2bf4ddbd5d4a36d7a01e4b26a3c00218ebe41a42235834545",
+      "bytes": 1379,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/raw-closure.json",
+      "sha256": "70f4d616eadfb1ab3b7d180c9c3db7a6693edc0e4e61c7731a57d3191d93fe37",
+      "bytes": 872576,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/raw-closure.lean",
+      "sha256": "0ab3cf1af9c55826dbfc799890039941afaf2c07ba17ab24d9048d5a35dab887",
+      "bytes": 8609,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/run-full.py",
+      "sha256": "6d939181c730795e9c643ee3dfe9f08ccd9f43755d10ec6aac8c58ef5e97c1d7",
+      "bytes": 5371,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/run-narrow.py",
+      "sha256": "e6bdaa9fa0e6ce85ca7b48936bb2caa8370caf532535f619cd7c726e79dd67a4",
+      "bytes": 6583,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-provider88-396e354f/source-plan.json",
+      "sha256": "823446c5fa2e3ff1795a5df890b1164f341f29ea03bb7f74e3b6fb1d401db56c",
+      "bytes": 35342,
+      "copy": "cp --reflink=never+CMP own evidence ONLY"
+    }
+  ]
+}

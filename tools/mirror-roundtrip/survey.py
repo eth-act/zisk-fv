@@ -343,6 +343,25 @@ CLASSIFICATION: dict[tuple[str, str], Entry] = {
            "all seven actual stage-1 equations, over the fourteen-field row; "
            "SourceMirrorWeld.lean:54 polynomials_iff_extracted binds c0-c6",
            claims="0-6"),
+    ("ZiskFv/AirsClean/MemAlignWriteByte/NativeRow.lean", "ResidualsHold"):
+        _e("MIRROR", "MemAlignWriteByte",
+           "all seven independent native residuals over the actual row carrier; "
+           "residuals_zero_iff_hold pins the unchanged fourteen-cell vector; "
+           "residuals_iff_polynomialSpec ties the checked c0-c6 mirror",
+           claims="0-6"),
+    ("ZiskFv/AirsClean/MemAlignWriteByte/NativeTupleSource.lean", "Tuple8Boundary"):
+        _e("NEAR_CHALLENGE", "MemAlignWriteByte",
+           "actual c8 source-slot decoding for range103 and ordered dual-byte88; "
+           "the existing challenge lookup protocol, not a new row equation or exclusion",
+           claims="8"),
+    ("ZiskFv/AirsClean/MemAlignWriteByte/NativeTupleSource.lean", "Tuple9Boundary"):
+        _e("NEAR_CHALLENGE", "MemAlignWriteByte",
+           "actual c9 aligned LOAD six-slot boundary of the existing challenge lookup",
+           claims="9"),
+    ("ZiskFv/AirsClean/MemAlignWriteByte/NativeTupleSource.lean", "Tuple10Boundary"):
+        _e("NEAR_CHALLENGE", "MemAlignWriteByte",
+           "actual c10 sixth written-byte source slot; existing range107 challenge lookup",
+           claims="10"),
     ("ZiskFv/AirsClean/MemAlignWriteByte/Spec.lean", "RangeSpec"):
         _e("NEAR_RANGE", "MemAlignWriteByte",
            "four .val bounds from actual bus107/bus103/bus88 lookups; "

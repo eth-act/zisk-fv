@@ -1,0 +1,300 @@
+{
+  "status": "ACTUAL_NEW2_NARROW_AND_FULL_RAW_GREEN_NOT_LIVE_CLOSURE",
+  "initial_source_checkpoint": "9d6c32dc",
+  "dependency_base_commit": "d6040715",
+  "actual_new2_sources": [
+    {
+      "module": "ZiskFv.AirsClean.MemAlignWriteByte.NativeInstance",
+      "source": "ZiskFv/AirsClean/MemAlignWriteByte/NativeInstance.lean",
+      "sha256": "3794f37011fc29df2ec772508f6724d1c03094c01a122573311d07db1decc66f",
+      "compiled_object": "/home/cody/zisk-fv-writebyte-canonical/build/writebyte-instance-gate/lean/ZiskFv/AirsClean/MemAlignWriteByte/NativeInstance.olean",
+      "compiled_object_sha256": "c07deec605d792f17aa7e716f2aea952d144ef68c0e9aeb14ba8276056415213"
+    },
+    {
+      "module": "ZiskFv.AirsClean.MemAlignWriteByte.NativeBus88",
+      "source": "ZiskFv/AirsClean/MemAlignWriteByte/NativeBus88.lean",
+      "sha256": "ef5df23fbe0cb633369748649babd12ac617294d19f43ed9d7cd28471e5017c7",
+      "compiled_object": "/home/cody/zisk-fv-writebyte-canonical/build/writebyte-instance-gate/lean/ZiskFv/AirsClean/MemAlignWriteByte/NativeBus88.olean",
+      "compiled_object_sha256": "4556d6ecab5b02dbe570ed11a6d4007fb771769e79998fc6c3fd52c06f09d036"
+    }
+  ],
+  "compiler": "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+  "compiler_sha256": "3e0d0d3d801675359f2d4cf9815bfdb417b20b92fdd9d48b3b14c95bbae28bbf",
+  "options": [
+    "-j2",
+    "--tstack=400000"
+  ],
+  "readonly_dependency_lease": "/home/cody/zisk-fv-writebyte-canonical/build/writebyte-canonical-gate/checked-canonical-wb5-lease.json",
+  "readonly_dependency_lease_sha256": "eb29ff24345355d2ed2b5fcfcf4fafd0aebd95eabde1f646dfc5892d00c97f7a",
+  "six_lease_sha256": "1e8c6bec9cb45b7f6951c578b47826a9bc5b742b7b7c62a57574fa5d38ab15c2",
+  "scope": "ALL actual defining/private/compiler/constructor/opaque/type+value roots in NativeInstance and NativeBus88; EVERYroot/EACHmoduleunion/combinedunion independent installed Lean.CollectAxioms/fullpaths/no pruning or depth cutoff",
+  "actual_roots": 93,
+  "actual_constants": 13252,
+  "actual_opaque_values": [
+    "Lean.opaqueId",
+    "String.Internal.append",
+    "String.hash",
+    "System.Platform.getNumBits",
+    "_private.Init.Data.Iterators.Basic.0.Std.Internal.idOpaque",
+    "_private.Init.WFExtrinsicFix.0.WellFounded.opaqueFix",
+    "mixHash"
+  ],
+  "actual_axiom_union": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "actual_module_unions": [
+    {
+      "module": "ZiskFv.AirsClean.MemAlignWriteByte.NativeInstance",
+      "roots": 72,
+      "constants": 13202,
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "crosscheck_matches": true
+    },
+    {
+      "module": "ZiskFv.AirsClean.MemAlignWriteByte.NativeBus88",
+      "roots": 21,
+      "constants": 11965,
+      "axioms": [
+        "Classical.choice",
+        "Quot.sound",
+        "propext"
+      ],
+      "crosscheck_matches": true
+    }
+  ],
+  "actual_full_seconds": 208.42632828699425,
+  "raw_report_sha256": "b871ee9a6cb143d8d55db5af937ac408c74354cf03164f8ca8530cb14edb7fd0",
+  "all_source_compiler_readonly_lease_CI_hashes_preserved": true,
+  "initial_failures_preserved": [
+    {
+      "stage": "narrow attempt1",
+      "disposition": "three ordinary proof/elaboration errors; dependent Option.get cases replaced with existing Option.some_get; dependent factory match split explicitly; OccurrenceKey.globalSlot namespace qualified; SAME source data/contracts; no weakened validator or budget change"
+    },
+    {
+      "stage": "FULL attempt1",
+      "disposition": "auditor-only reserved Lean identifier matches; renamed moduleMatches. Actual source2/compiled2 unchanged. Not a semantic mutation reject or a RAW pass."
+    }
+  ],
+  "initial_failed_auditor_reconstruction": {
+    "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/raw-closure-failed-attempt1.lean",
+    "sha256": "9126a6cedc50622430c410dde187f424894fa4e80750ee86819de41bb6eac9b1",
+    "matches_actual_before_attempt1_hash": true,
+    "method": "exact known three-token inverse repair, reconstructed after failure; not claimed an independently retained original source copy"
+  },
+  "dispositions": [
+    "private factory computes row0 and actual Direct hints itself; caller supplies only source/resolution/mode",
+    "allFinN recovery uses SAME existing source getter profile/stride/full original-buffer facts; no universal success input",
+    "exact once-only three unrestricted scalar Direct operations remain disjoint from physical rows, including zero/-1/source timestamp0",
+    "all4 real row interactions and actual source c7/c8/c9/c10/staticlookups/7polynomials/all8routes preserved",
+    "full lazy actual88 family projection is one ordered cell9/cell8 negative-unit pull per physical row; Direct empty by real MemoryBus/Dual88 channel inequality",
+    "no full-N materialization/free field reader/SourceValid/count normalization/caller roster or balance certificate",
+    "canonical five/protected/shared sources unchanged; no active Main/API borrowed CIs, object/cache copies or foreign writes"
+  ],
+  "missing_boundaries": [
+    "same-source native VirtualTable0 registry0/AIR33 source88 lane2 rows262144+i multiplicity/raw store/setup/hint correlation; see provider-native-boundary.json",
+    "actual native ABI/PIL-to-setup SourceObject materialization",
+    "native global sum/stage2 finalizer/once occurrence/balance transport, including actual byte/Mem counterparts",
+    "provider membership transport into Accepted/root; not live #413/#414 closure"
+  ],
+  "mutation_campaigns": "NO new2 semantic mutations run. Historical b632 real PIL412 campaign remains separately scoped unchanged. Future recipes in provider-native-boundary.json are not verification.",
+  "files": [
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/ZiskFv-AirsClean-MemAlignWriteByte-NativeBus88-attempt2.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/ZiskFv-AirsClean-MemAlignWriteByte-NativeInstance-attempt1.log",
+      "sha256": "634549ca1374b7e786e4be943acfda9c775c147948cfab24a42f08c76ab26814",
+      "bytes": 2852,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/ZiskFv-AirsClean-MemAlignWriteByte-NativeInstance-attempt2.log",
+      "sha256": "b572ba62f3bb490924faa6c0f79a78f1e9fbd1b2d278be3ad087b5d4558c3637",
+      "bytes": 1168,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/full-after-failed-attempt1.json",
+      "sha256": "4305cbb275dc7bc2b3bdec14964397de724f4f3a7e5c4ff243c2f4bda7c247cd",
+      "bytes": 111,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/full-after.json",
+      "sha256": "22320f4d6a5afbc6230d9e67f9a634ce2879774de9a17c8aeb64b265d45c7223",
+      "bytes": 892,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/full-attempt1.exit",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/full-attempt1.log",
+      "sha256": "171c3753445524601241ddc9ac1045ca7af9992130ee86a311b58915f49e28fa",
+      "bytes": 179,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/full-attempt2.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/full-attempt2.log",
+      "sha256": "a187594b3b77632ecdf2800351b6fc9d20e303c1e07e0124b16de659502c9fda",
+      "bytes": 178,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/full-before-attempt2.json",
+      "sha256": "b38881af3eb3e28a6df4245a9a12352a865ed3803f9592dc134ebc1586aa76ee",
+      "bytes": 5242,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/full-before.json",
+      "sha256": "4015b16147fa9757c617148e72bb4988d60d7323023caa56a775e9e2da853460",
+      "bytes": 5242,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/full-result-attempt2.json",
+      "sha256": "2a721e1bb6dc85fdfb0bd41297647f25582ec5b50609d78fb056a01f67151315",
+      "bytes": 273,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/full-result.json",
+      "sha256": "29e5723efa3d05b952d621f438f3a3ff336ff52d91608222cb5c9ba7df6a7baf",
+      "bytes": 272,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/full-runner-attempt1.exit",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/full-runner-attempt1.log",
+      "sha256": "171c3753445524601241ddc9ac1045ca7af9992130ee86a311b58915f49e28fa",
+      "bytes": 179,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/full-runner-attempt2.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/full-runner-attempt2.log",
+      "sha256": "874caf0877ce7090abd52dd88e31ecca30d7ce2860eb10ff14575db30c997db2",
+      "bytes": 325,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/narrow-after-attempt1.json",
+      "sha256": "184a14b6d2e0eaa9071aca8086d0bf3f259a44abccc860b6376e2a532956b659",
+      "bytes": 1377,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/narrow-after-attempt2.json",
+      "sha256": "3572bb5838ac70a3976293e1fdd536d56e6f28f743d4e54c6a125f8a02dcd791",
+      "bytes": 2550,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/narrow-attempt1.exit",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/narrow-attempt1.log",
+      "sha256": "cc52f88e86ad31ac125c394f5030fd3bc65c65b144ef9f6ece84c6572ccc22c3",
+      "bytes": 3168,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/narrow-attempt2.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/narrow-attempt2.log",
+      "sha256": "bd4205768eef42e7431e17a0542b14cb1553795d6d83a43efb0db019b7b05569",
+      "bytes": 1859,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/narrow-before-attempt1.json",
+      "sha256": "c39aa6063f8faa2a91884be38138a56de427758a7d7d20f3158b4b9878b7efcb",
+      "bytes": 517025,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/narrow-before-attempt2.json",
+      "sha256": "540e54ab8fd5a987e8db460377274177ac9993ba03a3ddab76f39ac6873fcea7",
+      "bytes": 517025,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/narrow-result-attempt1.json",
+      "sha256": "33bce63c1a5fe91d72293c4260ff5b3c10a297286352e9825ab0c9805bc476c8",
+      "bytes": 1036,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/narrow-result-attempt2.json",
+      "sha256": "a7b47dca584a9992f98e51fcfd436f5376c4db51b74bd7b6bf6dab198fb8e7e3",
+      "bytes": 2173,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/private-lean-path.txt",
+      "sha256": "b44ae640c8d7fa1bfd8c61fb495b3e92d6a023a3e1d7c34ea9ff87adf8228c2d",
+      "bytes": 1380,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/raw-closure.json",
+      "sha256": "b871ee9a6cb143d8d55db5af937ac408c74354cf03164f8ca8530cb14edb7fd0",
+      "bytes": 750671,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/raw-closure.lean",
+      "sha256": "5dc58970d762da160fe39ef6761ad440ba03ba556e09daa4beaf8abcc9be8928",
+      "bytes": 8718,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/run-full.py",
+      "sha256": "d169b91bb5150b085b7133a9074e085599e8bef1efbb6bb853a1096dd7684bd1",
+      "bytes": 5546,
+      "copy": "ordinary cp --reflink=never + cmp"
+    },
+    {
+      "path": "tools/adversarial-mutations/evidence/writebyte/native-instance-003a2d9f/run-narrow.py",
+      "sha256": "5cdc23e52565f785b773a87ab65ff4fe7684ddb7691245e5cb7b7d5896a67fb3",
+      "bytes": 6473,
+      "copy": "ordinary cp --reflink=never + cmp"
+    }
+  ]
+}

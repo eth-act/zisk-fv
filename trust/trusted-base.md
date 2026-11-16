@@ -1641,6 +1641,43 @@ participates in the whole witness balances. Consumed source end4 is not physical
 completion, termination or a final public-I/O statement. This exercises the
 internal model nonvacuously without changing the public mapped Root interface.
 
+## Standalone native WriteByte source family (partial)
+
+The WriteByte native row, tuple, value, recovery and instance modules consume
+the actual source schema and the same original UInt64 source buffer. The
+private factory computes its row-zero and Direct decodes, derives every
+physical row from that source geometry, and keeps the full lazy row family
+disjoint from the three once-per-instance Direct messages. Padding remains an
+unrestricted field scalar, including zero and minus one; it is not a row count.
+All four row interactions and the ordered negative-unit channel88 byte pull
+are retained, with the Direct branch excluded from88 by actual channel identity.
+
+These are local source/circuit and representation proofs, not a replacement
+Accepted witness. Actual source88 VirtualTable0 native producer/setup/slot
+correlation, global balance and stage2/once-occurrence transport, and live
+provider composition remain unproved. The old free-other-Main adapter is not
+imported. The retained genuine PIL mutation archive separately records green
+baseline/comment controls and named c8 operand-order, c9 timestamp and c10
+written-byte-slot source rejections; it is not evidence for native runtime
+materialization or the new factory's unrun mutation controls. No Root, Valid,
+Accepted, caller or source-constraint contract is strengthened; #412, #413 and
+#414 remain open for their exact remaining acceptance.
+
+The additive native88 projection now obtains all 65536 provider weights from
+the same original VirtualTable0 source buffer at lane2, row262144+i, retaining
+zero weights. A separate optional pair-indexed view of both actual33/34 slots
+relates the computed buffer witness to the existing provider table; missing34
+never changes the primary33 projection or creates a default. This is not proof
+of runtime hint/global-info agreement, Dctx instance pairing, compiled operand
+identity, native materialization or actual balanced-world membership.
+
+The native seven-equation residual predicate uses the ordinary row-mirror
+grammar and is definitionally tied to all seven indexed residuals over the
+same fourteen cells. It is compared against c0-c6, not classified out. The
+three source-slot predicates record only the already challenge-mixed c8-c10
+lookup boundaries; they introduce no new source exclusion.
+
+
 ## Standalone source-owned verifier inputs (partial)
 
 `PublicIo`, `PublicIoSource` and `SourcePublicVerifier` are standalone models,
@@ -1691,4 +1728,3 @@ loads by contradiction. Repairing the actual provider/read-byte chain or event
 width is a separate protected decision. Exact source read-byte replay and the
 remaining Core/state/boot derivations remain open; local MemAlign structural
 countermodels are not full accepted-world or upstream-forgery claims.
-
