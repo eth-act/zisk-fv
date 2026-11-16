@@ -1,4 +1,5 @@
 import ZiskFv.AirsClean.ByteMemorySourceProjection
+import ZiskFv.AirsClean.ByteMemoryDirectSource
 import ZiskFv.AirsClean.MemAlignByte.Bridge
 import ZiskFv.AirsClean.MemAlignReadByte.Bridge
 
@@ -290,6 +291,42 @@ theorem roster_keys_nodup (source : SourceObject FGL)
     exact (List.nodup_ofFn_ofInjective (fun _ _ eq => eq)).filter _
   rw [← hi] at hk
   simpa only [List.map_map, key, ResolvedOccurrence.key, Function.comp_def] using hk
+
+/-- Actual four Direct ASTs, selected by this instance's physical AIR and
+evaluated from this SAME resolved source. Missing extension data stays absent. -/
+def sourceDirectResiduals? (view : NativeByteInstance source) :
+    Option (Vector (Mem.Stage2.Ext3 FGL) 2) := do
+  let projection ← ByteMemoryDirectSource.fromPhysical? view.physical
+  ByteMemoryDirectSource.actualResiduals? projection
+
+/-- Mixed cubic residuals formed from this instance's ACTUAL compiled operations:
+every evaluated tuple cell and signed multiplicity is consumed. -/
+def operationDirectResiduals? (view : NativeByteInstance source) (env : Environment FGL) :
+    Option (Vector (Mem.Stage2.Ext3 FGL) 2) := do
+  let projection ← ByteMemoryDirectSource.fromPhysical? view.physical
+  ByteMemoryDirectSource.compiledResiduals? projection view.instanceOperations env
+
+/-- Load-bearing source-equation linkage, not satisfaction of those equations.
+The projection/failure case is computed internally, never supplied by a caller. -/
+theorem source_direct_residuals_eq_operations (view : NativeByteInstance source)
+    (env : Environment FGL) :
+    view.sourceDirectResiduals? = view.operationDirectResiduals? env := by
+  unfold sourceDirectResiduals? operationDirectResiduals?
+  cases hp : ByteMemoryDirectSource.fromPhysical? view.physical with
+  | none => rfl
+  | some projection =>
+    simpa only [hp, Option.bind_some, instanceOperations] using
+      ByteMemoryDirectSource.actual_residuals_eq_compiled projection env
+
+/-- The linkage includes all three coefficients for both Direct equations.
+It does not assert that any residual is zero or turn numeric gsum into balance. -/
+theorem source_direct_all_coefficients (view : NativeByteInstance source)
+    (env : Environment FGL) (equation : Fin 2) (coefficient : Fin 3) :
+    view.sourceDirectResiduals?.map
+        (fun residuals => Mem.Stage2.Ext3.coeff residuals[equation.val] coefficient) =
+      (view.operationDirectResiduals? env).map
+        (fun residuals => Mem.Stage2.Ext3.coeff residuals[equation.val] coefficient) := by
+  rw [source_direct_residuals_eq_operations]
 
 end NativeByteInstance
 end ZiskFv.AirsClean
