@@ -58,8 +58,8 @@ def occurrence : ResolvedOccurrence source :=
 theorem actual_slot : occurrence.slotData = slot := rfl
 
 theorem actual_setup : occurrence.setup? = some Constructibility.setup := by
-  change (Constructibility.occurrence false).setup? = some Constructibility.setup
-  exact Constructibility.exact_setup_selected false
+  simp [occurrence, ResolvedOccurrence.setup?, SourceObject.setupAt?,
+    SourceObject.registryEntry, source, Constructibility.source]
 
 theorem traceBuffer_size : traceBuffer.size = 13 * N + 5 := by
   simp only [traceBuffer, Array.size_ofFn]
@@ -76,9 +76,17 @@ theorem slot_fixed : slot.fixed = Constructibility.fixedBuffer := by
   dsimp only [slot]
   exact Constructibility.slot_fixed false
 
-theorem params_trace : (occurrence.params false).trace = traceBuffer := rfl
-theorem params_air : (occurrence.params false).airvalues = airBuffer := rfl
-theorem params_group : (occurrence.params false).airgroupValues = groupBuffer := rfl
+theorem params_trace : (occurrence.params false).trace = traceBuffer := by
+  dsimp only [ResolvedOccurrence.params, paramsOf]
+  rw [actual_slot, slot_trace]
+theorem params_air : (occurrence.params false).airvalues = airBuffer := by
+  dsimp only [ResolvedOccurrence.params, paramsOf]
+  rw [actual_slot]
+  dsimp only [slot]
+theorem params_group : (occurrence.params false).airgroupValues = groupBuffer := by
+  dsimp only [ResolvedOccurrence.params, paramsOf]
+  rw [actual_slot]
+  dsimp only [slot]
 theorem params_challenges : (occurrence.params false).challenges = #[0, 0, 0, 1, 0, 0] := rfl
 
 theorem actual_auxiliary : occurrence.slotData.auxTrace = auxiliaryBuffer := by
@@ -198,6 +206,16 @@ theorem actual_gamma : Stage2.challenge? occurrence 2 1 = some gamma := by
   simp only [actual_setup, bind, Option.bind_some, challenge1_map]
   rfl
 
+private theorem chosen_auxiliary_entry
+    {s : SourceObject FGL} {r : ResolvedOccurrence s} (view : CompleteView r) (column : Fin 3) :
+    auxiliaryEntry? view.base.setup column.val = some (view.mapId column, view.mapEntry column) := by
+  unfold auxiliaryEntry?
+  simp only [bind]
+  rw [(view.selected_map column).1]
+  simp only [Option.bind_some]
+  rw [(view.selected_map column).2.1]
+  rfl
+
 /-- Reuse the already checked SAME native setup metadata shape, not the old
 fixture's buffer values, fields, or a new caller certificate. -/
 theorem complete_nonvacuous : (completeFromResolved? occurrence).isSome = true := by
@@ -214,23 +232,11 @@ theorem complete_nonvacuous : (completeFromResolved? occurrence).isSome = true :
       have sameSetup : base.setup = old.base.setup :=
         (Option.some.inj (base.setupSelected.symm.trans actual_setup)).trans oldSetup.symm
       have e0 : auxiliaryEntry? base.setup 0 = some (old.mapId 0, old.mapEntry 0) := by
-        unfold auxiliaryEntry?
-        rw [sameSetup, (old.selected_map 0).1]
-        simp only [bind, Option.bind_some]
-        rw [(old.selected_map 0).2.1]
-        rfl
+        simpa only [sameSetup] using chosen_auxiliary_entry old 0
       have e1 : auxiliaryEntry? base.setup 1 = some (old.mapId 1, old.mapEntry 1) := by
-        unfold auxiliaryEntry?
-        rw [sameSetup, (old.selected_map 1).1]
-        simp only [bind, Option.bind_some]
-        rw [(old.selected_map 1).2.1]
-        rfl
+        simpa only [sameSetup] using chosen_auxiliary_entry old 1
       have e2 : auxiliaryEntry? base.setup 2 = some (old.mapId 2, old.mapEntry 2) := by
-        unfold auxiliaryEntry?
-        rw [sameSetup, (old.selected_map 2).1]
-        simp only [bind, Option.bind_some]
-        rw [(old.selected_map 2).2.1]
-        rfl
+        simpa only [sameSetup] using chosen_auxiliary_entry old 2
       simp only [completeFromResolved?, baseSelected, bind, Option.bind_some]
       split
       · rename_i absent
