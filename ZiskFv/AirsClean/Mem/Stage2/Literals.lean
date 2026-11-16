@@ -11,23 +11,29 @@ open ZiskFv.AirsClean.MemAlignWriteByte.SourceLiterals
 
 theorem nat_11 : "11".toNat? = some 11 := by
   change (String.ofList ['1', '1']).toNat? = some 11
-  simp [String.toNat?, String.Slice.toNat?, String.Slice.isNat, foldl_ofList, String.Slice.isEmpty]
+  simp only [String.toNat?, String.Slice.toNat?, String.Slice.isNat, foldl_ofList]
+  simp [String.Slice.isEmpty]
 theorem nat_102 : "102".toNat? = some 102 := by
   change (String.ofList ['1', '0', '2']).toNat? = some 102
-  simp [String.toNat?, String.Slice.toNat?, String.Slice.isNat, foldl_ofList, String.Slice.isEmpty]
+  simp only [String.toNat?, String.Slice.toNat?, String.Slice.isNat, foldl_ofList]
+  simp [String.Slice.isEmpty]
 theorem nat_103 : "103".toNat? = some 103 := by
   change (String.ofList ['1', '0', '3']).toNat? = some 103
-  simp [String.toNat?, String.Slice.toNat?, String.Slice.isNat, foldl_ofList, String.Slice.isEmpty]
+  simp only [String.toNat?, String.Slice.toNat?, String.Slice.isNat, foldl_ofList]
+  simp [String.Slice.isEmpty]
 theorem nat_104 : "104".toNat? = some 104 := by
   change (String.ofList ['1', '0', '4']).toNat? = some 104
-  simp [String.toNat?, String.Slice.toNat?, String.Slice.isNat, foldl_ofList, String.Slice.isEmpty]
+  simp only [String.toNat?, String.Slice.toNat?, String.Slice.isNat, foldl_ofList]
+  simp [String.Slice.isEmpty]
 theorem nat_continuation : "2684354560".toNat? = some 2684354560 := by
   change (String.ofList ['2', '6', '8', '4', '3', '5', '4', '5', '6', '0']).toNat? = some 2684354560
-  simp [String.toNat?, String.Slice.toNat?, String.Slice.isNat, foldl_ofList, String.Slice.isEmpty]
+  simp only [String.toNat?, String.Slice.toNat?, String.Slice.isNat, foldl_ofList]
+  simp [String.Slice.isEmpty]
 theorem nat_negative_one : "18446744069414584320".toNat? = some 18446744069414584320 := by
   change (String.ofList ['1', '8', '4', '4', '6', '7', '4', '4', '0', '6',
     '9', '4', '1', '4', '5', '8', '4', '3', '2', '0']).toNat? = some 18446744069414584320
-  simp [String.toNat?, String.Slice.toNat?, String.Slice.isNat, foldl_ofList, String.Slice.isEmpty]
+  simp only [String.toNat?, String.Slice.toNat?, String.Slice.isNat, foldl_ofList]
+  simp [String.Slice.isEmpty]
 end LiteralProof
 
 @[simp] theorem literal_zero : literal? "0" = some (Ext3.ofBase (0 : FGL)) := by
