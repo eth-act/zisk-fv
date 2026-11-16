@@ -49,6 +49,8 @@ def repeatJalrPost
 
 noncomputable def repeatJalrSecond := retirePC (repeatJalrPost repeatJalrInit)
 
+noncomputable def repeatJalrFinal := retirePC (repeatJalrPost repeatJalrSecond)
+
 theorem repeatJalrInit_regBoot :
     ∀ k : Fin 32, k ≠ 0 → repeatJalrInit.regs.get? (reg_of_fin k) =
       some (cast (by rw [register_type_reg_of_fin_equiv]) (0 : BitVec 64)) := by
@@ -131,13 +133,17 @@ theorem repeatedJalr_actual_sail_execution :
     repeatJalrSecond.regs.get? Register.PC = some (0#64) ∧
     repeatJalrSecond.regs.get? Register.x1 = some (4#64) ∧
     repeatJalrSecond.regs.get? Register.x2 = some (0#64) ∧
-    repeatJalrSecond.mem = repeatJalrInit.mem := by
+    repeatJalrSecond.mem = repeatJalrInit.mem ∧
+    repeatJalrFinal.regs.get? Register.PC = some (0#64) ∧
+    repeatJalrFinal.regs.get? Register.x1 = some (4#64) ∧
+    repeatJalrFinal.regs.get? Register.x2 = some (0#64) ∧
+    repeatJalrFinal.mem = repeatJalrInit.mem := by
   refine ⟨repeatJalr_sourceEnd, repeatJalr_first_execution, ?_,
-    repeatJalrSecond_reads.1, ?_, ?_, ?_⟩
+    repeatJalrSecond_reads.1, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact repeatJalr_execute repeatJalrSecond repeatJalrSecond_reads.1
       repeatJalrSecond_reads.2.1 repeatJalrSecond_reads.2.2.1
       repeatJalrSecond_reads.2.2.2.1 repeatJalrSecond_reads.2.2.2.2
-  all_goals simp [repeatJalrSecond, retirePC, repeatJalrPost, repeatJalrInit,
+  all_goals simp [repeatJalrFinal, repeatJalrSecond, retirePC, repeatJalrPost, repeatJalrInit,
     withMEnabled, write_reg_state, addFaithfulState, addFaithfulRegs,
     addFaithfulZeroRegs, x1, regidx_to_fin, Std.ExtDHashMap.get?_insert]
 
