@@ -819,10 +819,13 @@ verifier-public-I/O/Sail binding.
 
 ## Native value source-profile metadata
 
-`pil-extract runtime-native-values-layout` reads the locked ZisK trace-value
-declarations and the locked proofman's macro, AirInstance and ProofCtx sources.
-The normal extraction derivation emits `Extraction.RuntimeNativeValuesLayout`;
-the closed generated inventory and Lake graph compile it. `NativeValuesLayout`
+`pil-extract runtime-native-values-layout` reads the locked ZisK trace declarations
+and the locked proofman's value/trace macros, AirInstance, ProofCtx and native
+buffer code, together with Main's PIL. One normal invocation emits the original
+`Extraction.RuntimeNativeValuesLayout`, `Extraction.RuntimeMainTraceLayout` and
+its additive `Extraction.RuntimeMemWriteByteTraceLayout` companion; all nine
+inputs and three output paths are explicit. The closed inventory and Lake graph
+compile them. `NativeValuesLayout`
 checks independent source-profile contracts for Main's eight AIR values, padding
 scalars, separate three-word GROUP values and Mem's six direct extension values.
 All projections select buffers from one registry-authoritative source object.
@@ -833,11 +836,37 @@ Accepted/Root premises. Native-to-image materialization, compiled-operand/PIL
 identity, machine addresses and actual full physical row coverage remain
 unproved. The primary trace store retains UInt64 bits; only requested unpacked
 words are canonically field-projected. That projection is intentionally
-noninjective and never serves as a packed decoder. Packed stage-one readers
-remain explicitly unsupported, not excluded from Root. No missing word becomes
-zero. The source-profile
+noninjective and never applied before packed bit extraction. Partial internal
+stage-one readers retain unsupported inputs as explicit failure, not Root
+exclusions; no missing word becomes zero. The source-profile
 metadata proves neither Rust/C ABI correctness nor final public-I/O/Sail binding,
 once-instance/provider composition, or completion of #371/#372/#413/#418.
+
+`PublicIoMainTraceLayout` and `PublicIoMemWriteByteTraceLayout` independently pin
+Main/Binary/Byte/Read and Mem/WriteByte field order, array coordinates, native bit
+positions, row capacities and packed/unpacked strides. The companion reuses the
+same generated `Profile`/`Cell` types and parser, retaining the four-profile
+artifact byte-for-byte. Complete Rust AST fragments are source-shape evidence,
+not a Rust execution/compiler/ABI theorem, an AIR range validator or a substitute
+for actual witness/physical-row/once-instance and verifier-I/O composition.
+
+`NativeTraceRules` independently fixes the scalar bit operations and dispatch
+contracts and pins the remaining complete macro-function ASTs. These are
+source-shape checks, not a proof of arbitrary Rust execution. The sole
+`NativeTraceCells` getter reads finite cells for all six profiles directly from
+the original UInt64 buffer in both packing modes; it never maps the entire
+physical trace or accepts another reader. Unpacked cells remain canonical raw
+field storage, not the Rust typed Bool/narrow getter results.
+
+`PublicIoMainNativeTrace` consumes this getter for all38 native Main cells and
+the same resolved AIR8/distinct GROUP3 buffers. Its Clean41 view retains the
+source address projections and every value of the non-native
+`im_high_degree_2` representation gauge. `PublicIoMainGauge` proves gauge
+independence of the whole existing circuit, complete operations and exposed
+channels, not just a selected assertion slice. These internal constructors and
+proofs do not establish native materialization, full physical/once-instance
+coverage, accepted-world correlation, completion or verifier-public-I/O/Sail
+binding.
 
 ## Internal typed Mem stage-2 source equations (build-only)
 

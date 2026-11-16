@@ -180,7 +180,11 @@ fn binding<'a>(block: &'a syn::Block, name: &str) -> Result<&'a syn::Expr> {
     let mut found = None;
     for statement in &block.stmts {
         let syn::Stmt::Local(local) = statement else { continue };
-        if matches!(&local.pat, syn::Pat::Ident(pattern) if pattern.ident == name) {
+        let pattern = match &local.pat {
+            syn::Pat::Type(typed) => typed.pat.as_ref(),
+            pattern => pattern,
+        };
+        if matches!(pattern, syn::Pat::Ident(pattern) if pattern.ident == name) {
             let expression = local.init.as_ref().context("source binding has no initializer")?.expr.as_ref();
             ensure!(found.replace(expression).is_none(), "duplicate source binding {name}");
         }
@@ -276,33 +280,63 @@ fn quote_tokens(expression: &syn::Expr) -> Result<proc_macro2::TokenStream> {
     Ok(expression.mac.tokens.clone())
 }
 
-fn quoted_bodies(tokens: proc_macro2::TokenStream, name: &str,
-    found: &mut Vec<proc_macro2::Group>) {
+struct QuotedFunction {
+    header_start: proc_macro2::Span,
+    header_end: proc_macro2::Span,
+    body: proc_macro2::Group,
+}
+
+fn quoted_functions(tokens: proc_macro2::TokenStream, name: &str,
+    found: &mut Vec<QuotedFunction>) {
     let tokens: Vec<_> = tokens.into_iter().collect();
     for (index, token) in tokens.iter().enumerate() {
+        let name_index = index + 1 + usize::from(matches!(tokens.get(index + 1),
+            Some(proc_macro2::TokenTree::Punct(punct)) if punct.as_char() == '#'));
         if matches!(token, proc_macro2::TokenTree::Ident(ident) if ident == "fn")
-            && matches!(tokens.get(index + 1), Some(proc_macro2::TokenTree::Ident(ident)) if ident == name) {
-            if let Some(body) = tokens[index + 2..].iter().find_map(|token| match token {
-                proc_macro2::TokenTree::Group(group) if group.delimiter() == proc_macro2::Delimiter::Brace => Some(group.clone()),
-                _ => None,
-            }) { found.push(body); }
+            && matches!(tokens.get(name_index), Some(proc_macro2::TokenTree::Ident(ident)) if ident == name) {
+            if let Some((body_index, body)) = tokens.iter().enumerate().skip(name_index + 1)
+                .find_map(|(body_index, token)| match token {
+                    proc_macro2::TokenTree::Group(group)
+                        if group.delimiter() == proc_macro2::Delimiter::Brace =>
+                        Some((body_index, group.clone())),
+                    _ => None,
+                }) {
+                let header_start = if index > 0
+                    && matches!(&tokens[index - 1], proc_macro2::TokenTree::Ident(ident) if ident == "pub")
+                    { index - 1 } else { index };
+                found.push(QuotedFunction {
+                    header_start: tokens[header_start].span(),
+                    header_end: tokens[body_index - 1].span(),
+                    body,
+                });
+            }
         }
         if let proc_macro2::TokenTree::Group(group) = token {
-            quoted_bodies(group.stream(), name, found);
+            quoted_functions(group.stream(), name, found);
         }
     }
 }
 
+fn quoted_function(tokens: proc_macro2::TokenStream, name: &str) -> Result<QuotedFunction> {
+    let mut functions = Vec::new();
+    quoted_functions(tokens, name, &mut functions);
+    ensure!(functions.len() == 1, "expected exactly one actual quoted function {name}");
+    Ok(functions.remove(0))
+}
+
 fn quoted_body(tokens: proc_macro2::TokenStream, name: &str) -> Result<proc_macro2::Group> {
-    let mut bodies = Vec::new();
-    quoted_bodies(tokens, name, &mut bodies);
-    ensure!(bodies.len() == 1, "expected exactly one actual quoted function {name}");
-    Ok(bodies.remove(0))
+    Ok(quoted_function(tokens, name)?.body)
+}
+
+fn quoted_signature(tokens: proc_macro2::TokenStream, name: &str) -> Result<proc_macro2::Span> {
+    let function = quoted_function(tokens, name)?;
+    function.header_start.join(function.header_end)
+        .with_context(|| format!("joining actual quoted function {name} signature span"))
 }
 
 /// Caller selects actual immutable sources and records their independent hashes.
 /// Source profile is b632 declarations + ff0e macro/common source, not 9ca=b632.
-/// No existing shared CLI/Cargo/Nix surface is changed by this additive module.
+/// The normal CLI supplies the locked source snapshots and emits their profiles.
 pub(crate) fn render(traces_source: &str, macro_source: &str,
     instance_source: &str, context_source: &str) -> Result<String> {
     let traces = syn::parse_file(traces_source).context("parsing actual native declarations")?;
@@ -504,3 +538,7 @@ structure ScalarRule where
     writeln!(out, "]\nend Extraction.RuntimeNativeValuesLayout")?;
     Ok(out)
 }
+
+// Native trace profiles reuse the same parser and source-token representation.
+#[path = "runtime_main_trace_layout.rs"]
+pub(crate) mod main_trace;

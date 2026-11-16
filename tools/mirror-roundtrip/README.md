@@ -534,8 +534,9 @@ entries below, which are what it could not get the gate to report. Two of the fo
 2026-07-28 hand findings are RESOLVED rather than live, and neither was dropped to
 make the run green: the fourth, `RomBoolSpec` unreachable, was resolved by the #296
 weld fan-out (`romBoolSpec_weld` is now its first consumer); its detection is
-preserved by the `WELD_CONSUMER_REMOVED` mutation, which strips that consumer and
-requires the tool to report `RomBoolSpec` unreachable again. The first, the a-side
+preserved by the `WELD_CONSUMER_REMOVED` mutation, which strips every current
+consumer in the weld and native Main gauge/projection while retaining the mirror
+definition, and requires it unreachable again. The first, the a-side
 C-copy at `main.pil:385` (Main #3 and #9) having no mirror counterpart, was resolved
 by commit `8aea6771`'s `MainExposed` weld (`constraint_3_weld` / `constraint_9_weld`,
 `ZiskFv/AirsClean/MainMirrorWeld.lean`); its detection is preserved by the

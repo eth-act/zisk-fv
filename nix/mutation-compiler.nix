@@ -18,7 +18,8 @@ writeShellApplication {
       state-machines/binary/src/binary_basic_frops_fixed.bin \
       state-machines/binary/src/binary_extension_frops_fixed.bin; do
       mkdir -p "$mutation_source/$(dirname "$payload")"
-      cp --no-preserve=mode "${fixed-data}/$payload" "$mutation_source/$payload"
+      cp --reflink=never --no-preserve=mode "${fixed-data}/$payload" "$mutation_source/$payload"
+      cmp "${fixed-data}/$payload" "$mutation_source/$payload"
     done
     cd "$mutation_source"
     exec node --max-old-space-size=16384 \
