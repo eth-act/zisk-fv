@@ -38,6 +38,7 @@ theorem shared_row_base (view : View resolved) (row : view.Index) :
     Option.bind_some, view.cm1Selected]
   rw [if_pos ⟨NativeTraceRules.actual_source_ready, scope.1, scope.2, cpu.1, cpu.2,
     rows, within, view.logical_width, stride, view.native_stride_positive, coverage⟩]
+  rfl
 
 def sharedRow (view : View resolved) (row : view.Index) :
     NativeTraceCells.Row .mem resolved false row.val :=
