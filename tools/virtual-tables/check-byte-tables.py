@@ -97,12 +97,12 @@ def main() -> None:
     packed = json.loads(packed_path.read_text())
     packed_sources = {source["busId"]: source for source in packed["sources"]}
 
-    # Build current model oleans, not a native executable for Mathlib's entire
-    # import closure. The interpreter evaluates the same maintained rowOfIndex.
+    # Build exactly the canonical/source modules consumed by the stream, not
+    # private-world channel finishing or a native Mathlib executable.
     if not args.quiet:
         print("building byte-table model modules")
     build = subprocess.run(
-        ["lake", "build", "ZiskFv.AirsClean.BinaryTableBalance",
+        ["lake", "build", "ZiskFv.AirsClean.BinaryTable",
          "ZiskFv.AirsClean.PackedVirtualTableSources",
          *(f"ZiskFv.AirsClean.{air}Slice" for air in TABLES)],
         cwd=ROOT, stdout=subprocess.DEVNULL)

@@ -90,6 +90,16 @@ the flags themselves.
   full-field payloads and unrelated producer UIDs retain exact `BigInt` values.
   Generated source locations alone do not establish live provider composition
   or an unchanged accepted-witness domain.
+  The ordinary byte-table checker additionally materializes the independent
+  canonical Binary/Extension source components and the complete 65,536-row
+  DualByte source component. It compares every tuple column and opcode block
+  with both virtual and packed compiler observations, including raw zero
+  multiplicity and generated physical source ownership. The standalone
+  `PackedVirtualTableSources` and `DualByteTable`/`DualByteSlice`/
+  `DualBytePackedSource` declarations are local, uncomposed source models.
+  Their materialization, constructibility and interaction correspondences do
+  not install providers into `FullEnsemble`, change the accepted-world witness,
+  or discharge root/channel finishing.
 - `public-io`: emit `Extraction.PublicIo` from the compiled GLOBAL expression
   graph and cleared sum. Hints identify tuples, but every operation-bus tuple is
   linked to an actual denominator and positive-unit numerator term; generated
