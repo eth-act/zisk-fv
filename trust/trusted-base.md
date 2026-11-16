@@ -1666,3 +1666,29 @@ uncomposed. Their two deliberate channel declarations are recorded in the
 channel snapshot; that inventory update is not an accepted-balance or Root
 provider-composition proof.
 
+
+## Internal source-head state and mutable-memory presence
+
+The checked source-head modules derive physical register/PC/platform prefix
+components from the actual source owners and preceding actual step soundness;
+they do not take a new caller register-agreement or all-step soundness oracle.
+The mutable-memory presence theorem derives nonempty Mem from an actual
+nonempty source memory-row prefix and the original accepted provider roster,
+including the real MemAlign/byte alternatives. Its finite-support bound follows
+from the existing roster and fixed capacity, not a caller closure/support bound.
+Presence does not establish memory values, replay chronology or the retained
+three narrow-store read/modify/write primitives.
+
+`CanonicalSyntaxBoundary` contains internal proposed premise/conclusion types
+and old-domain comparison proofs only. The public Root remains unchanged;
+no proposed eighteen-argument endpoint or replacement `InputsAgreeCore` is
+installed by these imports. There is no Root premise-removal credit.
+
+The separate narrow-load obstruction proves that the inherited six narrow-load
+Core records' direct full Mem tuple has width8 while the actual decoded Main
+request has width1/2/4. Those incompatible premises are not used to discharge
+loads by contradiction. Repairing the actual provider/read-byte chain or event
+width is a separate protected decision. Exact source read-byte replay and the
+remaining Core/state/boot derivations remain open; local MemAlign structural
+countermodels are not full accepted-world or upstream-forgery claims.
+
