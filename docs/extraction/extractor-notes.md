@@ -836,9 +836,9 @@ Accepted/Root premises. Native-to-image materialization, compiled-operand/PIL
 identity, machine addresses and actual full physical row coverage remain
 unproved. The primary trace store retains UInt64 bits; only requested unpacked
 words are canonically field-projected. That projection is intentionally
-noninjective and never serves as a packed decoder. Packed stage-one readers
-remain explicitly unsupported, not excluded from Root. No missing word becomes
-zero. The source-profile
+noninjective and never applied before packed bit extraction. Partial internal
+stage-one readers retain unsupported inputs as explicit failure, not Root
+exclusions; no missing word becomes zero. The source-profile
 metadata proves neither Rust/C ABI correctness nor final public-I/O/Sail binding,
 once-instance/provider composition, or completion of #371/#372/#413/#418.
 
@@ -849,3 +849,21 @@ same generated `Profile`/`Cell` types and parser, retaining the four-profile
 artifact byte-for-byte. Complete Rust AST fragments are source-shape evidence,
 not a Rust execution/compiler/ABI theorem, an AIR range validator or a substitute
 for actual witness/physical-row/once-instance and verifier-I/O composition.
+
+`NativeTraceRules` independently fixes the scalar bit operations and dispatch
+contracts and pins the remaining complete macro-function ASTs. These are
+source-shape checks, not a proof of arbitrary Rust execution. The sole
+`NativeTraceCells` getter reads finite cells for all six profiles directly from
+the original UInt64 buffer in both packing modes; it never maps the entire
+physical trace or accepts another reader. Unpacked cells remain canonical raw
+field storage, not the Rust typed Bool/narrow getter results.
+
+`PublicIoMainNativeTrace` consumes this getter for all38 native Main cells and
+the same resolved AIR8/distinct GROUP3 buffers. Its Clean41 view retains the
+source address projections and every value of the non-native
+`im_high_degree_2` representation gauge. `PublicIoMainGauge` proves gauge
+independence of the whole existing circuit, complete operations and exposed
+channels, not just a selected assertion slice. These internal constructors and
+proofs do not establish native materialization, full physical/once-instance
+coverage, accepted-world correlation, completion or verifier-public-I/O/Sail
+binding.

@@ -336,3 +336,7 @@ import ZiskFv.AirsClean.MemAlignWriteByte.SourceInstance
 import ZiskFv.AirsClean.NativeValuesLayout
 import ZiskFv.AirsClean.PublicIoMainTraceLayout
 import ZiskFv.AirsClean.PublicIoMemWriteByteTraceLayout
+import ZiskFv.AirsClean.NativeTraceRules
+import ZiskFv.AirsClean.NativeTraceCells
+import ZiskFv.AirsClean.PublicIoMainGauge
+import ZiskFv.AirsClean.PublicIoMainNativeTrace
