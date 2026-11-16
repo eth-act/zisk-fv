@@ -42,19 +42,28 @@ theorem stage2_recovery (view : CompleteView occurrence) (row : Index)
       some (extensionWitness (view.base.rotate row rotation) column) := by
   rw [view.auxiliary_source, auxiliary_recovery]
 
+private theorem forward_coordinate (row : Index) (column : Fin 13) :
+    traceBuffer[row.val * 13 + column.val]'(by
+      rw [traceBuffer_size]
+      have within : row.val < N := row.isLt
+      have col := column.isLt
+      omega) = UInt64.ofNat ((primary row)[column]).val := by
+  have swap : row.val * 13 + column.val = 13 * row.val + column.val := by omega
+  exact (getElem_congr_idx (c := traceBuffer) swap).trans (trace_coordinate row column)
+
 private theorem native_word (view : CompleteView occurrence) (row : Index) (column : Fin 13) :
     traceWord? (occurrence.params false)
       (row.val * view.base.nativeStride + column.val) =
       some (UInt64.ofNat ((primary row)[column]).val) := by
   have stride : view.base.nativeStride = 13 := rfl
-  have bound : 13 * row.val + column.val < traceBuffer.size := by
+  have bound : row.val * 13 + column.val < traceBuffer.size := by
     rw [traceBuffer_size]
     have within : row.val < N := row.isLt
     have col := column.isLt
     omega
   simp only [traceWord?, params_trace, stride]
-  rw [Nat.mul_comm row.val 13,
-    getElem?_pos traceBuffer (13 * row.val + column.val) bound, trace_coordinate]
+  exact (getElem?_pos traceBuffer (row.val * 13 + column.val) bound).trans
+    (congrArg (fun word : UInt64 => some word) (forward_coordinate row column))
 
 private theorem cached_unpacked
     {s : SourceObject FGL} {r : ResolvedOccurrence s}
@@ -137,7 +146,9 @@ private theorem unpacked_single (view : CompleteView occurrence) (row : Index) (
     subst index
     change NativeTraceWords.unpackedField
       ((occurrence.params false).trace[row.val * 13 + column.val]) = (primary row)[column]
-    rw [params_trace, Nat.mul_comm row.val 13, trace_coordinate, word_roundtrip]
+    rw [params_trace]
+    exact (congrArg NativeTraceWords.unpackedField (forward_coordinate row column)).trans
+      (word_roundtrip ((primary row)[column]))
 
 theorem stage1_recovery (view : CompleteView occurrence) (row : Index)
     (column : Fin 13) (rotation : Int) :
@@ -250,7 +261,7 @@ theorem air_recovery (index : Fin 21) : Stage2.airValue? occurrence index.val = 
     simp only [ResolvedOccurrence.airValueWords?, actual_setup, bind, Option.bind_some,
       getElem?_pos Constructibility.setup.airValuesMap index.val bound,
       metadata.2, if_neg scalar, valueWidth, metadata.1,
-      if_neg scalar, ↓reduceIte]
+      if_neg scalar, show (2 : Nat) ≠ 1 by decide, ↓reduceIte]
     have capacity : 15 + 3 * (index.val - 15) + 3 ≤ airBuffer.size := by
       rw [airBuffer_size]
       have within := index.isLt
