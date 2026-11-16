@@ -19,10 +19,17 @@ open ZiskFv.Compliance.Instantiation
 open ZiskFv.Completeness.SailDecode
 open AddFaithfulPaddedRootSoundness
 
+private theorem worldTrace_numInstructions : worldTrace.numInstructions = 4 := rfl
+private theorem worldTrace_programLength : worldTrace.programLength = 2 := rfl
+
+attribute [local simp] worldTrace_numInstructions worldTrace_programLength
+  worldAddProgramRow worldAndProgramRow
+
 /-- Real physical source starts, with no total family of auxiliary ZiskSteps. -/
 def worldSourceIndex (i : Fin 2) : Fin 4 := ⟨2 * i.val, by omega⟩
 
-def worldStart : Fin 1 → Fin worldTrace.programLength := fun _ => 0
+def worldStart : Fin 1 → Fin worldTrace.programLength :=
+  fun _ => ⟨0, by rw [worldTrace_programLength]; decide⟩
 
 theorem worldProgramRowsBinding :
     ProgramRowsBinding worldTrace worldStart (fun _ => 0) repeatJalrRawProgram := by
@@ -84,7 +91,7 @@ def worldClaim (i : Fin 2) : Claim_jalr worldTrace (worldSourceIndex i) where
   offset_bv := 0#64
 
 /-- Both raw certificates use the same actual ROM/provider world. -/
-def worldRawDecode (i : Fin 2) :
+noncomputable def worldRawDecode (i : Fin 2) :
     RawProgramDecode worldTrace (worldSourceIndex i) (.jalr (worldClaim i))
       worldStart (fun _ => 0) repeatJalrRawProgram := by
   refine ⟨⟨RawProgramDecode_jalr.unaligned {
@@ -98,7 +105,7 @@ def worldRawDecode (i : Fin 2) :
     h_a_mask_lo := ?_
     h_a_mask_hi := ?_
     h_c1_zero := ?_
-    h_offset_even := by decide
+    h_offset_even := by change (0#64 &&& 1#64) = 0#64; decide
     h_target_nonneg := ?_
     h_target_lt := ?_
     hLineAdd := ?_
@@ -118,7 +125,7 @@ def worldRawDecode (i : Fin 2) :
   · fin_cases i <;> norm_num [worldSourceIndex, mainOfTable, worldClaim,
       worldRow1, worldRow3, worldRow1Template, worldRow3Template, mainRomRowOf]
   · fin_cases i <;> norm_num [worldSourceIndex, mainOfTable, worldClaim,
-      worldRow1, worldRow3, worldRow1Template, worldRow3Template, mainRomRowOf, GL_prime]
+      worldRow1, worldRow3, worldRow1Template, worldRow3Template, mainRomRowOf]
   · intro j hline
     fin_cases i <;> fin_cases j
     all_goals simp [worldSourceIndex, mainOfTable, worldTrace, worldProgram,
@@ -202,9 +209,9 @@ private theorem worldLanes (i : Fin 2) :
           worldRow2Template, worldAddProgramRow, mainRomRowOf,
           Transpiler.wrap_to_regidx] using pointer.symm
     subst r
-    rw [registerZero]
     fin_cases i <;> simp [worldSourceIndex, mainOfTable, worldRow0, worldRow2,
-      worldRow0Template, worldRow2Template, mainRomRowOf, ZiskFv.Trusted.lane_lo]
+      worldRow0Template, worldRow2Template, mainRomRowOf, ZiskFv.Trusted.lane_lo,
+      Transpiler.wrap_to_regidx, registerZero]
   · intro r hr selector pointer
     have r_eq : r = (2 : Fin 32) := by
       fin_cases i <;>
@@ -212,16 +219,16 @@ private theorem worldLanes (i : Fin 2) :
           worldRow2Template, worldAddProgramRow, mainRomRowOf,
           Transpiler.wrap_to_regidx] using pointer.symm
     subst r
-    rw [registerZero]
     fin_cases i <;> simp [worldSourceIndex, mainOfTable, worldRow0, worldRow2,
-      worldRow0Template, worldRow2Template, mainRomRowOf, ZiskFv.Trusted.lane_hi]
+      worldRow0Template, worldRow2Template, mainRomRowOf, ZiskFv.Trusted.lane_hi,
+      Transpiler.wrap_to_regidx, registerZero]
 
 private theorem worldAvoid (i : Fin 2) :
     RowOutsideDefectRegion worldTrace (worldSourceIndex i) (.jalr (worldClaim i)) := by
   constructor
   · fin_cases i <;> norm_num [MainSequentialPcDomain, mainPcVal, worldSourceIndex,
       mainOfTable, worldRow0, worldRow2, worldRow0Template, worldRow2Template,
-      mainRomRowOf, GL_prime]
+      mainRomRowOf]
   · intro pc hpc
     have zero : pc = 0#64 := by
       apply BitVec.eq_of_toNat_eq
@@ -282,10 +289,12 @@ private theorem worldTerminalEffect (i : Fin 2)
     ZiskFv.Channels.state_effect_via_channels
       ⟨Pilot.execRowAt worldTrace (worldFinishIndex i), [eRdAt worldTrace (worldFinishIndex i)]⟩
       state = EStateM.Result.ok (ExecutionResult.Retire_Success ()) (repeatJalrPost state) := by
+  have distinct : (1 : FGL) ≠ -1 := by decide +kernel
   fin_cases i <;>
-    simp [worldFinishIndex, worldMainIndex, ZiskFv.Channels.state_effect_via_channels,
+    simp [distinct, worldFinishIndex, worldMainIndex, ZiskFv.Channels.state_effect_via_channels,
       Pilot.execRowAt, eRdAt, mainRowWithRomAt, mainOfTable,
-      worldRow1, worldRow1Template, worldRow3, worldRow3Template,
+      worldRow1, worldRow1Template, worldRow2, worldRow2Template,
+      worldRow3, worldRow3Template, worldRow4, worldRow4Template,
       worldAndProgramRow, worldAndBits, JalrSpinWitness.jalrAndBits, mainRomRowOf,
       ZiskFv.Channels.MemoryBus.MemBusMessage.toEntry, cMemMessage,
       bus_effect, Transpiler.wrap_to_regidx, ZiskFv.Channels.MemoryBusBytes.byteAt,
@@ -312,10 +321,10 @@ theorem worldGeneratedHistory :
     retirePC (sailStepPost repeatJalrInstruction (worldSailTrace (worldSourceIndex 1))) =
       repeatJalrFinal := by
   refine ⟨repeatJalr_actual_encoder, ?_, ?_⟩
-  · simp only [worldSailTrace, worldSourceIndex]
+  · change retirePC (sailStepPost repeatJalrInstruction repeatJalrInit) = repeatJalrSecond
     rw [sailStepPost, repeatJalr_first_execution]
     rfl
-  · simp only [worldSailTrace, worldSourceIndex]
+  · change retirePC (sailStepPost repeatJalrInstruction repeatJalrSecond) = repeatJalrFinal
     rw [sailStepPost, repeatedJalr_actual_sail_execution.2.2.2.1]
     rfl
 
