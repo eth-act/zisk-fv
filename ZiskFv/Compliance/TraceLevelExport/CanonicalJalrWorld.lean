@@ -59,7 +59,8 @@ def worldProgram : Program 2
 /-- Exact source serialization, not only a decoder shape or an opcode claim. -/
 theorem worldProgram_actual_source :
     romMessagesOfRaw 0 jalrExpansionRaw = (worldAddProgramRow, some worldAndProgramRow) := by
-  rfl
+  run_tac Lean.Elab.Tactic.liftMetaFinishingTactic fun goal =>
+    Lean.Meta.withTransparency .all goal.refl
 
 @[reducible] def worldInitial (reg : FGL) : MemBusMessage FGL :=
   ZiskFv.AirsClean.RegisterBoundary.bootMessage (boundaryRowIdle reg)
@@ -67,8 +68,17 @@ theorem worldProgram_actual_source :
 @[reducible] def worldFreeCols (step a0 a1 b0 b1 : FGL)
     (previous : MemBusMessage FGL) : MainRomFreeCols :=
   mainRomFreeColsWithRegisterPrevious
-    { addX1MainFreeCols with a_0 := a0, a_1 := a1, b_0 := b0, b_1 := b1,
-      im_high_degree_2 := 0, segment_l1 := 0, main_step := step } previous
+    { addX1MainFreeCols with
+      a_0 := a0
+      a_1 := a1
+      b_0 := b0
+      b_1 := b1
+      im_high_degree_2 := 0
+      segment_l1 := 0
+      main_step := step }
+    previous
+
+attribute [local simp] worldFreeCols worldInitial mainRomFreeColsWithRegisterPrevious
 
 @[reducible] def worldRow0Template : MainRowWithRom FGL :=
   mainRomRowOf worldAddProgramRow worldAddBits (MainRomExecKind.external false 1 0)
@@ -126,7 +136,7 @@ theorem worldRegisterHistories :
     bRegPreMessage worldRow2 = bMemMessage worldRow0 ∧
     cRegPreMessage worldRow3 = cMemMessage worldRow1 ∧
     bRegPreMessage worldRow4 = bMemMessage worldRow2 := by
-  decide
+  repeat constructor <;> rfl
 
 def worldBoundaryRows : List (ZiskFv.AirsClean.RegisterBoundary.RegisterBoundaryRow FGL) :=
   [ registerBoundaryRowFromLast 1 worldRow3WithLast.1,
@@ -159,16 +169,37 @@ def worldMainRangeValues : List FGL :=
     Expression.eval (Environment.fromInput worldRow4 emptyData)
       (bRegStepDistanceExpr (varFromOffset MainRowWithRom 0)) ]
 
+private theorem eval_world_b_distance (env : Environment FGL) (row : Var MainRowWithRom FGL) :
+    Expression.eval env (bRegStepDistanceExpr row) =
+      (2 + (eval env row).rom.main_step * 4) - (eval env row).rom.b_reg_prev_mem_step - 1 := by
+  rcases row with ⟨core, rom⟩
+  cases rom
+  simp [bRegStepDistanceExpr, Expression.eval, ProvableStruct.eval_eq_eval,
+    ProvableStruct.eval, ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go, CircuitType.eval_expr]
+
+private theorem eval_world_c_distance (env : Environment FGL) (row : Var MainRowWithRom FGL) :
+    Expression.eval env (cRegStepDistanceExpr row) =
+      (3 + (eval env row).rom.main_step * 4) - (eval env row).rom.store_reg_prev_mem_step - 1 := by
+  rcases row with ⟨core, rom⟩
+  cases rom
+  simp [cRegStepDistanceExpr, Expression.eval, ProvableStruct.eval_eq_eval,
+    ProvableStruct.eval, ProvableStruct.fromComponents, ProvableStruct.components,
+    ProvableStruct.toComponents, ProvableStruct.eval.go, CircuitType.eval_expr]
+
 theorem worldMainRangeValues_actual : worldMainRangeValues = [1, 6, 7, 7, 7] := by
-  decide
+  simp only [worldMainRangeValues, eval_world_b_distance, eval_world_c_distance,
+    ProvableType.eval_fromInput_varFromOffset_zero]
+  rfl
 
 theorem worldAllRangeValues_spec :
     ∀ v ∈ worldMainRangeValues ++ registerBoundaryRangeValues worldBoundaryRows,
       ZiskFv.AirsClean.RangeTables.rangeTable24.Spec v := by
-  change ∀ v ∈ worldMainRangeValues ++ registerBoundaryRangeValues worldBoundaryRows,
+  rw [worldMainRangeValues_actual]
+  change ∀ v ∈ ([1, 6, 7, 7, 7] : List FGL) ++ registerBoundaryRangeValues worldBoundaryRows,
     v.val < 2 ^ 24
   letI := List.decidableBAll (fun v : FGL => v.val < 2 ^ 24)
-    (worldMainRangeValues ++ registerBoundaryRangeValues worldBoundaryRows)
+    (([1, 6, 7, 7, 7] : List FGL) ++ registerBoundaryRangeValues worldBoundaryRows)
   decide
 
 def worldBinaryAddRow := ZiskFv.AirsClean.BinaryAdd.binaryAddRowOf 1 0
@@ -199,7 +230,7 @@ def worldBinaryAndTable : Table FGL :=
       exact (binarySingleRowTable worldBinaryAndRow).raw_uniform_width arr member
     fixed_domain := by
       intro columns hcolumns
-      simp [ZiskFv.AirsClean.Binary.staticLookupComponent] at hcolumns }
+      simp [binarySingleRowTable, ZiskFv.AirsClean.Binary.staticLookupComponent] at hcolumns }
 
 private theorem worldRow_proverAssumptions (i : Fin 5) :
     (componentWithRomMemAndOpBus 2 worldProgram).circuit.ProverAssumptions
@@ -281,13 +312,16 @@ theorem worldMainTable_constraints : worldMainTable.Constraints := by
   intro arr harr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at harr
   rcases harr with rfl | rfl | rfl | rfl | rfl
-  all_goals apply worldMain_constraintsHold_materialize <;> first
-    | rfl
-    | exact worldRow_proverAssumptions ⟨0, by decide⟩
-    | exact worldRow_proverAssumptions ⟨1, by decide⟩
-    | exact worldRow_proverAssumptions ⟨2, by decide⟩
-    | exact worldRow_proverAssumptions ⟨3, by decide⟩
-    | exact worldRow_proverAssumptions ⟨4, by decide⟩
+  · exact worldMain_constraintsHold_materialize 0 worldRow0 (by rfl) (by rfl)
+      (worldRow_proverAssumptions 0)
+  · exact worldMain_constraintsHold_materialize 1 worldRow1 (by rfl) (by rfl)
+      (worldRow_proverAssumptions 1)
+  · exact worldMain_constraintsHold_materialize 2 worldRow2 (by rfl) (by rfl)
+      (worldRow_proverAssumptions 2)
+  · exact worldMain_constraintsHold_materialize 3 worldRow3 (by rfl) (by rfl)
+      (worldRow_proverAssumptions 3)
+  · exact worldMain_constraintsHold_materialize 4 worldRow4 (by rfl) (by rfl)
+      (worldRow_proverAssumptions 4)
 
 theorem worldBinaryAddTable_constraints : worldBinaryAddTable.Constraints := by
   apply binaryAddRowsTable_constraints_of_proverAssumptions
@@ -302,7 +336,23 @@ private theorem worldBinaryAndSingle_constraints :
   refine ⟨false, false, false, false, false, andByte0Index,
     andMiddleIndex, andMiddleIndex, andMiddleIndex, andMiddleIndex,
     andMiddleIndex, andMiddleIndex, andLastIndex, ?_⟩
-  decide
+  norm_num [worldBinaryAndRow, andByte0Index, andMiddleIndex, andLastIndex,
+    ZiskFv.AirsClean.Binary.binaryTableRow, ZiskFv.AirsClean.BinaryTable.rowOfIndex,
+    ZiskFv.AirsClean.BinaryTable.blockOfIndex, ZiskFv.AirsClean.BinaryTable.relativeIndex,
+    ZiskFv.AirsClean.BinaryTable.coutOfIndex, ZiskFv.AirsClean.BinaryTable.resultIsAOfIndex,
+    ZiskFv.AirsClean.BinaryTable.cIsSignedOfIndex, ZiskFv.AirsClean.BinaryTable.opOfIndex,
+    ZiskFv.AirsClean.BinaryTable.opOfBlock,
+    ZiskFv.AirsClean.Binary.binaryMode32AndCIsSignedOf,
+    ZiskFv.AirsClean.Binary.binaryBOpOrSextOf,
+    ZiskFv.AirsClean.BinaryTable.block14, ZiskFv.AirsClean.BinaryTable.block13,
+    ZiskFv.AirsClean.BinaryTable.block12, ZiskFv.AirsClean.BinaryTable.block11,
+    ZiskFv.AirsClean.BinaryTable.block10, ZiskFv.AirsClean.BinaryTable.block9,
+    ZiskFv.AirsClean.BinaryTable.block8, ZiskFv.AirsClean.BinaryTable.block7,
+    ZiskFv.AirsClean.BinaryTable.block6, ZiskFv.AirsClean.BinaryTable.block5,
+    ZiskFv.AirsClean.BinaryTable.block4, ZiskFv.AirsClean.BinaryTable.block3,
+    ZiskFv.AirsClean.BinaryTable.block2, ZiskFv.AirsClean.BinaryTable.block1,
+    ZiskFv.AirsClean.BinaryTable.minMaxBlockSize,
+    ZiskFv.AirsClean.BinaryTable.absBlockSize, ZiskFv.AirsClean.BinaryTable.fullBlockSize]
 
 theorem worldBinaryAndTable_constraints : worldBinaryAndTable.Constraints := by
   intro arr harr
@@ -431,8 +481,8 @@ private theorem balanced_of_all_actual_payloads (emitted : List (Interaction FGL
   · intro interaction member
     exact List.mem_map.mpr ⟨interaction, member, rfl⟩
   · intro msg member
-    obtain ⟨interaction, member, rfl⟩ := List.mem_map.mp member
-    exact of_decide_eq_true ((List.all_eq_true.mp checks) interaction member)
+    obtain ⟨interaction, present, rfl⟩ := List.mem_map.mp member
+    exact of_decide_eq_true ((List.all_eq_true.mp checks) interaction present)
 
 /-- Full actual emissions, INCLUDING the real fifth row and all31 reload rows.
 The finite certificate checks every present payload, not a handpicked partition. -/
@@ -447,8 +497,8 @@ theorem worldWitness_balancedChannels : worldWitness.BalancedChannels := by
     apply balanced_of_all_actual_payloads
     · left
       rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
-      decide
-    · decide
+      decide +kernel
+    · decide +kernel
 
 theorem worldWitness_transitions : worldWitness.TransitionConstraints := by
   intro table h_table
