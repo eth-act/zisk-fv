@@ -1,0 +1,6 @@
+/tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/MemC33SourceFidelity.lean:27:2: error: Tactic `rfl` failed: The left-hand side
+  actualCompiledConstraints
+is not definitionally equal to the right-hand side
+  [expectedConstraint]
+
+⊢ actualCompiledConstraints = [expectedConstraint]

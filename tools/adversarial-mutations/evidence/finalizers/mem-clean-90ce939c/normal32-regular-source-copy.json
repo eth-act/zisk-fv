@@ -1,0 +1,397 @@
+{
+  "producer": {
+    "status": "GREEN",
+    "source": "40afcd7c8d53a1ffd4f87e1d6c7993960b20ddf7",
+    "normal_nix_output": "/nix/store/pz1sr13qkmbxg8ivkx08rwri8zqj2wz5-zisk-fv-extracted-lean-1.0",
+    "old31_exact": [
+      {
+        "path": "Arith.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "ArithRangeTable.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "ArithTable.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "Binary.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "BinaryAdd.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "BinaryExtension.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "Buses.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "ByteTables/BinaryExtensionTable.json",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "ByteTables/BinaryTable.json",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "Circuit.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "Components/BinaryAdd/Constraints.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "Components/BinaryAdd/Manifest.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "Components/BinaryAdd/Row.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "LookupWiring.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "Main.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "Mem.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "MemAirFacts.md",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "MemAlign.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "MemAlignByte.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "MemAlignReadByte.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "MemAlignRom.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "MemAlignRom.tsv",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "MemAlignWriteByte.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "MemGeneratedArtifact.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "MemGeneratedConstraintBridge.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "MemoryBuses.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "PackedVirtualTables.json",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "PackedVirtualTables.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "PublicIo.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "RomSource.lean",
+        "exact_old_bytes": true
+      },
+      {
+        "path": "SourceDimensions.lean",
+        "exact_old_bytes": true
+      }
+    ],
+    "new_native_runtime_sha256": "7d8dfc3b7dc3ff8630333ca448ab5cddf0024fb4fee1b8f37181d0ebfcf18632",
+    "new_module_matches_actual805_producer": true,
+    "total_files": 32,
+    "source_profiles": "existing locked b632 trace helpers + ff0e macros/AirInstance/ProofCtx; unchanged existing Rust dependency versions; no upstream/pin/productionconstraint/ABI trust change",
+    "scope": "fresh NORMAL production CLI/Nix derivation; kernel consumer/new trace-word cutover and proper-main full gates still separately owed"
+  },
+  "checks": [
+    {
+      "file": "Arith.lean",
+      "destination": "build/extraction/Extraction/Arith.lean",
+      "sha256": "f12c31afa86de18af9b554a3cb025353ee4df62f29a072811dee6f48db92550d",
+      "prior_sha256": "f12c31afa86de18af9b554a3cb025353ee4df62f29a072811dee6f48db92550d",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "ArithRangeTable.lean",
+      "destination": "build/extraction/Extraction/ArithRangeTable.lean",
+      "sha256": "707ddad69ff62e7eb76d661b08173f63dc5b87fc4649f0d9a21be7b8ab105f63",
+      "prior_sha256": "707ddad69ff62e7eb76d661b08173f63dc5b87fc4649f0d9a21be7b8ab105f63",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "ArithTable.lean",
+      "destination": "build/extraction/Extraction/ArithTable.lean",
+      "sha256": "a9c81b842ba8e95b61e953e6c7773a6a71c627bde5470f08411dcf856114cba3",
+      "prior_sha256": "e11e3b6573dff7851698ba88186b27e7319a86175f8fb4fae343a3e79cb947eb",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "Binary.lean",
+      "destination": "build/extraction/Extraction/Binary.lean",
+      "sha256": "4d62c46816e0c962e62f0cf7b04322c77e5cc467c0e955728abc86662804bf68",
+      "prior_sha256": "4d62c46816e0c962e62f0cf7b04322c77e5cc467c0e955728abc86662804bf68",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "BinaryAdd.lean",
+      "destination": "build/extraction/Extraction/BinaryAdd.lean",
+      "sha256": "5bdeab97da50d8570a56a3008f55b5a2da0b9219dc4d39a39d226c37cbd5b212",
+      "prior_sha256": "5bdeab97da50d8570a56a3008f55b5a2da0b9219dc4d39a39d226c37cbd5b212",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "BinaryExtension.lean",
+      "destination": "build/extraction/Extraction/BinaryExtension.lean",
+      "sha256": "6ad5c7a940e746436b2d04f46c2ace9645da1de1f98235a644458023d4b5e9c9",
+      "prior_sha256": "6ad5c7a940e746436b2d04f46c2ace9645da1de1f98235a644458023d4b5e9c9",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "Buses.lean",
+      "destination": "build/extraction/Extraction/Buses.lean",
+      "sha256": "c4ac4bb448ccc8da76533831fbb8028258eea1270ff7a2fb9132ad97761000ec",
+      "prior_sha256": "c4ac4bb448ccc8da76533831fbb8028258eea1270ff7a2fb9132ad97761000ec",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "ByteTables/BinaryExtensionTable.json",
+      "destination": "build/extraction/ByteTables/BinaryExtensionTable.json",
+      "sha256": "4beee37303c9d2402f8926d0eb6288d33bf5f4c7e76807e557ab136bfb190a12",
+      "prior_sha256": "83ec9e83db81ba82c134caffd532f3113fa277785fb61d81f8f0ef91ca9f31b1",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "ByteTables/BinaryTable.json",
+      "destination": "build/extraction/ByteTables/BinaryTable.json",
+      "sha256": "71b085b5acb3bc4f547bc8a33c39dd5eb45fbe3b191ca08011cc4bf7cd675896",
+      "prior_sha256": "201a93ebe4b34fddedbbb8d81ce6a06d9d16db2c6305198d2bb022364cbaf179",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "Circuit.lean",
+      "destination": "build/extraction/Extraction/Circuit.lean",
+      "sha256": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+      "prior_sha256": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "Components/BinaryAdd/Constraints.lean",
+      "destination": "build/extraction/Extraction/Components/BinaryAdd/Constraints.lean",
+      "sha256": "c715445789c4f9f5c9b70cb1e43a4ac437bf632dd59363cf81d9c96de6823624",
+      "prior_sha256": "c715445789c4f9f5c9b70cb1e43a4ac437bf632dd59363cf81d9c96de6823624",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "Components/BinaryAdd/Manifest.lean",
+      "destination": "build/extraction/Extraction/Components/BinaryAdd/Manifest.lean",
+      "sha256": "9d76862875db59cde44e7c108e14157d358ebfb689bba5f49e0b2df180140263",
+      "prior_sha256": "9d76862875db59cde44e7c108e14157d358ebfb689bba5f49e0b2df180140263",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "Components/BinaryAdd/Row.lean",
+      "destination": "build/extraction/Extraction/Components/BinaryAdd/Row.lean",
+      "sha256": "63f8b6f5cebcee80cd85de33d972d18d62ae3ec68ef4bdf13f0f138d54fc1de8",
+      "prior_sha256": "63f8b6f5cebcee80cd85de33d972d18d62ae3ec68ef4bdf13f0f138d54fc1de8",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "LookupWiring.lean",
+      "destination": "build/extraction/Extraction/LookupWiring.lean",
+      "sha256": "c44807d618d000f2a3456b5c0a9af9e2dbb728df31725df1cb2cd7a1d097ff8c",
+      "prior_sha256": "c44807d618d000f2a3456b5c0a9af9e2dbb728df31725df1cb2cd7a1d097ff8c",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "Main.lean",
+      "destination": "build/extraction/Extraction/Main.lean",
+      "sha256": "6ebaaf1025c7d318ab4fecad13760427d098ca5b2a10318c07ed2a74885539f4",
+      "prior_sha256": "6ebaaf1025c7d318ab4fecad13760427d098ca5b2a10318c07ed2a74885539f4",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "Mem.lean",
+      "destination": "build/extraction/Extraction/Mem.lean",
+      "sha256": "749ea99f75482225cf14ddc0025766afe348b739d974ff7f8040d94d3ad63af3",
+      "prior_sha256": "749ea99f75482225cf14ddc0025766afe348b739d974ff7f8040d94d3ad63af3",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "MemAirFacts.md",
+      "destination": "build/extraction/MemAirFacts.md",
+      "sha256": "00b6b5f9f1a5d3abf7b5c7cd97c969efefdd843789917a26a497e014c85c6436",
+      "prior_sha256": "00b6b5f9f1a5d3abf7b5c7cd97c969efefdd843789917a26a497e014c85c6436",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "MemAlign.lean",
+      "destination": "build/extraction/Extraction/MemAlign.lean",
+      "sha256": "08c4ac6b522fd3c7a13ceb66f23de644535c6d2067b2afd543cacd6da3ccc90f",
+      "prior_sha256": "08c4ac6b522fd3c7a13ceb66f23de644535c6d2067b2afd543cacd6da3ccc90f",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "MemAlignByte.lean",
+      "destination": "build/extraction/Extraction/MemAlignByte.lean",
+      "sha256": "a9c3ab8cc64c9f55a04a982967626bb281b9bf498a7005ff93a46256637ad959",
+      "prior_sha256": "a9c3ab8cc64c9f55a04a982967626bb281b9bf498a7005ff93a46256637ad959",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "MemAlignReadByte.lean",
+      "destination": "build/extraction/Extraction/MemAlignReadByte.lean",
+      "sha256": "4488bfc1c7b1f08183e6ab064f7df65ebf542ef377c8521f1aa49ceb893273dc",
+      "prior_sha256": "4488bfc1c7b1f08183e6ab064f7df65ebf542ef377c8521f1aa49ceb893273dc",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "MemAlignRom.lean",
+      "destination": "build/extraction/Extraction/MemAlignRom.lean",
+      "sha256": "083ff34c282a8f2f51110db1a37d422733727b98aefbc33d3328288203737b69",
+      "prior_sha256": "083ff34c282a8f2f51110db1a37d422733727b98aefbc33d3328288203737b69",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "MemAlignRom.tsv",
+      "destination": "build/extraction/MemAlignRom.tsv",
+      "sha256": "d5c40a0aea47ee2283f99619500883a68b4de57d0e7f785d4cef98590758602c",
+      "prior_sha256": "d5c40a0aea47ee2283f99619500883a68b4de57d0e7f785d4cef98590758602c",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "MemAlignWriteByte.lean",
+      "destination": "build/extraction/Extraction/MemAlignWriteByte.lean",
+      "sha256": "97b5093c60a8bc4d4459d86adc21e9bad8e5fa11e8939f8c1e68141c29a4640f",
+      "prior_sha256": "97b5093c60a8bc4d4459d86adc21e9bad8e5fa11e8939f8c1e68141c29a4640f",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "MemGeneratedArtifact.lean",
+      "destination": "build/extraction/Extraction/MemGeneratedArtifact.lean",
+      "sha256": "423204ac5f10f389277800134601642949e439c93c0290c838bf5cf311c96731",
+      "prior_sha256": "423204ac5f10f389277800134601642949e439c93c0290c838bf5cf311c96731",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "MemGeneratedConstraintBridge.lean",
+      "destination": "build/extraction/Extraction/MemGeneratedConstraintBridge.lean",
+      "sha256": "087f949677bff0419f14a68f82c0d6b1c11f7e5ba257a969267b1bbe48ecd2fb",
+      "prior_sha256": "087f949677bff0419f14a68f82c0d6b1c11f7e5ba257a969267b1bbe48ecd2fb",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "MemoryBuses.lean",
+      "destination": "build/extraction/Extraction/MemoryBuses.lean",
+      "sha256": "4eafc03917ba902cd9200084db080a8a3d729bdaddc23fc0f0c4252714155c1d",
+      "prior_sha256": "4eafc03917ba902cd9200084db080a8a3d729bdaddc23fc0f0c4252714155c1d",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "PackedVirtualTables.json",
+      "destination": "build/extraction/PackedVirtualTables.json",
+      "sha256": "5a4e51d0065c3dd3827bc0f99bf4427088c89a72bdbe1b09a3f14417c182df49",
+      "prior_sha256": "5a4e51d0065c3dd3827bc0f99bf4427088c89a72bdbe1b09a3f14417c182df49",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "PackedVirtualTables.lean",
+      "destination": "build/extraction/Extraction/PackedVirtualTables.lean",
+      "sha256": "8a80734b2725e89530b1c8e86d3f0160b1da9021b4572355476720a5622cfc37",
+      "prior_sha256": "8a80734b2725e89530b1c8e86d3f0160b1da9021b4572355476720a5622cfc37",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "PublicIo.lean",
+      "destination": "build/extraction/Extraction/PublicIo.lean",
+      "sha256": "2b7e82411b679fb6a0be8ddc59c507b91b2f062ed5fce1e3da7efa10959c992f",
+      "prior_sha256": "2b7e82411b679fb6a0be8ddc59c507b91b2f062ed5fce1e3da7efa10959c992f",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "RomSource.lean",
+      "destination": "build/extraction/Extraction/RomSource.lean",
+      "sha256": "51e310e18b3738381e1215cd8a1a12fc4394724fa0f271ba796ca13c67505f17",
+      "prior_sha256": "010a84b459acf0df4b703fce720f5657854170913d8126105281339a99a389cd",
+      "prior_exists": true,
+      "cmp": "identical"
+    },
+    {
+      "file": "RuntimeNativeValuesLayout.lean",
+      "destination": "build/extraction/Extraction/RuntimeNativeValuesLayout.lean",
+      "sha256": "7d8dfc3b7dc3ff8630333ca448ab5cddf0024fb4fee1b8f37181d0ebfcf18632",
+      "prior_sha256": null,
+      "prior_exists": false,
+      "cmp": "identical"
+    },
+    {
+      "file": "SourceDimensions.lean",
+      "destination": "build/extraction/Extraction/SourceDimensions.lean",
+      "sha256": "6f52c8ccdfaa3cdeabf4502d91df05923e95aea3d1f356589e5a15b8cfaa525f",
+      "prior_sha256": "6f52c8ccdfaa3cdeabf4502d91df05923e95aea3d1f356589e5a15b8cfaa525f",
+      "prior_exists": true,
+      "cmp": "identical"
+    }
+  ],
+  "no_symlinks_no_olean_no_cache_copy": true
+}

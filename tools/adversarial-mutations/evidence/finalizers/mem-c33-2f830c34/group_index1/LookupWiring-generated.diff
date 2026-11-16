@@ -1,0 +1,300 @@
+--- /tmp/mem-c33-real-source-controls.pk6x1Z/baseline/Extraction/LookupWiring.lean	2026-11-15 23:42:42.912424445 -0500
++++ /tmp/mem-c33-real-source-controls.pk6x1Z/group_index1/Extraction/LookupWiring.lean	2026-11-15 23:48:08.237297316 -0500
+@@ -272,6 +272,7 @@
+   ⟨some 0, some 0, "im_single", .witness, some 2, 6, 0, []⟩,
+   ⟨some 0, some 0, "__L1__", .fixed, some 0, 0, 0, []⟩,
+   ⟨some 0, none, "Zisk.gsum_result", .airGroupValue, some 2, 0, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_DmaMemCpy : Air := ⟨0, 1, "Zisk", "DmaMemCpy", [
+@@ -305,6 +306,7 @@
+   ⟨some 0, some 1, "im_cluster", .witness, some 2, 4, 0, []⟩,
+   ⟨some 0, some 1, "im_single", .witness, some 2, 5, 0, []⟩,
+   ⟨some 0, some 1, "__L1__", .fixed, some 0, 0, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_DmaInputCpy : Air := ⟨0, 2, "Zisk", "DmaInputCpy", [
+@@ -332,6 +334,7 @@
+   ⟨some 0, some 2, "im_single", .witness, some 2, 4, 0, []⟩,
+   ⟨some 0, some 2, "im_single", .witness, some 2, 5, 0, []⟩,
+   ⟨some 0, some 2, "__L1__", .fixed, some 0, 0, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Dma64Aligned : Air := ⟨0, 3, "Zisk", "Dma64Aligned", [
+@@ -384,6 +387,7 @@
+   ⟨some 0, some 3, "Dma64Aligned.last_count_chunk", .airValue, some 1, 16, 1, [2]⟩,
+   ⟨some 0, some 3, "Dma64Aligned.padding_size", .airValue, some 1, 18, 0, []⟩,
+   ⟨some 0, some 3, "Dma64Aligned.im_direct", .airValue, some 2, 19, 1, [5]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Dma64AlignedInputCpy : Air := ⟨0, 4, "Zisk", "Dma64AlignedInputCpy", [
+@@ -422,6 +426,7 @@
+   ⟨some 0, some 4, "Dma64AlignedInputCpy.last_count_chunk", .airValue, some 1, 12, 1, [2]⟩,
+   ⟨some 0, some 4, "Dma64AlignedInputCpy.padding_size", .airValue, some 1, 14, 0, []⟩,
+   ⟨some 0, some 4, "Dma64AlignedInputCpy.im_direct", .airValue, some 2, 15, 1, [5]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Dma64AlignedMemSet : Air := ⟨0, 5, "Zisk", "Dma64AlignedMemSet", [
+@@ -457,6 +462,7 @@
+   ⟨some 0, some 5, "Dma64AlignedMemSet.last_count_chunk", .airValue, some 1, 14, 1, [2]⟩,
+   ⟨some 0, some 5, "Dma64AlignedMemSet.padding_size", .airValue, some 1, 16, 0, []⟩,
+   ⟨some 0, some 5, "Dma64AlignedMemSet.im_direct", .airValue, some 2, 17, 1, [5]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Dma64AlignedMem : Air := ⟨0, 6, "Zisk", "Dma64AlignedMem", [
+@@ -501,6 +507,7 @@
+   ⟨some 0, some 6, "Dma64AlignedMem.last_count_chunk", .airValue, some 1, 16, 1, [2]⟩,
+   ⟨some 0, some 6, "Dma64AlignedMem.padding_size", .airValue, some 1, 18, 0, []⟩,
+   ⟨some 0, some 6, "Dma64AlignedMem.im_direct", .airValue, some 2, 19, 1, [5]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Dma64AlignedMemCpy : Air := ⟨0, 7, "Zisk", "Dma64AlignedMemCpy", [
+@@ -543,6 +550,7 @@
+   ⟨some 0, some 7, "Dma64AlignedMemCpy.last_count_chunk", .airValue, some 1, 14, 1, [2]⟩,
+   ⟨some 0, some 7, "Dma64AlignedMemCpy.padding_size", .airValue, some 1, 16, 0, []⟩,
+   ⟨some 0, some 7, "Dma64AlignedMemCpy.im_direct", .airValue, some 2, 17, 1, [5]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_DmaUnaligned : Air := ⟨0, 8, "Zisk", "DmaUnaligned", [
+@@ -589,6 +597,7 @@
+   ⟨some 0, some 8, "DmaUnaligned.padding_size", .airValue, some 1, 32, 0, []⟩,
+   ⟨some 0, some 8, "DmaUnaligned.last_count_chunk", .airValue, some 1, 33, 1, [2]⟩,
+   ⟨some 0, some 8, "DmaUnaligned.im_direct", .airValue, some 2, 35, 1, [6]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_DmaPrePost : Air := ⟨0, 9, "Zisk", "DmaPrePost", [
+@@ -630,6 +639,7 @@
+   ⟨some 0, some 9, "im_cluster", .witness, some 2, 8, 0, []⟩,
+   ⟨some 0, some 9, "im_cluster", .witness, some 2, 9, 0, []⟩,
+   ⟨some 0, some 9, "__L1__", .fixed, some 0, 0, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_DmaPrePostMemCpy : Air := ⟨0, 10, "Zisk", "DmaPrePostMemCpy", [
+@@ -661,6 +671,7 @@
+   ⟨some 0, some 10, "im_cluster", .witness, some 2, 8, 0, []⟩,
+   ⟨some 0, some 10, "im_single", .witness, some 2, 9, 0, []⟩,
+   ⟨some 0, some 10, "__L1__", .fixed, some 0, 0, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_DmaPrePostInputCpy : Air := ⟨0, 11, "Zisk", "DmaPrePostInputCpy", [
+@@ -683,6 +694,7 @@
+   ⟨some 0, some 11, "im_cluster", .witness, some 2, 5, 0, []⟩,
+   ⟨some 0, some 11, "im_single", .witness, some 2, 6, 0, []⟩,
+   ⟨some 0, some 11, "__L1__", .fixed, some 0, 0, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Main : Air := ⟨0, 12, "Zisk", "Main", [
+@@ -741,6 +753,7 @@
+   ⟨some 0, some 12, "Main.last_reg_value", .airValue, some 1, 8, 2, [31, 2]⟩,
+   ⟨some 0, some 12, "Main.last_reg_mem_step", .airValue, some 1, 70, 1, [31]⟩,
+   ⟨some 0, some 12, "Main.im_direct", .airValue, some 2, 101, 1, [96]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Rom : Air := ⟨0, 13, "Zisk", "Rom", [
+@@ -748,6 +761,7 @@
+   ⟨some 0, some 13, "multiplicity", .witness, some 1, 0, 0, []⟩,
+   ⟨some 0, some 13, "gsum", .witness, some 2, 0, 0, []⟩,
+   ⟨some 0, some 13, "__L1__", .fixed, some 0, 0, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Mem : Air := ⟨0, 14, "Zisk", "Mem", [
+@@ -781,6 +795,7 @@
+   ⟨some 0, some 14, "Mem.distance_base", .airValue, some 1, 11, 1, [2]⟩,
+   ⟨some 0, some 14, "Mem.distance_end", .airValue, some 1, 13, 1, [2]⟩,
+   ⟨some 0, some 14, "Mem.im_direct", .airValue, some 2, 15, 1, [6]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_RomData : Air := ⟨0, 15, "Zisk", "RomData", [
+@@ -805,6 +820,7 @@
+   ⟨some 0, some 15, "RomData.segment_last_step", .airValue, some 1, 9, 0, []⟩,
+   ⟨some 0, some 15, "RomData.segment_last_addr", .airValue, some 1, 10, 0, []⟩,
+   ⟨some 0, some 15, "RomData.im_direct", .airValue, some 2, 11, 1, [4]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_InputData : Air := ⟨0, 16, "Zisk", "InputData", [
+@@ -833,6 +849,7 @@
+   ⟨some 0, some 16, "InputData.distance_base", .airValue, some 1, 11, 1, [2]⟩,
+   ⟨some 0, some 16, "InputData.distance_end", .airValue, some 1, 13, 1, [2]⟩,
+   ⟨some 0, some 16, "InputData.im_direct", .airValue, some 2, 15, 1, [6]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_MemAlign : Air := ⟨0, 17, "Zisk", "MemAlign", [
+@@ -859,6 +876,7 @@
+   ⟨some 0, some 17, "im_single", .witness, some 2, 5, 0, []⟩,
+   ⟨some 0, some 17, "MemAlign.L1", .fixed, some 0, 0, 0, []⟩,
+   ⟨some 0, some 17, "__L1__", .fixed, some 0, 1, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_MemAlignByte : Air := ⟨0, 18, "Zisk", "MemAlignByte", [
+@@ -885,6 +903,7 @@
+   ⟨some 0, some 18, "__L1__", .fixed, some 0, 0, 0, []⟩,
+   ⟨some 0, some 18, "MemAlignByte.padding_size", .airValue, some 1, 0, 0, []⟩,
+   ⟨some 0, some 18, "MemAlignByte.im_direct", .airValue, some 2, 1, 1, [2]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_MemAlignReadByte : Air := ⟨0, 19, "Zisk", "MemAlignReadByte", [
+@@ -905,6 +924,7 @@
+   ⟨some 0, some 19, "__L1__", .fixed, some 0, 0, 0, []⟩,
+   ⟨some 0, some 19, "MemAlignReadByte.padding_size", .airValue, some 1, 0, 0, []⟩,
+   ⟨some 0, some 19, "MemAlignReadByte.im_direct", .airValue, some 2, 1, 1, [2]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_MemAlignWriteByte : Air := ⟨0, 20, "Zisk", "MemAlignWriteByte", [
+@@ -929,6 +949,7 @@
+   ⟨some 0, some 20, "__L1__", .fixed, some 0, 0, 0, []⟩,
+   ⟨some 0, some 20, "MemAlignWriteByte.padding_size", .airValue, some 1, 0, 0, []⟩,
+   ⟨some 0, some 20, "MemAlignWriteByte.im_direct", .airValue, some 2, 1, 1, [3]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Arith : Air := ⟨0, 21, "Zisk", "Arith", [
+@@ -975,6 +996,7 @@
+   ⟨some 0, some 21, "im_single", .witness, some 2, 13, 0, []⟩,
+   ⟨some 0, some 21, "im_single", .witness, some 2, 14, 0, []⟩,
+   ⟨some 0, some 21, "__L1__", .fixed, some 0, 0, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Binary : Air := ⟨0, 22, "Zisk", "Binary", [
+@@ -998,6 +1020,7 @@
+   ⟨some 0, some 22, "__L1__", .fixed, some 0, 0, 0, []⟩,
+   ⟨some 0, some 22, "Binary.padding_size", .airValue, some 1, 0, 0, []⟩,
+   ⟨some 0, some 22, "Binary.im_direct", .airValue, some 2, 1, 1, [1]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_BinaryAdd : Air := ⟨0, 23, "Zisk", "BinaryAdd", [
+@@ -1012,6 +1035,7 @@
+   ⟨some 0, some 23, "__L1__", .fixed, some 0, 0, 0, []⟩,
+   ⟨some 0, some 23, "BinaryAdd.padding_size", .airValue, some 1, 0, 0, []⟩,
+   ⟨some 0, some 23, "BinaryAdd.im_direct", .airValue, some 2, 1, 1, [1]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_BinaryExtension : Air := ⟨0, 24, "Zisk", "BinaryExtension", [
+@@ -1031,6 +1055,7 @@
+   ⟨some 0, some 24, "__L1__", .fixed, some 0, 0, 0, []⟩,
+   ⟨some 0, some 24, "BinaryExtension.padding_size", .airValue, some 1, 0, 0, []⟩,
+   ⟨some 0, some 24, "BinaryExtension.im_direct", .airValue, some 2, 1, 1, [1]⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Add256 : Air := ⟨0, 25, "Zisk", "Add256", [
+@@ -1064,6 +1089,7 @@
+   ⟨some 0, some 25, "im_cluster", .witness, some 2, 15, 0, []⟩,
+   ⟨some 0, some 25, "im_cluster", .witness, some 2, 16, 0, []⟩,
+   ⟨some 0, some 25, "__L1__", .fixed, some 0, 0, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_ArithEq : Air := ⟨0, 26, "Zisk", "ArithEq", [
+@@ -1101,6 +1127,7 @@
+   ⟨some 0, some 26, "im_single", .witness, some 2, 12, 0, []⟩,
+   ⟨some 0, some 26, "ArithEq.CLK_0", .fixed, some 0, 0, 0, []⟩,
+   ⟨some 0, some 26, "__L1__", .fixed, some 0, 1, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_ArithEq384 : Air := ⟨0, 27, "Zisk", "ArithEq384", [
+@@ -1138,6 +1165,7 @@
+   ⟨some 0, some 27, "im_single", .witness, some 2, 12, 0, []⟩,
+   ⟨some 0, some 27, "ArithEq384.CLK_0", .fixed, some 0, 0, 0, []⟩,
+   ⟨some 0, some 27, "__L1__", .fixed, some 0, 1, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Keccakf : Air := ⟨0, 28, "Zisk", "Keccakf", [
+@@ -1442,6 +1470,7 @@
+   ⟨some 0, some 28, "im_single", .witness, some 2, 292, 0, []⟩,
+   ⟨some 0, some 28, "Keccakf.CLK_0", .fixed, some 0, 0, 0, []⟩,
+   ⟨some 0, some 28, "__L1__", .fixed, some 0, 1, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Sha256f : Air := ⟨0, 29, "Zisk", "Sha256f", [
+@@ -1460,6 +1489,7 @@
+   ⟨some 0, some 29, "im_single", .witness, some 2, 2, 0, []⟩,
+   ⟨some 0, some 29, "Sha256f.CLK_0", .fixed, some 0, 0, 0, []⟩,
+   ⟨some 0, some 29, "__L1__", .fixed, some 0, 1, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Poseidon2 : Air := ⟨0, 30, "Zisk", "Poseidon2", [
+@@ -1475,6 +1505,7 @@
+   ⟨some 0, some 30, "im_single", .witness, some 2, 4, 0, []⟩,
+   ⟨some 0, some 30, "Poseidon2.CLK_0", .fixed, some 0, 0, 0, []⟩,
+   ⟨some 0, some 30, "__L1__", .fixed, some 0, 1, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_Blake2br : Air := ⟨0, 31, "Zisk", "Blake2br", [
+@@ -1508,6 +1539,7 @@
+   ⟨some 0, some 31, "Blake2br.CLK_0", .fixed, some 0, 0, 0, []⟩,
+   ⟨some 0, some 31, "Blake2br.MSG_IDX", .fixed, some 0, 1, 0, []⟩,
+   ⟨some 0, some 31, "__L1__", .fixed, some 0, 2, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_SpecifiedRanges : Air := ⟨0, 32, "Zisk", "SpecifiedRanges", [
+@@ -1531,6 +1563,7 @@
+   ⟨some 0, some 32, "SpecifiedRanges.OPID", .fixed, some 0, 0, 1, [29]⟩,
+   ⟨some 0, some 32, "SpecifiedRanges.VALS", .fixed, some 0, 29, 1, [29]⟩,
+   ⟨some 0, some 32, "__L1__", .fixed, some 0, 58, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_VirtualTable0 : Air := ⟨0, 33, "Zisk", "VirtualTable0", [
+@@ -1544,6 +1577,7 @@
+   ⟨some 0, some 33, "VirtualTable0.UID", .fixed, some 0, 0, 1, [8]⟩,
+   ⟨some 0, some 33, "VirtualTable0.column", .fixed, some 0, 8, 1, [43]⟩,
+   ⟨some 0, some 33, "__L1__", .fixed, some 0, 51, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def air_VirtualTable1 : Air := ⟨0, 34, "Zisk", "VirtualTable1", [
+@@ -1557,6 +1591,7 @@
+   ⟨some 0, some 34, "VirtualTable1.UID", .fixed, some 0, 0, 1, [8]⟩,
+   ⟨some 0, some 34, "VirtualTable1.column", .fixed, some 0, 8, 1, [64]⟩,
+   ⟨some 0, some 34, "__L1__", .fixed, some 0, 72, 0, []⟩,
++  ⟨some 0, none, "Zisk.gsum_result_counterfactual", .airGroupValue, some 2, 1, 0, []⟩,
+ ]⟩
+ 
+ def unscopedSymbols : List Symbol := [
+@@ -5850,14 +5885,14 @@
+   constraintEqualsTemplate := by rfl
+ }
+ 
+-def constraint_Mem_33 : Expr := Expr.mul (Expr.fixed 1 (1)) (Expr.sub (Expr.sub (Expr.airGroupValue 0) (Expr.witness 2 0 (0))) (Expr.add (Expr.add (Expr.add (Expr.add (Expr.add (Expr.airValue 15) (Expr.airValue 16)) (Expr.airValue 17)) (Expr.airValue 18)) (Expr.airValue 19)) (Expr.airValue 20)))
+-def template_Mem_33 : Expr := normalise (gsumFinalRowTemplate (Expr.fixed 1 (1)) (Expr.airGroupValue 0) (Expr.witness 2 0 (0)) [Expr.airValue 15, Expr.airValue 16, Expr.airValue 17, Expr.airValue 18, Expr.airValue 19, Expr.airValue 20])
++def constraint_Mem_33 : Expr := Expr.mul (Expr.fixed 1 (1)) (Expr.sub (Expr.sub (Expr.airGroupValue 1) (Expr.witness 2 0 (0))) (Expr.add (Expr.add (Expr.add (Expr.add (Expr.add (Expr.airValue 15) (Expr.airValue 16)) (Expr.airValue 17)) (Expr.airValue 18)) (Expr.airValue 19)) (Expr.airValue 20)))
++def template_Mem_33 : Expr := normalise (gsumFinalRowTemplate (Expr.fixed 1 (1)) (Expr.airGroupValue 1) (Expr.witness 2 0 (0)) [Expr.airValue 15, Expr.airValue 16, Expr.airValue 17, Expr.airValue 18, Expr.airValue 19, Expr.airValue 20])
+ def link_Mem_33 : ValidatedFinalRow := {
+   air := "Mem",
+   constraintIndex := 33,
+   shape := .gsumFinalRow,
+   selector := Expr.fixed 1 (1),
+-  groupValue := Expr.airGroupValue 0,
++  groupValue := Expr.airGroupValue 1,
+   gsum := Expr.witness 2 0 (0),
+   directTerms := [Expr.airValue 15, Expr.airValue 16, Expr.airValue 17, Expr.airValue 18, Expr.airValue 19, Expr.airValue 20],
+   constraint := constraint_Mem_33,

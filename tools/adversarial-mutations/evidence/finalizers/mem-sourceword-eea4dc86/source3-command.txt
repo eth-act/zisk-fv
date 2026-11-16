@@ -1,0 +1,9 @@
+Source inputs frozen at eea4dc861b9a054bb8ca32979723a453c0c1775c. Current recipe hashes: source3-current-recipe.sha256. Existing unchanged opaque-aware observer hash: checked-inputs.sha256; its source is preserved in the earlier committed c33 proof-audit archive.
+
+Actual sequential command (cwd /home/cody/zisk-fv-closure-extractor):
+for name in RawSource NativeTraceWords SourceInstance; do
+  { time lake env lean -j2 --run build/mem-c33-equation-evidence/FullRawObserver.lean ZiskFv.AirsClean.MemAlignWriteByte.$name build/mem-sourceword-1ef2bc8d/source3-raw/$name; } > build/mem-sourceword-1ef2bc8d/$name-source3-full-raw.log 2>&1 || exit $?
+done
+
+The actual per-module summaries, complete type/value/opaque/constructor graphs, every-root full axiom paths and EVERYroot+union collector comparisons are in complete-proof-audits.tar.gz/source3-raw/.
+No earlier seven-module Mem audit was rerun. No source-owner result is relabeled as an own run. Independent current-recipe source3 RAW was explicitly authorized after documenting the sole library-root-list-only Lake metadata mismatch.

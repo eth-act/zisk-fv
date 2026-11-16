@@ -1,0 +1,22 @@
+--- /tmp/mem-c33-real-source-controls.pk6x1Z/baseline/Extraction/LookupWiring.lean	2026-11-15 23:42:42.912424445 -0500
++++ /tmp/mem-c33-real-source-controls.pk6x1Z/drop_direct5/Extraction/LookupWiring.lean	2026-11-15 23:49:12.970943862 -0500
+@@ -5850,8 +5850,8 @@
+   constraintEqualsTemplate := by rfl
+ }
+ 
+-def constraint_Mem_33 : Expr := Expr.mul (Expr.fixed 1 (1)) (Expr.sub (Expr.sub (Expr.airGroupValue 0) (Expr.witness 2 0 (0))) (Expr.add (Expr.add (Expr.add (Expr.add (Expr.add (Expr.airValue 15) (Expr.airValue 16)) (Expr.airValue 17)) (Expr.airValue 18)) (Expr.airValue 19)) (Expr.airValue 20)))
+-def template_Mem_33 : Expr := normalise (gsumFinalRowTemplate (Expr.fixed 1 (1)) (Expr.airGroupValue 0) (Expr.witness 2 0 (0)) [Expr.airValue 15, Expr.airValue 16, Expr.airValue 17, Expr.airValue 18, Expr.airValue 19, Expr.airValue 20])
++def constraint_Mem_33 : Expr := Expr.mul (Expr.fixed 1 (1)) (Expr.sub (Expr.sub (Expr.airGroupValue 0) (Expr.witness 2 0 (0))) (Expr.add (Expr.add (Expr.add (Expr.add (Expr.airValue 15) (Expr.airValue 16)) (Expr.airValue 17)) (Expr.airValue 18)) (Expr.airValue 19)))
++def template_Mem_33 : Expr := normalise (gsumFinalRowTemplate (Expr.fixed 1 (1)) (Expr.airGroupValue 0) (Expr.witness 2 0 (0)) [Expr.airValue 15, Expr.airValue 16, Expr.airValue 17, Expr.airValue 18, Expr.airValue 19])
+ def link_Mem_33 : ValidatedFinalRow := {
+   air := "Mem",
+   constraintIndex := 33,
+@@ -5859,7 +5859,7 @@
+   selector := Expr.fixed 1 (1),
+   groupValue := Expr.airGroupValue 0,
+   gsum := Expr.witness 2 0 (0),
+-  directTerms := [Expr.airValue 15, Expr.airValue 16, Expr.airValue 17, Expr.airValue 18, Expr.airValue 19, Expr.airValue 20],
++  directTerms := [Expr.airValue 15, Expr.airValue 16, Expr.airValue 17, Expr.airValue 18, Expr.airValue 19],
+   constraint := constraint_Mem_33,
+   template := template_Mem_33,
+   hints := [],

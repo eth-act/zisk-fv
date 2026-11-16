@@ -1,0 +1,105 @@
+{
+  "status": "passed-current-recipe-source3-and-mem7",
+  "checked_proof_head": "eea4dc861b9a054bb8ca32979723a453c0c1775c",
+  "source_owner_cutover": "5d2ef5bc",
+  "source_owner_proof_repair": "34cae22f",
+  "source_owner_evidence": "62c21165",
+  "source_hashes": {
+    "RawSource": "aa3b7041d338b86692f1f9f65b2f190b4dd9a0ba22587d9f81d8551a79f20121",
+    "SourceInstance": "ccd470c0321d6b1a056494c3801fa75f99dfda7077c6906e2c86e843874c684c",
+    "NativeTraceWords": "1bcfebcbb2e01355e3551b6895ab11613fef28887823c4d52b68cf2fb8abf407",
+    "SourceLiterals": "40d19ab9a34501f34da3d52a223d2e9edb5ca4c7b0b2b4083ca2db6179a796dc",
+    "Mem.SourceFinalizer": "34134a1fec9509124454589f373d3a9b26501719143172ac3ea936f35105517d"
+  },
+  "owned_caller_migration": "Exactly Mem.SourceFinalizer.runningCoordinate? line81 resolved.cmWords? -> resolved.cmAuxWords?. All generic F/SourceObject F signatures preserved; no unfold proof edits required. Concrete FGL Stage2.Native remains cmWords?.",
+  "narrow_command": "lake env lean -j2 -o OUTPUT MODULE.lean",
+  "narrow_cohesive_green_modules": 10,
+  "narrow_aggregate_green_seconds": 85.838,
+  "narrow_scope": "Actual RawSource, NativeTraceWords, SourceInstance, Mem.SourceFinalizer and all six Mem.Stage2 modules. RawSource passed attempt1; source-owner NativeTraceWords failed then exact owner34cae22f two-proof-line repair was imported. Only repaired/remaining targets retried; no unchanged failure confirmation or limit/statement weakening.",
+  "full_raw_command": "Explicit lake env lean -j2 --run existing FullRawObserver.lean MODULE DIRECTORY, once for all seven defining modules",
+  "full_raw_wall_seconds": 910.64,
+  "full_raw_defining_root_count": 341,
+  "module_roots": {
+    "SourceFinalizer": 22,
+    "Stage2.Cubic": 72,
+    "Stage2.Equations": 31,
+    "Stage2.Native": 25,
+    "Stage2.PolynomialRow": 103,
+    "Stage2.Literals": 17,
+    "Stage2.Local": 71
+  },
+  "raw_axiom_union": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "coverage": "ALL actual defining-module roots, including private/compiler declarations; complete checked-kernel type/value references INCLUDING opaque bodies and inductive constructors; full paths; EVERY root and each module union independently agree with actual Lean.collectAxioms. No pruning, namespace filtering, allowlist or excluded failed roots.",
+  "source_owner_raw_observed": "Owner923-root/std3 result read; exact source/dependency inputs matched except library root-list-only lakefile delta. No owner RAW reuse is claimed: separately authorized OWN independent source3 current-recipe audit passed. Source-owner evidence remains separately cited.",
+  "historical_evidence": "Old5338 six-module319-root checkpoint9fdec58a and c33 original44/22-root gates remain separately recorded and are NOT relabeled as changed-type evidence.",
+  "new_mutation_campaign_run_by_this_worker": false,
+  "production_nix_node_cargo_gate_run": false,
+  "protected_interface_changes": false,
+  "existing_root_table_component_mirror_valid_fields_changed": false,
+  "claims": "Source-owned exact polynomial correspondence for nine nonlinear c24-c32, actual cubic X^3-X-1/base embedding, same-source factory postcondition, supplementary genuine local base-field inverse feasibility, and preserved generic native finalizer API under UInt64-primary trace representation.",
+  "not_claimed": [
+    "Native Rust/C++ memory/snapshot/ABI/compiled operand/opening/PILglobalid or machine address authentication",
+    "Packed stage1 coverage, honest all-row materialization, physical-domain or once-occurrence integration",
+    "An extension Field instance, generic extension inverse, new source-validity premise, opaque assumption or default-zero fallback",
+    "Protected Mem scalar-to-Ext3 component/Valid_Mem correction (proposal is NOT approved or applied)",
+    "Numeric logUp algebra, Accepted/Root credit or whole#371/#372 closure"
+  ],
+  "independent_current_recipe_source3_raw": {
+    "status": "passed",
+    "wall_seconds": 368.9,
+    "root_count": 557,
+    "modules": [
+      {
+        "root_count": 22,
+        "raw_axiom_union": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "nodes": 7917,
+        "module": "ZiskFv.AirsClean.MemAlignWriteByte.NativeTraceWords",
+        "edges": 105389,
+        "cross_check": "Union and EVERY individual root agree with the installed Lean.collectAxioms implementation",
+        "coverage": "Every module declaration, including private/compiler declarations; complete checked kernel type/value and inductive-constructor dependency closure; no namespace pruning or axiom allowlist"
+      },
+      {
+        "root_count": 309,
+        "raw_axiom_union": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "nodes": 6160,
+        "module": "ZiskFv.AirsClean.MemAlignWriteByte.RawSource",
+        "edges": 99706,
+        "cross_check": "Union and EVERY individual root agree with the installed Lean.collectAxioms implementation",
+        "coverage": "Every module declaration, including private/compiler declarations; complete checked kernel type/value and inductive-constructor dependency closure; no namespace pruning or axiom allowlist"
+      },
+      {
+        "root_count": 226,
+        "raw_axiom_union": [
+          "Classical.choice",
+          "Quot.sound",
+          "propext"
+        ],
+        "nodes": 3993,
+        "module": "ZiskFv.AirsClean.MemAlignWriteByte.SourceInstance",
+        "edges": 51323,
+        "cross_check": "Union and EVERY individual root agree with the installed Lean.collectAxioms implementation",
+        "coverage": "Every module declaration, including private/compiler declarations; complete checked kernel type/value and inductive-constructor dependency closure; no namespace pruning or axiom allowlist"
+      }
+    ],
+    "raw_axiom_union": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "every_root_and_union_collector_agree": true,
+    "seven_mem_gate_repeated": false
+  },
+  "all_own_current_recipe_defining_roots": 898
+}
