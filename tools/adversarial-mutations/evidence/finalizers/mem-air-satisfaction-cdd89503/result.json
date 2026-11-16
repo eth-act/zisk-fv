@@ -1,0 +1,119 @@
+{
+  "source_commit": "cdd89503a1363cd0f02be508c344b627d298a207",
+  "scope": "supplemental one-unpacked-source full-physical Mem AIR-satisfaction image only",
+  "chosen_mode": "unpacked, not a production/Root exclusion",
+  "actual_rows": 4194304,
+  "actual_clause_count": 34,
+  "exact_source_local_lookup_proofs": true,
+  "all_three_extension_coefficients_retained": true,
+  "source_kind_GROUP0_not_AIR0": true,
+  "source_gsum": "explicit arithmetic progression (row+1)*(-1/104-1/105)",
+  "source_GROUP0": "independent closed -(N+4)/104-N/105-1/12",
+  "trace_original_words": "13*N+5",
+  "trace_suffix_words": 5,
+  "aux_original_words": "22*N",
+  "aux_offset": "13*N",
+  "aux_width": 9,
+  "actual_global_challenges": [
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      0,
+      0
+    ]
+  ],
+  "actual_six_directs": [
+    "base(-1/12)",
+    "0",
+    "base(-1/104)",
+    "base(-1/104)",
+    "base(-1/104)",
+    "base(-1/104)"
+  ],
+  "narrow": {
+    "Data": {
+      "passed": true,
+      "attempt": 1,
+      "seconds": 8.818
+    },
+    "Algebra": {
+      "passed": true,
+      "attempt": 2,
+      "seconds": 5.739
+    },
+    "SourceEquations": {
+      "passed": true,
+      "attempt": 4,
+      "seconds": 5.877
+    },
+    "SourceImage": {
+      "passed": true,
+      "attempt": 6,
+      "seconds": 6.1
+    },
+    "Recovery": {
+      "passed": true,
+      "attempt": 11,
+      "seconds": 6.275
+    },
+    "Satisfaction": {
+      "passed": true,
+      "attempt": 11,
+      "seconds": 3.931
+    }
+  },
+  "narrow_total_seconds": 36.74,
+  "full_raw": {
+    "passed": true,
+    "total_roots": 496,
+    "roots": {
+      "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Algebra": 62,
+      "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Data": 95,
+      "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Recovery": 120,
+      "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Satisfaction": 19,
+      "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceEquations": 105,
+      "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceImage": 95
+    },
+    "seconds": 716.374,
+    "each_root_and_each_module_union_independently_matches_installed_Lean_collectAxioms_std3": true,
+    "coverage": "all actual defining-module roots, private/compiler/type+value including opaque, inductive constructors and complete imported paths",
+    "axiom_union": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ]
+  },
+  "immutable_inputs_after": {
+    "status": "all-exact",
+    "phase": "after",
+    "lease_sha256": "1e8c6bec9cb45b7f6951c578b47826a9bc5b742b7b7c62a57574fa5d38ab15c2",
+    "checked_entry_count": 3318,
+    "compiler_sha256": "3e0d0d3d801675359f2d4cf9815bfdb417b20b92fdd9d48b3b14c95bbae28bbf",
+    "lean_options": [
+      "-j2",
+      "--tstack=400000"
+    ],
+    "foreign_writes": false,
+    "object_copies": false,
+    "excluded_modules": [
+      "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Data",
+      "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Algebra",
+      "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceEquations",
+      "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceImage",
+      "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Recovery",
+      "ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.Satisfaction"
+    ]
+  },
+  "old_4_8_189_38_untouched_not_rerun": true,
+  "new_trust_cap_or_protected_registration_edits": false,
+  "remaining": [
+    "native ABI/machine/compiled-id/PIL/opening/snapshot/source-world authentication",
+    "approved protected Valid/Mirror/Circuit/Component/Table/Accepted/Root cutover",
+    "production/whole-world validation and full ensemble/provider composition",
+    "numeric logUp algebra and existing assumed balance TCB obligations"
+  ]
+}

@@ -973,3 +973,52 @@ This closes the additive full-auxiliary/challenge representation-construction
 gap only; complete AIR satisfiability, authentic source-world construction and
 the explicitly held protected live cutover remain open.
 
+#### Supplemental full-row Mem AIR image
+
+`PhysicalSource.AirWitness` is a chosen unpacked existential image, not a
+production-mode restriction or native/source-world authentication. It keeps
+the full original13N+5 UInt64 primary words, original22N auxiliary buffer,
+physical width2 fixed pulses, real GROUP0, all six direct blocks, and global
+challenge triples. Its gsum is an explicit arithmetic progression with
+increment `-104⁻¹-105⁻¹`, not a generated-expression repacking. GROUP0 is the
+independently closed value `-(N+4)/104-N/105-1/12`; alpha/gamma are explicitly
+the three-coefficient base0/base1 blocks. Every extension coefficient remains
+in the equations, even though the chosen higher coefficients are zero.
+
+The independent segment targets include all24 clauses with genuine source
+cyclic rotations. Fifteen actual typed mixed projections, nine actual typed
+nonlinear projections, the GROUP0-preserving c33, and nine unchanged generated
+base-only projections account for all34 clauses without using legacy scalar
+c33 as a GROUP-kind correspondence. The local lookup target uses exactly the
+PIL-declared witness widths, distance16 calls, increment bounds and selected
+dual24 call; no extra unpacked-storage validator or acceptance premise is added.
+
+Checked source `cdd89503a1363cd0f02be508c344b627d298a207` adds six internal
+modules: `AirWitness.Data`, `Algebra`, `SourceEquations`, `SourceImage`,
+`Recovery`, and `Satisfaction`. In namespace
+`ZiskFv.AirsClean.Mem.PhysicalSource.AirWitness.SourceImage`,
+`constructed_source_satisfies` proves the computed complete constructor
+recovers this same occurrence, every actual clause0–33 at every physical row
+`Fin4194304`, every required source local lookup, and the unique actual
+physical-last fixed pulse. `polynomial_recovery` identifies the entire actual
+native partial evaluator with the independent closed interpretation; its
+primary coordinates also recover the canonical cached native getter.
+Unsupported/opaque AST leaves remain `None`.
+
+All six narrow checks passed (36.740s aggregate); complete type/value RAW
+audits passed for496 actual defining-module roots, including private/compiler
+declarations, opaque values, inductive constructors and all imported paths
+(716.374s). Every root and every module union independently agrees with the
+installed `Lean.collectAxioms`: only `propext`, `Quot.sound` and
+`Classical.choice`. Immutable source/object/compiler inputs remained exact.
+Earlier frozen4/8/189/38 evidence and sources were neither modified nor rerun.
+Logs, exact source inputs, full dependency paths and repaired-attempt failures:
+`tools/adversarial-mutations/evidence/finalizers/mem-air-satisfaction-cdd89503/`.
+
+The source equations cite pinned `mem.pil`103–123,195–226,263–286,365–397
+and the six direct/finalizer construction in pinned `std_sum.pil`640–696.
+This closes supplemental full-physical Mem AIR satisfiability/constructibility,
+not production native ABI/PIL/r.id authentication, source-world construction,
+provider/ensemble composition, full logUp algebra or the protected live
+`Valid_Mem`/Mirror/Circuit/extraction cutover. No such interface or trust change
+is included; #371 and the related live closure obligations remain open.
