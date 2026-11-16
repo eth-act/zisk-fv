@@ -35,7 +35,7 @@ private theorem auxiliaryEntry_selected (setup : NativeSetup) (column : Nat)
       have equal : (id, actual) = entry := by
         simpa [auxiliaryEntry?, hid, he, bind] using selected
       cases equal
-      exact ⟨hid, he⟩
+      exact ⟨rfl, rfl⟩
 
 private def auxiliaryGeometry (view : View resolved) (entries : Vector (Nat × PolMap) 3) : Prop :=
   view.setup.mapSectionsN["cm2"]? = some 9 ∧
@@ -195,6 +195,8 @@ theorem auxiliary_source (view : CompleteView resolved) (row : view.Index) (colu
   simp only [cmAuxAt?, bind, chosen.2.2.1, view.base.native_rotation row rotation,
     Option.bind_some, view.auxiliary_width, view.auxiliary_offset,
     chosen.2.2.2.1, chosen.2.2.2.2]
+  rw [show "cm" ++ toString (2 : Nat) = "cm2" by decide]
+  simp only [view.auxiliary_width, view.auxiliary_offset, Option.bind_some]
   rw [extension_read_at _ _ _ view.same_auxiliary_buffer bound]
   simp only [auxiliary, auxiliaryAddress, Nat.mul_comm]
   rfl
