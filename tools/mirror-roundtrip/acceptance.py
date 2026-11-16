@@ -1402,6 +1402,9 @@ def perturb_writebyte_polynomial(index: int, anchor: str,
             return replace_in_line(
                 "row.direct_value) = 0", "row.direct_value", "row.composed_value")(lines)
         selected = anchor.replace("byte_value_factor", "sourceByteFactor") if native else anchor
+        if native:
+            # The same residual is written as lhs-rhs=0, not lhs=rhs.
+            selected = {3: "row.composed_value - (", 4: "(", 5: "("}.get(index, "") + selected
         return replace_in_line(selected, before, after)(lines)
     return apply
 
