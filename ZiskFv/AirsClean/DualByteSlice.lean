@@ -111,6 +111,8 @@ theorem sourceFixedColumns_materialize (index : Fin 65536) (multiplicity : FGL) 
     sourceFixedColumns.materialize index.val #[multiplicity] =
       (toElements (sourceRows (fun _ => multiplicity) index)).toArray := by
   rw [providerRow_toArray]
+  change sourceFixedColumns.materialize index.val #[multiplicity] =
+    (toElements (DualByteTable.sourceRow index)).toArray ++ #[multiplicity]
   have hsize : (toElements (DualByteTable.sourceRow index)).toArray.size = 2 :=
     Vector.size_toArray _
   apply Array.ext
@@ -123,10 +125,11 @@ theorem sourceFixedColumns_materialize (index : Fin 65536) (multiplicity : FGL) 
       simp only [IndexedFixedColumns.materialize, Array.getElem_ofFn,
         sourceFixedColumns, IndexedFixedColumns.fixedAt, dif_pos hslot,
         Nat.mod_eq_of_lt index.isLt, Vector.getElem_toArray]
+      all_goals rfl
     · have hi2 : i = 2 := by omega
       subst i
       rw [Array.getElem_append_right (by simpa only [hsize] using (Nat.le_refl 2))]
-      simp only [hsize, Nat.sub_self]
+      change _ = multiplicity
       unfold IndexedFixedColumns.materialize
       rewrite [Array.getElem_ofFn]
       rewrite [sourceFixedColumns_multiplicity_layout]
@@ -219,7 +222,10 @@ theorem sourceInteraction_mem_spec
 theorem source_input_message (row : ProviderRow FGL) (data : ProverData FGL) :
     eval (Environment.fromInput row data) (messageExpr sourceComponent.rowInputVar) =
       (⟨row.byte_a, row.byte_b⟩ : DualByteMessage FGL) := by
-  rw [eval_messageExpr, ProvableType.eval_fromInput_varFromOffset_zero]
+  rw [eval_messageExpr]
+  exact congrArg (fun value : ProviderRow FGL =>
+    (⟨value.byte_a, value.byte_b⟩ : DualByteMessage FGL))
+      (ProvableType.eval_fromInput_varFromOffset_zero row data)
 
 theorem source_input_multiplicity (row : ProviderRow FGL) (data : ProverData FGL) :
     eval (Environment.fromInput row data)
