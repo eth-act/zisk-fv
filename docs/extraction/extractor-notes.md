@@ -326,6 +326,14 @@ physical-domain/once-occurrence cutover remain representation boundaries.
 Neither this internal circuit nor its decoded boolean is an added
 `Valid_Mem`/Accepted/Root premise or a numeric logUp balance proof.
 
+The internal six-module checkpoint `9fdec58a` passed narrow Lean elaboration
+and complete opaque-aware RAW auditing of all 319 defining-module declarations;
+every root and each union agree with Lean's collector, with only
+`Classical.choice`, `Quot.sound` and `propext` in the aggregate. Evidence is in
+`tools/adversarial-mutations/evidence/finalizers/mem-stage2-9fdec58a/`.
+This result uses the frozen `SourceInstance` hash `533894dc…`, not the subsequent
+UInt64-primary trace cutover, and makes no Accepted/Root or full-#371 closure claim.
+
 `link_Main_reloadRange : Fin 31 → ValidatedLink` indexes c49+3k in source
 order. It is separate from `link_Main_reload`, which indexes the corresponding
 memory reload messages. Both are generated only after exact template checks.

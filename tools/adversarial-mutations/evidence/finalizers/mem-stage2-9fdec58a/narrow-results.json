@@ -1,0 +1,43 @@
+{
+  "bounded_command": "lake env lean -j2 -o OUTPUT MODULE.lean",
+  "modules": [
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Cubic",
+      "log": "build/mem-stage2-687cbb47/Cubic-attempt4.log",
+      "seconds": 4.028,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Equations",
+      "log": "build/mem-stage2-687cbb47/Equations-attempt4.log",
+      "seconds": 5.234,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Native",
+      "log": "build/mem-stage2-687cbb47/Native-attempt4.log",
+      "seconds": 6.084,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.PolynomialRow",
+      "log": "build/mem-stage2-687cbb47/PolynomialRow-attempt4.log",
+      "seconds": 6.215,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Literals",
+      "log": "build/mem-stage2-687cbb47/Literals-attempt5.log",
+      "seconds": 5.253,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Local",
+      "log": "build/mem-stage2-687cbb47/Local-attempt10.log",
+      "seconds": 6.648,
+      "status": "passed"
+    }
+  ],
+  "source_dependency": "SourceLiterals-attempt1.log; exact owner source SHA40d19ab9a34501f34da3d52a223d2e9edb5ca4c7b0b2b4083ca2db6179a796dc",
+  "unchanged_c33_targets_rerun": false
+}

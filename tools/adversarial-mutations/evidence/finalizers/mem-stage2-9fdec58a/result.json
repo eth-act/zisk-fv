@@ -1,0 +1,31 @@
+{
+  "status": "passed-internal-old-source-checkpoint",
+  "checked_proof_head": "9fdec58a1f669422d9ce8c988c4f70b866e47374",
+  "initial_checkpoint": "687cbb47b3daf3ee87d8c98b1849cb9b5a61a556",
+  "source_instance_sha256": "533894dc5716d7cc7ff8562c34fec52821a5f9a24fc4aae20b762752f6c7fc2c",
+  "source_literals_sha256": "40d19ab9a34501f34da3d52a223d2e9edb5ca4c7b0b2b4083ca2db6179a796dc",
+  "narrow_command": "lake env lean -j2 -o OUTPUT MODULE.lean",
+  "narrow_green_modules": 6,
+  "narrow_green_aggregate_seconds": 33.462,
+  "full_raw_wall_seconds": 726.94,
+  "full_raw_total_defining_roots": 319,
+  "root_counts": {"Cubic":72,"Equations":31,"Native":25,"PolynomialRow":103,"Literals":17,"Local":71},
+  "raw_axiom_union": ["Classical.choice","Quot.sound","propext"],
+  "coverage": "All defining-module roots, including private/compiler declarations; complete checked-kernel type/value references including opaque values and inductive constructors; full axiom paths; EVERY root and each module union cross-checked against actual Lean.collectAxioms. No namespace/root/axiom pruning.",
+  "source_contract": "Nine nonlinear Mem equations c24-c32, plus unchanged frozen linear c33. Ext3 uses actual pinned proofman X^3-X-1 arithmetic and base embedding (a,0,0). Same-source factory computes the typed row; all nine actual ASTs evaluate to their explicit typed polynomial residuals. Six direct inverse cells remain AIR15-20, not auxiliary aliases.",
+  "proof_repairs": "Proof-only normalization and Lean record elaboration repairs are frozen in commits after687cbb47. Failed actual diagnostics and the initial unavailable /usr/bin/time setup failure are retained in complete-proof-audits.tar.gz. Decoder elimination was made linear rather than raising default proof limits. No statements or trust boundaries were weakened.",
+  "audit_observer": "Exact reused build/mem-c33-equation-evidence/FullRawObserver.lean; input hash recorded in checked-inputs.sha256. Source and prior observer archive are retained by c924 evidence.",
+  "unchanged_c33_44_and_22_root_gates_rerun": false,
+  "new_mutation_campaign_run": false,
+  "normal_production_gate_run": false,
+  "protected_interface_changes": false,
+  "closure_claim": false,
+  "boundaries": [
+    "This result uses old frozen5338 source types, NOT the subsequent approved internal UInt64 trace cutover.",
+    "Packed stage1 is explicitly unsupported and remains a full-row coverage gap, not a Root exclusion.",
+    "Compiled native operand/opening identity, machine arithmetic, source snapshots and physical/once-occurrence bindings remain unproved here.",
+    "Genuine 12/104/105 base-field local feasibility is supplementary, not a materialized native source object or honest all-row trace.",
+    "No extension Field instance, fake inverse, opaque assumption, zero fallback, stronger caller promise or protected Valid_Mem/Root edit was introduced.",
+    "No numeric logUp algebra, Accepted/Root credit, #371 or #372 closure is claimed."
+  ]
+}
