@@ -117,26 +117,29 @@ private theorem cm2_offset :
     Nat.mul_comm]
 
 private theorem map0 : Stage2.witnessMapId? Constructibility.setup 2 0 = some 13 := by
-  simp only [Stage2.witnessMapId?, show 2 = 2 ∧ (0 : Nat) = 0 by decide, if_true,
-    SourceFinalizer.gsumMapId?]
+  unfold Stage2.witnessMapId?
+  rw [if_pos (by decide : 2 = 2 ∧ (0 : Nat) = 0)]
+  unfold SourceFinalizer.gsumMapId?
   rw [Array.findIdx?_eq_some_iff_getElem]
   refine ⟨by decide, by decide, ?_⟩
   intro index before
-  interval_cases index <;> decide
+  interval_cases index <;> decide +revert
 
 private theorem map1 : Stage2.witnessMapId? Constructibility.setup 2 1 = some 14 := by
-  simp only [Stage2.witnessMapId?, show ¬(2 = 2 ∧ (1 : Nat) = 0) by decide, if_false]
+  unfold Stage2.witnessMapId?
+  rw [if_neg (by decide : ¬(2 = 2 ∧ (1 : Nat) = 0))]
   rw [Array.findIdx?_eq_some_iff_getElem]
   refine ⟨by decide, by decide, ?_⟩
   intro index before
-  interval_cases index <;> decide
+  interval_cases index <;> decide +revert
 
 private theorem map2 : Stage2.witnessMapId? Constructibility.setup 2 2 = some 15 := by
-  simp only [Stage2.witnessMapId?, show ¬(2 = 2 ∧ (2 : Nat) = 0) by decide, if_false]
+  unfold Stage2.witnessMapId?
+  rw [if_neg (by decide : ¬(2 = 2 ∧ (2 : Nat) = 0))]
   rw [Array.findIdx?_eq_some_iff_getElem]
   refine ⟨by decide, by decide, ?_⟩
   intro index before
-  interval_cases index <;> decide
+  interval_cases index <;> decide +revert
 
 private theorem entry0 : auxiliaryEntry? Constructibility.setup 0 =
     some (13, Constructibility.cmMap[13]) := by
@@ -168,7 +171,7 @@ private theorem challenge1_map :
   rw [Array.findIdx?_eq_some_iff_getElem]
   refine ⟨by decide, by decide, ?_⟩
   intro index before
-  interval_cases index <;> decide
+  interval_cases index <;> decide +revert
 
 theorem actual_alpha (packed : Bool) : Stage2.challenge? (occurrence packed) 2 0 =
     some (⟨29, 31, 37⟩ : Stage2.Ext3 FGL) := by
@@ -248,7 +251,7 @@ theorem auxiliary_coefficients (packed : Bool) (view : CompleteView (occurrence 
     view.auxiliary row column rotation = (⟨3, 4, 2⟩ : Stage2.Ext3 FGL) := by
   apply Stage2.Ext3.ext
   all_goals
-    simp only [CompleteView.auxiliary, getElem_fin, CompleteView.auxiliaryAddress,
+    simp only [CompleteView.auxiliary, Fin.getElem_fin, CompleteView.auxiliaryAddress,
       actual_auxiliary, auxiliaryBuffer, Array.getElem_ofFn]
     have within := (view.base.rotate row rotation).isLt
     have col := column.isLt
