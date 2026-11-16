@@ -874,3 +874,10 @@ complete gate logs are retained under
 `tools/adversarial-mutations/evidence/finalizers/mem-clean-90ce939c/`.
 These are the clean internal-scope checks, not whole-production/V1/V2/Nix
 completion or a live Mem/public c33 repair.
+
+The mirror inventory explicitly classifies the six additional Mem protocol
+predicates under its existing challenge/stage-2 category. These are the same
+source c24–c33 already outside that checker's stage-1 polynomial comparison,
+not new source exclusions or changes to its 176 comparable entries. The typed
+AST/row proofs above provide their separate build-only correspondence; the
+live scalar Mem model is still not thereby repaired.
