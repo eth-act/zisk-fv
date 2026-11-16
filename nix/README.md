@@ -92,3 +92,10 @@ done
 
 Public key (for trust verification):
 `zisk-fv.cachix.org-1:hyAMf+R99XtroAcQmwqdHUlpTJdViLVC6xA4KMXxlIE=`
+
+`compile-mutation ISOLATED_SOURCE OUTPUT_PILOUT` compiles an owned copy of the
+locked production PIL with the same compiler, standard library and external
+fixed columns. It copies those immutable payloads with `--reflink=never` and
+byte-compares each copy before compilation. A Rust fixed-generator mutation
+still requires newly generated fixed data; reusing this helper's production
+payloads does not validate such a mutation.
