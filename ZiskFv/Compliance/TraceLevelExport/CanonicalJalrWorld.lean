@@ -59,14 +59,13 @@ def worldProgram : Program 2
 /-- Exact source serialization, not only a decoder shape or an opcode claim. -/
 theorem worldProgram_actual_source :
     romMessagesOfRaw 0 jalrExpansionRaw = (worldAddProgramRow, some worldAndProgramRow) := by
-  rcases System.Platform.numBits_eq with bits | bits
-  all_goals
-    run_tac Lean.Elab.Tactic.liftMetaTactic fun goal => do
-      let target ← Lean.Meta.withTransparency .all
-        (Lean.Meta.reduce (← goal.getType) (explicitOnly := false)
-          (skipTypes := false) (skipProofs := true))
-      pure [← goal.change target]
-  all_goals norm_num [bits]
+  run_tac Lean.Elab.Tactic.liftMetaTactic fun goal => do
+    let args := (← goal.getType).getAppArgs
+    let lhs ← Lean.Meta.withTransparency .all (Lean.Meta.whnf args[1]!)
+    let target ← Lean.Meta.mkEq lhs args[2]!
+    pure [← Lean.Meta.withTransparency .all (goal.change target)]
+  simp only [Prod.mk.injEq, Option.some.injEq, ZiskRomMessage.mk.injEq]
+  all_goals decide +kernel
 
 @[reducible] def worldInitial (reg : FGL) : MemBusMessage FGL :=
   ZiskFv.AirsClean.RegisterBoundary.bootMessage (boundaryRowIdle reg)
