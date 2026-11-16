@@ -70,20 +70,30 @@ def decodeRow? (resolved : ResolvedOccurrence source) (row : Nat) : Option Polyn
     let l1 ← baseFixed? resolved row 0
     let nextL1 ← baseFixed? resolved row 1
     let groupResult ← groupValue? resolved 0
-    return { addr, step, sel, stepDual, selDual, valueLo, valueHi, wr,
-      lowIncrement, highIncrement, segmentId, isLastSegment,
-      previousValueLo, previousValueHi, previousStep, previousAddr,
-      lastValueLo, lastValueHi, lastStep, lastAddr,
-      distanceBaseLo, distanceBaseHi, distanceEndLo, distanceEndHi,
-      alpha, gamma, running, previousRunning, cluster0, cluster1,
-      direct0, direct1, direct2, direct3, direct4, direct5, l1, nextL1, groupResult }
+    return { addr := addr, step := step, sel := sel, stepDual := stepDual, selDual := selDual,
+      valueLo := valueLo, valueHi := valueHi, wr := wr,
+      lowIncrement := lowIncrement, highIncrement := highIncrement,
+      segmentId := segmentId, isLastSegment := isLastSegment,
+      previousValueLo := previousValueLo, previousValueHi := previousValueHi,
+      previousStep := previousStep, previousAddr := previousAddr,
+      lastValueLo := lastValueLo, lastValueHi := lastValueHi,
+      lastStep := lastStep, lastAddr := lastAddr,
+      distanceBaseLo := distanceBaseLo, distanceBaseHi := distanceBaseHi,
+      distanceEndLo := distanceEndLo, distanceEndHi := distanceEndHi,
+      alpha := alpha, gamma := gamma, running := running, previousRunning := previousRunning,
+      cluster0 := cluster0, cluster1 := cluster1,
+      direct0 := direct0, direct1 := direct1, direct2 := direct2,
+      direct3 := direct3, direct4 := direct4, direct5 := direct5,
+      l1 := l1, nextL1 := nextL1, groupResult := groupResult }
   else none
 
 /-- Concrete internal polynomial-circuit test of a successfully decoded row.
 This is not installed in Accepted/Valid_Mem or passed as a caller premise. -/
 def decodedCircuit? (resolved : ResolvedOccurrence source) (row : Nat) : Option Bool := do
   let values ← decodeRow? resolved row
-  return decide values.WithFinalizer
+  return @decide values.WithFinalizer (by
+    unfold PolynomialRow.WithFinalizer PolynomialRow.Circuit
+    infer_instance)
 
 theorem decode_rejects_other_registry (resolved : ResolvedOccurrence source) (row : Nat)
     (notMem : SourceFinalizer.memOccurrence resolved = false) :
