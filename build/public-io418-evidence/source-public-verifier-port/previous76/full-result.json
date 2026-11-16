@@ -1,0 +1,12 @@
+{
+  "GREEN": true,
+  "actual_roots": 76,
+  "actual_raw_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "source_sha256": "8cf02c690a721cf44a4026a2c61fc925d22051555c9266a6b8ee9c46ea186afa",
+  "scope": "ALL newleaf types+values/opaque/private/compiler/ctors/fullpaths/EACHroot+unionCollector",
+  "no_root_native_map_opening_Sail_binding_claim": true
+}
