@@ -894,3 +894,13 @@ distinguishes packed/unpacked stores and retains shared suffix words; it is
 not native execution, whole-AIR/full-world validity or source authentication.
 This prototype leaves the eight accepted stage-two leaves and every protected
 live interface unchanged.
+
+Support checkpoint `5b64f5c0…` passed all five narrow targets and complete
+opaque-aware RAW checks of all 189 defining roots, every root and module union
+cross-checked with the collector (standard three axioms). Concrete both-mode
+nonvacuity uses symbolic source-buffer size/scan proofs, not evaluation of four
+million proof rows or raised budgets. Exact profiles, LSP reader signature,
+proof repairs, source hashes and full paths/logs are retained under
+`tools/adversarial-mutations/evidence/finalizers/mem-physical-support-5b64f5c0/`.
+This support check is separate from the later shared six-kind logical-projection
+consumer and makes no native/source-world or protected-interface success claim.

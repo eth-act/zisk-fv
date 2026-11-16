@@ -1,0 +1,61 @@
+{
+  "status": "passed-source-only-five-support",
+  "initial_source": "0009e7cfbcc46e99f626acfdf9d199226e7e8570",
+  "checked_proof_source": "5b64f5c0d2c8b74acd8d4a5216ea15aa8232de0c",
+  "narrow": [
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage1.SourceColumns",
+      "log": "build/mem-physical-source/Stage1.SourceColumns-narrow-attempt2.log",
+      "seconds": 10.594,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage1.NativeProfile",
+      "log": "build/mem-physical-source/Stage1.NativeProfile-narrow-attempt2.log",
+      "seconds": 9.773,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.FixedScan",
+      "log": "build/mem-physical-source/PhysicalSource.FixedScan-narrow-attempt3.log",
+      "seconds": 7.008,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.Domain",
+      "log": "build/mem-physical-source/PhysicalSource.Domain-narrow-attempt4.log",
+      "seconds": 9.375,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.PhysicalSource.Constructibility",
+      "log": "build/mem-physical-source/PhysicalSource.Constructibility-narrow-attempt10.log",
+      "seconds": 5.646,
+      "status": "passed"
+    }
+  ],
+  "narrow_seconds": 42.396,
+  "generated_prereqs": "Real canonicalf2b8 and same-renderercompanion019eb compiled directly with lean-j2; initial Lake unknown unregistered module is preserved SETUPfailure, not a kill; no normalregistration/config edit.",
+  "full_roots": 189,
+  "full_seconds": 656.79,
+  "raw_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "module_counts": {
+    "ZiskFv.AirsClean.Mem.PhysicalSource.Constructibility": 54,
+    "ZiskFv.AirsClean.Mem.PhysicalSource.Domain": 87,
+    "ZiskFv.AirsClean.Mem.PhysicalSource.FixedScan": 20,
+    "ZiskFv.AirsClean.Mem.Stage1.NativeProfile": 5,
+    "ZiskFv.AirsClean.Mem.Stage1.SourceColumns": 23
+  },
+  "scope": "ALL5 defining-module actual roots/private/compiler/typeANDvalueINCLUDINGOPAQUE/ctors/fullpaths/EVERYroot+moduleUNION independently agree with installedCollector; no namespacefilter/allowlist/sampling.",
+  "source_geometry": "Full lazyFin4194304, actual13logical native4packed/13unpacked originalUInt64coverage+suffix, SAMEfixedwidth2/L1col1 scan notSEGMENT0; actualGROUP3coeff+ALL6direct3coeff from SAMEsource object.",
+  "constructibility": "Concrete computed constructor succeeds for BOTHBool modes, actualoriginaltrace/fixedarrays+5suffix; symbolic size/scan proofs. No Nrow/indexlist/copiedtrace, no arbitraryProfileSuccess/SourceValid/gettercallback, no newvalidator on unpacked widths.",
+  "failed_proofs": "Actual failed own proofs retained, including failed unselective buffer normalization reaching defaultrecursion/heartbeat limits; repaired with precise field/size equalities and selective unfolding, NOT budgetraise/bruteforce/statementweakening. Not credited as mutation rejects.",
+  "frozen8_modified": false,
+  "stage2_aux_fullworld_native_auth_abi_pil_machine_proved": false,
+  "root_or_live_c33_or_whole371_credit": false,
+  "logical_projection_next": "Separate newNativeProjection/Comparison source consumes ONLY actualchecked205c six-kind core. Not part of this5module verification; await explicit separate gate slot."
+}
