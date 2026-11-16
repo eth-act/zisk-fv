@@ -61,6 +61,22 @@ def elf_metadata(path):
             "sections": result, "program_headers": phdrs}
 
 
+def preserve_initial_native_evidence(workspace):
+    for name in ["native-launch-evidence.json", "native-orchestrator.py"]:
+        previous = workspace / name
+        if previous.exists():
+            previous.rename(workspace / name.replace(".", "-initial.", 1))
+    initial_evidence = workspace / "native-launch-evidence-initial.json"
+    if initial_evidence.exists():
+        evidence = json.loads(initial_evidence.read_text())
+        if evidence["native_orchestrator_snapshot_file"] == "native-orchestrator.py":
+            initial_snapshot = workspace / "native-orchestrator-initial.py"
+            if sha(initial_snapshot) != evidence["native_orchestrator_sha256"]:
+                raise ValueError("Renamed initial native snapshot does not match its recorded hash")
+            evidence["native_orchestrator_snapshot_file"] = initial_snapshot.name
+            initial_evidence.write_text(json.dumps(evidence, indent=2) + "\n")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--zisk-git", required=True, type=Path)
@@ -102,10 +118,7 @@ def main():
         if failed_log.exists():
             raise ValueError("The initial continuation was already attempted; preserve its outcome")
         (workspace / "native-producer.log").rename(failed_log)
-        for name in ["native-launch-evidence.json", "native-orchestrator.py"]:
-            previous = workspace / name
-            if previous.exists():
-                previous.rename(workspace / name.replace(".", "-initial.", 1))
+        preserve_initial_native_evidence(workspace)
         initial_failure = {"file": failed_log.name, "sha256": sha(failed_log),
                            "classification": "native linker setup failure; not a source/data/proof kill"}
         for command in commands:
