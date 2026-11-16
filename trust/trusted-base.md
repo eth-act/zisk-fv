@@ -1748,3 +1748,28 @@ loads by contradiction. Repairing the actual provider/read-byte chain or event
 width is a separate protected decision. Exact source read-byte replay and the
 remaining Core/state/boot derivations remain open; local MemAlign structural
 countermodels are not full accepted-world or upstream-forgery claims.
+
+## Canonical native byte Direct equations (internal partial)
+
+The ByteMemory/NativeByteInstance modules derive the full finite Byte and
+ReadByte row-operation family plus one disjoint instance emission site from
+the same SourceObject/registry occurrence. The original raw padding scalar,
+including zero and negative values, supplies the actual two Direct operations;
+it is not assumed to equal a count. The Params `genProof=false` profile is
+selected; packed versus unpacked storage is independently determined by the
+actual slot metadata, not by that Boolean.
+
+The dedicated partial source projection retains AIR0 scalar, both AIR1/2
+extension inverse blocks and the mapped extension challenges. All three
+coefficients of actual generated c13/c14 and c7/c8 are tied to mixed residuals
+of the real compiled operations, including all six tuple cells, channel10 and
+signs. It does not install a fictitious Field instance for triples or fill
+unread/missing expression leaves with zero.
+
+AIR/GROUP metadata checks use the source-populated ordered names/stages,
+not invented dimension or stageId fields. Real challenge stage/id/dimension
+checks remain. Native compiled operand r.id/PIL rank, setup/ABI materialization,
+source-world/once-roster balance and provider/Accepted integration remain open.
+No numerical gsum, completed execution, Root or full #412/#372 closure follows
+from these local residual equalities.
+
