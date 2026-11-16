@@ -221,6 +221,37 @@
           };
         };
 
+        apps.aeneas-rom-flags-extract-check-tracked = {
+          type = "app";
+          program = "${pkgs.writeShellApplication {
+            name = "aeneas-rom-flags-extract-check-tracked";
+            runtimeInputs = with pkgs; [
+              cargo
+              clang
+              diffutils
+              elan
+              git
+              gnumake
+              gnutar
+              jq
+              libclang.lib
+              nasm
+              nix
+              python3
+              rustc
+              pkgsCross.riscv64-embedded.stdenv.cc
+            ];
+            text = ''
+              cd "$(git rev-parse --show-toplevel)" || exit 1
+              export LIBCLANG_PATH="${pkgs.libclang.lib}/lib"
+              AENEAS_FLAKE="${aeneas}" scripts/aeneas-rom-flags-extract.sh --check
+            '';
+          }}/bin/aeneas-rom-flags-extract-check-tracked";
+          meta = {
+            description = "Freshly extract the actual pinned Rust get_flags and check the additive Lean snapshot.";
+          };
+        };
+
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
             elan         # Lean toolchain manager
