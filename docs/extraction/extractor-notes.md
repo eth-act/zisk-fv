@@ -294,6 +294,18 @@ and opening-index bindings, defined native machine/address arithmetic, and live
 snapshot/ABI materialization. CPU/nonextended native rows are the current reader
 scope; unsupported GPU/verifier layouts are not acceptance exclusions.
 
+The real compiled-source campaign in
+`tools/adversarial-mutations/evidence/finalizers/mem-c33-2f830c34/` uses pinned
+production pilout `e816e4fd…`, the whole normal CLI built from `19f0ba22`, and
+one immutable independent kernel fidelity theorem over all normal source-AST
+rosters, including `ConstraintOnly`. Baseline and a cloned-DAG neutral control
+passed; valid GROUP-to-AIR, declared GROUP-index, sign, dropped-term and L1
+rotation mutations each reached and failed that theorem after all generated
+modules compiled. In the GROUP-to-AIR case the legacy generated `Mem.lean`
+remained byte-identical while the kind-preserving source AST changed. This is
+compiled-input source-fidelity evidence, not PIL-frontend equivalence, native
+authentication, numeric balance or a live Mem correction.
+
 `link_Main_reloadRange : Fin 31 → ValidatedLink` indexes c49+3k in source
 order. It is separate from `link_Main_reload`, which indexes the corresponding
 memory reload messages. Both are generated only after exact template checks.

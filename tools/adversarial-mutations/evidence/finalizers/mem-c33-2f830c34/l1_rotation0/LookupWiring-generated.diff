@@ -1,0 +1,68 @@
+--- /tmp/mem-c33-real-source-controls.pk6x1Z/baseline/Extraction/LookupWiring.lean	2026-11-15 23:42:42.912424445 -0500
++++ /tmp/mem-c33-real-source-controls.pk6x1Z/l1_rotation0/Extraction/LookupWiring.lean	2026-11-15 23:49:48.034447560 -0500
+@@ -1739,9 +1739,9 @@
+   air := "Mem",
+   emittedConstraintFile := true,
+   mixedConstraintCount := 25,
+-  unlinkedMixedConstraintCount := 15,
++  unlinkedMixedConstraintCount := 16,
+   gsumHintCount := 11,
+-  validatedLinkCount := 10
++  validatedLinkCount := 9
+ }
+ 
+ def airStatus_RomData : AirStatus := {
+@@ -5556,6 +5556,13 @@
+   reason := "AIR-value relation is not a standard-sum lookup template; separate model correspondence required; source: mem/pil/mem.pil:423 read_same_addr*(value[1]-(previous_value))"
+ }
+ 
++def constraintOnly_Mem_33 : ConstraintOnly := {
++  air := "Mem",
++  constraintIndex := 33,
++  constraint := Expr.mul (Expr.fixed 1 (0)) (Expr.sub (Expr.sub (Expr.airGroupValue 0) (Expr.witness 2 0 (0))) (Expr.add (Expr.add (Expr.add (Expr.add (Expr.add (Expr.airValue 15) (Expr.airValue 16)) (Expr.airValue 17)) (Expr.airValue 18)) (Expr.airValue 19)) (Expr.airValue 20))),
++  reason := "unrecognized standard-sum shape; no remaining hint matches an audited route; source: std_sum.pil:696 __L1__'*((Zisk.gsum_result-gsum)-(((((Mem.im_direct[0]+Mem.im_direct[1])+Mem.im_direct[2])+Mem.im_direct[3])+Mem.im_direct[4])+Mem.im_direct[5]))"
++}
++
+ def hint_Mem_24_0 : HintTuple := {
+   hintIndex := 897,
+   piop := "Range Check",
+@@ -5850,23 +5857,6 @@
+   constraintEqualsTemplate := by rfl
+ }
+ 
+-def constraint_Mem_33 : Expr := Expr.mul (Expr.fixed 1 (1)) (Expr.sub (Expr.sub (Expr.airGroupValue 0) (Expr.witness 2 0 (0))) (Expr.add (Expr.add (Expr.add (Expr.add (Expr.add (Expr.airValue 15) (Expr.airValue 16)) (Expr.airValue 17)) (Expr.airValue 18)) (Expr.airValue 19)) (Expr.airValue 20)))
+-def template_Mem_33 : Expr := normalise (gsumFinalRowTemplate (Expr.fixed 1 (1)) (Expr.airGroupValue 0) (Expr.witness 2 0 (0)) [Expr.airValue 15, Expr.airValue 16, Expr.airValue 17, Expr.airValue 18, Expr.airValue 19, Expr.airValue 20])
+-def link_Mem_33 : ValidatedFinalRow := {
+-  air := "Mem",
+-  constraintIndex := 33,
+-  shape := .gsumFinalRow,
+-  selector := Expr.fixed 1 (1),
+-  groupValue := Expr.airGroupValue 0,
+-  gsum := Expr.witness 2 0 (0),
+-  directTerms := [Expr.airValue 15, Expr.airValue 16, Expr.airValue 17, Expr.airValue 18, Expr.airValue 19, Expr.airValue 20],
+-  constraint := constraint_Mem_33,
+-  template := template_Mem_33,
+-  hints := [],
+-  templateFromTerms := by rfl
+-  constraintEqualsTemplate := by rfl
+-}
+-
+ def hint_MemAlign_33_0 : HintTuple := {
+   hintIndex := 984,
+   piop := "Range Check",
+@@ -8254,6 +8244,7 @@
+   constraintOnly_Mem_19 ,
+   constraintOnly_Mem_20 ,
+   constraintOnly_Mem_22 ,
++  constraintOnly_Mem_33 ,
+ ]
+ 
+ def validatedLinks : List ValidatedLink := [
+@@ -8430,7 +8421,6 @@
+ 
+ def validatedFinalRows : List ValidatedFinalRow := [
+   link_Main_143 ,
+-  link_Mem_33 ,
+   link_MemAlign_39 ,
+   link_MemAlignByte_15 ,
+   link_MemAlignReadByte_9 ,
