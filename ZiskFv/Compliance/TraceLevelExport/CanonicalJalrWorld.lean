@@ -1114,6 +1114,21 @@ private theorem worldMain_source_channel_nil (channel : RawChannel FGL)
   simpa only [List.mem_cons, List.not_mem_nil, or_false, not_or] using
     And.intro mem (And.intro op range)
 
+-- Keep list algebra abstract: checking append conversions must not normalize
+-- either actual full-domain provider stream.
+private theorem three_active_table_streams (channel : RawChannel FGL)
+    (before between after : List (Table FGL))
+    (consumer extension binary : Table FGL)
+    (before_nil : before.flatMap (·.interactionsWith channel) = [])
+    (between_nil : between.flatMap (·.interactionsWith channel) = [])
+    (after_nil : after.flatMap (·.interactionsWith channel) = []) :
+    (before ++ [consumer] ++ between ++ [extension, binary] ++ after).flatMap
+        (·.interactionsWith channel) =
+      consumer.interactionsWith channel ++ extension.interactionsWith channel ++
+        binary.interactionsWith channel := by
+  simp only [List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
+    before_nil, between_nil, after_nil, List.nil_append, List.append_nil]
+
 /-- Reduce only proved-silent tables; retain the actual consumer and both
 full-domain source streams, including zero multiplicities. -/
 private theorem worldSource_emissions (channel : RawChannel FGL)
@@ -1123,18 +1138,35 @@ private theorem worldSource_emissions (channel : RawChannel FGL)
       worldBinaryAndTable.interactionsWith channel ++
         worldExtensionSourceTable.interactionsWith channel ++
           worldBinarySourceTable.interactionsWith channel := by
-  have boundary := worldBoundary_source_channel_nil channel mem range
-  have add := worldBinaryAdd_source_channel_nil channel op
-  have main := worldMain_source_channel_nil channel mem op range
+  let before : List (Table FGL) :=
+    [ worldBoundaryTable,
+      emptyComponentTable ZiskFv.AirsClean.MemAlignReadByte.component,
+      emptyComponentTable ZiskFv.AirsClean.MemAlignByte.component,
+      emptyComponentTable ZiskFv.AirsClean.MemAlign.component,
+      emptyComponentTable ZiskFv.AirsClean.MemAlignRangeSlice.component,
+      emptyComponentTable ZiskFv.AirsClean.MemAlignRomSlice.component,
+      emptyComponentTable ZiskFv.AirsClean.Mem.componentWithDualMemBus,
+      registerStepRangeRowsTable
+        (worldMainRangeValues ++ registerBoundaryRangeValues worldBoundaryRows),
+      emptyComponentTable ZiskFv.AirsClean.SpecifiedRangesSlice.component,
+      emptyComponentTable ZiskFv.AirsClean.ArithDiv.component,
+      emptyComponentTable ZiskFv.AirsClean.ArithMul.componentComplete,
+      emptyComponentTable ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent ]
   have provider := registerStepRangeRowsTable_interactionsWith_of_ne
     (worldMainRangeValues ++ registerBoundaryRangeValues worldBoundaryRows) channel range
-  change worldTables.flatMap (fun table => table.interactionsWith channel) = _
-  unfold worldTables
-  generalize hExtension : worldExtensionSourceTable = extensionTable
-  generalize hBinary : worldBinarySourceTable = binaryTable
-  simp only [List.flatMap_cons, List.flatMap_nil,
-    boundary, add, main, provider, emptyComponentTable_interactionsWith,
-    List.nil_append, List.append_nil, List.append_assoc]
+  have before_nil : before.flatMap (·.interactionsWith channel) = [] := by
+    simp only [before, List.flatMap_cons, List.flatMap_nil,
+      worldBoundary_source_channel_nil channel mem range, provider,
+      emptyComponentTable_interactionsWith, List.nil_append]
+  have between_nil : [worldBinaryAddTable].flatMap (·.interactionsWith channel) = [] := by
+    simpa only [List.flatMap_cons, List.flatMap_nil, List.append_nil] using
+      worldBinaryAdd_source_channel_nil channel op
+  have after_nil : [worldMainTable].flatMap (·.interactionsWith channel) = [] := by
+    simpa only [List.flatMap_cons, List.flatMap_nil, List.append_nil] using
+      worldMain_source_channel_nil channel mem op range
+  exact three_active_table_streams channel before [worldBinaryAddTable] [worldMainTable]
+    worldBinaryAndTable worldExtensionSourceTable worldBinarySourceTable
+    before_nil between_nil after_nil
 
 private theorem worldBinary_consumer_requests :
     worldBinaryAndTable.interactionsWith
