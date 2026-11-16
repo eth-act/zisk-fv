@@ -303,8 +303,8 @@ import ZiskFv.AirsClean.OperationPadding
 import ZiskFv.AirsClean.MemAlignWriteByte.ExtractedWiring
 import ZiskFv.AirsClean.MemAlignWriteByte.DirectWiring
 import ZiskFv.AirsClean.MemAlignWriteByte.RawByteSource
-import ZiskFv.AirsClean.NativeValuesLayout
 import ZiskFv.AirsClean.MemAlignWriteByte.SourceInstance
+import ZiskFv.AirsClean.NativeValuesLayout
 import ZiskFv.AirsClean.Mem.SourceFinalizerEquation
 import ZiskFv.AirsClean.Mem.SourceFinalizer
 import ZiskFv.AirsClean.Mem.Stage2.Cubic
