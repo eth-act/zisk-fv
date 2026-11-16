@@ -60,17 +60,13 @@ def worldProgram : Program 2
 theorem worldProgram_actual_source :
     romMessagesOfRaw 0 jalrExpansionRaw = (worldAddProgramRow, some worldAndProgramRow) := by
   rcases System.Platform.numBits_eq with bits | bits
-  all_goals norm_num [romMessagesOfRaw, jalrExpansionRaw, bits,
-    zisk_core.aeneas_extract.extract_transpile_rv64im_rows_raw,
-    zisk_core.aeneas_extract.extract_transpile_rv64im_raw,
-    worldAddProgramRow, worldAndProgramRow, worldAddBits, worldAndBits,
-    JalrSpinWitness.jalrAddBits, JalrSpinWitness.jalrAndBits,
-    romRowOf, signedOffset, romFlagBitsOfExtract, packFlags,
-    zisk_core.zisk_inst.SRC_IMM, zisk_core.zisk_inst.SRC_MEM,
-    zisk_core.zisk_inst.SRC_REG, zisk_core.zisk_inst.SRC_IND,
-    zisk_core.zisk_inst.SRC_C, zisk_core.zisk_inst.STORE_REG,
-    zisk_core.zisk_inst.STORE_MEM, zisk_core.zisk_inst.STORE_IND,
-    zisk_core.riscv2zisk_context.Riscv2ZiskContext.jalr.JALR_MASK]
+  all_goals
+    run_tac Lean.Elab.Tactic.liftMetaTactic fun goal => do
+      let target ← Lean.Meta.withTransparency .all
+        (Lean.Meta.reduce (← goal.getType) (explicitOnly := false)
+          (skipTypes := false) (skipProofs := true))
+      pure [← goal.change target]
+  all_goals norm_num [bits]
 
 @[reducible] def worldInitial (reg : FGL) : MemBusMessage FGL :=
   ZiskFv.AirsClean.RegisterBoundary.bootMessage (boundaryRowIdle reg)
@@ -601,7 +597,7 @@ private theorem worldAnd_emissions (channel : RawChannel FGL) :
       (binarySingleRowTable worldBinaryAndRow).interactionsWith channel ++
         (binarySingleRowTable worldBinaryAndRow).interactionsWith channel := by
   simp [worldBinaryAndTable, binarySingleRowTable, Table.interactionsWith, Table.table,
-    ZiskFv.AirsClean.Binary.staticLookupComponent]
+    Table.environment, ZiskFv.AirsClean.Binary.staticLookupComponent]
 
 private def worldMemEmissions : List (Interaction FGL) :=
   worldBoundaryRows.flatMap registerBoundaryMemBusInteractions ++
@@ -688,9 +684,9 @@ private theorem worldOther_emissions (channel : RawChannel FGL)
     emptyComponentTable_interactionsWith]
 
 private theorem worldChannel_ne
-    (channel : RawChannel FGL) (name : String) (named : channel.name = name)
+    (channel : RawChannel FGL) (expectedName : String) (named : channel.name = expectedName)
     (other : RawChannel FGL) (otherName : String) (otherNamed : other.name = otherName)
-    (different : name ≠ otherName) : channel ≠ other := by
+    (different : expectedName ≠ otherName) : channel ≠ other := by
   intro equal
   apply different
   exact named.symm.trans ((congrArg (fun raw : RawChannel FGL => raw.name) equal).trans otherNamed)
@@ -706,6 +702,36 @@ private theorem worldOther_balanced (channel : RawChannel FGL)
     decide +kernel
   · decide +kernel
 
+private theorem worldRanges_balanced :
+    BalancedInteractions (worldWitness.tables.flatMap
+      (·.interactionsWith ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw)) := by
+  rw [worldRange_emissions]
+  unfold worldRangeEmissions
+  rw [worldMainRangeValues_actual]
+  apply balanced_of_all_actual_payloads
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide +kernel
+  · decide +kernel
+
+private theorem worldMem_balanced :
+    BalancedInteractions (worldWitness.tables.flatMap (·.interactionsWith MemBusChannel.toRaw)) := by
+  rw [worldMem_emissions]
+  apply balanced_of_all_actual_payloads
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide +kernel
+  · decide +kernel
+
+private theorem worldOps_balanced :
+    BalancedInteractions (worldWitness.tables.flatMap (·.interactionsWith OpBusChannel.toRaw)) := by
+  rw [worldOp_emissions]
+  apply balanced_of_all_actual_payloads
+  · left
+    rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
+    decide +kernel
+  · decide +kernel
+
 /-- Full actual emissions, INCLUDING the real fifth row and all31 reload rows.
 The finite certificate checks every present payload, not a handpicked partition. -/
 theorem worldWitness_balancedChannels : worldWitness.BalancedChannels := by
@@ -715,30 +741,13 @@ theorem worldWitness_balancedChannels : worldWitness.BalancedChannels := by
     SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_channels,
     SoundEnsemble.addTable_channels, SoundEnsemble.empty_channels] at hchannel
   rcases hchannel with rfl | rfl | rfl | rfl | rfl | rfl
-  · rw [worldRange_emissions]
-    unfold worldRangeEmissions
-    rw [worldMainRangeValues_actual]
-    apply balanced_of_all_actual_payloads
-    · left
-      rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
-      decide +kernel
-    · decide +kernel
+  · exact worldRanges_balanced
   · exact worldOther_balanced _
       (worldChannel_ne _ _ rfl _ _ rfl (by decide))
       (worldChannel_ne _ _ rfl _ _ rfl (by decide))
       (worldChannel_ne _ _ rfl _ _ rfl (by decide))
-  · rw [worldMem_emissions]
-    apply balanced_of_all_actual_payloads
-    · left
-      rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
-      decide +kernel
-    · decide +kernel
-  · rw [worldOp_emissions]
-    apply balanced_of_all_actual_payloads
-    · left
-      rw [show ringChar FGL = GL_prime from ringChar.eq FGL GL_prime]
-      decide +kernel
-    · decide +kernel
+  · exact worldMem_balanced
+  · exact worldOps_balanced
   · exact worldOther_balanced _
       (worldChannel_ne _ _ rfl _ _ rfl (by decide))
       (worldChannel_ne _ _ rfl _ _ rfl (by decide))
