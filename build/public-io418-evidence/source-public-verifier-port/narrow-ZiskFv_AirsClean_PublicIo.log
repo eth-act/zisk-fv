@@ -1,0 +1,21 @@
+/home/cody/zisk-fv-source-public-verifier-port/ZiskFv/AirsClean/PublicIo.lean:88:24: warning: This simp argument is unused:
+  List.ofFn_eq_map
+
+Hint: Omit it from the simp argument list.
+  simp [circuit_norm, L̵i̵s̵t̵.̵o̵f̵F̵n̵_̵e̵q̵_̵m̵a̵p̵,̵ ̵List.map_map, Function.comp_def]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/cody/zisk-fv-source-public-verifier-port/ZiskFv/AirsClean/PublicIo.lean:98:18: warning: This simp argument is unused:
+  main
+
+Hint: Omit it from the simp argument list.
+  simp [verifier, m̵a̵i̵n̵,̵ ̵circuit_norm]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`
+/home/cody/zisk-fv-source-public-verifier-port/ZiskFv/AirsClean/PublicIo.lean:241:22: warning: This simp argument is unused:
+  hne
+
+Hint: Omit it from the simp argument list.
+  simp [circuit_norm, h̵n̵e̵,̵ ̵Ne.symm hne]
+
+Note: This linter can be disabled with `set_option linter.unusedSimpArgs false`

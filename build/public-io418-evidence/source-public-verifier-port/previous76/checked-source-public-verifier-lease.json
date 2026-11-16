@@ -1,0 +1,43 @@
+{
+  "source_public_consumer_sha256": "8cf02c690a721cf44a4026a2c61fc925d22051555c9266a6b8ee9c46ea186afa",
+  "normalPublicIo_source_sha256": "2b7e82411b679fb6a0be8ddc59c507b91b2f062ed5fce1e3da7efa10959c992f",
+  "six_source_core_lease_sha256": "1e8c6bec9cb45b7f6951c578b47826a9bc5b742b7b7c62a57574fa5d38ab15c2",
+  "Main_six_compatibility_lease_sha256": "0e37effc6319f095c0320def1f70e93f0ece1be4b840ed237167e7376b53979f",
+  "fresh_owned_objects": {
+    "Extraction/PublicIo": {
+      "source_sha256": "2b7e82411b679fb6a0be8ddc59c507b91b2f062ed5fce1e3da7efa10959c992f",
+      "object_sha256": "e6f8aca1274d29c5dac14aaa652d9c4e621eeaefcd658d27a18e37c91f3c51ec",
+      "object": "/home/cody/zisk-fv-public-main-trace/build/public-io418-evidence/source-public-verifier/gate/out/Extraction/PublicIo.olean"
+    },
+    "ZiskFv/AirsClean/PublicIo": {
+      "source_sha256": "b4e033df8a4870ca3ec3017cf9c5117aa5bb8f7c6c0e45bcfe915ea1dac9ad46",
+      "object_sha256": "a9cda5b77bc2c31ed7f5f63594a396cee2a9b7a4680e103d872f9cfd83f61d7e",
+      "object": "/home/cody/zisk-fv-public-main-trace/build/public-io418-evidence/source-public-verifier/gate/out/ZiskFv/AirsClean/PublicIo.olean"
+    },
+    "ZiskFv/AirsClean/PublicIoSource": {
+      "source_sha256": "200083485eb12bcc1e8da4610d37e08ffd5e0130ca182a6e350c92cd20c6e5f7",
+      "object_sha256": "4e165f0f76b6a1fdc07ae120f0d46c783b56ad27f407a8d58f835c89d388265c",
+      "object": "/home/cody/zisk-fv-public-main-trace/build/public-io418-evidence/source-public-verifier/gate/out/ZiskFv/AirsClean/PublicIoSource.olean"
+    },
+    "ZiskFv/AirsClean/SourcePublicVerifier": {
+      "source_sha256": "8cf02c690a721cf44a4026a2c61fc925d22051555c9266a6b8ee9c46ea186afa",
+      "object_sha256": "5093d60b094318b5a5a3ec4252b5ca763349695faff5c56a1db00926dbd1a589",
+      "object": "/home/cody/zisk-fv-public-main-trace/build/public-io418-evidence/source-public-verifier/gate/out/ZiskFv/AirsClean/SourcePublicVerifier.olean"
+    }
+  },
+  "actual_FULL_roots": 76,
+  "raw_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "raw_report_sha256": "6185cd7de6701ddc9e2cc816fa36b6585c1b01aa8097bd35f5f1ca0c2a1de35a",
+  "compiler_sha256": "3e0d0d3d801675359f2d4cf9815bfdb417b20b92fdd9d48b3b14c95bbae28bbf",
+  "options": [
+    "-j2",
+    "--tstack=400000",
+    "-Dpp.unicode.fun=true"
+  ],
+  "policy": "READONLYobjects;nextconsumerprivateoutputsfirst+excludeallwritablemodules/sidecars,noobject/cachecopy/foreignwrite",
+  "native_or_Accepted_Root_binding_claim": false
+}

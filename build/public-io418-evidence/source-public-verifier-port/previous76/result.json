@@ -1,0 +1,26 @@
+{
+  "status": "ACTUAL standaloneSourcePublicVerifier NARROW+FULL GREEN; source-object-level binding, NOT native/Accepted/Root/Sail closure",
+  "consumer_source": "ZiskFv/AirsClean/SourcePublicVerifier.lean",
+  "consumer_sha256": "8cf02c690a721cf44a4026a2c61fc925d22051555c9266a6b8ee9c46ea186afa",
+  "computed_input": "existingPublicIo.PublicIO whole68 derivedONLYfrom SAME SourceObjectGlobals/ResolvedOccurrenceParams.publicInputs, actualregistry-selectedsetup?; originalArrayretained; nPublics68/bufferbound internalpartialchecks ONLY; no independentPIO/equalitycertificate/newSourceObjectfield/Rootsuccesspromise",
+  "map_contract": "selected_public_map derivesretainednativepublicsMap fromactualselectedsetup; no maplength/name/rank/stagevalidator andno metadata-to-pointeroffsetshortcut. DirectPublicValueid correspondsoriginalsourcepublicarray",
+  "narrow": {
+    "actual_prerequisites": "freshprivateExtraction.PublicIo normal2b7 (tooltag4DF4), PublicIo395 b4e033df..., PublicIoSource130 20008348... allGREEN; verifiedf37Main6/sourceCore205cCIleases0e37/1e8c andexact1662inputentries",
+    "target_attempt2": "exit0;12.06s; source8cf02c69",
+    "preserved_failure_attempt1": "rfl/whnf normalization200000 timeout forVector.ofFn projection, andexistingCleanOperations interactionValuesWith noncomputable; repairedexplicitVector.getElem_ofFn/reusedwholeprojection andmarkedONLYCleanobservernoncomputable; NOcaps/hypothesis/contractweakening",
+    "compiler_options": "Lean4.28 exactbinary3e0d0d3d... -j2 --tstack=400000 -Dpp.unicode.fun=true existingrepooption"
+  },
+  "FULL_actual_new_leaf": {
+    "roots": 76,
+    "raw_axioms": ["Classical.choice", "Quot.sound", "propext"],
+    "scope": "ALLdefiningroots types+values inclOPAQUE/private/compiler/constructors/fullpaths; EACHroot+UNION independentlyinstalledLean.collectAxioms; recursiveimportsUNPRUNED",
+    "job": "bg_1350 exit0;162.03s",
+    "filter_or_allowance_changes": "NONE",
+    "evidence": "full-result.json/full-raw-axioms.json/full-source-freeze.json/full-raw.log/full-lease-after.json; MeasureSourcePublicVerifierRaw.lean"
+  },
+  "observed_kernel_contracts": ["EVERY68actualPublicValue/rawsourcebuffercell", "SAMEfourROMrootcells and64inputlimbs, no secondROM/publicimage", "bothParams modes sameglobalpublicvector", "actualCleanverifierComponentoperations fromcomputedsourcePIO only; universallyquantifiedProverData notcertificate", "ALL32ordered11slotmessages/positiveunit/nodup/exactper-indexmultiplicity", "actualcompiledGLOBALbus5000+positiveomitted-denominatornumeratorandall11slots fromexistingindependentPublicIoSourceweld", "jointsameSourceObject/resolvedoccurrence/Params withSOLEactualNativeMain38/AIR8/SEPARATEGROUP3, no newReader"],
+  "source_cpp_rust_boundary": "native-public-boundary.json records exactactualGlobalInfo::from_file(pilout.globalInfo.json),ProofCtxallocation/set/getpublics/get_air_instance_params,verify_global_constraints_proof/get_publics_ptr,FFI,nativeGLOBALbuffer1/directidandStarkInfo::load(publicsMap) sourcefacts; NOTRust/C++/CABIexecutionproofs",
+  "input_integrity": "all1662leaseentriesbefore/after unchanged; privateoutputlinks excludeALL4writablemodules+sidecars; no .oleancopy/cachecopy/foreignwrite; unchanged155/6sourcecampaignNOTrerun",
+  "still_OPEN": ["actualPIL/globalInfo/setupJSONproducer→registry-selectednativepublicsMap/nPublics materializationandcompiledpublicsymbolcorrelation", "liveProofCtx/StepsParams/GLOBALpublicpointer/openingauthentication→SAMEtypedSourceObjectglobals", "actualAcceptedwitness publicInput binding/Unit→68canonicalcutover", "ROMauthentication/runtimeepilogue/continuity/termination/finalSailobservable/whole354or418closure"],
+  "protected_interfaces_changed": "NONE; no SourceObjectfield/Root/Accepted/Framework/PureSpec/dispatch/normalregistration changes"
+}

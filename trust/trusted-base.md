@@ -1677,3 +1677,28 @@ same fourteen cells. It is compared against c0-c6, not classified out. The
 three source-slot predicates record only the already challenge-mixed c8-c10
 lookup boundaries; they introduce no new source exclusion.
 
+
+## Standalone source-owned verifier inputs (partial)
+
+`PublicIo`, `PublicIoSource` and `SourcePublicVerifier` are standalone models,
+not replacements for the canonical Accepted witness or Root. They connect the
+compiled GLOBAL public-output schema to the same source object's 68 public
+fields: four ROM fields and 64 limbs, with 32 ordered eleven-slot OP_PUBLIC
+contributions. The verifier projection reads the original shared public-input
+buffer in both Params modes; it does not supply a second public-I/O vector or
+assume a caller equality. PublicValue uses its actual source id directly, not
+an invented publics-map rank/name validator.
+
+The local joint Main projection retains the original source occurrence, AIR
+values and group values. Native producer/setup materialization, transport to
+the accepted balanced ensemble, complete runtime/termination and the actual
+Sail/public-observable relation remain separate unproved obligations. No
+Root, Accepted, initial-state, caller-program or validator domain is changed,
+and this partial does not close #354, #416 or #418. The existing external
+intended-binary commitment boundary is not expanded into a new cryptographic
+or compiler-correctness claim.
+
+The verifier's OpBus requirement and 32-message exposure are local and
+uncomposed. Their two deliberate channel declarations are recorded in the
+channel snapshot; that inventory update is not an accepted-balance or Root
+provider-composition proof.

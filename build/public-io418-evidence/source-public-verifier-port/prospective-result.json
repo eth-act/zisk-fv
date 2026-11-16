@@ -1,0 +1,40 @@
+{
+  "status": "GREEN",
+  "base": "622938be281db14470819a9fe752528221a2491d",
+  "checks": [
+    {
+      "label": "narrow-ZiskFv_AirsClean_PublicIo",
+      "status": 0,
+      "seconds": 11.274900433025323
+    },
+    {
+      "label": "narrow-ZiskFv_AirsClean_PublicIoSource",
+      "status": 0,
+      "seconds": 6.493009255966172
+    },
+    {
+      "label": "narrow-ZiskFv_AirsClean_SourcePublicVerifier",
+      "status": 0,
+      "seconds": 5.607448277063668
+    },
+    {
+      "label": "full-all-three",
+      "status": 0,
+      "seconds": 163.1793797009159
+    }
+  ],
+  "all_three_defining_modules": [
+    "ZiskFv.AirsClean.PublicIo",
+    "ZiskFv.AirsClean.PublicIoSource",
+    "ZiskFv.AirsClean.SourcePublicVerifier"
+  ],
+  "declarations": 175,
+  "raw_axioms": [
+    "Classical.choice",
+    "Quot.sound",
+    "propext"
+  ],
+  "opaque_types_values_private_compiler_constructors_full_paths": true,
+  "every_root_and_union_independent_collectAxioms": true,
+  "no_new_authentication_accepted_Sail_or_354_418_closure_claim": true
+}

@@ -1,0 +1,20 @@
+{
+  "status": "SOURCEONLY cohesive port, NO new-base narrow/RAW/build/test run",
+  "base": "622938be281db14470819a9fe752528221a2491d",
+  "base_context": "prospective actualmain448+proper8/GEN34; parentreported prefix602s/kernel8/603std3, COMPLETE Nix queued, NOT claimed mergedmain",
+  "new_worktree": "/home/cody/zisk-fv-source-public-verifier-port",
+  "creation": "/usr/bin/git -c core.hooksPath=/dev/null worktree add -b closure-source-public-verifier-port ...622938be; no auto-reflink hook",
+  "exact_three_copied_models": [
+    {"path":"ZiskFv/AirsClean/PublicIo.lean","sha256":"b4e033df8a4870ca3ec3017cf9c5117aa5bb8f7c6c0e45bcfe915ea1dac9ad46"},
+    {"path":"ZiskFv/AirsClean/PublicIoSource.lean","sha256":"200083485eb12bcc1e8da4610d37e08ffd5e0130ca182a6e350c92cd20c6e5f7"},
+    {"path":"ZiskFv/AirsClean/SourcePublicVerifier.lean","sha256":"8cf02c690a721cf44a4026a2c61fc925d22051555c9266a6b8ee9c46ea186afa"}
+  ],
+  "transfer": "ordinary SOURCEONLY cp--reflink=never + byteCMP all3 andprevious76evidence; NOolean/cache/bigcachecopies",
+  "ordinary_integration": "exact3 ZiskFv.lean imports afterexistingMainNativeTrace; existingREADME scope paragraph only; Extraction.PublicIo alreadyregistered no lakefilechange",
+  "normal_source_metadata": "SOURCEONLY actualnormalpz1NAR PublicIo.lean SHA2b7e82411b679fb6a0be8ddc59c507b91b2f062ed5fce1e3da7efa10959c992f restoredintoownmissingignoredExtraction path; notfreshproduction/regeneration claim",
+  "dependency_comparison": "source-and-dependency-diff.json recordsactualsourcefiles. IMPORTANToldworkingdirectory NativeTraceRules/Cells werefrozenFOURsourcecopies4087/4f875, NOTtheCIusedbyf907. ACTUALf907 importedcheckedSIX205c c225/d14 via1e8c lease; prospectivebase c225/d14 MATCHthatcheckedSourceCI. Main9275/Gauge05ca/Layouteea42/NativeValues3e27/Rawaa3/Instanceccd/Word1bc/OperationBus0a27/toolchain/manifest/flakepins match",
+  "actual_previous_evidence": "previous76/*copied byteexactfromf907. Previous76scope isSourcePublicVerifier ONLY, notall3/prospectivebase. SourceCppnative-public-boundary citationsff0e includeGlobalInfo JSON/ProofCtxsharedpublicptr/FFI/directGLOBALid/nativeParams selector/StarkInfo publicmaploader",
+  "explicit_exclusions": ["NO PublicIoEnsemble/Classification/Runtime/SourceObjectfield additions", "NOAccepted/Root/Inputs/PureSpec/dispatch/canonicalpublicinputtype/Unit-verifieralias changes", "StandalonePublicIo.verifier definition NOTcanonicalretarget", "NO duplicateMain/nativegetter/model or strongerPolMap/limbvalidator", "NO normalCLI/Cargo/Nix/pin/upstream changes"],
+  "next_requested_scope": "NEWnarrow all3 standalonemodules plus FULLALLactualdefiningmodule roots PublicIo/PublicIoSource/SourcePublicVerifier; type+value/OPAQUE/private/compiler/constructors/fullpaths EACHroot+unioninstalledCollector unfilteredstandard3; preserveold76/f37/468data NOTrelabel. Needexactprospectivebase verifiedCI/compiler/options/dependency lease beforeactualcommands; no .oleancopy/foreignwrite",
+  "binding_claim_boundary": "typedsourceownedpublicbuffer→existingcompiledGLOBAL/CleanverifierMODEL withsameMain38/AIR8/GROUP3 partial only; nativepublicmap/pointer/openingauth/completion/wholeSailIObinding and354/418closure remainOPEN"
+}

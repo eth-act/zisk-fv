@@ -182,6 +182,22 @@ The Sail side comes from the flake-pinned Sail and sail-riscv sources. The ZisK
 side comes from the flake-pinned pilout and generated Lean extraction, wrapped
 by the human-readable AIR and circuit semantics under `ZiskFv/`.
 
+The standalone `PublicIo`, `PublicIoSource`, and `SourcePublicVerifier` models
+describe the existing68-cell public vector (four ROM-root cells and64 input
+limbs) and the actual32 positive11-slot PUBOUT verifier emissions. The source
+constructor computes its input only from the same source-owned Globals/Params
+buffer and registry-selected setup; it retains the native public map without
+an extra name/rank validator or an independently supplied public vector.
+Its Main38/AIR8/GROUP3 projection uses the existing shared native reader.
+These definitions do **not** retarget the canonical Unit verifier, Accepted
+trace, Root statement or caller inputs. Native setup/public-pointer/opening
+authentication, completion and whole-Sail-output binding remain unproved.
+Fresh verification on prospective base `622938be` checked all three defining
+modules:175 roots, unfiltered type/value/opaque dependencies and full axiom
+paths, with independent per-root and union `Lean.collectAxioms` agreement.
+The union is exactly `Classical.choice`, `Quot.sound`, and `propext`; the prior
+standalone76-root evidence remains separately archived, not relabeled.
+
 # Bugs Reported
 The following patches fix bugs that were found in the course of building out zisk-fv:
  1. https://github.com/0xPolygonHermez/zisk/pull/1050

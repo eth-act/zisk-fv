@@ -1,0 +1,13 @@
+{
+  "source_sha256": "8cf02c690a721cf44a4026a2c61fc925d22051555c9266a6b8ee9c46ea186afa",
+  "observer_sha256": "8ec308de44b2e0f1a0564e8888661caeda06c081ebac62a93af940758feee397",
+  "six_lease_sha256": "1e8c6bec9cb45b7f6951c578b47826a9bc5b742b7b7c62a57574fa5d38ab15c2",
+  "Main_six_lease_sha256": "0e37effc6319f095c0320def1f70e93f0ece1be4b840ed237167e7376b53979f",
+  "compiler": "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+  "options": [
+    "-j2",
+    "--tstack=400000",
+    "-Dpp.unicode.fun=true"
+  ],
+  "LEAN_PATH": "/home/cody/zisk-fv-public-main-trace/build/public-io418-evidence/source-public-verifier/gate/out:/home/cody/zisk-fv-public-main-trace/build/public-io418-evidence/main-trace-layout/main-native-six/out:/home/cody/zisk-fv-tuples-six/build/native-six418/lean:/home/cody/zisk-fv-public-main-trace/build/public-io418-evidence/main-trace-campaign/cases/baseline/out:/home/cody/zisk-fv-tuples/build/tuple-source-prototype/lean:/home/cody/zisk-fv-tuples/.lake/packages/Cli/.lake/build/lib/lean:/home/cody/zisk-fv-tuples/.lake/packages/batteries/.lake/build/lib/lean:/home/cody/zisk-fv-tuples/.lake/packages/Qq/.lake/build/lib/lean:/home/cody/zisk-fv-tuples/.lake/packages/aesop/.lake/build/lib/lean:/home/cody/zisk-fv-tuples/.lake/packages/proofwidgets/.lake/build/lib/lean:/home/cody/zisk-fv-tuples/.lake/packages/importGraph/.lake/build/lib/lean:/home/cody/zisk-fv-tuples/.lake/packages/LeanSearchClient/.lake/build/lib/lean:/home/cody/zisk-fv-tuples/.lake/packages/plausible/.lake/build/lib/lean:/home/cody/zisk-fv-tuples/.lake/packages/mathlib/.lake/build/lib/lean:/home/cody/zisk-fv-tuples/build/sail-lean/.lake/build/lib/lean:/home/cody/zisk-fv-tuples/build/clean-lean/.lake/build/lib/lean:/home/cody/zisk-fv-tuples/build/aeneas-lean/.lake/build/lib/lean:/home/cody/zisk-fv-tuples/.lake/packages/repl/.lake/build/lib/lean:/home/cody/zisk-fv-tuples/.lake/build/lib/lean:/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/lib/lean"
+}
