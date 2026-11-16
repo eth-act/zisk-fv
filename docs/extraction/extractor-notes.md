@@ -929,3 +929,47 @@ Real stage2 auxiliary/challenge coverage and PIL/compiled-operand/ABI/opening/
 snapshot authentication remain required. Correct scalar-to-Ext3 fields,
 GROUP0 binding, and cyclic native rows require explicit protected approval.
 
+#### Additive complete Mem representation view
+
+`PhysicalSource.Rotation`, `CompleteView`, `Columns`, and
+`CompleteConstructibility` are separate source-only leaves, not modifications
+of the frozen eight Mem modules or protected live interfaces. The private
+computed constructor selects the same occurrence's stage2 map, width9,
+offset13N, full original auxiliary capacity22N, and both actual global
+challenge blocks. All rotated three-coefficient witness blocks recover the
+existing partial native readers; stage1 continues through the sole canonical
+getter. Individual named stage1 fields use its scalar cached-row API rather
+than allocating thirteen cells per scalar access.
+
+The representation fixture retains both packed/unpacked original traces and
+their five-word suffix. Its original auxiliary buffer has symbolic full22N
+coverage, stage2 triples `(3,4,2)`, and global challenges `(29,31,37)` and
+`(41,43,47)`. It does not enumerate decoded physical rows or claim any complete
+AIR equation, native execution, compiled-id/opening/ABI/snapshot authentication,
+numeric logUp property, or Accepted/Component/Table/Root export. The older
+empty-aux fixture remains unchanged and still proves only its narrower scope.
+
+Source provenance for this bounded representation: pinned proofman `ff0e33a9`
+`pil2-components/lib/std/pil/std_sum.pil:302–307,350–351,571,599,640–658,694–696`
+declares L1, stage2 gsum/cluster witnesses, GROUP result, gamma, direct values
+and the recurrence/finalizer; `std_tools.pil:9–10` declares alpha. The actual
+CPU constraint-mode post-setup section-offset loop is
+`pil2-stark/src/starkpil/stark_info.cpp:281–284,327–330`; cm1 width13 then
+cm2 width9 yields offset13N and end22N. Native challenge operands use
+`expressions_info.cpp:545–552` (`3*r.id`); matching that compiled r.id to the
+PIL/ordered metadata remains explicitly unproved.
+
+Frozen complete-view source `bf75d078b732e230f04d767f226a19a997a157ce`
+passed the four actual narrow targets (29.958s total), then all243 RAW roots
+(Rotation18, CompleteView93, Columns70, CompleteConstructibility62; 542.575s).
+Every actual defining-module root, including private/compiler declarations,
+opaque values and constructors, and each module union independently matched
+the installed `Lean.collectAxioms` and standard3. The1660 immutable lease
+inputs,1648 metadata links and compiler hashes remained exact before/after.
+No borrowed OLean/cache copy or foreign write occurred. Earlier189/38 checks
+were retained rather than rerun. Evidence:
+`tools/adversarial-mutations/evidence/finalizers/mem-physical-complete-bf75d078/`.
+This closes the additive full-auxiliary/challenge representation-construction
+gap only; complete AIR satisfiability, authentic source-world construction and
+the explicitly held protected live cutover remain open.
+
