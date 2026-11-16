@@ -34,6 +34,7 @@ expected_modules=(
   PublicIo
   SourceDimensions
   RomSource
+  RuntimeNativeValuesLayout
 )
 
 if [[ ! -d "$generated_dir" ]]; then

@@ -65,6 +65,7 @@
     {"kind": "lean", "path": "Extraction/PackedVirtualTables.lean"},
     {"kind": "lean", "path": "Extraction/PublicIo.lean"},
     {"kind": "lean", "path": "Extraction/RomSource.lean"},
+    {"kind": "lean", "path": "Extraction/RuntimeNativeValuesLayout.lean"},
     {"kind": "lean", "path": "Extraction/SourceDimensions.lean"},
     {"kind": "report", "path": "MemAirFacts.md"},
     {"kind": "source_table", "path": "MemAlignRom.tsv"},

@@ -16,6 +16,7 @@ mod source_dimensions;
 mod rom_source;
 mod packed_virtual_tables;
 mod public_io;
+mod runtime_native_values_layout;
 
 pub mod pilout {
     include!(concat!(env!("OUT_DIR"), "/pilout.rs"));
@@ -60,6 +61,8 @@ enum Cmd {
     PackedVirtualTables(PackedVirtualTablesCmd),
     /// Emit constraint-linked compiled GLOBAL public-IO contributions.
     PublicIo(LookupWiringCmd),
+    /// Emit native value layouts and source macro/buffer dataflow metadata.
+    RuntimeNativeValuesLayout(RuntimeNativeValuesLayoutCmd),
     /// Parse MemAlignRom's PIL fixed columns and emit `Extraction.MemAlignRom`.
     MemAlignRom(MemAlignRomCmd),
     /// Emit the Clean `Air.Flat.Component` source for one AIR — the `Row`
@@ -172,6 +175,21 @@ struct PackedVirtualTablesCmd {
     #[arg(long)]
     compiled_json: PathBuf,
 
+    /// Output path for the generated Lean module. If omitted, prints to stdout.
+    #[arg(long)]
+    output: Option<PathBuf>,
+}
+
+#[derive(Args, Debug)]
+struct RuntimeNativeValuesLayoutCmd {
+    #[arg(long)]
+    traces_source: PathBuf,
+    #[arg(long)]
+    macro_source: PathBuf,
+    #[arg(long)]
+    air_instance_source: PathBuf,
+    #[arg(long)]
+    proof_context_source: PathBuf,
     /// Output path for the generated Lean module. If omitted, prints to stdout.
     #[arg(long)]
     output: Option<PathBuf>,
@@ -325,6 +343,20 @@ fn main() -> Result<()> {
                 .with_context(|| format!("failed to read pilout {}", args.pilout.display()))?;
             let pilout = PilOut::decode(bytes.as_slice()).context("failed to decode pilout protobuf")?;
             write_output(args.output.as_deref(), &public_io::render(&pilout)?)
+        }
+        Cmd::RuntimeNativeValuesLayout(args) => {
+            let traces = fs::read_to_string(&args.traces_source)
+                .with_context(|| format!("failed to read {}", args.traces_source.display()))?;
+            let macros = fs::read_to_string(&args.macro_source)
+                .with_context(|| format!("failed to read {}", args.macro_source.display()))?;
+            let instance = fs::read_to_string(&args.air_instance_source)
+                .with_context(|| format!("failed to read {}", args.air_instance_source.display()))?;
+            let context = fs::read_to_string(&args.proof_context_source)
+                .with_context(|| format!("failed to read {}", args.proof_context_source.display()))?;
+            write_output(
+                args.output.as_deref(),
+                &runtime_native_values_layout::render(&traces, &macros, &instance, &context)?,
+            )
         }
         Cmd::ArithTable(args) => {
             let rendered = arith_table::run(&args.rust_source, args.output.as_deref())?;
