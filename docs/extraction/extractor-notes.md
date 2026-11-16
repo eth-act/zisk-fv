@@ -874,3 +874,23 @@ complete gate logs are retained under
 `tools/adversarial-mutations/evidence/finalizers/mem-clean-90ce939c/`.
 These are the clean internal-scope checks, not whole-production/V1/V2/Nix
 completion or a live Mem/public c33 repair.
+
+### Separate Mem physical-source constructor prototype
+
+The additive `Mem.Stage1` inventory compares all thirteen actual PIL logical
+cells, including both `value` coordinates, with the independently emitted
+canonical Mem native profile. Packed widths/offsets describe 252 bits/four
+native words; they impose no range/Bool validator on unpacked field storage.
+Logical stage-one decoding remains exclusively the shared `NativeTraceCells`
+reader, not a second Mem getter or a guessed native operand id.
+
+`Mem.PhysicalSource` checks one source occurrence's registry/setup/PIL capacity,
+original UInt64 native stride/coverage and the same original width-two fixed
+buffer, scanning `__L1__` column one rather than `SEGMENT_L1` column zero.
+Its domain is lazy `Fin 4194304`, with physical cyclic-last reasoning and
+same-source three-coordinate GROUP/direct blocks. It does not allocate a
+four-million-row list or decoded trace. Concrete source-image construction
+distinguishes packed/unpacked stores and retains shared suffix words; it is
+not native execution, whole-AIR/full-world validity or source authentication.
+This prototype leaves the eight accepted stage-two leaves and every protected
+live interface unchanged.
