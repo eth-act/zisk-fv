@@ -1,0 +1,55 @@
+{
+  "status": "UNTRUSTED_NATIVE_STAGE_PROVENANCE",
+  "evidence_kind": "preserved_prelaunch_tool_source_and_command_transcript_not_process_environment_dump",
+  "native_orchestrator_source_snapshot": "capture.py#61B8",
+  "native_orchestrator_sha256": null,
+  "native_orchestrator_snapshot_file": null,
+  "native_process_environment": {"status": "UNOBSERVED", "values": null},
+  "configured_child_environment_evidence_kind": "source_assignment_before_successful_launch_not_independently_observed_process_values",
+  "source_configured_child_environment": {
+    "CARGO_HOME": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/cargo-home",
+    "CARGO_TARGET_DIR": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target",
+    "CARGO_BUILD_JOBS": "2",
+    "MAKEFLAGS": "-j2",
+    "CMAKE_BUILD_PARALLEL_LEVEL": "2",
+    "NUM_JOBS": "2",
+    "RAYON_NUM_THREADS": "2",
+    "OMP_NUM_THREADS": "2",
+    "LIBCLANG_PATH": "/nix/store/wm3wq7p1a4wp5lw23b4rc8apak230f9f-clang-21.1.8-lib/lib",
+    "RUSTC": "/nix/store/l6xfdil58bxy0gm42iljma77ff3841wp-rust-default-1.95.0-nightly-2026-02-07/bin/rustc"
+  },
+  "source_configured_library_path_prefix": "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/openmp-runtime",
+  "native_inherited_library_path_suffix": "UNOBSERVED",
+  "native_inherited_path_suffix": "UNOBSERVED",
+  "native_inherited_rustflags": "UNOBSERVED",
+  "native_inherited_cargo_encoded_rustflags": "UNOBSERVED",
+  "native_inherited_ld_library_path": "UNOBSERVED",
+  "source_evidence": [
+    {
+      "snapshot": "capture.py#1F44",
+      "chronology": "Original write before initial native job bg_771; not the later finalizer source",
+      "excerpt": "NUM_JOBS=\"2\", RAYON_NUM_THREADS=\"2\", LIBCLANG_PATH=str(args.libclang),"
+    },
+    {
+      "snapshot": "capture.py#61B8",
+      "chronology": "Successful edit response immediately before bg_776; history://ClosureTupleWelds entries at lines 469 and 473",
+      "line_range_in_edit_response": [111, 114],
+      "excerpt": "env.update(CARGO_HOME=str(cargo_home), CARGO_TARGET_DIR=str(workspace / \"target\"),\n               CARGO_BUILD_JOBS=\"2\", MAKEFLAGS=\"-j2\", CMAKE_BUILD_PARALLEL_LEVEL=\"2\",\n               NUM_JOBS=\"2\", RAYON_NUM_THREADS=\"2\", OMP_NUM_THREADS=\"2\", LIBCLANG_PATH=str(args.libclang),\n               RUSTC=str(args.rust_toolchain / \"bin/rustc\"))"
+    },
+    {
+      "snapshot": "capture.py#61B8",
+      "excerpt": "subprocess.run(command, cwd=cwd or workspace, env=env, stdout=subprocess.PIPE if capture else log, stderr=log, check=True, text=capture)",
+      "scope": "The helper passes the configured env mapping to the actual Cargo child; no /proc environment snapshot or independent thread-count observation was captured."
+    }
+  ],
+  "launch_command_tool_id": "bg_776",
+  "launch_argv": [
+    "python3", "tools/finite-return-rom/capture.py", "--continue-native", "--llvm-openmp", "/usr/lib/libomp.so",
+    "--zisk-git", "/home/cody/zisk-fv/zisk", "--workspace", "build/finite-return-rom",
+    "--output", "tools/finite-return-rom/fixtures/minimal-return",
+    "--cross-cc", "/nix/store/rjma49ap3fv3zfs8bsd6vw72m867f13h-riscv64-none-elf-gcc-wrapper-15.2.0",
+    "--libclang", "/nix/store/wm3wq7p1a4wp5lw23b4rc8apak230f9f-clang-21.1.8-lib/lib",
+    "--rust-toolchain", "/nix/store/l6xfdil58bxy0gm42iljma77ff3841wp-rust-default-1.95.0-nightly-2026-02-07"
+  ],
+  "correction": "The original bded85d9 manifest described finalizer-selected settings and the finalizer's current capture.py hash without a stage distinction. Neither is a launch-time environment measurement or a measured native-orchestrator hash. Frozen bded85d9 and its actual native data remain preserved."
+}

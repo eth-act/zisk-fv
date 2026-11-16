@@ -1,0 +1,266 @@
+   Compiling proc-macro2 v1.0.106
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.45
+   Compiling libc v0.2.186
+   Compiling syn v2.0.117
+   Compiling cfg-if v1.0.4
+   Compiling shlex v1.3.0
+   Compiling jobserver v0.1.34
+   Compiling find-msvc-tools v0.1.9
+   Compiling cc v1.2.61
+   Compiling autocfg v1.5.0
+   Compiling once_cell v1.21.4
+   Compiling version_check v0.9.5
+   Compiling paste v1.0.15
+   Compiling num-traits v0.2.19
+   Compiling generic-array v0.14.9
+   Compiling typenum v1.20.0
+   Compiling zerocopy v0.8.48
+   Compiling glob v0.3.3
+   Compiling clang-sys v1.8.1
+   Compiling num-integer v0.1.46
+   Compiling getrandom v0.2.17
+   Compiling serde_core v1.0.228
+   Compiling num-bigint v0.4.6
+   Compiling block-buffer v0.10.4
+   Compiling either v1.15.0
+   Compiling zeroize_derive v1.4.3
+   Compiling minimal-lexical v0.2.1
+   Compiling memchr v2.8.0
+   Compiling regex-syntax v0.8.10
+   Compiling nom v7.1.3
+   Compiling regex-automata v0.4.14
+   Compiling zeroize v1.8.2
+   Compiling ppv-lite86 v0.2.21
+   Compiling libloading v0.8.9
+   Compiling crossbeam-utils v0.8.21
+   Compiling serde v1.0.228
+   Compiling log v0.4.29
+   Compiling regex v1.12.3
+   Compiling cexpr v0.6.0
+   Compiling serde_derive v1.0.228
+   Compiling tracing-core v0.1.36
+   Compiling bitflags v2.11.1
+   Compiling pin-project-lite v0.2.17
+   Compiling crypto-common v0.1.6
+   Compiling digest v0.10.7
+   Compiling tracing-attributes v0.1.31
+   Compiling equivalent v1.0.2
+   Compiling lazy_static v1.5.0
+   Compiling hashbrown v0.17.0
+   Compiling tracing v0.1.44
+   Compiling indexmap v2.14.0
+   Compiling dunce v1.0.5
+   Compiling cfg_aliases v0.2.1
+   Compiling rand_core v0.6.4
+   Compiling rand_chacha v0.3.1
+   Compiling crossbeam-epoch v0.9.18
+   Compiling rayon-core v1.13.0
+   Compiling pkg-config v0.3.33
+   Compiling shell-words v1.1.1
+   Compiling arrayvec v0.7.6
+   Compiling smallvec v1.15.1
+   Compiling bindgen v0.69.5
+   Compiling build-probe-mpi v0.1.5
+   Compiling crossbeam-deque v0.8.6
+   Compiling rand v0.8.6
+   Compiling itertools v0.12.1
+   Compiling enum-ordinalize-derive v4.3.2
+   Compiling lazycell v1.3.0
+   Compiling thiserror v2.0.18
+   Compiling rustc-hash v2.1.2
+   Compiling rustc-hash v1.1.0
+   Compiling enum-ordinalize v4.3.2
+   Compiling ark-std v0.5.0
+   Compiling sysinfo v0.35.2
+   Compiling fields v0.17.0 (https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9)
+   Compiling bincode v1.3.3
+   Compiling thiserror-impl v2.0.18
+   Compiling ark-serialize-derive v0.5.0
+   Compiling ahash v0.8.12
+   Compiling cmake v0.1.58
+   Compiling winnow v1.0.2
+   Compiling itoa v1.0.18
+   Compiling bytemuck v1.25.0
+   Compiling colored v3.1.1
+   Compiling fs_extra v1.3.0
+   Compiling toml_parser v1.1.2+spec-1.1.0
+   Compiling aws-lc-sys v0.40.0
+   Compiling proofman-util v0.17.0 (https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9)
+   Compiling ark-serialize v0.5.0
+   Compiling mpi-sys v0.2.3
+   Compiling rayon v1.12.0
+   Compiling ark-ff-macros v0.5.0
+   Compiling educe v0.6.0
+   Compiling itertools v0.13.0
+   Compiling ark-ff-asm v0.5.0
+   Compiling libffi-sys v4.1.0
+   Compiling zmij v1.0.21
+   Compiling cpufeatures v0.2.17
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling allocator-api2 v0.2.21
+   Compiling ark-ff v0.5.0
+   Compiling hashbrown v0.15.5
+   Compiling toml_edit v0.25.11+spec-1.1.0
+   Compiling ring v0.17.14
+   Compiling prettyplease v0.2.37
+   Compiling serde_json v1.0.149
+   Compiling ark-poly v0.5.0
+   Compiling proc-macro-crate v3.5.0
+   Compiling mpi v0.8.1
+   Compiling borsh v1.6.1
+   Compiling proofman-starks-lib-c v0.17.0 (https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9)
+   Compiling custom_derive v0.1.7
+   Compiling aws-lc-rs v1.16.3
+   Compiling getrandom v0.3.4
+   Compiling conv v0.3.3
+   Compiling borsh-derive v1.6.1
+   Compiling ark-ec v0.5.0
+   Compiling libffi v5.1.0
+   Compiling matchers v0.2.0
+   Compiling sharded-slab v0.1.7
+   Compiling csv-core v0.1.13
+   Compiling tracing-serde v0.2.0
+   Compiling crossbeam-channel v0.5.15
+   Compiling tracing-log v0.2.0
+   Compiling rustls-pki-types v1.14.1
+   Compiling thread_local v1.1.9
+   Compiling bytes v1.11.1
+   Compiling ryu v1.0.23
+   Compiling proofman-common v0.17.0 (https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9)
+   Compiling num_threads v0.1.7
+   Compiling parking_lot_core v0.9.12
+   Compiling bindgen v0.72.1
+   Compiling nu-ansi-term v0.50.3
+   Compiling untrusted v0.9.0
+   Compiling tracing-subscriber v0.3.23
+   Compiling env v1.0.1
+   Compiling csv v1.4.0
+   Compiling crossbeam-queue v0.3.12
+   Compiling proofman-macros v0.17.0 (https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9)
+   Compiling num_cpus v1.17.0
+   Compiling yansi v1.0.1
+   Compiling keccak v0.1.6
+   Compiling crunchy v0.2.4
+   Compiling heck v0.5.0
+   Compiling scopeguard v1.2.0
+   Compiling lock_api v0.4.14
+   Compiling rand_core v0.9.5
+   Compiling errno v0.3.14
+   Compiling socket2 v0.6.3
+   Compiling unicode-segmentation v1.13.2
+   Compiling libm v0.2.16
+   Compiling lib-c v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/lib-c)
+   Compiling lib-float v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/lib-float)
+   Compiling rustls v0.23.40
+   Compiling convert_case v0.10.0
+   Compiling signal-hook-registry v1.4.8
+   Compiling parking_lot v0.12.5
+   Compiling rand_chacha v0.9.0
+   Compiling zkvm-interface v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/zkvm-interface)
+   Compiling const-hex v1.18.1
+   Compiling proofman-verifier v0.17.0 (https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9)
+   Compiling syn-solidity v1.5.7
+   Compiling tokio-macros v2.7.0
+   Compiling macro-string v0.1.4
+   Compiling mio v1.2.0
+   Compiling proc-macro-error-attr2 v2.0.0
+   Compiling openssl-probe v0.2.1
+   Compiling unicode-xid v0.2.6
+   Compiling anyhow v1.0.102
+   Compiling subtle v2.6.1
+   Compiling tiny-keccak v2.0.2
+   Compiling powerfmt v0.2.0
+   Compiling deranged v0.5.8
+   Compiling derive_more-impl v2.1.1
+   Compiling rustls-native-certs v0.8.3
+   Compiling proc-macro-error2 v2.0.1
+   Compiling tokio v1.52.1
+   Compiling alloy-sol-macro-input v1.5.7
+   Compiling rand v0.9.4
+   Compiling sha3 v0.10.9
+   Compiling rustls-webpki v0.103.13
+   Compiling ark-bn254 v0.5.0
+   Compiling ark-secp256k1 v0.5.0
+   Compiling ark-secp256r1 v0.5.0
+   Compiling ark-bls12-381 v0.5.0
+   Compiling quinn-udp v0.5.14
+   Compiling blake3 v1.8.5
+   Compiling circuit v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/tools/circuit)
+   Compiling utf8parse v0.2.2
+   Compiling time-core v0.1.8
+   Compiling ruint-macro v1.2.1
+   Compiling num-conv v0.2.1
+   Compiling tinyvec_macros v0.1.1
+   Compiling siphasher v1.0.2
+   Compiling fastbloom v0.14.1
+   Compiling tinyvec v1.11.0
+   Compiling rustls-platform-verifier v0.6.2
+   Compiling time v0.3.47
+   Compiling ruint v1.18.0
+   Compiling anstyle-parse v1.0.0
+   Compiling precompiles-helpers v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/precompiles/helpers)
+   Compiling zisk-core v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/core)
+   Compiling alloy-sol-macro-expander v1.5.7
+   Compiling derive_more v2.1.1
+   Compiling zisk-verifier v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/verifier)
+   Compiling proofman-hints v0.17.0 (https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9)
+   Compiling witness v0.17.0 (https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9)
+   Compiling sha2 v0.10.9
+   Compiling quinn v0.11.9
+   Compiling ripemd v0.1.3
+   Compiling base64 v0.22.1
+   Compiling cpufeatures v0.3.0
+   Compiling futures-sink v0.3.32
+   Compiling arrayref v0.3.9
+   Compiling constant_time_eq v0.4.2
+   Compiling anstyle-query v1.1.5
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling iana-time-zone v0.1.65
+   Compiling colorchoice v1.0.5
+   Compiling anstyle v1.0.14
+   Compiling lru-slab v0.1.2
+   Compiling slab v0.4.12
+   Compiling futures-core v0.3.32
+   Compiling proofman v0.17.0 (https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9)
+   Compiling tokio-util v0.7.18
+   Compiling quinn-proto v0.11.14
+   Compiling anstream v1.0.0
+   Compiling chrono v0.4.44
+   Compiling ziskos-hints v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/ziskos-hints)
+   Compiling pem v3.0.6
+   Compiling alloy-primitives v1.5.7
+   Compiling pil-std-lib v0.17.0 (https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9)
+   Compiling alloy-sol-macro v1.5.7
+   Compiling yasna v0.5.2
+   Compiling curves v0.17.0 (https://github.com/0xPolygonHermez/pil2-proofman.git?tag=v0.17.0#ff0e33a9)
+   Compiling strsim v0.11.1
+   Compiling zisk-definitions v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/definitions)
+   Compiling elf v0.7.4
+   Compiling clap_lex v1.1.0
+   Compiling riscv v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/riscv)
+   Compiling clap_builder v4.6.0
+   Compiling rcgen v0.14.7
+   Compiling alloy-sol-types v1.5.7
+   Compiling clap_derive v4.6.1
+   Compiling serde_arrays v0.2.0
+   Compiling zisk-pil v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/pil)
+   Compiling clap v4.6.1
+   Compiling zisk-common v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/common)
+   Compiling mem-planner-cpp v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/state-machines/mem-cpp)
+   Compiling static_assertions v1.1.0
+   Compiling mem-common v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/state-machines/mem-common)
+   Compiling named-sem v0.2.3
+   Compiling asm-runner v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/emulator-asm/asm-runner)
+   Compiling itertools v0.14.0
+   Compiling sm-rom v0.17.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/state-machines/rom)
+   Compiling finite-return-rom-capture v0.1.0 (/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/driver)
+error: linking with `cc` failed: exit status: 1
+  |
+  = note:  "cc" "-m64" "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target/debug/deps/rustcbwhgqH/symbols.o" "<68 object files omitted>" "-Wl,--as-needed" "-Wl,-Bstatic" "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target/debug/deps/{libsm_rom-58e13ea96231c58b,libitertools-adc8d51b81a3a05d,libasm_runner-b7254b07e1193c4c,libmem_planner_cpp-821ee558952eff80,libmem_common-c3bc95bd6970dfba,libstatic_assertions-b23f9456d08c2faf,libzisk_pil-769422b22fc7c294,libserde_arrays-05114ceaaf40d20f,libzisk_common-1d96a78573cd4e05,liballoy_sol_types-1019ad94eebb52d1,liballoy_primitives-4d61d0b2a5bd1641,libconst_hex-c9e5b3de535efcc3,libderive_more-c6f7ea1e640a733f,libruint-b7e5d785923e609e,libsha3-fcb4b7263adb7c47,libkeccak-2d771700c2d35788,librcgen-a999e60dfd0d12b1,libyasna-9852c996a4785123,libtime-8e7826fd4718effb,libtime_core-5f5de9e6bb0767c6,libnum_conv-d156a8c419a9e386,libderanged-0e8e0e51fab715a6,libpowerfmt-72131029f4938bbd,libpem-5874ad0fd7b93897,libbase64-1eac0160e47cf9e9,libproofman-3a7270fd011485e7,libchrono-97794d4adba4b52c,libiana_time_zone-7d3da965916b6eb5,libblake3-d475a04b89afb988,libconstant_time_eq-f91b41f1989e0772,libcpufeatures-8d0a72ec04d3841a,libarrayref-00723dadb0b8c66f,libcurves-d09608a443858fac,libpil_std_lib-4453bb5ed320fa0f,libwitness-374154714c0b7f39,libtokio_util-e7b05e4120f53f22,libfutures_core-2d7bb4d1409fb0c1,libfutures_sink-fc42ba6de011a598,libproofman_hints-9ca2176684238af9,libquinn-2c8de9446bd4357a,libquinn_udp-eb6a7f70a510a287,libquinn_proto-dd6df453d6aa63b6,liblru_slab-7aafff0ffaa3f111,libslab-57cc2c3cd25b5970,librustls_platform_verifier-b214a4c4899ef370,librustls_native_certs-d97d85f53c283fb5,libopenssl_probe-cbb93053a39143d6,librustls-0f72e3245be0f4e7,libsubtle-a7c30e9150b6c9d8,libwebpki-101cb7a9c7e9e933,libaws_lc_rs-d7b6c647417949e0,libaws_lc_sys-f13a695b6b5e21b6,libring-e511b349f3b2c37e,libuntrusted-9c1a8c0c452596ad,librustls_pki_types-1120e16f30191b36,libfastbloom-276007aff08c662d,libsiphasher-5191ff690e89ec04,librand-e3b0905cd07d16bf,librand_chacha-bf646558ad648037,librand_core-340924285d74ee5a,libgetrandom-b9ce399594142d05,libtinyvec-904f12c71d5726de,libtinyvec_macros-dae4282b78017f08,libtokio-9b5d42849de49a78,libsignal_hook_registry-d0fab08032d51513,liberrno-d437546334049a70,libsocket2-a6c98536a25e68ed,libmio-69e413a64467be89,libparking_lot-140eef23fa1c92d2,libparking_lot_core-fd39b46898053985,liblock_api-9fd6913848ac39ce,libscopeguard-cfa69166bd4da734,librustc_hash-fcfb63909c15579b,libbytes-06e749ac1289c53f,libproofman_common-6c12f5134ecf0052,libcsv-5d597de12c5f8d9e,libryu-69612d13f8de36d4,libcsv_core-a93c4e449b73edb9,libnum_cpus-dafcab8c1ca56d99,libenv-f49614d1f4e123cc,libnum_threads-d83b91996c535912,libcrossbeam_queue-17fca809ce7cead8,libyansi-36fa603c14121cd1,liblibloading-e2192da9d1cfad1b,libborsh-133d727bcb99a109,libproofman_starks_lib_c-0569958799c8c2b3,libcrossbeam_channel-7debebbf3318cf15,libmpi-9f6cbab097ed62fc,liblibffi-8077aa8f5a381ea1,liblibffi_sys-a27e97579c072121,libconv-55fa9157ecd49960,libcustom_derive-aba239d3a5a94806,libmpi_sys-7593e20aca3bc4c3,libtracing_subscriber-12d0ff602bb5e23d,libsmallvec-83ffde712cc68410,libtracing_serde-ffb6c195e586a7b0,libserde_json-ad572426ecccd026,libitoa-6a6d3f3d53caa1d6,libzmij-a225ea298d51a18f,libindexmap-3cb8ac6aef59ca98,libequivalent-3ff77df1ac69f53a,libhashbrown-6c02736b1a2594aa,libsharded_slab-dbe9f8825660b1f8,libmatchers-990ae3ef4fdf847d,libregex_automata-305e9a9a4197d42c,libregex_syntax-c46276be8c4c9108,libnu_ansi_term-fc893516ffb4beec,libthread_local-73aaca66a90fa022,libtracing_log-15106192172079fd,libzisk_core-09bf18f96f2c768b,libziskos_hints-a600d637fd8e508d,libzisk_verifier-e73afa0e21a770f3,libproofman_verifier-28d4920c62b56536,libtracing-466050dfdf2fd160,liblog-a0bb876effbebb1c,libpin_project_lite-2ff97dda599ad6f8,libtracing_core-aea703f9180284a8,libproofman_util-ea2a232b493935dd,libsysinfo-f0ce20425e03e2a1,libmemchr-6107e8755c89e2eb,libcolored-25895314907eb16a,libbytemuck-dec1c11e886d0302,libbincode-35d80c7ccfaf0ac9,libanyhow-442d8d19315a85b2,libzkvm_interface-5784aca1eb5ca4b4,libripemd-a3a4a354d2bca927,liblazy_static-87c02066b6621a70,libtiny_keccak-7e9663be20ff213d,libzisk_definitions-19bd8c2b179b2df1,libriscv-0ecdb85737fda5e9,libprecompiles_helpers-7e544801511b8ace,liblib_c-778cb8ec1300ca36,libcircuit-3dd37ad2d74806f1,libcrunchy-1b99fbcf58f3a1ed,libark_secp256k1-4a07ea0e8bf5d924,libark_bls12_381-62d723732aa25746,libark_secp256r1-51b9f1897e0c56fd,libark_bn254-2f6627ceb4546a16,libark_ec-720e8df78677e28d,libark_poly-7686980337165b8d,libahash-f60abfa5eff3d0a2,libonce_cell-b1fd511a994cb72e,libhashbrown-1884e8b91e44d0db,liballocator_api2-302c8aaff85fe901,libitertools-5b2d43144e44a6b5,libark_ff-fbc418123b83181b,libzeroize-b456808f690319a6,libark_serialize-98ea23315424a08d,libarrayvec-a5e92737053faea4,libark_std-0f5e9b465723d034,librand-52230ddabfdb4449,librand_chacha-64841334c914a499,libppv_lite86-da001f3a788971ab,libzerocopy-417a7291b52f3fb8,librand_core-821b206abc61cd8b,libgetrandom-9728b41316da4e71,libsha2-7b1c25ad70fcf6e0,libcpufeatures-241f523369765f8e,libdigest-1a3214b2e19adb72,libblock_buffer-c53258a37d0869dd,libcrypto_common-20baf36dac98cc33,libgeneric_array-a69ae80b060e2b6f,libtypenum-0e8b6158fb6e6e05,libelf-df1bff650864b565,librayon-ec31603cd50e8688,librayon_core-0645cddf271abca5,libcrossbeam_deque-45c1181e7f67f75a,libcrossbeam_epoch-9699aac84ac5e5aa,libcrossbeam_utils-1ab00d54e6c79ffa,libeither-9a78d543324cf6ff,libnamed_sem-0ba9b80b80c35afb,libthiserror-c9056499a9bd516b,liblibc-60c24d95f60b75c7,libfields-3485a4371fff5b86,libcfg_if-2262c59ed30cbfdf,libserde-260122f62174db39,libserde_core-7115434aeee34822,libnum_bigint-7a627ed7e6cc90f8,libnum_integer-852792759c2f6932,libnum_traits-c35d5490bb5006cb}.rlib" "<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/lib/{libstd-*,libpanic_unwind-*,libobject-*,libmemchr-*,libaddr2line-*,libgimli-*,libcfg_if-*,librustc_demangle-*,libstd_detect-*,libhashbrown-*,librustc_std_workspace_alloc-*,libminiz_oxide-*,libadler2-*,libunwind-*,liblibc-*,librustc_std_workspace_core-*,liballoc-*,libcore-*,libcompiler_builtins-*}.rlib" "-Wl,-Bdynamic" "-lstdc++" "-ldl" "-lsodium" "-lpthread" "-lgmp" "-lstdc++" "-lgmpxx" "-lcrypto" "-liomp5" "-lmpi" "-lpthread" "-lgmp" "-lstdc++" "-lgmpxx" "-lc" "-lgcc_s" "-lutil" "-lrt" "-lpthread" "-lm" "-ldl" "-lc" "-L" "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target/debug/deps/rustcbwhgqH/raw-dylibs" "-B<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld" "-fuse-ld=lld" "-Wl,--eh-frame-hdr" "-Wl,-z,noexecstack" "-L" "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target/debug/build/libffi-sys-8ef85dc5d0e56cbd/out/libffi-root/lib" "-L" "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target/debug/build/libffi-sys-8ef85dc5d0e56cbd/out/libffi-root/lib32" "-L" "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target/debug/build/libffi-sys-8ef85dc5d0e56cbd/out/libffi-root/lib64" "-L" "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target/debug/build/mpi-sys-bf9e4ca57d66cb41/out" "-L" "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target/debug/build/blake3-355d77427c343332/out" "-L" "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target/debug/build/ring-85946306002e1aa2/out" "-L" "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target/debug/build/aws-lc-sys-7beb05513d771e12/out" "-L" "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target/debug/build/mem-planner-cpp-9fbc7d499908a764/out/memcpp" "-L" "/usr/lib" "-L" "/usr/local/lib" "-L" "/usr/lib/x86_64-linux-gnu" "-L" "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/cargo-home/git/checkouts/pil2-proofman-3d49384e4e2f0af7/ff0e33a/pil2-stark/lib" "-L" "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/source/lib-c/c/lib" "-L" "<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/lib" "-o" "/home/cody/zisk-fv-finite-return-rom/build/finite-return-rom/target/debug/deps/finite_return_rom_capture-5222ad40d2d8df77" "-Wl,--gc-sections" "-pie" "-Wl,-z,relro,-z,now" "-nodefaultlibs"
+  = note: some arguments are omitted. use `--verbose` to show all linker arguments
+  = note: rust-lld: error: unable to find library -liomp5
+          collect2: error: ld returned 1 exit status
+          
+
+error: could not compile `finite-return-rom-capture` (bin "finite-return-rom-capture") due to 1 previous error

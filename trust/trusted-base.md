@@ -553,18 +553,21 @@ dropped as describing a cursor the evidence no longer uses.)
 
 ### Canonical ALU input derivation — #360 partial
 
-`TraceLevelExport.PureInputs.pureInputsOfRegAgree` reconstructs 43 ALU/M
-input families from decoded operands and the **current** register-agreement
-invariant. Architectural x0 is the specified zero register; other values come
+`TraceLevelExport.PureInputs.pureInputsOfRegAgree` reconstructs all63 pure
+runtime input families from decoded operands and the **current** register/PC
+agreement. Architectural x0 is the specified zero register; other values come
 from the register file. Both the induction step and final `root_soundness`
 call consume this constructor. It does not assume future step soundness.
 The 13 M factories retain every existing provider, range, remainder, forge and
 ISA fact and prove equality of the complete old and canonical runtime inputs.
 The common register reader is shared rather than duplicated in the dispatcher.
 
-Four store and seven load families also reconstruct their successful reads;
-the remaining nine families pass through unchanged. The existing current-PC
-equality and aggregate `InputsAgreeCore` premise are **not removed**. Memory,
+Four store and seven load families reconstruct their successful reads. The nine
+control factories now reconstruct all branch, JAL/JALR and FENCE inputs too:
+whole-input uniqueness preserves all original success/misa/privilege/mseccfg
+facts and JALR's genuine source-row rs1 bridge. No new read, input equality,
+layout or domain hypothesis is supplied. The existing current-PC equality and
+aggregate `InputsAgreeCore` premise are **not removed**. Memory,
 architectural/physical row placement, boot/platform invariants and remaining
 family-specific obligations still need their actual derivations.
 
