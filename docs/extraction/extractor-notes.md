@@ -306,6 +306,26 @@ remained byte-identical while the kind-preserving source AST changed. This is
 compiled-input source-fidelity evidence, not PIL-frontend equivalence, native
 authentication, numeric balance or a live Mem correction.
 
+The additive `Mem.Stage2` model covers the nine remaining polynomial equations
+c24–c32; together with the frozen linear c33 there are ten stage-2 equations.
+`Cubic` keeps three coefficients and the actual pinned multiplication modulo
+`X^3 - X - 1`, with base embedding `(x,0,0)`. It does not install a `Field`
+instance or use coordinate-wise extension multiplication. `Equations` fixes
+each source cell, challenge stage/index, selector, sign and multiplicity
+independently of generated link payloads. `Native` interprets the polynomial
+fragment from the same resolved source object; `Local` computes a typed row
+from those readers. Its factory postcondition relates each actual source
+equation to the corresponding explicit `PolynomialRow` residual, rather than
+accepting a free source-cell record or validity certificate.
+
+The local algebraic construction uses genuine inverses of nonzero base-field
+constants, not a fabricated inverse on extension tuples. It is not a proof that
+live Rust/C++ buffers materialize that row. Packed stage-1 decoding, compiled
+operand/opening identity, native machine arithmetic and the accepted-table
+physical-domain/once-occurrence cutover remain representation boundaries.
+Neither this internal circuit nor its decoded boolean is an added
+`Valid_Mem`/Accepted/Root premise or a numeric logUp balance proof.
+
 `link_Main_reloadRange : Fin 31 → ValidatedLink` indexes c49+3k in source
 order. It is separate from `link_Main_reload`, which indexes the corresponding
 memory reload messages. Both are generated only after exact template checks.
