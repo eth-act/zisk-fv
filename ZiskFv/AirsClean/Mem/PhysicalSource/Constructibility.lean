@@ -100,7 +100,7 @@ theorem exact_setup_selected (packed : Bool) :
     SourceObject.registryEntry, ResolvedOccurrence.registryEntry, source]
 
 theorem exact_cm1 : setup.mapSectionsN["cm1"]? = some 13 := by
-  simp [setup, Std.HashMap.getElem?_insert]
+  simp [setup, Std.HashMap.getElem?_insert, Std.HashMap.getElem_insert]
 
 theorem exact_group (packed : Bool) :
     NativeValuesLayout.groupWords? .mem ((occurrence packed).params false) =
@@ -144,16 +144,13 @@ theorem constructor_nonvacuous (packed : Bool) :
           · rfl
       · apply False.elim
         apply checked
-        change 0 = 0 ∧ 14 = 14 ∧ false = false ∧ false = false ∧
-          4194304 = physicalRows ∧ physicalRows = 4194304 ∧
-          13 = 13 ∧ (if packed then 4 else 13) = (if packed then 4 else 13) ∧
-          0 < (if packed then 4 else 13) ∧
-          4194304 * (if packed then 4 else 13) ≤ (traceBuffer packed).size ∧
-          2 = 2 ∧ 2 * 4194304 ≤ fixedBuffer.size ∧
-          FixedScan.check fixedBuffer = true
-        refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, ?_, ?_, rfl, ?_, fixedBuffer_scan⟩
-        · cases packed <;> decide
-        · simp [traceBuffer, physicalRows]
-        · simp [fixedBuffer, physicalRows]
+        refine ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, ?_, ?_, rfl, ?_, ?_⟩
+        · change 0 < (if packed then 4 else 13)
+          cases packed <;> decide
+        · change 4194304 * (if packed then 4 else 13) ≤ (traceBuffer packed).size
+          simp [traceBuffer, physicalRows]
+        · change 2 * physicalRows ≤ fixedBuffer.size
+          simp [fixedBuffer]
+        · exact fixedBuffer_scan
 
 end ZiskFv.AirsClean.Mem.PhysicalSource.Constructibility
