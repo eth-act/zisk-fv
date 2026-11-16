@@ -53,7 +53,8 @@ private theorem native_word (view : CompleteView occurrence) (row : Index) (colu
     have col := column.isLt
     omega
   simp only [traceWord?, params_trace, stride]
-  rw [Nat.mul_comm row.val 13, getElem?_pos _ _ bound, trace_coordinate]
+  rw [Nat.mul_comm row.val 13,
+    getElem?_pos traceBuffer (13 * row.val + column.val) bound, trace_coordinate]
 
 private theorem cached_unpacked
     {s : SourceObject FGL} {r : ResolvedOccurrence s}
@@ -134,9 +135,9 @@ private theorem unpacked_single (view : CompleteView occurrence) (row : Index) (
   · intro index left right
     have zero : index = 0 := by simpa using left
     subst index
-    simp only [Array.getElem_ofFn, Nat.add_zero, params_trace, Nat.mul_comm,
-      trace_coordinate, word_roundtrip]
-    rfl
+    change NativeTraceWords.unpackedField
+      ((occurrence.params false).trace[row.val * 13 + column.val]) = (primary row)[column]
+    rw [params_trace, Nat.mul_comm row.val 13, trace_coordinate, word_roundtrip]
 
 theorem stage1_recovery (view : CompleteView occurrence) (row : Index)
     (column : Fin 13) (rotation : Int) :
@@ -157,7 +158,7 @@ theorem stage1_recovery (view : CompleteView occurrence) (row : Index)
   rw [if_pos supported]
   simp only [bind, actual_setup, Option.bind_some, stage1_map, ↓reduceIte]
   simp only [ResolvedOccurrence.cmWords?, bind, actual_setup, Option.bind_some,
-    getElem?_pos _ _ entryBound, entry.1, ↓reduceIte]
+    getElem?_pos Constructibility.setup.cmPolsMap column.val entryBound, entry.1, ↓reduceIte]
   have unpacked : occurrence.slotData.metadata.isPacked = false := rfl
   simp only [unpacked, Bool.false_eq_true, ↓reduceIte, shifted, Option.bind_some, entry.2]
   rw [show "cm" ++ toString (1 : Nat) = "cm1" by decide]
@@ -234,18 +235,21 @@ theorem air_recovery (index : Fin 21) : Stage2.airValue? occurrence index.val = 
   have metadata := air_metadata index
   unfold Stage2.airValue?
   rw [if_pos index.isLt]
-  simp only [actual_setup, bind, Option.bind_some, getElem?_pos _ _ bound, metadata.1]
+  simp only [actual_setup, bind, Option.bind_some,
+    getElem?_pos Constructibility.setup.airValuesMap index.val bound, metadata.1]
   by_cases scalar : index.val < 15
   · simp only [if_pos scalar, ↓reduceIte]
     simp only [ResolvedOccurrence.airValueWords?, actual_setup, bind, Option.bind_some,
-      getElem?_pos _ _ bound, metadata.2, if_pos scalar, valueWidth, metadata.1, if_pos scalar,
+      getElem?_pos Constructibility.setup.airValuesMap index.val bound,
+      metadata.2, if_pos scalar, valueWidth, metadata.1, if_pos scalar,
       ↓reduceIte]
     have capacity : index.val < airBuffer.size := by rw [airBuffer_size]; omega
     rw [base_read_at _ _ _ _ (by simp [buffer?, params_air]) capacity]
     simp [airCell, scalar, airBuffer, Array.getElem_ofFn]
   · simp only [if_neg scalar, ↓reduceIte]
     simp only [ResolvedOccurrence.airValueWords?, actual_setup, bind, Option.bind_some,
-      getElem?_pos _ _ bound, metadata.2, if_neg scalar, valueWidth, metadata.1,
+      getElem?_pos Constructibility.setup.airValuesMap index.val bound,
+      metadata.2, if_neg scalar, valueWidth, metadata.1,
       if_neg scalar, ↓reduceIte]
     have capacity : 15 + 3 * (index.val - 15) + 3 ≤ airBuffer.size := by
       rw [airBuffer_size]
@@ -259,9 +263,10 @@ theorem group_recovery : Stage2.groupValue? occurrence 0 = some groupResult := b
   have stage : Constructibility.setup.airgroupValuesMap[0].stage = 2 := rfl
   unfold Stage2.groupValue?
   rw [if_pos rfl]
-  simp only [actual_setup, bind, Option.bind_some, getElem?_pos _ _ within, stage, ↓reduceIte]
+  simp only [actual_setup, bind, Option.bind_some,
+    getElem?_pos Constructibility.setup.airgroupValuesMap 0 within, stage, ↓reduceIte]
   simp only [ResolvedOccurrence.airGroupValueWords?, actual_setup, bind, Option.bind_some,
-    getElem?_pos _ _ within, valueOffset_zero, valueWidth, stage,
+    getElem?_pos Constructibility.setup.airgroupValuesMap 0 within, valueOffset_zero, valueWidth, stage,
     show (2 : Nat) ≠ 1 by decide, ↓reduceIte]
   rw [extension_read_at (occurrence.params false) .airGroupValue groupBuffer 0
     (by simp only [buffer?, params_group]) (by decide)]
