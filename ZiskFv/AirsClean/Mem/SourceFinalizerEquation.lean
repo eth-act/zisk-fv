@@ -106,7 +106,7 @@ theorem partial_coordinate_equation {F : Type} [Field F]
       let direct5 ← source.airValue 20
       return selector * (contribution - running -
         (((((direct0 + direct1) + direct2) + direct3) + direct4) + direct5))) := by
-  simp [evalLinearCoordinate?, constraint_Mem_33, bind_assoc]
+  simp [evalLinearCoordinate?, constraint_Mem_33, Option.bind_assoc]
 
 theorem linear_coordinate_rejects_nonlinear {F : Type} [Field F]
     (source : Source (Option F)) :
@@ -130,7 +130,8 @@ theorem no_injective_three_words_to_scalar :
     ¬ ∃ encode : (Fin 3 → FGL) → FGL, Function.Injective encode := by
   rintro ⟨encode, injective⟩
   have card_le := Fintype.card_le_of_injective encode injective
-  norm_num [Fintype.card_fun, FGL, GL_prime] at card_le
+  simp only [Fintype.card_fun, Fintype.card_fin] at card_le
+  norm_num at card_le
 
 /-- The existing fixed schema rotates over its physical domain, not the
 materialized prefix length. A strict prefix never enables the finalizer. -/
