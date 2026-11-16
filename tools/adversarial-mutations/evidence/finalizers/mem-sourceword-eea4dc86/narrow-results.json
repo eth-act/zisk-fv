@@ -1,0 +1,70 @@
+{
+  "checked_proof_head": "eea4dc861b9a054bb8ca32979723a453c0c1775c",
+  "bounded_command": "lake env lean -j2 -o OUTPUT MODULE.lean",
+  "modules": [
+    {
+      "module": "ZiskFv.AirsClean.MemAlignWriteByte.RawSource",
+      "log": "build/mem-sourceword-1ef2bc8d/ZiskFv.AirsClean.MemAlignWriteByte.RawSource-narrow-attempt1.log",
+      "seconds": 12.502,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.MemAlignWriteByte.NativeTraceWords",
+      "log": "build/mem-sourceword-1ef2bc8d/ZiskFv.AirsClean.MemAlignWriteByte.NativeTraceWords-narrow-attempt2.log",
+      "seconds": 6.692,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.MemAlignWriteByte.SourceInstance",
+      "log": "build/mem-sourceword-1ef2bc8d/ZiskFv.AirsClean.MemAlignWriteByte.SourceInstance-narrow-attempt2.log",
+      "seconds": 7.455,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.SourceFinalizer",
+      "log": "build/mem-sourceword-1ef2bc8d/ZiskFv.AirsClean.Mem.SourceFinalizer-narrow-attempt2.log",
+      "seconds": 19.498,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Cubic",
+      "log": "build/mem-sourceword-1ef2bc8d/ZiskFv.AirsClean.Mem.Stage2.Cubic-narrow-attempt2.log",
+      "seconds": 3.965,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Equations",
+      "log": "build/mem-sourceword-1ef2bc8d/ZiskFv.AirsClean.Mem.Stage2.Equations-narrow-attempt2.log",
+      "seconds": 6.793,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Native",
+      "log": "build/mem-sourceword-1ef2bc8d/ZiskFv.AirsClean.Mem.Stage2.Native-narrow-attempt2.log",
+      "seconds": 7.291,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.PolynomialRow",
+      "log": "build/mem-sourceword-1ef2bc8d/ZiskFv.AirsClean.Mem.Stage2.PolynomialRow-narrow-attempt2.log",
+      "seconds": 6.747,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Literals",
+      "log": "build/mem-sourceword-1ef2bc8d/ZiskFv.AirsClean.Mem.Stage2.Literals-narrow-attempt2.log",
+      "seconds": 6.836,
+      "status": "passed"
+    },
+    {
+      "module": "ZiskFv.AirsClean.Mem.Stage2.Local",
+      "log": "build/mem-sourceword-1ef2bc8d/ZiskFv.AirsClean.Mem.Stage2.Local-narrow-attempt2.log",
+      "seconds": 8.059,
+      "status": "passed"
+    }
+  ],
+  "green_module_count": 10,
+  "aggregate_green_seconds": 85.83800000000001,
+  "failure_preserved": "NativeTraceWords-narrow-attempt1.log: actual owner finite-block dependent-if proof error; fixed only by exact owner34cae22f two-proof-line repair, no unchanged retry or budget/statement weakening.",
+  "old5338_gate_relabelled": false
+}

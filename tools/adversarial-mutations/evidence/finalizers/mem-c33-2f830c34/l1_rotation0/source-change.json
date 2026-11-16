@@ -1,0 +1,17 @@
+{
+  "air": 14,
+  "case": "l1_rotation0",
+  "constraint": 33,
+  "generated_Lean_edited": false,
+  "group": 0,
+  "group_declarations": 1,
+  "input_bytes": 4417266,
+  "layer": "actual production compiled PilOut protobuf",
+  "new_expressions": 289,
+  "new_root": 288,
+  "original_expressions": 281,
+  "original_root": 239,
+  "output_bytes": 4265294,
+  "semantic_changes": 1,
+  "source_schema_and_reference_checks": "passed"
+}
