@@ -261,6 +261,29 @@ The independent typed source interpretation keeps AIR-group values separate
 from AIR values and rejects unsupported syntax as `none`; it does not inherit
 the legacy `Extraction.Circuit.exposed` kind conflation.
 
+Mem c33 is a separate **live** source-kind gap, not one of those eight
+build-only closures. The current live permutation predicate and its legacy
+`Circuit.exposed 0` weld use AIR `Mem.segment_id` (stage 1, index 0), while
+`constraint_Mem_33` reads AIR-GROUP `Zisk.gsum_result` (stage 2, index 0).
+The latter has source rank zero but three native extension words. The additive
+`Mem.SourceFinalizerEquation` fixes the independent three-coordinate equation,
+selector, signs and six direct terms without changing that live predicate.
+Its partial linear interpreter has no missing-cell zero default and does not
+invent coordinate-wise extension multiplication. These equation targets do not
+establish that a native occurrence satisfies c33, supply a source object, or
+prove logUp/channel balance.
+
+The native source reader must select the setup by registry group/AIR and read
+GROUP values, AIR values, row `gsum` and the fixed selector from the same final
+source occurrence. Native AIR/GROUP offsets are separate ordered-map stage-width
+prefix sums, not PIL symbol indices; the `gsum` address additionally needs the
+actual post-setup `cm2` offset, stage position, width and physical domain.
+An arbitrary three-word value cannot be losslessly stored in the existing
+one-word field. Independently, a strict prefix of the fixed physical Mem domain
+never enables the rotated final-row selector. Neither problem is discharged by
+adding an opaque sidecar, strengthening acceptance, assuming exact table length,
+or treating local source equations as a provider/ensemble contribution proof.
+
 `link_Main_reloadRange : Fin 31 → ValidatedLink` indexes c49+3k in source
 order. It is separate from `link_Main_reload`, which indexes the corresponding
 memory reload messages. Both are generated only after exact template checks.
