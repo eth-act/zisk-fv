@@ -145,15 +145,16 @@ def compiledResiduals? (view : Operands) (operations : Operations FGL) (env : En
 
 private theorem block_zero_mul (value : Ext3 FGL) : (0 : Ext3 FGL) * value = 0 := by
   rw [Ext3.mul_eq_convolutionMul]
+  change Ext3.convolutionMul ⟨0, 0, 0⟩ value = ⟨0, 0, 0⟩
   apply Ext3.ext <;> simp [Ext3.convolutionMul]
 
 private theorem block_zero_add (value : Ext3 FGL) : (0 : Ext3 FGL) + value = value := by
-  cases value
-  apply Ext3.ext <;> simp [HAdd.hAdd, Add.add]
+  change (⟨0 + value.c0, 0 + value.c1, 0 + value.c2⟩ : Ext3 FGL) = value
+  apply Ext3.ext <;> simp
 
 private theorem block_add_zero (value : Ext3 FGL) : value + (0 : Ext3 FGL) = value := by
-  cases value
-  apply Ext3.ext <;> simp [HAdd.hAdd, Add.add]
+  change (⟨value.c0 + 0, value.c1 + 0, value.c2 + 0⟩ : Ext3 FGL) = value
+  apply Ext3.ext <;> simp
 
 private theorem block_one_mul (value : Ext3 FGL) : (1 : Ext3 FGL) * value = value := by
   change Ext3.ofBase (1 : FGL) * value = value
@@ -162,8 +163,21 @@ private theorem block_one_mul (value : Ext3 FGL) : (1 : Ext3 FGL) * value = valu
   apply Ext3.ext <;> simp [HSMul.hSMul, SMul.smul]
 
 private theorem block_zero_sub (value : Ext3 FGL) : (0 : Ext3 FGL) - value = -value := by
-  cases value
-  apply Ext3.ext <;> simp [Sub.sub, Neg.neg]
+  change (⟨0 - value.c0, 0 - value.c1, 0 - value.c2⟩ : Ext3 FGL) =
+    ⟨-value.c0, -value.c1, -value.c2⟩
+  apply Ext3.ext <;> simp
+
+private theorem memory_message_size : ProvableType.size MemBusMessage = 6 := rfl
+
+private theorem memory_message_elements {F : Type} (message : MemBusMessage F) :
+    ProvableType.toElements (M := MemBusMessage) message =
+      #v[message.mem_op, message.ptr, message.timestamp, message.width, message.value_0, message.value_1] := by
+  apply Vector.ext
+  intro index bound
+  have hindex : index < 6 := by simpa only [memory_message_size] using bound
+  interval_cases index <;>
+    simp [explicit_provable_type, ProvableStruct.componentsToElements,
+      ProvableStruct.components, ProvableStruct.toComponents]
 
 /-- The residual uses actual compiled message fields and actual signed
 multiplicities, not only a parallel independent local tuple definition. -/
@@ -175,7 +189,7 @@ theorem compiled_residuals_eq_expected (view : Operands) (env : Environment FGL)
   change batchResiduals? view (ByteMemoryCompiledPadding.byteValues view.padding env) = _
   rw [ByteMemoryCompiledPadding.byte_compiled]
   simp [batchResiduals?, interactionResidual?, ByteMemoryCompiledPadding.zeroLoadValue,
-    Channel.pushedIfValue, Channel.toRaw, MemBusChannel,
+    Channel.pushedIfValue, Channel.toRaw, MemBusChannel, memory_message_size, memory_message_elements,
     alignedExpected, byteExpected, b, Ext3.ofBase_zero,
     block_zero_mul, block_zero_add, block_add_zero, block_one_mul, block_zero_sub]
 
