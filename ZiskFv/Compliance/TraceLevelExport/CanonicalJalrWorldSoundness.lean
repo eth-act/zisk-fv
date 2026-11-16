@@ -25,6 +25,13 @@ private theorem worldTrace_programLength : worldTrace.programLength = 2 := rfl
 attribute [local simp] worldTrace_numInstructions worldTrace_programLength
   worldAddProgramRow worldAndProgramRow
 
+private theorem worldProgramRaw0 :
+    worldTrace.program ⟨0, by change 0 < 2; decide⟩ = worldAddProgramRow := rfl
+private theorem worldProgramRaw1 :
+    worldTrace.program ⟨1, by change 1 < 2; decide⟩ = worldAndProgramRow := rfl
+
+attribute [local simp] worldProgramRaw0 worldProgramRaw1
+
 /-- Real physical source starts, with no total family of auxiliary ZiskSteps. -/
 def worldSourceIndex (i : Fin 2) : Fin 4 := ⟨2 * i.val, by omega⟩
 
@@ -35,7 +42,7 @@ theorem worldProgramRowsBinding :
     ProgramRowsBinding worldTrace worldStart (fun _ => 0) repeatJalrRawProgram := by
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro k k' h
-    fin_cases k; fin_cases k'; rfl
+    fin_cases k; fin_cases k'; simp at h
   · intro k
     fin_cases k; decide
   · intro k
@@ -128,13 +135,13 @@ noncomputable def worldRawDecode (i : Fin 2) :
       worldRow1, worldRow3, worldRow1Template, worldRow3Template, mainRomRowOf]
   · intro j hline
     fin_cases i <;> fin_cases j
-    all_goals simp [worldSourceIndex, mainOfTable, worldTrace, worldProgram,
+    all_goals simp [worldSourceIndex, mainOfTable,
       worldAddProgramRow, worldAndProgramRow, worldRow0, worldRow2,
       worldRow0Template, worldRow2Template, mainRomRowOf] at hline
     all_goals exact ⟨0, rfl, rfl, rfl⟩
   · intro j hline
     fin_cases i <;> fin_cases j
-    all_goals simp [worldSourceIndex, mainOfTable, worldTrace, worldProgram,
+    all_goals simp [worldSourceIndex, mainOfTable,
       worldAddProgramRow, worldAndProgramRow, worldRow1, worldRow3,
       worldRow1Template, worldRow3Template, mainRomRowOf] at hline
     all_goals exact ⟨0, rfl, rfl, rfl⟩
@@ -209,9 +216,12 @@ private theorem worldLanes (i : Fin 2) :
           worldRow2Template, worldAddProgramRow, mainRomRowOf,
           Transpiler.wrap_to_regidx] using pointer.symm
     subst r
-    fin_cases i <;> simp [worldSourceIndex, mainOfTable, worldRow0, worldRow2,
-      worldRow0Template, worldRow2Template, mainRomRowOf, ZiskFv.Trusted.lane_lo,
-      Transpiler.wrap_to_regidx, registerZero]
+    fin_cases i
+    all_goals
+      simp [worldSourceIndex] at registerZero
+      simp [worldSourceIndex, mainOfTable, worldRow0, worldRow2,
+        worldRow0Template, worldRow2Template, mainRomRowOf, ZiskFv.Trusted.lane_lo,
+        Transpiler.wrap_to_regidx, registerZero]
   · intro r hr selector pointer
     have r_eq : r = (2 : Fin 32) := by
       fin_cases i <;>
@@ -219,9 +229,12 @@ private theorem worldLanes (i : Fin 2) :
           worldRow2Template, worldAddProgramRow, mainRomRowOf,
           Transpiler.wrap_to_regidx] using pointer.symm
     subst r
-    fin_cases i <;> simp [worldSourceIndex, mainOfTable, worldRow0, worldRow2,
-      worldRow0Template, worldRow2Template, mainRomRowOf, ZiskFv.Trusted.lane_hi,
-      Transpiler.wrap_to_regidx, registerZero]
+    fin_cases i
+    all_goals
+      simp [worldSourceIndex] at registerZero
+      simp [worldSourceIndex, mainOfTable, worldRow0, worldRow2,
+        worldRow0Template, worldRow2Template, mainRomRowOf, ZiskFv.Trusted.lane_hi,
+        Transpiler.wrap_to_regidx, registerZero]
 
 private theorem worldAvoid (i : Fin 2) :
     RowOutsideDefectRegion worldTrace (worldSourceIndex i) (.jalr (worldClaim i)) := by
