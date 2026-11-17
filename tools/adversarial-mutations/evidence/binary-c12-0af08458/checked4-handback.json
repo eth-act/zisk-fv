@@ -1,0 +1,489 @@
+{
+  "source_commit": "0af084581996b2fd4bb2f0db32d286d183858bb0",
+  "base_main_commit": "ad90c14954d8b48463d1a09d79868cc54f7c9f5f",
+  "initial_source_only_commit": "2d9106cadd870b857d8e32137406a4297386267f",
+  "source_pin": "b63274507a040bf9e09d22214df43066e8f80cb7",
+  "source_contract": "BinaryPIL158\u2013159 assumes_padding_operation(OP_ADD,padding_size), operations.pil160\u2013167; actualnormalGEN c12 AIR1*((10*alpha+5000)+gamma)-(0-AIR0); ALL11OpBuscellszeroADD, negativeANYrawp; source-kind AIR1inverse/baseAIR0/challenges2/0,1, ALL3 cubiccoeff.",
+  "model": "SOURCE-OWNED INTERNAL partial native instance, fullFin4194304/39cell inverse/ALLcanonicalmainWithBinaryTable rowops + ONEinstanceOperations; privatecomputedCells readsSAMEresolvedsourcebuffers (nativeAIRstage/orderedprefix, NOAIRdim invention, realchallengesmetadata); computedregistry roster/allselection/order/nodup. NoComponent/Valid/protectedAPI/TCB edits.",
+  "supplemental": "ACTUALchecked existence proofforallrawp inclnegative, explicitSYNTHETICSourceObject/fullsymbolicnativeprimarybuffer/realAIRstage-withdim0/nontrivialall3inverse/challengewords. NOTproducer/constraints/Accepted/nativeauth/balance.",
+  "held": [
+    "native compiled operand r.id/r.dim/PILsymbol rank correlation (SourceObject contains no compiledoperandprogram)",
+    "real producer/source-image/ABI/mutable snapshot authentication; rawp=count/history",
+    "exact semantic source-segment occurrence projection/correlation beyond internalregistry keys",
+    "c13finalizer/gsum/provider/internalchannel/worldbalance/finishedOpBus/Root/Accepted"
+  ],
+  "checked_full": {
+    "complete": true,
+    "narrow": [
+      {
+        "command": [
+          "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+          "-j2",
+          "--tstack=400000",
+          "-o",
+          "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/BinaryPaddingOperations.olean",
+          "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/BinaryPaddingOperations.lean"
+        ],
+        "returncode": 0,
+        "seconds": 19.462813207996078,
+        "log": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/r1/narrow-BinaryPaddingOperations.log",
+        "source_sha256": "30b28fb8271b432e326e64da54f446ef920dc33fb7750e7b94fd8709360c5e64",
+        "object_sha256": "5a9a0f81ae1c60791d25dbd90eca0ff086de693d42d206adc0b6679d04564bd6",
+        "object": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/BinaryPaddingOperations.olean",
+        "all_ci_runtime_siblings": [
+          {
+            "path": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/BinaryPaddingOperations.olean",
+            "sha256": "5a9a0f81ae1c60791d25dbd90eca0ff086de693d42d206adc0b6679d04564bd6"
+          }
+        ],
+        "reused_exact_checked_unchanged_prefix": true
+      },
+      {
+        "command": [
+          "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+          "-j2",
+          "--tstack=400000",
+          "-o",
+          "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/BinaryNativeRows.olean",
+          "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/BinaryNativeRows.lean"
+        ],
+        "returncode": 0,
+        "seconds": 9.06242029403802,
+        "log": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/r1/narrow-BinaryNativeRows.log",
+        "source_sha256": "d01373bbbcc550046682bbebcfbba8296ecd5cfeb84d502774c79df3ac610b66",
+        "object_sha256": "73b20c73573817ced68c4d38fc3b82477917d1f251d04d3653918e00fe134b37",
+        "object": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/BinaryNativeRows.olean",
+        "all_ci_runtime_siblings": [
+          {
+            "path": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/BinaryNativeRows.olean",
+            "sha256": "73b20c73573817ced68c4d38fc3b82477917d1f251d04d3653918e00fe134b37"
+          }
+        ],
+        "reused_exact_checked_unchanged_prefix": true
+      },
+      {
+        "command": [
+          "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+          "-j2",
+          "--tstack=400000",
+          "-o",
+          "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/NativeBinaryInstance.olean",
+          "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/NativeBinaryInstance.lean"
+        ],
+        "returncode": 0,
+        "seconds": 8.476022781105712,
+        "log": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/r1/narrow-NativeBinaryInstance.log",
+        "source_sha256": "fe275787f2adb750ac53dc75457f9840a192d0c523587f06d582a0ce34ef91ca",
+        "object_sha256": "3e34e2c83a8b53b6443a75ec7a0a5949d0eec18cade95893332a230a167b7b70",
+        "object": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/NativeBinaryInstance.olean",
+        "all_ci_runtime_siblings": [
+          {
+            "path": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/NativeBinaryInstance.olean",
+            "sha256": "3e34e2c83a8b53b6443a75ec7a0a5949d0eec18cade95893332a230a167b7b70"
+          }
+        ],
+        "reused_exact_checked_unchanged_prefix": true
+      },
+      {
+        "command": [
+          "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+          "-j2",
+          "--tstack=400000",
+          "-o",
+          "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/NativeBinaryConstruction.olean",
+          "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/NativeBinaryConstruction.lean"
+        ],
+        "returncode": 0,
+        "seconds": 5.0020279729506,
+        "log": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/r2/narrow-NativeBinaryConstruction.log",
+        "source_sha256": "ead53f2ac161ce3d9293404bde4ebf6ea3768afbfca99faee4672bebd3de8a3a",
+        "object_sha256": "85ccccde842a0c00b611c4d92969e1a8207ef640c0845cc7f802748e6a01ab19",
+        "object": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/NativeBinaryConstruction.olean",
+        "all_ci_runtime_siblings": [
+          {
+            "path": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/NativeBinaryConstruction.olean",
+            "sha256": "85ccccde842a0c00b611c4d92969e1a8207ef640c0845cc7f802748e6a01ab19"
+          }
+        ]
+      }
+    ],
+    "mcp": {
+      "command": [
+        "/home/cody/.local/bin/uvx",
+        "--from",
+        "lean-lsp-mcp",
+        "python",
+        "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/check-native-mcp-locked.py",
+        "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/r2"
+      ],
+      "returncode": 0,
+      "seconds": 12.844674907973967,
+      "log": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/r2/mcp-native-types-diagnostics.log"
+    },
+    "full": {
+      "command": [
+        "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+        "-j2",
+        "--tstack=400000",
+        "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/MeasureBinarySourceRaw.lean"
+      ],
+      "returncode": 0,
+      "seconds": 245.10925414098892,
+      "log": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/r2/full-all4-raw.log"
+    },
+    "actual_all4_roots": 319,
+    "raw_axioms": [
+      "Classical.choice",
+      "Quot.sound",
+      "propext"
+    ],
+    "per_module_counts": {
+      "ZiskFv.AirsClean.BinaryPaddingOperations": 95,
+      "ZiskFv.AirsClean.BinaryNativeRows": 95,
+      "ZiskFv.AirsClean.NativeBinaryInstance": 76,
+      "ZiskFv.AirsClean.NativeBinaryConstruction": 53
+    },
+    "full_report": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/full-raw-axioms.json",
+    "full_report_sha256": "70d839337870298afe1e41968ed4b800dd13f6003a3562dfd3a8e5b5d39ceebe"
+  },
+  "source_ci_runtime_lineage": {
+    "ZiskFv.AirsClean.BinaryPaddingOperations": {
+      "source": {
+        "path": "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/BinaryPaddingOperations.lean",
+        "sha256": "30b28fb8271b432e326e64da54f446ef920dc33fb7750e7b94fd8709360c5e64"
+      },
+      "checked": {
+        "command": [
+          "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+          "-j2",
+          "--tstack=400000",
+          "-o",
+          "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/BinaryPaddingOperations.olean",
+          "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/BinaryPaddingOperations.lean"
+        ],
+        "returncode": 0,
+        "seconds": 19.462813207996078,
+        "log": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/r1/narrow-BinaryPaddingOperations.log",
+        "source_sha256": "30b28fb8271b432e326e64da54f446ef920dc33fb7750e7b94fd8709360c5e64",
+        "object_sha256": "5a9a0f81ae1c60791d25dbd90eca0ff086de693d42d206adc0b6679d04564bd6",
+        "object": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/BinaryPaddingOperations.olean",
+        "all_ci_runtime_siblings": [
+          {
+            "path": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/BinaryPaddingOperations.olean",
+            "sha256": "5a9a0f81ae1c60791d25dbd90eca0ff086de693d42d206adc0b6679d04564bd6"
+          }
+        ]
+      },
+      "all_ci_runtime_siblings": [
+        {
+          "path": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/BinaryPaddingOperations.olean",
+          "sha256": "5a9a0f81ae1c60791d25dbd90eca0ff086de693d42d206adc0b6679d04564bd6"
+        }
+      ]
+    },
+    "ZiskFv.AirsClean.BinaryNativeRows": {
+      "source": {
+        "path": "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/BinaryNativeRows.lean",
+        "sha256": "d01373bbbcc550046682bbebcfbba8296ecd5cfeb84d502774c79df3ac610b66"
+      },
+      "checked": {
+        "command": [
+          "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+          "-j2",
+          "--tstack=400000",
+          "-o",
+          "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/BinaryNativeRows.olean",
+          "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/BinaryNativeRows.lean"
+        ],
+        "returncode": 0,
+        "seconds": 9.06242029403802,
+        "log": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/r1/narrow-BinaryNativeRows.log",
+        "source_sha256": "d01373bbbcc550046682bbebcfbba8296ecd5cfeb84d502774c79df3ac610b66",
+        "object_sha256": "73b20c73573817ced68c4d38fc3b82477917d1f251d04d3653918e00fe134b37",
+        "object": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/BinaryNativeRows.olean",
+        "all_ci_runtime_siblings": [
+          {
+            "path": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/BinaryNativeRows.olean",
+            "sha256": "73b20c73573817ced68c4d38fc3b82477917d1f251d04d3653918e00fe134b37"
+          }
+        ]
+      },
+      "all_ci_runtime_siblings": [
+        {
+          "path": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/BinaryNativeRows.olean",
+          "sha256": "73b20c73573817ced68c4d38fc3b82477917d1f251d04d3653918e00fe134b37"
+        }
+      ]
+    },
+    "ZiskFv.AirsClean.NativeBinaryInstance": {
+      "source": {
+        "path": "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/NativeBinaryInstance.lean",
+        "sha256": "fe275787f2adb750ac53dc75457f9840a192d0c523587f06d582a0ce34ef91ca"
+      },
+      "checked": {
+        "command": [
+          "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+          "-j2",
+          "--tstack=400000",
+          "-o",
+          "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/NativeBinaryInstance.olean",
+          "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/NativeBinaryInstance.lean"
+        ],
+        "returncode": 0,
+        "seconds": 8.476022781105712,
+        "log": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/r1/narrow-NativeBinaryInstance.log",
+        "source_sha256": "fe275787f2adb750ac53dc75457f9840a192d0c523587f06d582a0ce34ef91ca",
+        "object_sha256": "3e34e2c83a8b53b6443a75ec7a0a5949d0eec18cade95893332a230a167b7b70",
+        "object": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/NativeBinaryInstance.olean",
+        "all_ci_runtime_siblings": [
+          {
+            "path": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/NativeBinaryInstance.olean",
+            "sha256": "3e34e2c83a8b53b6443a75ec7a0a5949d0eec18cade95893332a230a167b7b70"
+          }
+        ]
+      },
+      "all_ci_runtime_siblings": [
+        {
+          "path": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/NativeBinaryInstance.olean",
+          "sha256": "3e34e2c83a8b53b6443a75ec7a0a5949d0eec18cade95893332a230a167b7b70"
+        }
+      ]
+    },
+    "ZiskFv.AirsClean.NativeBinaryConstruction": {
+      "source": {
+        "path": "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/NativeBinaryConstruction.lean",
+        "sha256": "ead53f2ac161ce3d9293404bde4ebf6ea3768afbfca99faee4672bebd3de8a3a"
+      },
+      "checked": {
+        "command": [
+          "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+          "-j2",
+          "--tstack=400000",
+          "-o",
+          "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/NativeBinaryConstruction.olean",
+          "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/NativeBinaryConstruction.lean"
+        ],
+        "returncode": 0,
+        "seconds": 5.0020279729506,
+        "log": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/r2/narrow-NativeBinaryConstruction.log",
+        "source_sha256": "ead53f2ac161ce3d9293404bde4ebf6ea3768afbfca99faee4672bebd3de8a3a",
+        "object_sha256": "85ccccde842a0c00b611c4d92969e1a8207ef640c0845cc7f802748e6a01ab19",
+        "object": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/NativeBinaryConstruction.olean",
+        "all_ci_runtime_siblings": [
+          {
+            "path": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/NativeBinaryConstruction.olean",
+            "sha256": "85ccccde842a0c00b611c4d92969e1a8207ef640c0845cc7f802748e6a01ab19"
+          }
+        ]
+      },
+      "all_ci_runtime_siblings": [
+        {
+          "path": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/lean/ZiskFv/AirsClean/NativeBinaryConstruction.olean",
+          "sha256": "85ccccde842a0c00b611c4d92969e1a8207ef640c0845cc7f802748e6a01ab19"
+        }
+      ]
+    }
+  },
+  "strict_dependency_lease_sha256": "e2689c02a0972124f6b2d65b4d871cdb9ae82be5766cc791ad9b9a45f1135ea9",
+  "M_source_head": "1b130fb2072d73d84cfca078d1e58d2c379cf702",
+  "canonical_source_imports": 59,
+  "generated_sources": 7,
+  "readonly_CI_runtime_leaves": 75185,
+  "failed_attempt": {
+    "path": "/home/cody/zisk-fv-binary-c12-source/build/binary-c12-source/gate/r1/final-result.json",
+    "result": "first3narrowGREEN, ConstructionFAIL, NO MCPPipeline/FULL, preserved. OnlyprivateparamsOfexplicitfalse/bounds/native-readerproofnormalization repaired; no data/roster/profile/field/statementweakening"
+  },
+  "MCP": "InstalledMCP actualsameprivateCIs/sourceproject/directLean/readOnly/noLake/maxopen1/no-prewarm. SharedfcntlLOCK_EX /tmp/closure-417-lean-lsp.lock. repair1actualj2 retainedapproval; allpostrepair-j1. Fullunfilteredpartial/success/timedout/items/nonemptytypes/goals retained. AsyncioSDKcleanupwarning separately retained, NOT a Lean diagnostic.",
+  "no_Node_GEN_mutation_Nix_or_old_scope_rerun": true,
+  "mutations": "NONE for newBinary scope; do not credit oldByte20/singleLOAD8 againstBinary. Requires later actualBinarysource baseline/mutation slot.",
+  "evidence": [
+    {
+      "path": "ZiskFv/AirsClean/BinaryPaddingOperations.lean",
+      "sha256": "30b28fb8271b432e326e64da54f446ef920dc33fb7750e7b94fd8709360c5e64"
+    },
+    {
+      "path": "ZiskFv/AirsClean/BinaryNativeRows.lean",
+      "sha256": "d01373bbbcc550046682bbebcfbba8296ecd5cfeb84d502774c79df3ac610b66"
+    },
+    {
+      "path": "ZiskFv/AirsClean/NativeBinaryInstance.lean",
+      "sha256": "fe275787f2adb750ac53dc75457f9840a192d0c523587f06d582a0ce34ef91ca"
+    },
+    {
+      "path": "ZiskFv/AirsClean/NativeBinaryConstruction.lean",
+      "sha256": "ead53f2ac161ce3d9293404bde4ebf6ea3768afbfca99faee4672bebd3de8a3a"
+    },
+    {
+      "path": "build/binary-c12-source/initial-source-freeze.json",
+      "sha256": "86126b6d3f7d9e31b3a84b3397bc9c9c16180a1b02f44403b707c9ea73c150ae"
+    },
+    {
+      "path": "build/binary-c12-source/mcp-source-guidance.json",
+      "sha256": "a06b92738101c0a318787671c1bf52bcf6042d8eb7af09e2739675160013fff1"
+    },
+    {
+      "path": "build/binary-c12-source/mcp-new-source-diagnostics1.json",
+      "sha256": "d71a32f6601fd76981913c71ddbb5d729182fddb2443a31711251e3641d9a72a"
+    },
+    {
+      "path": "build/binary-c12-source/mcp-new-source-diagnostics2.json",
+      "sha256": "6acae8c09a9c06322fc2542a7d16a3409dadaa4bdb31b739e8513bcb1c52ba7d"
+    },
+    {
+      "path": "build/binary-c12-source/mcp-rows-diagnostics3.json",
+      "sha256": "bf49f58d968cc9d2e172473078862f9d1a82433834445d19289f95d1c8d83fb1"
+    },
+    {
+      "path": "build/binary-c12-source/implementation-source-freeze.json",
+      "sha256": "ebd7fb806abaf86c4a12cb07026b61516e8ace92d7f9fb90f371a6e6f35fb96f"
+    },
+    {
+      "path": "build/binary-c12-source/canonical-source-import-closure.json",
+      "sha256": "41945566f8a774c88ce204ea2c2585938bd392a27c20cbc26142e208221db2b4"
+    },
+    {
+      "path": "build/binary-c12-source/prepare-lease.py",
+      "sha256": "2e65f2f6c0a1174101fcb196029a92a1c41c80dd27d81ddb150d95f5fa51f439"
+    },
+    {
+      "path": "build/binary-c12-source/check-native-mcp.py",
+      "sha256": "56acdc6b9d4e6171bd35a2ac474859070a3de1848588e0522160f224f8318861"
+    },
+    {
+      "path": "build/binary-c12-source/run-gate.py",
+      "sha256": "4657df866ef76d51c194f149a526ea87f01cb02936a6668bcf79518f22160e51"
+    },
+    {
+      "path": "build/binary-c12-source/check-native-mcp-locked.py",
+      "sha256": "8321fb31fe07f4f5562611718c99ca5a87ad5267a32a0d04a26846d244899798"
+    },
+    {
+      "path": "build/binary-c12-source/run-gate-locked.py",
+      "sha256": "8da8e1e32d4cdf5a07dac6905392dbfe389cbcdb6ea35e14358faafbbe80e219"
+    },
+    {
+      "path": "build/binary-c12-source/mcp-proof-repair1.json",
+      "sha256": "3c65d8e27944d23209c11d36964d5f28b29fcba821fa56bfa1cb11f881af0dab"
+    },
+    {
+      "path": "build/binary-c12-source/package-checked.py",
+      "sha256": "9e8d84cb86231d7b780d20fca5464722690e1891b2c51ff2b3d7893b12ee6918"
+    },
+    {
+      "path": "build/binary-c12-source/gate/ready-lease.json",
+      "sha256": "e2689c02a0972124f6b2d65b4d871cdb9ae82be5766cc791ad9b9a45f1135ea9"
+    },
+    {
+      "path": "build/binary-c12-source/gate/MeasureBinarySourceRaw.lean",
+      "sha256": "9b95dd8a31a5dab41596e36d1e8a8c81ade80e3ea52cf2235126b8ec27590093"
+    },
+    {
+      "path": "build/binary-c12-source/gate/checked-prefix.json",
+      "sha256": "d863a58a56e3d88cbd790e68fa164e522080e61b7392e13373726b45943b6817"
+    },
+    {
+      "path": "build/binary-c12-source/gate/full-raw-axioms.json",
+      "sha256": "70d839337870298afe1e41968ed4b800dd13f6003a3562dfd3a8e5b5d39ceebe"
+    },
+    {
+      "path": "build/binary-c12-source/semantic-repair2/mcp-native-types-diagnostics.json",
+      "sha256": "95b16f05b90867d148db5865df005745d51622cd96afd1994f3cab56d5b78ab0"
+    },
+    {
+      "path": "build/binary-c12-source/semantic-repair3/mcp-native-types-diagnostics.json",
+      "sha256": "3e087351319823d40e3b3667dd108d42b3640c59ff8937d575ded1c64a751afc"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r1/before-strict.json",
+      "sha256": "1ef2ad35d66eaee60ebe4085aad1e1f7e48ef782c3ed663afd3bfaca90668ac2"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r1/source-freeze.json",
+      "sha256": "6301e9dd544e9e31be0116cadd26e340685d0790526b726dd98c8467528500be"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r1/narrow-BinaryPaddingOperations.log",
+      "sha256": "2d471783862a5898072a806d4e294f97d1bb9a225094f3ca74fe12a370c69096"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r1/narrow-BinaryPaddingOperations-result.json",
+      "sha256": "b45c29e66fbda69c994f590317029991950fd732f2b375dcb1e895a717dc03e5"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r1/narrow-BinaryNativeRows.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r1/narrow-BinaryNativeRows-result.json",
+      "sha256": "02088762f9f94871639a620ee8c1aa817bb89a65673987b63cab3e17323ffaee"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r1/narrow-NativeBinaryInstance.log",
+      "sha256": "4d2de22f9814f14cb0769237e7867460b4edf4c774fb90829939a706701d9a34"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r1/narrow-NativeBinaryInstance-result.json",
+      "sha256": "a630c4ba728fa9ae1088e70cb74387b265dcd381da44976a3af9f8bbf08e1243"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r1/narrow-NativeBinaryConstruction.log",
+      "sha256": "a9186330aae9b7d83a51a07f5fcf1ecb33411159dcb9140cd5bf83ea530fd928"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r1/narrow-NativeBinaryConstruction-result.json",
+      "sha256": "f5aecb2846c6a47588b7adc95048247d006b604ef48dc72f393a65ae65f3b749"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r1/after-strict.json",
+      "sha256": "1ef2ad35d66eaee60ebe4085aad1e1f7e48ef782c3ed663afd3bfaca90668ac2"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r1/final-result.json",
+      "sha256": "f615d71669bdab2db62e193e0cd51bf6727f6ae608481cb4e635298563254953"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r2/before-strict.json",
+      "sha256": "1df9c89f6c679ebd51e71901b151bf61eef8fcccc22bbfd94a3c7c7f27c1ad71"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r2/source-freeze.json",
+      "sha256": "d178dfe7df290c9161e1cdb72d85ac4e64825dc7e77c5791dd8598dae912f7d8"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r2/narrow-NativeBinaryConstruction.log",
+      "sha256": "4623881b9e188f1173caebf46c03819335d1c23793bfc4e427571b3c3f3f337e"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r2/narrow-NativeBinaryConstruction-result.json",
+      "sha256": "d2464ee48e51eca0af0c869f0f44adba7f9c3053c377b0c172f2f516f75bb05a"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r2/mcp-native-types-diagnostics.log",
+      "sha256": "4f6611786b621238326805c29a2cec23998d9eeeb82424f06c2d1f1a9d9b5b97"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r2/mcp-native-types-diagnostics.json",
+      "sha256": "3e087351319823d40e3b3667dd108d42b3640c59ff8937d575ded1c64a751afc"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r2/mcp-native-types-diagnostics-result.json",
+      "sha256": "4d22248347dd147ed08adf3df3f9928381609455646747e7774e0423a4a6b4e1"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r2/full-all4-raw.log",
+      "sha256": "4ad201711680ee3c771aff0b5d0adad1bfbd1c4f48bdbe98a2ab4f79e9375694"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r2/full-all4-raw-result.json",
+      "sha256": "2880e79525413a2297136aaf3142499df4496967c206798d0cb9d1440d2151d5"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r2/after-strict.json",
+      "sha256": "1df9c89f6c679ebd51e71901b151bf61eef8fcccc22bbfd94a3c7c7f27c1ad71"
+    },
+    {
+      "path": "build/binary-c12-source/gate/r2/final-result.json",
+      "sha256": "56b1ed8ce250f81e5e3bb18c82b78e1c8695109e6d5564178f70e079a825673b"
+    }
+  ]
+}
