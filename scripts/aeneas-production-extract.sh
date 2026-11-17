@@ -217,9 +217,12 @@ if [[ "$decl_count" -eq 0 ]]; then
   exit 1
 fi
 
+# The pinned translator otherwise sizes a Domainslib pool from host CPUs,
+# independently of the caller's CPU quota and Lean thread limit.
 (
   cd "$WORKSPACE"
   nix run "$AENEAS_FLAKE#aeneas" -- \
+    -sequential \
     -backend lean \
     -dest Lean \
     production_m2.llbc
