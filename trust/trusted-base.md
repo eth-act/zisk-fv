@@ -1753,3 +1753,25 @@ source-world/once-roster balance and provider/Accepted integration remain open.
 No numerical gsum, completed execution, Root or full #412/#372 closure follows
 from these local residual equalities.
 
+## Native Binary padding source operations (internal partial)
+
+Binary c12 is the source once-instance
+`assumes_padding_operation(OP_ADD, padding_size)`, not an ordinary Binary row
+tuple. The new source-owned instance retains every existing row operation over
+the full `Fin 4194304`, all 39 native coordinates, and one disjoint negative
+raw-padding contribution with opcode10 and eleven source message slots.
+Zero and negative raw scalars are retained without a count/range premise.
+
+The dedicated partial typed reader keeps scalar AIR0, all three AIR1 inverse
+and challenge coefficients, and actual source-populated stage metadata.
+The generated c12 AST, independent expected equation and residual of the real
+compiled once-instance interaction agree coefficient by coefficient. An
+explicit same-reader construction exists for every raw scalar, with nontrivial
+three-word extension buffers; it does not assert the source equation holds.
+
+These are build-only source-fidelity and internal constructibility results.
+Actual native operand/PIL rank, compiled-id/setup/ABI/producer correlation,
+accepted-world and once-roster balance, provider composition, numeric gsum
+and Binary c13 remain open. No Component, Table, Valid, Accepted or Root
+interface changes, padding-count assertion, or whole #372 closure occurs here.
+

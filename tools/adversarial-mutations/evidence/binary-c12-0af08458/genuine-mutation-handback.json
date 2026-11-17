@@ -1,0 +1,1333 @@
+{
+  "source_commit": "0af084581996b2fd4bb2f0db32d286d183858bb0",
+  "arena": "/tmp/binary-c12-0af08458-36nj4_xv",
+  "source_pin": "b63274507a040bf9e09d22214df43066e8f80cb7",
+  "experiment": "ONEgenuine isolatedb632productionBinaryc12OP_ADD\u2192OP_ADD+1 sourcecall; independent0afexpectedop10/11slots/-rawp/bus5000unchanged; actual09Node16GiB+6zGEN. NOupstreamRust/pin/proofchanges.",
+  "normal_control": "FRESH_NEW4_NORMAL_CONTROL_GREEN",
+  "normal_all4_fresh_consumer_kernels": {
+    "ZiskFv.AirsClean.BinaryPaddingOperations": 0,
+    "ZiskFv.AirsClean.BinaryNativeRows": 0,
+    "ZiskFv.AirsClean.NativeBinaryInstance": 0,
+    "ZiskFv.AirsClean.NativeBinaryConstruction": 0
+  },
+  "normal_fresh_kernel_count": 28,
+  "mutant_classification": "GENUINE_BINARY_C12_SOURCE_OPCODE_TYPED_RESIDUAL_REJECT",
+  "named_typed_source_rejections": [
+    {
+      "module": "ZiskFv.AirsClean.BinaryPaddingOperations",
+      "declaration": "actual_residual_eq_expected",
+      "source_sha256": "30b28fb8271b432e326e64da54f446ef920dc33fb7750e7b94fd8709360c5e64",
+      "actual_kernel_diagnostic": "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/BinaryPaddingOperations.lean:102:59: error: unsolved goals\nview : Operands\n\u22a2 view.inverse * (Ext3.ofBase 11 * view.alpha + Ext3.ofBase 5000 + view.gamma) - (0 - Ext3.ofBase view.padding) =\n    view.inverse * (Ext3.ofBase 10 * view.alpha + Ext3.ofBase 5000 + view.gamma) - (0 - Ext3.ofBase view.padding)\n"
+    }
+  ],
+  "mutant_consumer_status": [
+    {
+      "command": [
+        "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+        "-j2",
+        "--tstack=400000",
+        "-R",
+        "/home/cody/zisk-fv-binary-c12-source",
+        "-o",
+        "/tmp/binary-c12-0af08458-36nj4_xv/opcode-add-one/lean/ZiskFv/AirsClean/BinaryPaddingOperations.olean",
+        "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/BinaryPaddingOperations.lean"
+      ],
+      "returncode": 1,
+      "seconds": 11.418208232964389,
+      "log": "/tmp/binary-c12-0af08458-36nj4_xv/opcode-add-one/03-kernel-ZiskFv-AirsClean-BinaryPaddingOperations.log",
+      "module": "ZiskFv.AirsClean.BinaryPaddingOperations",
+      "source": "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/BinaryPaddingOperations.lean",
+      "source_sha256": "30b28fb8271b432e326e64da54f446ef920dc33fb7750e7b94fd8709360c5e64"
+    },
+    {
+      "command": [
+        "/home/cody/.elan/toolchains/leanprover--lean4---v4.28.0/bin/lean",
+        "-j2",
+        "--tstack=400000",
+        "-R",
+        "/home/cody/zisk-fv-binary-c12-source",
+        "-o",
+        "/tmp/binary-c12-0af08458-36nj4_xv/opcode-add-one/lean/ZiskFv/AirsClean/BinaryNativeRows.olean",
+        "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/BinaryNativeRows.lean"
+      ],
+      "returncode": 0,
+      "seconds": 11.43299077206757,
+      "log": "/tmp/binary-c12-0af08458-36nj4_xv/opcode-add-one/03-kernel-ZiskFv-AirsClean-BinaryNativeRows.log",
+      "module": "ZiskFv.AirsClean.BinaryNativeRows",
+      "source": "/home/cody/zisk-fv-binary-c12-source/ZiskFv/AirsClean/BinaryNativeRows.lean",
+      "source_sha256": "d01373bbbcc550046682bbebcfbba8296ecd5cfeb84d502774c79df3ac610b66",
+      "object": "/tmp/binary-c12-0af08458-36nj4_xv/opcode-add-one/lean/ZiskFv/AirsClean/BinaryNativeRows.olean",
+      "object_sha256": "73b20c73573817ced68c4d38fc3b82477917d1f251d04d3653918e00fe134b37",
+      "all_siblings": [
+        {
+          "path": "/tmp/binary-c12-0af08458-36nj4_xv/opcode-add-one/lean/ZiskFv/AirsClean/BinaryNativeRows.olean",
+          "sha256": "73b20c73573817ced68c4d38fc3b82477917d1f251d04d3653918e00fe134b37"
+        }
+      ]
+    },
+    {
+      "module": "ZiskFv.AirsClean.NativeBinaryInstance",
+      "classification": "BLOCKED_BY_REJECTED_DEPENDENCY_NOT_KILL",
+      "dependency": "ZiskFv.AirsClean.BinaryPaddingOperations",
+      "no_stale_CI_reused": true
+    },
+    {
+      "module": "ZiskFv.AirsClean.NativeBinaryConstruction",
+      "classification": "BLOCKED_BY_REJECTED_DEPENDENCY_NOT_KILL",
+      "dependency": "ZiskFv.AirsClean.NativeBinaryInstance",
+      "no_stale_CI_reused": true
+    }
+  ],
+  "blocked_dependencies_are_NOT_kills": true,
+  "baseline319_RAW_NOT_rerun": true,
+  "normal_compiler_actual_prior_provenance_reused_not_old_consumer_CI": true,
+  "actual_PILout_sha256": {
+    "normal-control": "324dc09b3ca641e721dd726db6f0f39193234695930c04e7bddae7008a535369",
+    "opcode-add-one": "31902c8527e1edb551bbf0581be14b85eaad641b6a55545b9cccb6cbdff9c17c"
+  },
+  "actual_generated_sha256": {
+    "normal-control": {
+      "Circuit.lean": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+      "Mem.lean": "749ea99f75482225cf14ddc0025766afe348b739d974ff7f8040d94d3ad63af3",
+      "Binary.lean": "4d62c46816e0c962e62f0cf7b04322c77e5cc467c0e955728abc86662804bf68",
+      "LookupWiring.lean": "c44807d618d000f2a3456b5c0a9af9e2dbb728df31725df1cb2cd7a1d097ff8c"
+    },
+    "opcode-add-one": {
+      "Circuit.lean": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+      "Mem.lean": "749ea99f75482225cf14ddc0025766afe348b739d974ff7f8040d94d3ad63af3",
+      "Binary.lean": "fecfa50412c45e29093d23602990a509bebc9f2aad456b63ea0875a95c3c0173",
+      "LookupWiring.lean": "db09742f8752ee1045a10d02b1c3992c28e45027ecedca678e4b8c342025c004"
+    }
+  },
+  "freeze_sha256": "b82fcee07f86c79204b918b26b134e41871c2e2e16241ac4f988d58d8056bc56",
+  "final_result_sha256": "f270913ab89da8e73c00d2efee4306e06a21b1b141846158e29739b1a1c492cc",
+  "source_expected_model_data_unchanged": true,
+  "no_SourceWorld_native_rid_rank_ABI_Accepted_producer_count_actualbalance_or_whole372_claim": true,
+  "evidence": [
+    {
+      "path": "consumer-source/ZiskFv/AirsClean/BinaryPaddingOperations.lean",
+      "sha256": "30b28fb8271b432e326e64da54f446ef920dc33fb7750e7b94fd8709360c5e64",
+      "bytes": 9239
+    },
+    {
+      "path": "consumer-source/ZiskFv/AirsClean/BinaryNativeRows.lean",
+      "sha256": "d01373bbbcc550046682bbebcfbba8296ecd5cfeb84d502774c79df3ac610b66",
+      "bytes": 6459
+    },
+    {
+      "path": "consumer-source/ZiskFv/AirsClean/NativeBinaryInstance.lean",
+      "sha256": "fe275787f2adb750ac53dc75457f9840a192d0c523587f06d582a0ce34ef91ca",
+      "bytes": 13002
+    },
+    {
+      "path": "consumer-source/ZiskFv/AirsClean/NativeBinaryConstruction.lean",
+      "sha256": "ead53f2ac161ce3d9293404bde4ebf6ea3768afbfca99faee4672bebd3de8a3a",
+      "bytes": 6347
+    },
+    {
+      "path": "normal-source-pil/pil/config.pil",
+      "sha256": "1c9e1c5b27313702e776af111e1136fab16d11967c2b33f9a51848ca11bcd442",
+      "bytes": 272
+    },
+    {
+      "path": "normal-source-pil/pil/operations.pil",
+      "sha256": "0ef4b65ce30d68047b2e03c6e06f9adac2d3cb6b202e3423002584f12e8ad966",
+      "bytes": 5318
+    },
+    {
+      "path": "normal-source-pil/pil/opids.pil",
+      "sha256": "626a8bfa66d0bb61cb4eed2cac65de7c3b48c37083457f93d37a21f89d705723",
+      "bytes": 970
+    },
+    {
+      "path": "normal-source-pil/pil/zisk.pil",
+      "sha256": "337b0d7b0c9c3149060b77b61b9e4b32a4be3392788f3de70af8947a010f4e9a",
+      "bytes": 5833
+    },
+    {
+      "path": "normal-source-pil/state-machines/rom/pil/rom.pil",
+      "sha256": "6f0f1a6037717fc65157852c2c2e06dc9aadd3fe4b2a116a882807f8d634bb2e",
+      "bytes": 662
+    },
+    {
+      "path": "normal-source-pil/state-machines/mem/pil/mem.pil",
+      "sha256": "2b24fc831257d353a161c199d1dd5083d7b9b7cb13ec4c59a690aeb5843294ff",
+      "bytes": 25860
+    },
+    {
+      "path": "normal-source-pil/state-machines/mem/pil/mem_align.pil",
+      "sha256": "463515e8b3284e0afbe105c054785e2881f69a4c4c1693bedefd0e57d2ffaa14",
+      "bytes": 8613
+    },
+    {
+      "path": "normal-source-pil/state-machines/mem/pil/mem_align_byte.pil",
+      "sha256": "759d4f499649b1e17d316d2ff2298e45d4075f46f0e37887eb6dd7a5180b44ca",
+      "bytes": 4496
+    },
+    {
+      "path": "normal-source-pil/state-machines/mem/pil/mem_align_rom.pil",
+      "sha256": "b4f5ca848f62bdd9ebc74d4f83cf2a44cbef93588862b56235a33190074463ed",
+      "bytes": 14004
+    },
+    {
+      "path": "normal-source-pil/state-machines/mem/pil/rom_data.pil",
+      "sha256": "9d25323fccabb66a498482c54a80c12c3df1e90ce7e170f50e4795b6d517db99",
+      "bytes": 908
+    },
+    {
+      "path": "normal-source-pil/state-machines/main/pil/main.pil",
+      "sha256": "f96a01b633e70a00442806943894a1fbdac140ad810fc018ff281433c1a38b9a",
+      "bytes": 23762
+    },
+    {
+      "path": "normal-source-pil/state-machines/main/pil/registers.pil",
+      "sha256": "fceea7ca163b2cc9c1251ae1ccaca3f46bf347b0884f6d943665bb1cdb487cb6",
+      "bytes": 1500
+    },
+    {
+      "path": "normal-source-pil/state-machines/frequent-ops/pil/frequent_ops.pil",
+      "sha256": "f80d0cf6e53e2935519b842c68d694f7784ce744c78a40d19f950f2a3da8c018",
+      "bytes": 520
+    },
+    {
+      "path": "normal-source-pil/state-machines/binary/pil/binary.pil",
+      "sha256": "7149abc61eb0b90394c62416174e56d6ae336b55c21193ce7e8f30b2f898a638",
+      "bytes": 11654
+    },
+    {
+      "path": "normal-source-pil/state-machines/binary/pil/binary_add.pil",
+      "sha256": "ab05a808165452b6b413add0774f89bda7024808264ab6b9f273baabe6ec8614",
+      "bytes": 941
+    },
+    {
+      "path": "normal-source-pil/state-machines/binary/pil/binary_extension.pil",
+      "sha256": "29ecd382f6cde851574823e6351148cd929035ed9fafef3f3f7edd2d9b34d11c",
+      "bytes": 4900
+    },
+    {
+      "path": "normal-source-pil/state-machines/binary/pil/binary_extension_table.pil",
+      "sha256": "bb5d57a0ad7907a25b39f4b9af98ff8334c92fddc345d8749a08393af9a1baec",
+      "bytes": 8998
+    },
+    {
+      "path": "normal-source-pil/state-machines/binary/pil/binary_table.pil",
+      "sha256": "f001fdcede4eb3766ca97580dfc68adbc3f80ab0fb2ac14b2ba2a073f94ff4f2",
+      "bytes": 15059
+    },
+    {
+      "path": "normal-source-pil/state-machines/arith/pil/arith.pil",
+      "sha256": "8dca97278895a0e103c9fd7dc8162fec5dbcdf07c8e0e6a66b6faa5059bccf42",
+      "bytes": 12903
+    },
+    {
+      "path": "normal-source-pil/state-machines/arith/pil/arith_mul64.pil",
+      "sha256": "574e506cfbe293badd85c216ebc462aa55ce11a93512726ecf0314e86a7d2ea9",
+      "bytes": 10187
+    },
+    {
+      "path": "normal-source-pil/state-machines/arith/pil/arith_range_table.pil",
+      "sha256": "668ba5c6c7c8dbb3e3848d146af93a0774597e7fe78406e6e9ccdd2527f3ce9b",
+      "bytes": 3414
+    },
+    {
+      "path": "normal-source-pil/state-machines/arith/pil/arith_table.pil",
+      "sha256": "c5bd1f2df70f1189a92d4d3be5347e4894f74a8c2a703221b8abc13335e63048",
+      "bytes": 10924
+    },
+    {
+      "path": "normal-source-pil/precompiles/sha256f/pil/sha256f.pil",
+      "sha256": "b61cfb1840b6fc6d8a6be7f6a6108ea2e9b3fda77940e0ac2823c2d3ca47a5f0",
+      "bytes": 17835
+    },
+    {
+      "path": "normal-source-pil/precompiles/poseidon2/pil/poseidon2.pil",
+      "sha256": "c48d0ec81a210a7c32d2b7043bb3709d4086eec6b549de1c3bb66b749f8a4d08",
+      "bytes": 9797
+    },
+    {
+      "path": "normal-source-pil/precompiles/poseidon2/pil/poseidon2_constants.pil",
+      "sha256": "7ab555c9f50c0f7f576a3e6f6da9b0de73570b30088e66230e584893776a13ce",
+      "bytes": 6343
+    },
+    {
+      "path": "normal-source-pil/precompiles/keccakf/pil/keccakf.pil",
+      "sha256": "0ac80411c1470641547b162cb2ea44b3e32a8eb06be47247a982008ac00855db",
+      "bytes": 20529
+    },
+    {
+      "path": "normal-source-pil/precompiles/keccakf/pil/keccakf_table.pil",
+      "sha256": "3cb692728b879a47e77a29b777839c5caa4a22027b7f0150a0807fbaed856ee3",
+      "bytes": 1838
+    },
+    {
+      "path": "normal-source-pil/precompiles/dma/pil/dma.pil",
+      "sha256": "401c39f8ce448c5eb3c33e982bf8981530f5831d4608bb6ff4eb89ce3990878e",
+      "bytes": 25078
+    },
+    {
+      "path": "normal-source-pil/precompiles/dma/pil/dma_64_aligned.pil",
+      "sha256": "be93be4237d5bc328800ce04dd49b760e8cd5f110b994be0da97130d74cc89e3",
+      "bytes": 32057
+    },
+    {
+      "path": "normal-source-pil/precompiles/dma/pil/dma_byte_cmp_table.pil",
+      "sha256": "e6e4646aed20b812ad063c2d93e5c8bf61876d39615d09466bf5020b9e7c3092",
+      "bytes": 1618
+    },
+    {
+      "path": "normal-source-pil/precompiles/dma/pil/dma_pre_post.pil",
+      "sha256": "addaf9c33086e169c49e4a5e457a52ce64e0c91b4ad3ffaa3a71eee8c140e4f6",
+      "bytes": 21385
+    },
+    {
+      "path": "normal-source-pil/precompiles/dma/pil/dma_pre_post_table.pil",
+      "sha256": "e42bec8cfe24d83ef90fd6157b37bf24062f6c5bd7759739bd5e16ab92be2a0d",
+      "bytes": 7255
+    },
+    {
+      "path": "normal-source-pil/precompiles/dma/pil/dma_rom.pil",
+      "sha256": "d9c30b5ed8b899c72721467e7dde20b7017d439004ceadd1de03b0745160340a",
+      "bytes": 3206
+    },
+    {
+      "path": "normal-source-pil/precompiles/dma/pil/dma_unaligned.pil",
+      "sha256": "52098e0bdfe47fe689898e46c308672d90cd4c55e445fca085996837979a3f99",
+      "bytes": 19998
+    },
+    {
+      "path": "normal-source-pil/precompiles/dma/pil/dual_range.pil",
+      "sha256": "bc836fdd71e32258582de2c7e685a82e4dde5c75c51ac85cc42e475c311862a0",
+      "bytes": 683
+    },
+    {
+      "path": "normal-source-pil/precompiles/dma/pil/tools.pil",
+      "sha256": "29b0fd566166b64420a4b6dbc097ab353237b535ff8793b9172e4dceed5420a4",
+      "bytes": 396
+    },
+    {
+      "path": "normal-source-pil/precompiles/blake2/pil/blake2br.pil",
+      "sha256": "4237c7fc7d18ce8dcbcf8b999c3745e3ffa0911d4ed6dc45243832091de9af6b",
+      "bytes": 35081
+    },
+    {
+      "path": "normal-source-pil/precompiles/big_int/pil/big_int_add.pil",
+      "sha256": "70fe1368f27699f019fdfc544d8b7d46c36f50ea9e0cfa5a02ec196b64d7a7c2",
+      "bytes": 5308
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq_384/pil/arith_eq_384.pil",
+      "sha256": "2619f8c8cc9ba82899541f0c5baafcb6d22c2165419655704e6a80f003918785",
+      "bytes": 29745
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq_384/pil/equations/arith384_mod.pil",
+      "sha256": "42131b94584ac1e980048fd259b004519b9b696f33f19e8005851d48b4ceb1d3",
+      "bytes": 141028
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq_384/pil/equations/bls12_381_complex_add_x3.pil",
+      "sha256": "31196fef0ee4364e42308b413969a9b3094e4f1d9b12ac6f4cb2b02add2ef731",
+      "bytes": 60831
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq_384/pil/equations/bls12_381_complex_add_y3.pil",
+      "sha256": "0258f145d317ec1bfb72b716f8fb263214c1e7f77e73e7493bbed4dcd1f198ac",
+      "bytes": 60831
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq_384/pil/equations/bls12_381_complex_mul_x3.pil",
+      "sha256": "ad9262adbec1e5aa6f215fb3f5b3aaf7169766abb7a8ec488c37e6058dd17907",
+      "bytes": 162189
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq_384/pil/equations/bls12_381_complex_mul_y3.pil",
+      "sha256": "7bf3d65d109d6447ef11125ac1ef5bf0e917dc1bfe51f75075cb50ddab0b775b",
+      "bytes": 161897
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq_384/pil/equations/bls12_381_complex_sub_x3.pil",
+      "sha256": "cbd013d9a330f8de3f829a9536a57510ff63cb8b023c1edc22a684116f6dd74e",
+      "bytes": 60831
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq_384/pil/equations/bls12_381_complex_sub_y3.pil",
+      "sha256": "17aca7e656844626f038e1eb1c39de75c502167ca4525cac0d90e1ea69a8ab89",
+      "bytes": 60831
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq_384/pil/equations/bls12_381_curve_add.pil",
+      "sha256": "63301aa89d3bce41d68ef3eb19399b4ef4e1aebdd8bf7fd121811cc95de13b18",
+      "bytes": 154010
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq_384/pil/equations/bls12_381_curve_dbl.pil",
+      "sha256": "e505905f62f6af88faee0fbf14a6bb743e56eba8bf362a94e908ec5ab266009b",
+      "bytes": 158941
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq_384/pil/equations/bls12_381_curve_x3.pil",
+      "sha256": "1d2e22428789a5f8b7abb9fbf924162ab56b67a8055f34d64ec9bffd7a796642",
+      "bytes": 104701
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq_384/pil/equations/bls12_381_curve_y3.pil",
+      "sha256": "18cf1e8964cb82913e7d552a3ff6378eda5a07786faa636e6d970e70bc24e260",
+      "bytes": 152208
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/arith_eq.pil",
+      "sha256": "a541b70b04c16a30541dd025defa2bba6b132558cb00c1634db588c743ec9534",
+      "bytes": 34491
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/arith_eq_lt_table.pil",
+      "sha256": "bcf9da1917ab47bc24699b7c6a7032c6b532db53516aa4b4239aa65965cab16d",
+      "bytes": 1049
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/arith256.pil",
+      "sha256": "c085ccd393fd32f1d148a614b95c880b5824f8d17990736d41d1c47b0038beae",
+      "bytes": 22798
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/arith256_mod.pil",
+      "sha256": "fc68f5c4d4c3db668caffc26503e81f25b0396c7323e8e890fdfe54dc611bf54",
+      "bytes": 63348
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/bn254_complex_add_x3.pil",
+      "sha256": "6a044b782142831e8fdd84c6d54da74dcfa2066de248154d9b6026f94301611d",
+      "bytes": 27763
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/bn254_complex_add_y3.pil",
+      "sha256": "8f352ff1b85025ae43486601d74bcf8717299bff0ace0de3c81ef03b20ee2045",
+      "bytes": 27763
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/bn254_complex_mul_x3.pil",
+      "sha256": "bd5819658799cb3a4b61561b38a5bfbd8d60a76968f199588ecce7ad585d616f",
+      "bytes": 69729
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/bn254_complex_mul_y3.pil",
+      "sha256": "43495587026c7f79206c2032a8181a852281bff805242bc7309fbb2f7b9386e8",
+      "bytes": 69677
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/bn254_complex_sub_x3.pil",
+      "sha256": "f507e507c443d6575c414495ac5399dc78840827239b639503a4ccd2f9ec2325",
+      "bytes": 27763
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/bn254_complex_sub_y3.pil",
+      "sha256": "06be24d944c857d6b9949be2373e9123f0fe400482bd274e70f07e0337f79b85",
+      "bytes": 27763
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/bn254_curve_add.pil",
+      "sha256": "3722762947aa301f74ca9a35764fe7c4b1eb9a000f489ea0011c411d9dff4b73",
+      "bytes": 66387
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/bn254_curve_dbl.pil",
+      "sha256": "71cb245cba7dd39fa269efdf147a34804ea22eeea4a6283a72f074587431ada9",
+      "bytes": 67895
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/bn254_curve_x3.pil",
+      "sha256": "3da0ba6ccebe70ce7cb4e123604017122d2842de725e54e9d40de25ec474b40c",
+      "bytes": 45996
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/bn254_curve_y3.pil",
+      "sha256": "fa80af4258b0fc878d917e853439db9e9f5c1f10513508df54d03c945614c20e",
+      "bytes": 65570
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/secp256k1_add.pil",
+      "sha256": "b364a02334852f2b294d28a620c86acbf317d6cf3eefc70fae12184c2adb8be1",
+      "bytes": 64753
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/secp256k1_dbl.pil",
+      "sha256": "9380e0f50917cbce65fddef90dc27906249c5e3fd4755cc5dadcc7dacd26b353",
+      "bytes": 66324
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/secp256k1_x3.pil",
+      "sha256": "ee3cc0d7a630c989695832c009e8104bf4d3a01a399583070b56166ec2dbcff7",
+      "bytes": 44839
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/secp256k1_y3.pil",
+      "sha256": "2183a6ca8292a897392d5c0d4cd6507520a632a050491f00f065ffe5236ac53a",
+      "bytes": 63936
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/secp256r1_add.pil",
+      "sha256": "fabbe9f417abbcb62ca6a79463a383807c93bdf3516e2d2ac8e15b383a946609",
+      "bytes": 55319
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/secp256r1_dbl.pil",
+      "sha256": "29e5526d61c0ddf59d13c1ae2cb84af868d299312654632be5ed4a1048f1ce37",
+      "bytes": 57598
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/secp256r1_x3.pil",
+      "sha256": "7a7c28fe05b5da215ebef01c1e6271b8be4a2b60bfab25d22a115f4630782f39",
+      "bytes": 35526
+    },
+    {
+      "path": "normal-source-pil/precompiles/arith_eq/pil/equations/secp256r1_y3.pil",
+      "sha256": "8c46c7698223dd0b3ef837b6660d5ed13d00643efcea6ddedf7cd3c1a24740c4",
+      "bytes": 54620
+    },
+    {
+      "path": "compiler-standard-pil/goldilocks.pil",
+      "sha256": "7de4504d3928f071d4453b7b80e7115b2837bf012cda47d6143f663583f82b65",
+      "bytes": 1797
+    },
+    {
+      "path": "compiler-standard-pil/std_connection.pil",
+      "sha256": "2f2a5e262698ba3660cf015eca8280f84af674b3e7827ec3fd5f88b4710de385",
+      "bytes": 21433
+    },
+    {
+      "path": "compiler-standard-pil/std_constants.pil",
+      "sha256": "dce84a1fe6e76055a7416146a3e45c46d1ee02ffd4897425205b7539254b0a79",
+      "bytes": 6127
+    },
+    {
+      "path": "compiler-standard-pil/std_direct.pil",
+      "sha256": "4ebb6e9537ba674a181c38dce0f0efc095d744cf818d974d91490d30ca1fc8b1",
+      "bytes": 6524
+    },
+    {
+      "path": "compiler-standard-pil/std_lookup.pil",
+      "sha256": "eabdbab57ba657a39f5c482921770561f720d699c1e63d1ac192dfaec93d2698",
+      "bytes": 6612
+    },
+    {
+      "path": "compiler-standard-pil/std_permutation.pil",
+      "sha256": "0e261fa1f6482a728c13bf7820fe49330f181fd80472fe71880d7fee20a0144c",
+      "bytes": 5824
+    },
+    {
+      "path": "compiler-standard-pil/std_prod.pil",
+      "sha256": "84039dce882092e21bf055d8deb5482402f64d676490a441c490174d8005a17b",
+      "bytes": 54496
+    },
+    {
+      "path": "compiler-standard-pil/std_range_check.pil",
+      "sha256": "538fafd9ab7c54ee4eca225715c730f7dc8b443a4245ac668ca650cd0649e19c",
+      "bytes": 29848
+    },
+    {
+      "path": "compiler-standard-pil/std_sum.pil",
+      "sha256": "c4f155bebe8839e7e8411dd088f92a80667eb17a90f8ff448190f08415f108c1",
+      "bytes": 42061
+    },
+    {
+      "path": "compiler-standard-pil/std_tools.pil",
+      "sha256": "632bd5c6cce4ab647dad9c749c7e85e1ab553ceaf0455b7b59f28d5d3580c8c0",
+      "bytes": 855
+    },
+    {
+      "path": "compiler-standard-pil/std_virtual_table.pil",
+      "sha256": "f7e4f91b0fcaa6ef36e1d5e867dc74c02737b2fd25054b01c79ad7a733f8965d",
+      "bytes": 22737
+    },
+    {
+      "path": "mutated-source-pil/state-machines/binary/pil/binary.pil",
+      "sha256": "6f2652604dfa708dce5db2c42cbf13df2404da332df464cbcf5056f7dadc6a8a",
+      "bytes": 11658
+    },
+    {
+      "path": "campaign/before-strict.json",
+      "sha256": "aca6a4e5f1832e010542ccbabd6d2e72993a644ed46fea51b87f377007df55fa",
+      "bytes": 237
+    },
+    {
+      "path": "campaign/results.json",
+      "sha256": "3e518fda02973de3244f6fe39b6c60d6505430ce3521472bf4fcdc759e0ee604",
+      "bytes": 82038
+    },
+    {
+      "path": "campaign/final-result.json",
+      "sha256": "f270913ab89da8e73c00d2efee4306e06a21b1b141846158e29739b1a1c492cc",
+      "bytes": 85508
+    },
+    {
+      "path": "campaign/after-strict.json",
+      "sha256": "aca6a4e5f1832e010542ccbabd6d2e72993a644ed46fea51b87f377007df55fa",
+      "bytes": 237
+    },
+    {
+      "path": "campaign/normal-source-before.json",
+      "sha256": "2fffbedf8fe790bccd4f863948b58ea5bdf9499ae31683f87a7ed8c1d08736fd",
+      "bytes": 322592
+    },
+    {
+      "path": "campaign/freeze.json",
+      "sha256": "b82fcee07f86c79204b918b26b134e41871c2e2e16241ac4f988d58d8056bc56",
+      "bytes": 11113
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-PublicIoMainTraceLayout-result.json",
+      "sha256": "fda6dcec78b7b847efe8ed39a639e692f2ea3a8a651449956f67cd17c6ff900e",
+      "bytes": 557
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-NativeBinaryInstance.log",
+      "sha256": "4d2de22f9814f14cb0769237e7867460b4edf4c774fb90829939a706701d9a34",
+      "bytes": 202
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-NativeBinaryConstruction.log",
+      "sha256": "4623881b9e188f1173caebf46c03819335d1c23793bfc4e427571b3c3f3f337e",
+      "bytes": 1393
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-SourceFinalizer.log",
+      "sha256": "92f666b389f33bb6dd95fcbf2d08e9ea145bad68e83d23c5d298c2a9d5382492",
+      "bytes": 460
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-Stage2-Equations-result.json",
+      "sha256": "e6fa891240ee0cce5cfe0269e7b60ce7705aceea38eb9a3d6530211d9eea7bd9",
+      "bytes": 548
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-MemMirrorWeld-result.json",
+      "sha256": "4638ba06cdac718e0b03498c0ac4e8499c33343d1cb2c09dfc52c12bbf5a85f4",
+      "bytes": 527
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-NativeTraceRules-result.json",
+      "sha256": "52d3892ea13ac405216ffdd82a3e1efe8f6f7c00fa634a6f124cddf5b4835f5d",
+      "bytes": 537
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-Stage2-Native-result.json",
+      "sha256": "8535b9418b2784f6c49f55b55d9bc0659acbdf1b6705760b83fa3ff4023e83c3",
+      "bytes": 539
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-Extraction-Mem-result.json",
+      "sha256": "539a12e8f86c4e58085007671df960fc54e4f3880ecaf9924da7b83806acf5a9",
+      "bytes": 523
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-Circuit-result.json",
+      "sha256": "da07edc93243440ca6faa35e5975a9e1b4acd97738fe326e3917cfa0db29e3ca",
+      "bytes": 522
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-NativeTraceWords-result.json",
+      "sha256": "a7d724be74fea4b84dd0a055fa1438c1d1fe310b53dacb20a9b073e83f3451dd",
+      "bytes": 591
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-Stage2-Literals-result.json",
+      "sha256": "a1e04695460ed11a727f6e982a81331b97cddc841e67e9ce5919f29bd8ce34b2",
+      "bytes": 546
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-BinaryNativeRows-result.json",
+      "sha256": "0329345204e59c922f1834a28d040afd9b1c883f89bf075df74e125a538c0948",
+      "bytes": 536
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-PublicIoMainTraceLayout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-GsumBoundary-Model.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/02-generator-3-result.json",
+      "sha256": "ddb0b02451653e2154f8468a5722c473cfa01e1f857c62a0cfc66fd159197970",
+      "bytes": 507
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-Extraction-LookupWiring.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-Extraction-Binary-result.json",
+      "sha256": "7659b33c5c636f0e32c354f06425e9deca9cdc26529b5fb26f95f7acb44de0f5",
+      "bytes": 533
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-RangeWiring-result.json",
+      "sha256": "365582ea754b7f82b0ce5494e3f516536ee230663aa953ff55f9ab5cb8b447e9",
+      "bytes": 534
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-NativeValuesLayout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-SourceLiterals.log",
+      "sha256": "8128f9400050e2debf4f1351649c9197503665d4281f13ae1e60805330d10ba5",
+      "bytes": 220
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-Extraction-Circuit-result.json",
+      "sha256": "13b434b87db531ec92fd6d0a0d6df3ebd4e5cb57fe5f82833db678e13dd94341",
+      "bytes": 535
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-Circuit.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-NativeBinaryInstance-result.json",
+      "sha256": "35d66f7cc962c07f690a15c1f8daf1aea82b9655b17cc41e2a8f49da7b1e2191",
+      "bytes": 548
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-PublicIoMemWriteByteTraceLayout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-Stage2-Equations.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/02-generator-1-result.json",
+      "sha256": "c18b1fc21d7a4f6296fbec8902ccdd41cb01bc045ef227635861ccbfd611aed6",
+      "bytes": 469
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-PublicIoMemWriteByteTraceLayout-result.json",
+      "sha256": "5ed90ba8980bc938f3f76593ae581eb3276bc1d38fea8b87d4ba7bf9779ddb67",
+      "bytes": 581
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-NativeTraceRules.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/02-generator-2.log",
+      "sha256": "43406c5924454b2b9870c4507f2ff7cc4a5bdbd03f5a278ab28c8adb12e3abb4",
+      "bytes": 148
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-Extraction-Binary.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-RawSource.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-BinaryPaddingOperations-result.json",
+      "sha256": "c8217134f0327d8b08143f0ab83f0ac1bf5fd32fa2c382a06e941d0502b6e124",
+      "bytes": 558
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-Constraints.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-SourceInstance.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-Extraction-Circuit.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/02-generator-0.log",
+      "sha256": "5270220483fe3d1aec8a2ace852c8b62402b0ed24b9c5f99d73e6c873cba32dc",
+      "bytes": 152
+    },
+    {
+      "path": "campaign/normal-control/02-generator-2-result.json",
+      "sha256": "4913376c478f43f4e74158205775ebf438b3a5c156f7f609767ffd17168e5f72",
+      "bytes": 501
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-SourceLiterals-result.json",
+      "sha256": "55491f3b591cffbc797bbc7e088f907abd293d14e43a33f2082ec0b8227e43f4",
+      "bytes": 584
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-Stage2-Literals.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-BinaryNativeRows.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/readonly-overlay.json",
+      "sha256": "40b62c6689d2491cd49e5f5960e2ba70250f5386e6f3595db1b94b690b0c758d",
+      "bytes": 25871772
+    },
+    {
+      "path": "campaign/normal-control/02-generator-3.log",
+      "sha256": "f6512d6c29f7677233a126f343b8d2fcd2cb7e3b22f8f692742e0fbd2814a663",
+      "bytes": 151
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-SourceInstance-result.json",
+      "sha256": "2307c36b336aba2266e9613fb25138991e22bd73ccda14f1659d06f32d7053bd",
+      "bytes": 585
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-SourceFinalizerEquation-result.json",
+      "sha256": "146b4aa54116c6a949b8d91ee8ff3fd6877fdc0e53471cee46ba0a4a5c695be1",
+      "bytes": 569
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-Extraction-Mem.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-RawSource-result.json",
+      "sha256": "93246064d14e80179dcb4ed0d4df979ddc98d91dd8aaad33da64548ceca8c1c7",
+      "bytes": 569
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-Stage2-Native.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-NativeBinaryConstruction-result.json",
+      "sha256": "77b7da2e5298eeecdf2a5593d5a53a91d99fe73cbba7f03a42e50f98dcdfcc00",
+      "bytes": 560
+    },
+    {
+      "path": "campaign/normal-control/result.json",
+      "sha256": "48e14c707f84eb3c4b445f686f4bab736bc490f98aae83b0c05def55b4d6e0fc",
+      "bytes": 40054
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-RangeWiring.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/02-generator-0-result.json",
+      "sha256": "e7e6c8d611a820d90f6ef4b881402b043988e8db53a77a799fe23e652fce21d2",
+      "bytes": 367
+    },
+    {
+      "path": "campaign/normal-control/02-generator-1.log",
+      "sha256": "d5cd4c914e4da6801cf523d0e8aefb9fcd96f6cc87020d5a2a6e6ee7278092b6",
+      "bytes": 157
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-Bridge.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-Bridge-result.json",
+      "sha256": "1351c4fa85571f3126d155024ee96c1c9d80302c6e716df0bb9f116571a0cf41",
+      "bytes": 518
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-GsumBoundary-Model-result.json",
+      "sha256": "47bc63c93004b6c15f6b9793f2f811b9993c0253ebab1af26d771f38dcd48e31",
+      "bytes": 541
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-Constraints-result.json",
+      "sha256": "a498d2f7b989b06a16051568a5dec687bbc1c6b3712fbf1b3b481917672177a3",
+      "bytes": 533
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-NativeTraceWords.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-MemMirrorWeld.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-NativeTraceCells.log",
+      "sha256": "fc3ba7f5bb499c49e7fe28ffddf352c144e3faee8a4bed874f1e5318dd976517",
+      "bytes": 206
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-NativeTraceCells-result.json",
+      "sha256": "aa92a30734da6449c0d6803406281486c4e9e1ff4d5cd064e4af48d2c27fb94d",
+      "bytes": 536
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-NativeValuesLayout-result.json",
+      "sha256": "ea32617400155c3d09996029b60573c2cd07679e9e30cf574485d22752942583",
+      "bytes": 542
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-SourceFinalizer-result.json",
+      "sha256": "aa7f5220f0642f5ce7eab5cff3d8f567172f25d03d9f381f5cc3688a4babdb3e",
+      "bytes": 546
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-Mem-SourceFinalizerEquation.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-ZiskFv-AirsClean-BinaryPaddingOperations.log",
+      "sha256": "2d471783862a5898072a806d4e294f97d1bb9a225094f3ca74fe12a370c69096",
+      "bytes": 661
+    },
+    {
+      "path": "campaign/normal-control/03-kernel-Extraction-LookupWiring-result.json",
+      "sha256": "513c6027ba99a1e31426ece3353ea5ed2bf9c15be6c737ee3d16a22341ff77fc",
+      "bytes": 549
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-PublicIoMainTraceLayout-result.json",
+      "sha256": "7d2fb3dcd655d8c95daf9fdccfd821da85f6335cde68c6973cd3b86f78cb010c",
+      "bytes": 558
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-SourceFinalizer.log",
+      "sha256": "92f666b389f33bb6dd95fcbf2d08e9ea145bad68e83d23c5d298c2a9d5382492",
+      "bytes": 460
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-Stage2-Equations-result.json",
+      "sha256": "3a5f5bc3de9a63b2ebff9a6472ada58636546f2bf7727abdc654250c96cf5d42",
+      "bytes": 549
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-MemMirrorWeld-result.json",
+      "sha256": "201d4de5569e3bd775cfdb15013b1becc22761d515000c9d1a8176c0c5ae45d9",
+      "bytes": 527
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-NativeTraceRules-result.json",
+      "sha256": "6021cb59e72cf0f78319ed4fd31834695c310f8507dcc8b54117305a52f9e50c",
+      "bytes": 536
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-Stage2-Native-result.json",
+      "sha256": "3862f4648e8daf920fd78082a421bc2584e0dfd8da987a909b9d60e8373b805a",
+      "bytes": 540
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-Extraction-Mem-result.json",
+      "sha256": "88c69c8077feb09cb3dec145751f0c680845ff333126098921ec9e2590b0336d",
+      "bytes": 523
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-Circuit-result.json",
+      "sha256": "30cb84409bffbcf618c384cb98c28ed520b4ac16069ab611e59d0deafd192147",
+      "bytes": 521
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-NativeTraceWords-result.json",
+      "sha256": "f5b15175a7a05e41e2b27c5828e2b28f6d149cb3633c02643e9da0af25344738",
+      "bytes": 591
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-Stage2-Literals-result.json",
+      "sha256": "7c61a694caa9623cc5e080095d8af8ff941f844e217e4c6eede0bf494b4ecc6f",
+      "bytes": 545
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-BinaryNativeRows-result.json",
+      "sha256": "9ba15984d22026142136d7d82d5a2e0fb8b407da8c0fbe96ad15d7d9aca3215c",
+      "bytes": 536
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-PublicIoMainTraceLayout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/source-after.json",
+      "sha256": "eb14f2483878ce33b56624854ce50f93e13c51c2a59a2d9f07a1c6c2cbb20e30",
+      "bytes": 328540
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-GsumBoundary-Model.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/02-generator-3-result.json",
+      "sha256": "74888c5c42adb413feddcc08bf7cbd99f330bd10c6bc017e8a4406e1dd434a0e",
+      "bytes": 502
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-Extraction-LookupWiring.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-Extraction-Binary-result.json",
+      "sha256": "1d53ac9df43178d3d6964f08a873f507dfbe1f37de8ced6af4510c6d56961f9f",
+      "bytes": 532
+    },
+    {
+      "path": "campaign/opcode-add-one/01-actual-source-compiler.log",
+      "sha256": "0bed009613343176ee6247bd107ce15c535d6d6e749cf8ddbd22d35af7f31d3c",
+      "bytes": 35796
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-RangeWiring-result.json",
+      "sha256": "3c033307f3afe350ded05b59b176fb85b52752e9889fc4ad88383df706202df6",
+      "bytes": 534
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-NativeValuesLayout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-SourceLiterals.log",
+      "sha256": "8128f9400050e2debf4f1351649c9197503665d4281f13ae1e60805330d10ba5",
+      "bytes": 220
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-Extraction-Circuit-result.json",
+      "sha256": "7ce40a4b71da2ac958af59286229c4cc919609de73a48417d7d25decf8e20f94",
+      "bytes": 535
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-Circuit.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-PublicIoMemWriteByteTraceLayout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-Stage2-Equations.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/02-generator-1-result.json",
+      "sha256": "ea5c6d91941decd4b120cef8929fdb67d9133b565311de00b20e5b1c34228f62",
+      "bytes": 463
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-PublicIoMemWriteByteTraceLayout-result.json",
+      "sha256": "5bc069d2df5cf0aac95f611243b6929d10ed136416cbaa51bfead7c6258f279b",
+      "bytes": 582
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-NativeTraceRules.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/02-generator-2.log",
+      "sha256": "e373a4ceb31c6f2db01b1f1a05793a54fe0dfbc8b3aa6b548ac3dbb2d4c66043",
+      "bytes": 148
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-Extraction-Binary.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/01-actual-source-compiler-result.json",
+      "sha256": "3aeb7719d36d46272181c85b5cb26ffdc94ad8c1266393d650e86be7a5c50b35",
+      "bytes": 394
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-RawSource.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/source-before.json",
+      "sha256": "2e5f01f2b58c434c924f49e9466f17f28382a698b2a7524255499453587fbac0",
+      "bytes": 322592
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-BinaryPaddingOperations-result.json",
+      "sha256": "20307a4617abee32a7e4e672f19e2fea12404a6576d8067738607b4bc5fd76ec",
+      "bytes": 558
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-Constraints.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-SourceInstance.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-Extraction-Circuit.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/02-generator-0.log",
+      "sha256": "ae9d87f9f7bda6fcf391d0c424e54145f2e28baa58f3d9e48d5f60c774338722",
+      "bytes": 152
+    },
+    {
+      "path": "campaign/opcode-add-one/02-generator-2-result.json",
+      "sha256": "e71ac368393f538f9cacb64345a3d7513bcbc3be834cb7ec35b406403755ae29",
+      "bytes": 497
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-SourceLiterals-result.json",
+      "sha256": "bd818d6f13a45ee317f7f399337d92bb49eeb5e3e70146174c4f7183ffa31fdc",
+      "bytes": 585
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-Stage2-Literals.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-BinaryNativeRows.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/readonly-overlay.json",
+      "sha256": "e1a446d75e55ae88964b976e6769629aeeef289983a587ff4eab990d048bd2f3",
+      "bytes": 25871772
+    },
+    {
+      "path": "campaign/opcode-add-one/02-generator-3.log",
+      "sha256": "e16a275e506e0a93dea1ec1b5e846fdf4523d652dbe998e10aa62fef62b04a73",
+      "bytes": 151
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-SourceInstance-result.json",
+      "sha256": "3ebc45ee7e3f1f46f5dabc2da6bff12a276081eb834e16a8f2456825d62f0b63",
+      "bytes": 585
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-SourceFinalizerEquation-result.json",
+      "sha256": "69b9334b923a193ff6bfc375a743351d91f32d83f4b56b1eecf2b5fd189b8bab",
+      "bytes": 570
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-Extraction-Mem.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-RawSource-result.json",
+      "sha256": "21171c646f2f6654bcd6a422177ae20d256ed9ce6a4f15b3fd60f4dead090213",
+      "bytes": 569
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-Stage2-Native.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/result.json",
+      "sha256": "34427ed5373c1377e7ac7988413e2a0483a257096916032a741c6ed77156def4",
+      "bytes": 38785
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-RangeWiring.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/02-generator-0-result.json",
+      "sha256": "fcc64944cde3ec3338f2ed7d8957050545165d88c9cbff7da05b8ef01f2ec821",
+      "bytes": 367
+    },
+    {
+      "path": "campaign/opcode-add-one/02-generator-1.log",
+      "sha256": "1e338df59f741c0b1801172ae13449612d6d272207fe528a30c8445e8f958689",
+      "bytes": 157
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-Bridge.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-Bridge-result.json",
+      "sha256": "8873cf4e2700e42c520bc0a52ee1c886b4065beae753b15b37ace72d29f2fa18",
+      "bytes": 519
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-GsumBoundary-Model-result.json",
+      "sha256": "9a3669191e8ebd07329005ed64d0100e50f4a4d1c8564920fa40d4e1fc7f65b6",
+      "bytes": 542
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-Constraints-result.json",
+      "sha256": "4c7f1bc100bd03326f0f5d28c77629fad2b5395b080f297e813efe261aed83d4",
+      "bytes": 534
+    },
+    {
+      "path": "campaign/opcode-add-one/actual-source.pilout",
+      "sha256": "31902c8527e1edb551bbf0581be14b85eaad641b6a55545b9cccb6cbdff9c17c",
+      "bytes": 4417275
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-MemAlignWriteByte-NativeTraceWords.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-MemMirrorWeld.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-NativeTraceCells.log",
+      "sha256": "fc3ba7f5bb499c49e7fe28ffddf352c144e3faee8a4bed874f1e5318dd976517",
+      "bytes": 206
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-NativeTraceCells-result.json",
+      "sha256": "a9e6ed358c9696ccb5952110e63bdb3990a89260eb17ee9daa4e8fbcdb153dd1",
+      "bytes": 537
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-NativeValuesLayout-result.json",
+      "sha256": "2f40a576753e53e1a6d91118994ea12bb41128d3e78fa0782fc3906885931678",
+      "bytes": 542
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-SourceFinalizer-result.json",
+      "sha256": "09b220851ac80c569ae5a49ee04eb18a8c37203a3c18efdc49ed687d60cf0bf2",
+      "bytes": 546
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-Mem-SourceFinalizerEquation.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-ZiskFv-AirsClean-BinaryPaddingOperations.log",
+      "sha256": "ca2ac1c06b22227db8bb9558f67b7c89629d4c6f367deb6f32e28ba591d06b0e",
+      "bytes": 1528
+    },
+    {
+      "path": "campaign/opcode-add-one/03-kernel-Extraction-LookupWiring-result.json",
+      "sha256": "bf9652cbf71d0cfbfdc2798527547ae6950e84a162c6e1b30a4b73595a80a176",
+      "bytes": 551
+    },
+    {
+      "path": "campaign/opcode-add-one/generated/Extraction/Circuit.lean",
+      "sha256": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+      "bytes": 740
+    },
+    {
+      "path": "campaign/opcode-add-one/generated/Extraction/Mem.lean",
+      "sha256": "749ea99f75482225cf14ddc0025766afe348b739d974ff7f8040d94d3ad63af3",
+      "bytes": 27323
+    },
+    {
+      "path": "campaign/opcode-add-one/generated/Extraction/Binary.lean",
+      "sha256": "fecfa50412c45e29093d23602990a509bebc9f2aad456b63ea0875a95c3c0173",
+      "bytes": 33258
+    },
+    {
+      "path": "campaign/opcode-add-one/generated/Extraction/LookupWiring.lean",
+      "sha256": "db09742f8752ee1045a10d02b1c3992c28e45027ecedca678e4b8c342025c004",
+      "bytes": 519569
+    },
+    {
+      "path": "campaign/normal-control/generated/Extraction/Circuit.lean",
+      "sha256": "573a84fa6ea7cc15a1253bc166150511c6df5bed437a75719947902a397b4c2d",
+      "bytes": 740
+    },
+    {
+      "path": "campaign/normal-control/generated/Extraction/Mem.lean",
+      "sha256": "749ea99f75482225cf14ddc0025766afe348b739d974ff7f8040d94d3ad63af3",
+      "bytes": 27323
+    },
+    {
+      "path": "campaign/normal-control/generated/Extraction/Binary.lean",
+      "sha256": "4d62c46816e0c962e62f0cf7b04322c77e5cc467c0e955728abc86662804bf68",
+      "bytes": 33258
+    },
+    {
+      "path": "campaign/normal-control/generated/Extraction/LookupWiring.lean",
+      "sha256": "c44807d618d000f2a3456b5c0a9af9e2dbb728df31725df1cb2cd7a1d097ff8c",
+      "bytes": 519569
+    },
+    {
+      "path": "normal-actual-compiler/actual-source.pilout",
+      "sha256": "324dc09b3ca641e721dd726db6f0f39193234695930c04e7bddae7008a535369",
+      "bytes": 4417275
+    },
+    {
+      "path": "normal-actual-compiler/result.json",
+      "sha256": "05b1d65655b3939992e2f2817d9b5e148e4d04e866a8838180ab8107bfdfc609",
+      "bytes": 19100
+    },
+    {
+      "path": "normal-actual-compiler/source-before.json",
+      "sha256": "2fffbedf8fe790bccd4f863948b58ea5bdf9499ae31683f87a7ed8c1d08736fd",
+      "bytes": 322592
+    },
+    {
+      "path": "normal-actual-compiler/01-actual-compiler.log",
+      "sha256": "86db305e5b14b338fd8ebf247591189304b7a8aae13520bd9f6e655b062fdcde",
+      "bytes": 35829
+    },
+    {
+      "path": "replay/run-genuine-mutation.py",
+      "sha256": "16ed8db9af62749bc6efdac122663b06104b2442cb4bf89d3f95ba2ba814ca07",
+      "bytes": 13354
+    },
+    {
+      "path": "replay/package-genuine-mutation.py",
+      "sha256": "f8645cd5e5b7f5045d8b27eba7df70ea175861973f91de60fdbbfcea6461ce99",
+      "bytes": 4644
+    },
+    {
+      "path": "lineage/readonly-dependency-lease.json",
+      "sha256": "e2689c02a0972124f6b2d65b4d871cdb9ae82be5766cc791ad9b9a45f1135ea9",
+      "bytes": 41337446
+    },
+    {
+      "path": "lineage/checked4-baseline-handback.json",
+      "sha256": "009b6391b2aee6441f4f1491a5d5efb5ef8c6e8d3ae74e041e7fe0eb25b7d194",
+      "bytes": 24464
+    },
+    {
+      "path": "tool-source/compile-mutation",
+      "sha256": "62884766bb8c0f4f2726c92a666dada220fb93b4ec9e48c0f04d14772bdb9a3c",
+      "bytes": 1327
+    },
+    {
+      "path": "tool-source/phg76nimggryd3c1pj1kk28948j1hqiv-zisk-fv-extracted-lean-1.0.drv",
+      "sha256": "d4ca33e69c0bfdb6ba8467348cb4a719e33124a3e2e393acca7e72432c93148d",
+      "bytes": 13320
+    }
+  ]
+}

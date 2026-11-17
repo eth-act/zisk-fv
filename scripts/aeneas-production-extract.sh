@@ -217,9 +217,12 @@ if [[ "$decl_count" -eq 0 ]]; then
   exit 1
 fi
 
+# The pinned translator otherwise sizes a Domainslib pool from host CPUs,
+# independently of the caller's CPU quota and Lean thread limit.
 (
   cd "$WORKSPACE"
   nix run "$AENEAS_FLAKE#aeneas" -- \
+    -sequential \
     -backend lean \
     -dest Lean \
     production_m2.llbc
@@ -314,7 +317,9 @@ open Lake DSL
 
 require aeneas from "aeneas-lean"
 
-package zisk_production_extraction_check
+package zisk_production_extraction_check where
+  -- Scheduler-only arguments must reach each compiler without rebuilding dependencies.
+  weakLeanArgs := #["-j1", "-DElab.async=false"]
 
 @[default_target] lean_lib ProductionM2
 @[default_target] lean_lib GeneratedChecks

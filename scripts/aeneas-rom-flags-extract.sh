@@ -35,7 +35,7 @@ for tool in gcc as ar ld; do
 done
 export PATH="$WORKSPACE/tool-shims:$PATH"
 export CARGO_TARGET_DIR="$WORKSPACE/target"
-export CARGO_BUILD_JOBS=2
+export CARGO_BUILD_JOBS="${CARGO_BUILD_JOBS:-2}"
 (
   cd "$WORKSPACE/source/core"
   nix run "$AENEAS_FLAKE#charon" -- cargo --preset=aeneas \
@@ -43,7 +43,8 @@ export CARGO_BUILD_JOBS=2
     --dest-file "$WORKSPACE/rom_flags.llbc" \
     -- --lib --features aeneas_extract --offline
 )
-nix run "$AENEAS_FLAKE#aeneas" -- -backend lean -namespace zisk_rom_flags \
+# CPU quotas do not bound the pinned translator's host-sized Domainslib pool.
+nix run "$AENEAS_FLAKE#aeneas" -- -sequential -backend lean -namespace zisk_rom_flags \
   -dest "$WORKSPACE/Lean" "$WORKSPACE/rom_flags.llbc"
 generated="$WORKSPACE/Lean/RomFlags.lean"
 if [[ ! -s "$generated" ]] ||
