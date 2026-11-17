@@ -1127,7 +1127,7 @@ private theorem three_active_table_streams (channel : RawChannel FGL)
       consumer.interactionsWith channel ++ extension.interactionsWith channel ++
         binary.interactionsWith channel := by
   simp only [List.flatMap_append, List.flatMap_cons, List.flatMap_nil,
-    before_nil, between_nil, after_nil, List.nil_append, List.append_nil]
+    before_nil, between_nil, after_nil, List.nil_append, List.append_nil, List.append_assoc]
 
 /-- Reduce only proved-silent tables; retain the actual consumer and both
 full-domain source streams, including zero multiplicities. -/
