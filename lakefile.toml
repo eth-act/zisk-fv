@@ -1,7 +1,7 @@
 name = "zisk-fv"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["ZiskFv", "Extraction"]
+defaultTargets = ["ZiskFv", "Extraction", "Source415DomainComparison"]
 moreLeanArgs = ["--tstack=400000"]
 
 [leanOptions]
@@ -68,6 +68,12 @@ rev = "v4.28.0"
 [[lean_lib]]
 name = "ZiskFv"
 roots = ["ZiskFv"]
+
+# Supplemental old/corrected provider-domain comparisons are checked in the
+# ordinary build without importing them into the production ZiskFv root.
+[[lean_lib]]
+name = "Source415DomainComparison"
+roots = ["Source415DomainComparison"]
 
 # The REAL Aeneas-extracted ZisK lowerer (`trust/aeneas/ProductionM2.lean`,
 # `import Aeneas`). Imported by ZiskFv/Compliance/AeneasBridgeTrust/Extraction.lean
