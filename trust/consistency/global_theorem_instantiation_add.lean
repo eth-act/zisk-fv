@@ -71,7 +71,7 @@ private def emptyData : ProverData FGL := fun _ _ => #[]
 private def providerRow : Array FGL := (toElements binaryAddZeroRow).toArray
 
 private def providerTable : Air.Flat.Table FGL where
-  component := staticLookupComponent
+  component := tableConsumerComponent
   rawRows := [providerRow]
   data := emptyData
   raw_uniform_width := by
@@ -81,30 +81,30 @@ private def providerTable : Air.Flat.Table FGL where
     rfl
   fixed_domain := by
     intro columns h_columns
-    simp [staticLookupComponent] at h_columns
+    simp [tableConsumerComponent] at h_columns
 
 private theorem providerTable_effectiveRows : providerTable.table = [providerRow] := by
-  simp [providerTable, Air.Flat.Table.table, staticLookupComponent]
+  simp [providerTable, Air.Flat.Table.table, tableConsumerComponent]
 
 private theorem rowInput_provider :
-    staticLookupComponent.rowInput (providerTable.environment providerRow) =
+    tableConsumerComponent.rowInput (providerTable.environment providerRow) =
       binaryAddZeroRow := by
-  change staticLookupComponent.rowInput (Environment.fromArray providerRow emptyData) =
+  change tableConsumerComponent.rowInput (Environment.fromArray providerRow emptyData) =
     binaryAddZeroRow
-  simp [providerRow, staticLookupComponent, Air.Flat.Component.rowInput,
+  simp [providerRow, tableConsumerComponent, Air.Flat.Component.rowInput,
     ProvableType.valueFromOffset_zero_fromInput_eq]
 
-private theorem providerTableSpec : providerTable.Spec := by
+private theorem providerTableFullSpec :
+    ∀ row ∈ providerTable.table,
+      ZiskFv.AirsClean.Binary.Spec
+          (tableConsumerComponent.rowInput (providerTable.environment row)) ∧
+        StaticBinaryTableSpecFacts
+          (tableConsumerComponent.rowInput (providerTable.environment row)) := by
   intro row h_row
   rw [providerTable_effectiveRows] at h_row
   simp only [List.mem_singleton] at h_row
   subst row
-  change staticLookupComponent.Spec (Environment.fromArray providerRow emptyData)
-  rw [staticLookupComponent_spec]
-  have h_row_input := rowInput_provider
-  change staticLookupComponent.rowInput (Environment.fromArray providerRow emptyData) =
-    binaryAddZeroRow at h_row_input
-  rw [h_row_input]
+  rw [rowInput_provider]
   exact ⟨binaryAddZeroSpec, binaryAddZeroStaticFacts⟩
 
 private theorem providerRowMem : providerRow ∈ providerTable.table := by
@@ -128,7 +128,7 @@ private theorem opBusMatch :
     matches_entry (opBus_row_Main witnessMain 0)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage
-          (staticLookupComponent.rowInput (providerTable.environment providerRow))) 1) := by
+          (tableConsumerComponent.rowInput (providerTable.environment providerRow))) 1) := by
   rw [rowInput_provider]
   norm_num [matches_entry, opBus_row_Main, witnessMain, witnessMainRow,
     ZiskFv.AirsClean.Main.validOfRow, ZiskFv.AirsClean.Binary.opBusMessage,
@@ -168,14 +168,14 @@ private def witnessBus : ZiskFv.Compliance.BusRows :=
 private theorem inputR1Row :
     addInput.r1_val =
       ZiskFv.EquivCore.Add.binaryRowA64
-        (staticLookupComponent.rowInput (providerTable.environment providerRow)) := by
+        (tableConsumerComponent.rowInput (providerTable.environment providerRow)) := by
   rw [rowInput_provider, a64_zero]
   rfl
 
 private theorem inputR2Row :
     addInput.r2_val =
       ZiskFv.EquivCore.Add.binaryRowB64
-        (staticLookupComponent.rowInput (providerTable.environment providerRow)) := by
+        (tableConsumerComponent.rowInput (providerTable.environment providerRow)) := by
   rw [rowInput_provider, b64_zero]
   rfl
 
@@ -209,7 +209,7 @@ private theorem promises :
 private def addZeroEnv : ZiskFv.Compliance.OpEnvelope witnessState witnessMain 0 :=
   ZiskFv.Compliance.OpEnvelope.add_via_binary
     addInput (regidx.Regidx 0#5) (regidx.Regidx 0#5) (regidx.Regidx 0#5)
-    witnessBus addPins providerTable providerRow rfl providerTableSpec providerRowMem
+    witnessBus addPins providerTable providerRow rfl providerTableFullSpec providerRowMem
     opBusMatch inputR1Row inputR2Row laneRd promises
 
 private theorem addZeroBridge : addZeroEnv.aeneasBridgeTrust := by
