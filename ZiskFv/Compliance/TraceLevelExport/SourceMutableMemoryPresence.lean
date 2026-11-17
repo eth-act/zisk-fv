@@ -169,7 +169,7 @@ All MemAlign rows, including padding and both request polarities, are counted. -
 theorem actualAlignmentSupport_small {n : Nat} (trace : AcceptedZiskTrace n) :
     7 * (actualAlignmentSupport trace).card < GL_prime := by
   classical
-  have roster : trace.witness.allTables.length = 16 := by
+  have roster : trace.witness.allTables.length = 18 := by
     have mapped := congrArg List.length trace.witness.allTables_map_component
     simp only [List.length_map] at mapped
     rw [mapped]
@@ -181,7 +181,7 @@ theorem actualAlignmentSupport_small {n : Nat} (trace : AcceptedZiskTrace n) :
       (alignmentPointers trace.witness.allTables).length := by
     exact List.toFinset_card_le _
   rw [roster] at pointerBound
-  change (alignmentPointers trace.witness.allTables).length ≤ 16 * 2097152 at pointerBound
+  change (alignmentPointers trace.witness.allTables).length ≤ 18 * 2097152 at pointerBound
   omega
 
 /-- Accepted/source integration must derive the predecessor closure from real

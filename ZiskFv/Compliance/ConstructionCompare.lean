@@ -23,10 +23,10 @@ hypothesis binders plus the genuine `execRow` ∀-binder.
 `h_matches` derivation reuses AND's `_op_lt_16` + `_64` route
 (`logic_row_mode_pins_of_emit_op_lt_16_of_static_spec` +
 `byte_chain_discharge_64_of_static_row`). The compare carry-flag / c-lane
-polarity reasoning that distinguishes SLT/SLTU from AND lives entirely inside the
-`equiv_SLT` / `equiv_SLTU` wrappers (which re-derive `h_row_m32` / `h_bop`
-inline); the construction takes the same INPUTS as `equiv_AND` and the `h_matches`
-fact it derives is only used for the lane→Sail binding (`input_r1_packed_a_row`).
+polarity reasoning that distinguishes SLT/SLTU from AND lives inside the
+row-native `EquivCore.Slt` / `EquivCore.Sltu` semantic cores; the construction
+passes the actual source row's `h_row_m32` and `h_bop` facts. Its `h_matches`
+fact also supplies the lane→Sail binding (`input_r1_packed_a_row`).
 
 ## SLT (`construction_slt_sound`)
 
@@ -212,15 +212,12 @@ theorem construction_slt_sound_claimed_dead
       rd_idx := h_rd_idx }
   -- (a) circuit-internal arithmetic + lane→Sail binding.
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_static :
-      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_zero : m.m32 i.val = 0 := h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
@@ -246,7 +243,8 @@ theorem construction_slt_sound_claimed_dead
   have h_matches :
       ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_LT :=
-    allByteMatchesOfStaticOut64_local h_out
+  allByteMatchesOfStaticOut64_local
+    (row := providerInput) (op := ZiskFv.Airs.Tables.BinaryTable.OP_LT) h_out
   -- Lane → Sail binding: from lane bridges (binders) + provider match.
   have h_input_r1_row :
       slt_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
@@ -260,11 +258,10 @@ theorem construction_slt_sound_claimed_dead
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) slt_input.r2_val
         h_matches h_m32_zero h_b_lo h_b_hi h_match h_input_r2
-  exact ZiskFv.Compliance.equiv_SLT
-    state slt_input r1 r2 rd m
-    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-    i.val bus pins h_match
-    h_input_r1_row h_input_r2_row h_lane_rd promises
+  exact ZiskFv.EquivCore.Slt.equiv_SLT_of_static_row
+    state slt_input r1 r2 rd m providerInput i.val bus promises pins
+    h_match h_core h_facts h_row_m32 h_bop
+    h_input_r1_row h_input_r2_row h_lane_rd
 
 /-- Sound SLTU construction: from the accepted trace + honest residual binders,
     conclude the canonical `execute (RTYPE SLTU) = (bus_effect …).2`.
@@ -408,15 +405,12 @@ theorem construction_sltu_sound_claimed_dead
       rd_idx := h_rd_idx }
   -- (a) circuit-internal arithmetic + lane→Sail binding.
   let providerInput :=
-    ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+    ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
       (providerTable.environment providerRow)
-  obtain ⟨h_core, h_facts⟩ :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_core_and_wf_of_table_spec
-      h_component h_table_spec h_provider_row
-  have h_static :
-      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts providerInput :=
-    ZiskFv.AirsClean.BinaryFamily.staticBinary_spec_facts_of_table_spec
-      h_component h_table_spec h_provider_row
+  obtain ⟨h_row_spec, h_static⟩ := h_table_spec providerRow h_provider_row
+  have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec providerInput h_row_spec
+  have h_facts :=
+    ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts providerInput h_static
   have h_m32_zero : m.m32 i.val = 0 := h_m32
   have h_emit :
       providerInput.chain.b_op + 16 * providerInput.mode.mode32 =
@@ -442,7 +436,8 @@ theorem construction_sltu_sound_claimed_dead
   have h_matches :
       ZiskFv.EquivCore.Bridge.Binary.all_byte_matches_wf_at_row
         providerInput ZiskFv.Airs.Tables.BinaryTable.OP_LTU :=
-    allByteMatchesOfStaticOut64_local h_out
+  allByteMatchesOfStaticOut64_local
+    (row := providerInput) (op := ZiskFv.Airs.Tables.BinaryTable.OP_LTU) h_out
   -- Lane → Sail binding: from lane bridges (binders) + provider match.
   have h_input_r1_row :
       sltu_input.r1_val = ZiskFv.EquivCore.Add.binaryRowA64 providerInput := by
@@ -456,10 +451,9 @@ theorem construction_sltu_sound_claimed_dead
       ZiskFv.EquivCore.Bridge.Binary.input_r2_packed_b_row
         m providerInput i.val (regidx_to_fin r2) sltu_input.r2_val
         h_matches h_m32_zero h_b_lo h_b_hi h_match h_input_r2
-  exact ZiskFv.Compliance.equiv_SLTU
-    state sltu_input r1 r2 rd m
-    ⟨providerTable, providerRow, h_component, h_table_spec, h_provider_row⟩
-    i.val bus pins h_match
-    h_input_r1_row h_input_r2_row h_lane_rd promises
+  exact ZiskFv.EquivCore.Sltu.equiv_SLTU_of_static_row
+    state sltu_input r1 r2 rd m providerInput i.val bus promises pins
+    h_match h_core h_facts h_row_m32 h_bop
+    h_input_r1_row h_input_r2_row h_lane_rd
 
 end ZiskFv.Compliance

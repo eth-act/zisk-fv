@@ -203,10 +203,12 @@ private theorem full_component_identifiers_nodup
       ("SpecifiedRangesSlice103", ZiskFv.AirsClean.SpecifiedRangesSlice.component.rawWidth),
       ("ArithDiv", ZiskFv.AirsClean.ArithDiv.component.rawWidth),
       ("ArithComplete", ZiskFv.AirsClean.ArithMul.componentComplete.rawWidth),
-      ("BinaryExtensionWithStaticTableAndShiftRange",
-        ZiskFv.AirsClean.BinaryExtension.shiftStaticLookupComponent.rawWidth),
-      ("BinaryWithStaticBinaryTable", ZiskFv.AirsClean.Binary.staticLookupComponent.rawWidth),
+      ("BinaryExtensionWithTableAndShiftRange",
+        ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent.rawWidth),
+      ("BinaryWithBinaryTable", ZiskFv.AirsClean.Binary.tableConsumerComponent.rawWidth),
       ("BinaryAdd", ZiskFv.AirsClean.BinaryAdd.component.rawWidth),
+      ("BinaryExtensionTableSource124", 1),
+      ("BinaryTableSource125", 1),
       ("anonymous", 41)] : List (String × Nat)).Nodup
   decide
 

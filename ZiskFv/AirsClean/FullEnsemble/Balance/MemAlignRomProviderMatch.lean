@@ -8,6 +8,7 @@ import ZiskFv.AirsClean.MemAlign.Bridge
 The finished bus-133 channel transports exact membership in the extracted
 `MemAlignRom` static table.  MemAlign is a consumer: D3 supplies its
 successor-PC payload, while balance selects the matching static provider row.
+The packed binary-table sources are excluded by their other-channel silence.
 -/
 
 namespace ZiskFv.AirsClean.FullEnsemble
@@ -54,7 +55,9 @@ theorem memAlignRom_balanced_of_witness
     BalancedInteractions (witness.interactionsWith MemAlignRomChannel.toRaw) := by
   have h := h_balanced MemAlignRomChannel.toRaw (by
     change MemAlignRomChannel.toRaw ∈
-      [ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+      [ ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+      , ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+      , ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
       , ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.toRaw
       , ZiskFv.Channels.MemoryBus.MemBusChannel.toRaw
       , ZiskFv.Channels.OperationBus.OpBusChannel.toRaw
@@ -126,7 +129,8 @@ theorem exists_memAlignRomSlice_provider_of_memAlign_interaction
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_providerTable
   rcases component_mem_fullRv64im_cases h_component_mem with
     h_verifier | h_boundary | h_alignRead | h_alignByte | h_align | h_range107 | h_rom | h_mem | h_ranges | h_regRange |
-      h_div | h_mul | h_extension | h_binary | h_binaryAdd | h_main
+      h_div | h_mul | h_extension | h_binary | h_binaryAdd |
+      h_extensionSource | h_binarySource | h_main
   · have h_nil : providerTable.interactionsWith MemAlignRomChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
       rw [h_verifier]
@@ -151,6 +155,12 @@ theorem exists_memAlignRomSlice_provider_of_memAlign_interaction
   · simp [staticBinaryExtension_table_interactionsWith_memAlignRom_nil h_extension] at h_providerInteraction
   · simp [staticBinary_table_interactionsWith_memAlignRom_nil h_binary] at h_providerInteraction
   · simp [binaryAdd_table_interactionsWith_memAlignRom_nil h_binaryAdd] at h_providerInteraction
+  · have h_nil := extensionTableSource_interactionsWith_nil_of_name
+      h_extensionSource MemAlignRomChannel.toRaw (by decide)
+    simp [h_nil] at h_providerInteraction
+  · have h_nil := binaryTableSource_interactionsWith_nil_of_name
+      h_binarySource MemAlignRomChannel.toRaw (by decide)
+    simp [h_nil] at h_providerInteraction
   · simp [main_table_interactionsWith_memAlignRom_nil h_main] at h_providerInteraction
 
 /-- Unpack a static bus-133 provider interaction to its concrete provider

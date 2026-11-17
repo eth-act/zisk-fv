@@ -1143,6 +1143,26 @@ Active conclusions:
   bus-125/bus-124 ensembles carry table membership through balance. No
   consumer promise or soundness-side `ProverAssumptions` is introduced;
   provider `ProverAssumptions` is completeness-only.
+- **Corrected global Binary source domain (#415, bounded cutover).** The
+  accepted `Unit` ensemble now composes both actual packed source providers:
+  bus 125 at `binary_table.pil:335-336` (5,505,024 rows) and bus 124 at
+  `binary_extension_table.pil:204-205` (3,151,872 rows). The 17 physical tables
+  give 18 `allTables` entries including the verifier; Main is the last entry.
+  The shared physical raw supplies both exact seven-field schemas, preserving
+  every raw FGL coefficient, including zero, and the ordered interaction streams.
+  Finished-channel balance derives all eight lookup facts for each consumer.
+  The approved 16 Binary and 12 Extension `OpEnvelope` constructors retain
+  their full prior row semantics, including the Extension B0 range fact;
+  consumer-local `Table.Spec` alone is not substituted for those semantics.
+  Existing accepted fields, chosen Mem table/replay, Main-height contract,
+  register pins, and reload checks are retained without new caller promises.
+  The private `Source415DomainComparison` proof root constructs source
+  histograms for arbitrary old execution prefixes and preserves exact selected
+  replay fields; it also projects arbitrary accepted source prefixes back.
+  This is explicitly a corrected accepted domain, not old-world definitional
+  equality, an identity of original native commitments, or whole #415 closure.
+  The public Root binder count and the separate guard/narrow-load/MUL boundaries
+  are not repaired or enlarged by this cutover. No trust kind is added.
 - **MemAlign byte-assembly exact lookup wiring (#242).** This is a cited
   application of the existing lookup/permutation protocol-soundness class,
   not a new trust kind. The shared MemAlignByte PIL template emits the live
