@@ -25,9 +25,11 @@ Its default Domainslib pool follows the host's recommended domain count,
 which CPU quotas and `LEAN_NUM_THREADS` do not bound. This changes scheduling,
 not extraction semantics or trust; the existing fresh-output and Lean checks
 remain enabled. The ROM recipe also honors the caller's `CARGO_BUILD_JOBS`.
-The generated Lean-check package also passes `-j1` to each compiler through
-Lake's `weakLeanArgs`: it bounds compiler workers without invalidating already
-checked dependency traces. The harness's four build branches share that package.
+The generated Lean-check package also passes `-j1` and `-DElab.async=false`
+through Lake's `weakLeanArgs`: compiler workers and concurrent theorem
+elaboration are bounded without changing kernel checks or proof budgets.
+Weak arguments preserve checked dependency traces; all four build branches
+share that package.
 
 The additive `ProductionM2/RomFlags.lean` module extracts the existing
 `ZiskInst::get_flags` method directly from the same 9ca88b5 source under the

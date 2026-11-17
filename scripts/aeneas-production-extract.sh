@@ -319,7 +319,7 @@ require aeneas from "aeneas-lean"
 
 package zisk_production_extraction_check where
   -- Scheduler-only arguments must reach each compiler without rebuilding dependencies.
-  weakLeanArgs := #["-j1"]
+  weakLeanArgs := #["-j1", "-DElab.async=false"]
 
 @[default_target] lean_lib ProductionM2
 @[default_target] lean_lib GeneratedChecks
