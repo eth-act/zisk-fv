@@ -21,6 +21,7 @@ channelsWithRequirements	channelsWithRequirements := [MemBusChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [MemBusChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [MemBusChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [OpBusChannel.toRaw, BinaryExtensionTableChannel.toRaw]
+channelsWithRequirements	channelsWithRequirements := [OpBusChannel.toRaw, BinaryExtensionTableChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [OpBusChannel.toRaw, BinaryTableChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [OpBusChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [OpBusChannel.toRaw]
@@ -44,6 +45,7 @@ channelsWithRequirements	channelsWithRequirements := [RegisterStepRangeChannel.t
 channelsWithRequirements	channelsWithRequirements := [SpecifiedRangesSliceChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := [ZiskRomBusChannel.toRaw]
 channelsWithRequirements	channelsWithRequirements := []
+exposedChannels	exposedChannels := tableConsumerCircuit.exposedChannels
 exposedChannels	exposedChannels _ _ := []
 exposedChannels	exposedChannels message _ := expose ArithRangeChannel [ArithRangeChannel.pushed message]
 exposedChannels	exposedChannels message _ := expose BinaryExtensionTableChannel [BinaryExtensionTableChannel.pushed message]
@@ -84,4 +86,4 @@ exposedChannels	exposedChannels row _ := expose OpBusChannel [OpBusChannel.pushe
 exposedChannels	exposedChannels row _ := expose ZiskRomBusChannel [ZiskRomBusChannel.emitted row.multiplicity row.message]
 exposedChannels	exposedChannels value _ := expose RegisterStepRangeChannel [RegisterStepRangeChannel.pushed (registerStepMessage value)]
 exposedChannels	exposedChannels value _ := expose SpecifiedRangesSliceChannel [SpecifiedRangesSliceChannel.pushed (memDistanceMessage value)]
-# total declarations: 86
+# total declarations: 88
