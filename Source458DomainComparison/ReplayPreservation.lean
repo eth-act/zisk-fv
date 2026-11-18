@@ -31,7 +31,14 @@ noncomputable section
 
 @[simp] theorem retargetTable_memTableRowAtOrZero (table : Table FGL) (row : Nat) :
     memTableRowAtOrZero (retargetTable table) row = memTableRowAtOrZero table row := by
-  simp only [memTableRowAtOrZero, retargetTable_table, retargetTable_environment]
+  unfold memTableRowAtOrZero
+  by_cases hrow : row < table.length
+  · simp only [Table.table_length, retargetTable_length, dif_pos hrow]
+    exact congrArg (fun env : Environment FGL =>
+      eval env Mem.componentWithDualMemBus.rowInputVar)
+      (retargetTable_environmentAt table
+        ⟨row, by simpa only [retargetTable_length] using hrow⟩)
+  · simp only [Table.table_length, retargetTable_length, dif_neg hrow]
 
 /-- All primary fields and even the unchanged uninterpreted ghost storage
 are projected from the identical original effective rows and shared data. -/

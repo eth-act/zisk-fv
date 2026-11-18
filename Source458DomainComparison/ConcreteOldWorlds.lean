@@ -42,8 +42,8 @@ private def instructionCount : Example → Nat
 
 /-- Only the fixed original concrete records supply source buffers and the
 unchanged non-Mem certificates. This is not a caller-supplied witness. -/
-private def sourceTrace : (example : Example) →
-    ZiskFv.Compliance.AcceptedZiskTrace (instructionCount example)
+private def sourceTrace : (exampleCase : Example) →
+    ZiskFv.Compliance.AcceptedZiskTrace (instructionCount exampleCase)
   | .singleAdd => SingleAddWitness.singleAddAcceptedTrace
   | .addSpin => AddSpinWitness.addSpinAcceptedTrace
   | .addAddiSpin => AddAddiSpinWitness.addAddiSpinAcceptedTrace
@@ -186,19 +186,19 @@ private theorem historicalTable_component_of_width (table : Table FGL)
   rw [← hc, hm] <;> rfl
 
 /-- A real old18 witness with all seventeen original physical carriers. -/
-def witness (example : Example) : EnsembleWitness
+def witness (exampleCase : Example) : EnsembleWitness
     (FullEnsemble.Legacy457.fullRv64imEnsemble
-      (sourceTrace example).programLength (sourceTrace example).program).ensemble where
-  tables := (sourceTrace example).witness.tables.map historicalTable
-  data := (sourceTrace example).witness.data
-  publicInput := (sourceTrace example).witness.publicInput
+      (sourceTrace exampleCase).programLength (sourceTrace exampleCase).program).ensemble where
+  tables := (sourceTrace exampleCase).witness.tables.map historicalTable
+  data := (sourceTrace exampleCase).witness.data
+  publicInput := (sourceTrace exampleCase).witness.publicInput
   same_length := by
-    rw [List.length_map, ← (sourceTrace example).witness.same_length] <;> rfl
+    rw [List.length_map, ← (sourceTrace exampleCase).witness.same_length] <;> rfl
   same_circuits := by
     intro index hi
     have sourceBound : index <
-        (FullEnsemble.fullRv64imEnsemble (sourceTrace example).programLength
-          (sourceTrace example).program).ensemble.tables.length := by
+        (FullEnsemble.fullRv64imEnsemble (sourceTrace exampleCase).programLength
+          (sourceTrace exampleCase).program).ensemble.tables.length := by
       change index < 17
       change index < 17 at hi
       exact hi
@@ -207,65 +207,65 @@ def witness (example : Example) : EnsembleWitness
     interval_cases index
     all_goals first
       | exact (historicalTable_mem_component _
-          ((sourceTrace example).witness.same_circuits _ sourceBound).symm).symm
+          ((sourceTrace exampleCase).witness.same_circuits _ sourceBound).symm).symm
       | (symm
          apply historicalTable_component_of_width _ _
-           ((sourceTrace example).witness.same_circuits _ sourceBound).symm
+           ((sourceTrace exampleCase).witness.same_circuits _ sourceBound).symm
          exact of_decide_eq_true rfl)
   same_data := by
     intro table ht
     rcases List.mem_map.mp ht with ⟨source, hs, rfl⟩
     rw [historicalTable_data]
-    exact (sourceTrace example).witness.same_data source hs
+    exact (sourceTrace exampleCase).witness.same_data source hs
 
-private theorem witness_verifierTable (example : Example) :
-    (witness example).verifierTable = (sourceTrace example).witness.verifierTable := by
+private theorem witness_verifierTable (exampleCase : Example) :
+    (witness exampleCase).verifierTable = (sourceTrace exampleCase).witness.verifierTable := by
   apply Ensemble.verifierTable_ext <;> rfl
 
-private theorem historicalTable_verifierTable (example : Example) :
-    historicalTable (sourceTrace example).witness.verifierTable =
-      (sourceTrace example).witness.verifierTable := by
+private theorem historicalTable_verifierTable (exampleCase : Example) :
+    historicalTable (sourceTrace exampleCase).witness.verifierTable =
+      (sourceTrace exampleCase).witness.verifierTable := by
   apply historicalTable_of_ne
   intro h
   have hw := congrArg (fun c : Component FGL => c.rawWidth) h
   change (0 : Nat) = 17 at hw
   omega
 
-private theorem witness_allTables (example : Example) :
-    (witness example).allTables =
-      (sourceTrace example).witness.allTables.map historicalTable := by
+private theorem witness_allTables (exampleCase : Example) :
+    (witness exampleCase).allTables =
+      (sourceTrace exampleCase).witness.allTables.map historicalTable := by
   simp only [EnsembleWitness.allTables, List.map_cons,
     historicalTable_verifierTable, witness_verifierTable] <;> rfl
 
 /-- Original buffers, in their exact original physical order. -/
-theorem witness_rawRows (example : Example) :
-    (witness example).tables.map Table.rawRows =
-      (sourceTrace example).witness.tables.map Table.rawRows := by
+theorem witness_rawRows (exampleCase : Example) :
+    (witness exampleCase).tables.map Table.rawRows =
+      (sourceTrace exampleCase).witness.tables.map Table.rawRows := by
   simp only [witness, List.map_map, Function.comp_def, historicalTable_rawRows]
 
 /-- In particular the original Sd/Ld scalar data is retained, not recomputed. -/
-theorem witness_data (example : Example) :
-    (witness example).data = (sourceTrace example).witness.data := rfl
+theorem witness_data (exampleCase : Example) :
+    (witness exampleCase).data = (sourceTrace exampleCase).witness.data := rfl
 
 /-- Non-Mem original tables, including Main and the two complete providers,
 are preserved as exact objects, not only as decoded row lists. -/
-theorem sourceTable_preserved (example : Example) (table : Table FGL)
-    (ht : table ∈ (sourceTrace example).witness.tables)
-    (hw : table.component.rawWidth ≠ 17) : table ∈ (witness example).tables := by
+theorem sourceTable_preserved (exampleCase : Example) (table : Table FGL)
+    (ht : table ∈ (sourceTrace exampleCase).witness.tables)
+    (hw : table.component.rawWidth ≠ 17) : table ∈ (witness exampleCase).tables := by
   apply List.mem_map.mpr
   refine ⟨table, ht, historicalTable_of_ne table ?_⟩
   intro hm
   apply hw
   rw [hm] <;> rfl
 
-private theorem source_mem_component_of_width (example : Example) (table : Table FGL)
-    (ht : table ∈ (sourceTrace example).witness.allTables)
+private theorem source_mem_component_of_width (exampleCase : Example) (table : Table FGL)
+    (ht : table ∈ (sourceTrace exampleCase).witness.allTables)
     (hw : table.component.rawWidth = 17) : table.component = Mem.componentWithDualMemBus := by
   have hc := EnsembleWitness.mem_allTables_component_of_mem_allTables ht
   rcases List.mem_iff_get.mp hc with ⟨⟨index, bound⟩, source⟩
   have width :
-      ((FullEnsemble.fullRv64imEnsemble (sourceTrace example).programLength
-        (sourceTrace example).program).ensemble.allTables.get
+      ((FullEnsemble.fullRv64imEnsemble (sourceTrace exampleCase).programLength
+        (sourceTrace exampleCase).program).ensemble.allTables.get
           ⟨index, bound⟩).rawWidth = 17 := by
     rw [source]
     exact hw
@@ -275,47 +275,47 @@ private theorem source_mem_component_of_width (example : Example) (table : Table
     | exact source.symm
     | cases width
 
-private theorem historical_mem_source (example : Example) (table : Table FGL)
-    (ht : table ∈ (sourceTrace example).witness.allTables)
+private theorem historical_mem_source (exampleCase : Example) (table : Table FGL)
+    (ht : table ∈ (sourceTrace exampleCase).witness.allTables)
     (hc : (historicalTable table).component = Mem.Legacy457.componentWithDualMemBus) :
     table.component = Mem.componentWithDualMemBus := by
-  apply source_mem_component_of_width example table ht
+  apply source_mem_component_of_width exampleCase table ht
   rw [← historicalTable_rawWidth table, hc] <;> rfl
 
 /-- Full ordered interaction lists, including zero-weight entries. -/
-theorem witness_interactionsWith (example : Example) (channel : RawChannel FGL) :
-    (witness example).interactionsWith channel =
-      (sourceTrace example).witness.interactionsWith channel := by
+theorem witness_interactionsWith (exampleCase : Example) (channel : RawChannel FGL) :
+    (witness exampleCase).interactionsWith channel =
+      (sourceTrace exampleCase).witness.interactionsWith channel := by
   simp only [EnsembleWitness.interactionsWith, witness_allTables, List.flatMap_map,
     Table.interactionsWith, historicalTable_table, historicalTable_operations,
     historicalTable_environment]
 
-theorem witness_constraints (example : Example) : (witness example).Constraints := by
+theorem witness_constraints (exampleCase : Example) : (witness exampleCase).Constraints := by
   intro table ht
   rw [witness_allTables] at ht
   rcases List.mem_map.mp ht with ⟨source, hs, rfl⟩
   simpa only [Table.Constraints, historicalTable_table, historicalTable_operations,
-    historicalTable_environment] using (sourceTrace example).constraints_hold source hs
+    historicalTable_environment] using (sourceTrace exampleCase).constraints_hold source hs
 
-theorem witness_balancedChannels (example : Example) : (witness example).BalancedChannels := by
+theorem witness_balancedChannels (exampleCase : Example) : (witness exampleCase).BalancedChannels := by
   intro channel hc
   have sourceChannel : channel ∈
-      (FullEnsemble.fullRv64imEnsemble (sourceTrace example).programLength
-        (sourceTrace example).program).ensemble.channels := hc
-  have balanced := (sourceTrace example).channels_balanced channel sourceChannel
-  change BalancedInteractions ((witness example).interactionsWith channel)
+      (FullEnsemble.fullRv64imEnsemble (sourceTrace exampleCase).programLength
+        (sourceTrace exampleCase).program).ensemble.channels := hc
+  have balanced := (sourceTrace exampleCase).channels_balanced channel sourceChannel
+  change BalancedInteractions ((witness exampleCase).interactionsWith channel)
   rw [witness_interactionsWith]
   exact balanced
 
-theorem witness_cyclic (example : Example) :
-    (witness example).CyclicSuccessorTransitionConstraints := by
+theorem witness_cyclic (exampleCase : Example) :
+    (witness exampleCase).CyclicSuccessorTransitionConstraints := by
   intro table ht
   rw [witness_allTables] at ht
   rcases List.mem_map.mp ht with ⟨source, hs, rfl⟩
   intro index
   simpa only [historicalTable_cyclic, historicalTable_environmentAt,
     historicalTable_successorEnvironment] using
-    (sourceTrace example).cyclic_successor_transitions_hold source hs
+    (sourceTrace exampleCase).cyclic_successor_transitions_hold source hs
       ⟨index.val, by simpa only [historicalTable_length] using index.isLt⟩
 
 /-- Exact original two raw rows/data, with only the historical component identity. -/
@@ -472,10 +472,10 @@ private theorem historicalSdLdMemTable_transitions : historicalSdLdMemTable.Tran
 
 /-- Exact physical-source provenance, including every fixed slot at every
 row, not merely equality of decoded replay entries or active provider keys. -/
-theorem witness_sources (example : Example) :
-    (witness example).tables.map
+theorem witness_sources (exampleCase : Example) :
+    (witness exampleCase).tables.map
       (fun table => (table.rawRows, table.data, fun slot row => table.fixedAt slot row)) =
-    (sourceTrace example).witness.tables.map
+    (sourceTrace exampleCase).witness.tables.map
       (fun table => (table.rawRows, table.data, fun slot row => table.fixedAt slot row)) := by
   simp only [witness, List.map_map, Function.comp_def, historicalTable_rawRows,
     historicalTable_data, historicalTable_fixedAt]
@@ -495,9 +495,9 @@ private theorem singleAdd_source_no_mem :
     | (change (0 : Nat) < 0 at hn
        omega)
 
-private theorem emptyCases_no_mem (example : Example) (hne : example ≠ .sdLd) :
-    ¬ ZiskFv.Compliance.MutableMemPresent (sourceTrace example).witness := by
-  cases example with
+private theorem emptyCases_no_mem (exampleCase : Example) (hne : exampleCase ≠ .sdLd) :
+    ¬ ZiskFv.Compliance.MutableMemPresent (sourceTrace exampleCase).witness := by
+  cases exampleCase with
   | singleAdd => exact singleAdd_source_no_mem
   | addSpin => exact AddSpinWitness.addSpinWitness_not_mutableMemPresent
   | addAddiSpin => exact AddAddiSpinWitness.addAddiSpinWitness_not_mutableMemPresent
@@ -509,14 +509,14 @@ private theorem emptyCases_no_mem (example : Example) (hne : example ≠ .sdLd) 
 /-- Old D1 is proved for the seven fixed cases. The sole nonempty Mem case
 uses the independent original-numeric proof above; no new-domain Mem D1 is
 used in this branch. All other components are the exact original objects. -/
-theorem witness_transitions (example : Example) : (witness example).TransitionConstraints := by
+theorem witness_transitions (exampleCase : Example) : (witness exampleCase).TransitionConstraints := by
   classical
   intro table ht
   rw [witness_allTables] at ht
   rcases List.mem_map.mp ht with ⟨source, hs, rfl⟩
   by_cases hm : source.component = Mem.componentWithDualMemBus
-  · by_cases he : example = .sdLd
-    · subst example
+  · by_cases he : exampleCase = .sdLd
+    · subst exampleCase
       have guard : ZiskFv.Compliance.MutableMemPresent
           SdLdSpinWitness.sdLdWitness := by
         refine ⟨SdLdSpinWitness.sdLdTableWithData sdLdMemTable, ?_, rfl, ?_⟩
@@ -538,32 +538,32 @@ theorem witness_transitions (example : Example) : (witness example).TransitionCo
       exact historicalSdLdMemTable_transitions
     · intro index
       apply False.elim
-      apply emptyCases_no_mem example he
+      apply emptyCases_no_mem exampleCase he
       refine ⟨source, hs, hm, ?_⟩
       rw [Table.table_length]
       have bound := index.isLt
       rw [historicalTable_length] at bound
       omega
   · rw [historicalTable_of_ne source hm]
-    exact (sourceTrace example).transitions_hold source hs
+    exact (sourceTrace exampleCase).transitions_hold source hs
 
-private theorem historical_presence_source (example : Example)
-    (guard : ZiskFv.Compliance.Legacy457.MutableMemPresent (witness example)) :
-    ZiskFv.Compliance.MutableMemPresent (sourceTrace example).witness := by
+private theorem historical_presence_source (exampleCase : Example)
+    (guard : ZiskFv.Compliance.Legacy457.MutableMemPresent (witness exampleCase)) :
+    ZiskFv.Compliance.MutableMemPresent (sourceTrace exampleCase).witness := by
   rcases guard with ⟨table, ht, hc, hn⟩
   rw [witness_allTables] at ht
   rcases List.mem_map.mp ht with ⟨source, hs, rfl⟩
-  exact ⟨source, hs, historical_mem_source example source hs hc,
+  exact ⟨source, hs, historical_mem_source exampleCase source hs hc,
     by simpa only [historicalTable_table] using hn⟩
 
-private def selectedHistoricalTable (example : Example)
-    (guard : ZiskFv.Compliance.Legacy457.MutableMemPresent (witness example)) :
+private def selectedHistoricalTable (exampleCase : Example)
+    (guard : ZiskFv.Compliance.Legacy457.MutableMemPresent (witness exampleCase)) :
     { table : Table FGL //
-      table ∈ (witness example).allTables ∧
+      table ∈ (witness exampleCase).allTables ∧
         table.component = Mem.Legacy457.componentWithDualMemBus ∧
         0 < table.table.length } :=
-  let selected := (sourceTrace example).mem_replay_table
-    (historical_presence_source example guard)
+  let selected := (sourceTrace exampleCase).mem_replay_table
+    (historical_presence_source exampleCase guard)
   ⟨historicalTable selected.1,
     by
       rw [witness_allTables]
@@ -571,26 +571,26 @@ private def selectedHistoricalTable (example : Example)
     historicalTable_mem_component selected.1 selected.2.2.1,
     by simpa only [historicalTable_table] using selected.2.2.2⟩
 
-private theorem selectedHistoricalTable_covers (example : Example)
-    (guard : ZiskFv.Compliance.Legacy457.MutableMemPresent (witness example))
-    (table : Table FGL) (ht : table ∈ (witness example).allTables)
+private theorem selectedHistoricalTable_covers (exampleCase : Example)
+    (guard : ZiskFv.Compliance.Legacy457.MutableMemPresent (witness exampleCase))
+    (table : Table FGL) (ht : table ∈ (witness exampleCase).allTables)
     (hc : table.component = Mem.Legacy457.componentWithDualMemBus) :
-    table = (selectedHistoricalTable example guard).1 := by
+    table = (selectedHistoricalTable exampleCase guard).1 := by
   rw [witness_allTables] at ht
   rcases List.mem_map.mp ht with ⟨source, hs, rfl⟩
-  have sourceMem := historical_mem_source example source hs hc
-  have covered := (sourceTrace example).mem_replay_source_covers
-    (historical_presence_source example guard) source hs sourceMem
+  have sourceMem := historical_mem_source exampleCase source hs hc
+  have covered := (sourceTrace exampleCase).mem_replay_source_covers
+    (historical_presence_source exampleCase guard) source hs sourceMem
   exact congrArg historicalTable covered
 
-private theorem historical_main_height {n : Nat} (example : Example)
-    (height : ∀ table ∈ (sourceTrace example).witness.allTables,
+private theorem historical_main_height {n : Nat} (exampleCase : Example)
+    (height : ∀ table ∈ (sourceTrace exampleCase).witness.allTables,
       table.component = Main.componentWithRomMemAndOpBus
-        (sourceTrace example).programLength (sourceTrace example).program →
+        (sourceTrace exampleCase).programLength (sourceTrace exampleCase).program →
           ∀ index : Fin n, index.val < table.table.length) :
-    ∀ table ∈ (witness example).allTables,
+    ∀ table ∈ (witness exampleCase).allTables,
       table.component = Main.componentWithRomMemAndOpBus
-        (sourceTrace example).programLength (sourceTrace example).program →
+        (sourceTrace exampleCase).programLength (sourceTrace exampleCase).program →
           ∀ index : Fin n, index.val < table.table.length := by
   classical
   intro table ht hc index
@@ -604,18 +604,18 @@ private theorem historical_main_height {n : Nat} (example : Example)
   · rw [historicalTable_of_ne source hm] at hc ⊢
     exact height source hs hc index
 
-private def accepted (example : Example) :
-    ZiskFv.Compliance.Legacy457.AcceptedZiskTrace (instructionCount example) where
-  programLength := (sourceTrace example).programLength
-  program := (sourceTrace example).program
-  witness := witness example
-  constraints_hold := witness_constraints example
-  channels_balanced := witness_balancedChannels example
-  mem_replay_table := selectedHistoricalTable example
-  mem_replay_source_covers := selectedHistoricalTable_covers example
-  transitions_hold := witness_transitions example
-  cyclic_successor_transitions_hold := witness_cyclic example
-  main_height := historical_main_height example (sourceTrace example).main_height
+private def accepted (exampleCase : Example) :
+    ZiskFv.Compliance.Legacy457.AcceptedZiskTrace (instructionCount exampleCase) where
+  programLength := (sourceTrace exampleCase).programLength
+  program := (sourceTrace exampleCase).program
+  witness := witness exampleCase
+  constraints_hold := witness_constraints exampleCase
+  channels_balanced := witness_balancedChannels exampleCase
+  mem_replay_table := selectedHistoricalTable exampleCase
+  mem_replay_source_covers := selectedHistoricalTable_covers exampleCase
+  transitions_hold := witness_transitions exampleCase
+  cyclic_successor_transitions_hold := witness_cyclic exampleCase
+  main_height := historical_main_height exampleCase (sourceTrace exampleCase).main_height
 
 def singleAddAcceptedTrace : ZiskFv.Compliance.Legacy457.AcceptedZiskTrace 1 :=
   accepted .singleAdd
