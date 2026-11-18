@@ -57,9 +57,9 @@ theorem projected_component_membership (new : NewWitness p program)
   simpa only [projectedTables, List.cons_append, List.append_assoc, List.nil_append] using hs
 
 theorem projected_mem_membership (new : NewWitness p program)
-    (table : Table FGL) (hc : table.component = Mem.componentWithDualMemBus) :
+    (table : Table FGL) (hc : table.component = Mem.Legacy457.componentWithDualMemBus) :
     table ∈ (projectedWitness new).allTables ↔ table ∈ new.allTables :=
-  projected_component_membership new Mem.componentWithDualMemBus
+  projected_component_membership new Mem.Legacy457.componentWithDualMemBus
     (by change (17 : Nat) ∉ [29, 39, 10, 1]; decide) table hc
 
 theorem projected_main_membership (new : NewWitness p program)
@@ -70,7 +70,7 @@ theorem projected_main_membership (new : NewWitness p program)
 
 theorem projected_mutableMemPresent (new : NewWitness p program) :
     ZiskFv.Compliance.Legacy45.MutableMemPresent (projectedWitness new) ↔
-      ZiskFv.Compliance.MutableMemPresent new :=
+      ZiskFv.Compliance.Legacy457.MutableMemPresent new :=
   ZiskFv.Compliance.DomainComparison.mutableMemPresent_iff (projectedWitness new) new
     (projected_mem_membership new)
 
@@ -96,30 +96,30 @@ open ZiskFv.AirsClean.FullEnsemble.DomainComparison
 
 variable {n : Nat}
 
-theorem projected_universal_main_height (trace : AcceptedZiskTrace n) :
+theorem projected_universal_main_height (trace : Legacy457.AcceptedZiskTrace n) :
     ∀ table ∈ (projectedWitness trace.witness).allTables,
       table.component = Main.componentWithRomMemAndOpBus trace.programLength trace.program →
         ∀ i : Fin n, i.val < table.table.length :=
   (main_height_iff (projectedWitness trace.witness) trace.witness
     (projected_main_membership trace.witness) n).mpr trace.main_height
 
-theorem projected_selected_replay_table (trace : AcceptedZiskTrace n)
+theorem projected_selected_replay_table (trace : Legacy457.AcceptedZiskTrace n)
     (guard : Legacy45.MutableMemPresent (projectedWitness trace.witness)) :
     let newGuard := (projected_mutableMemPresent trace.witness).mp guard
     let table := (trace.mem_replay_table newGuard).1
     table ∈ (projectedWitness trace.witness).allTables ∧
-      table.component = Mem.componentWithDualMemBus ∧ 0 < table.table.length := by
+      table.component = Mem.Legacy457.componentWithDualMemBus ∧ 0 < table.table.length := by
   dsimp only
   have selected := (trace.mem_replay_table
     ((projected_mutableMemPresent trace.witness).mp guard)).2
   exact ⟨(projected_mem_membership trace.witness _ selected.2.1).mpr selected.1,
     selected.2⟩
 
-theorem projected_replay_source_covers (trace : AcceptedZiskTrace n)
+theorem projected_replay_source_covers (trace : Legacy457.AcceptedZiskTrace n)
     (guard : Legacy45.MutableMemPresent (projectedWitness trace.witness))
     (table : Table FGL)
     (member : table ∈ (projectedWitness trace.witness).allTables)
-    (component : table.component = Mem.componentWithDualMemBus) :
+    (component : table.component = Mem.Legacy457.componentWithDualMemBus) :
     table = (trace.mem_replay_table
       ((projected_mutableMemPresent trace.witness).mp guard)).1 :=
   trace.mem_replay_source_covers
@@ -128,7 +128,7 @@ theorem projected_replay_source_covers (trace : AcceptedZiskTrace n)
 
 /-- Genuine arbitrary currentAccepted18→Legacy45Accepted16. There are no
 additional candidate-witness predicates or source-fullness promises. -/
-def currentAcceptedToLegacy (trace : AcceptedZiskTrace n) : Legacy45.AcceptedZiskTrace n :=
+def currentAcceptedToLegacy (trace : Legacy457.AcceptedZiskTrace n) : Legacy45.AcceptedZiskTrace n :=
   toLegacy trace (projectedWitness trace.witness)
     (projected_mem_membership trace.witness) (projected_main_membership trace.witness)
     (projected_constraints trace.witness trace.constraints_hold trace.channels_balanced)
@@ -136,17 +136,17 @@ def currentAcceptedToLegacy (trace : AcceptedZiskTrace n) : Legacy45.AcceptedZis
     (projected_cyclic_transitions trace.witness trace.cyclic_successor_transitions_hold)
     (projected_balanced trace.witness trace.channels_balanced)
 
-theorem currentAcceptedToLegacy_witness (trace : AcceptedZiskTrace n) :
+theorem currentAcceptedToLegacy_witness (trace : Legacy457.AcceptedZiskTrace n) :
     (currentAcceptedToLegacy trace).witness = projectedWitness trace.witness := rfl
 
-theorem currentAcceptedToLegacy_memReplayTable (trace : AcceptedZiskTrace n)
+theorem currentAcceptedToLegacy_memReplayTable (trace : Legacy457.AcceptedZiskTrace n)
     (ho : Legacy45.MutableMemPresent (currentAcceptedToLegacy trace).witness)
-    (hn : MutableMemPresent trace.witness) :
+    (hn : Legacy457.MutableMemPresent trace.witness) :
     (currentAcceptedToLegacy trace).memReplayTable ho = trace.memReplayTable hn := rfl
 
-theorem currentAcceptedToLegacy_memReplayRows (trace : AcceptedZiskTrace n)
+theorem currentAcceptedToLegacy_memReplayRows (trace : Legacy457.AcceptedZiskTrace n)
     (ho : Legacy45.MutableMemPresent (currentAcceptedToLegacy trace).witness)
-    (hn : MutableMemPresent trace.witness) :
+    (hn : Legacy457.MutableMemPresent trace.witness) :
     (currentAcceptedToLegacy trace).memReplayRows ho = trace.memReplayRows hn := rfl
 
 end ZiskFv.Compliance.DomainComparison

@@ -19,8 +19,7 @@ theorem sd_ld_mem_table_constructible :
       ZiskFv.AirsClean.FullEnsemble.MemTableGeneratedConstraintFacts
         sdLdMemTable
         (ZiskFv.AirsClean.FullEnsemble.memOfTableData sdLdMemTable)
-        (ZiskFv.AirsClean.FullEnsemble.memSegmentOfTableData sdLdMemTable)
-        (ZiskFv.AirsClean.FullEnsemble.memPermutationOfTableData sdLdMemTable) :=
+        (ZiskFv.AirsClean.FullEnsemble.memSegmentOfTableData sdLdMemTable) :=
   ⟨sdLdMemTable_constraints, sdLdMemTable_transitions,
     sdLdMemTable_generatedConstraintFacts⟩
 

@@ -9,9 +9,9 @@ used by an accepted trace: an SD of the non-zero doubleword `42`, followed by
 an LD of the same word.  The table has the physical Mem fixed schema, so its
 first row is the actual segment boundary rather than a synthetic prefix.
 
-Regenerate the sidecar literals by solving `mem.pil`'s generated segment and
-permutation equations for `std_alpha = 0`, `std_gamma = 1`. The step-by-step
-arithmetic was not retained in-tree.
+The existing scalar ghost literals are retained as uninterpreted `ProverData`
+payload. The operational witness proves segment constraints and range/source
+ties only; these literals are not a numerical Ext3 source-acceptance claim.
 -/
 
 namespace ZiskFv.Compliance
@@ -300,28 +300,11 @@ private def sdLdMemSegmentColumns : ZiskFv.Airs.Mem.SegmentColumns FGL where
   distance_end_1 := 1023
   segment_l1 := fun row => memFixedColumns.fixedAt MemFixedColumn.segmentL1 row
 
-private def sdLdMemPermutationColumns : ZiskFv.Airs.Mem.PermutationColumns FGL where
-  std_alpha := 0
-  std_gamma := 1
-  l1 := fun row => memFixedColumns.fixedAt MemFixedColumn.l1 row
-  im_direct_0 := 1537228672451215360
-  im_direct_1 := 0
-  im_direct_2 := 10110234730352224099
-  im_direct_3 := 10110234730352224099
-  im_direct_4 := 10110234730352224099
-  im_direct_5 := 10110234730352224099
-
 private theorem sdLdMemSegmentColumns_source :
     memSegmentColumnsOfProverDataAndFixed sdLdMemData
       (fun row => memFixedColumns.fixedAt MemFixedColumn.segmentL1 row) =
       sdLdMemSegmentColumns := by
   simp [sdLdMemSegmentColumns]
-
-private theorem sdLdMemPermutationColumns_source :
-    memPermutationColumnsOfProverDataAndFixed sdLdMemData
-      (fun row => memFixedColumns.fixedAt MemFixedColumn.l1 row) =
-      sdLdMemPermutationColumns := by
-  simp [sdLdMemPermutationColumns]
 
 @[simp] theorem sdLdMemTable_memRowAt_zero :
     memRowFromEnvironment (sdLdMemTable.environmentAt ⟨0, by simp⟩) = sdMemRow := by
@@ -373,9 +356,9 @@ private theorem sdLdMemTable_rangeBridge_one :
 @[simp] theorem sdLdMemFixed_l1_two :
     memFixedColumns.fixedAt MemFixedColumn.l1 2 = 0 := by rfl
 
-/-- The two real Mem rows satisfy every generated continuity, range-source,
-and permutation equation. Row zero uses the component's saturated
-predecessor; row one uses the preceding store row. -/
+/-- The two real Mem rows satisfy every operational segment-continuity and
+range-source equation. Row zero uses the component's saturated predecessor;
+row one uses the preceding store row. -/
 theorem sdLdMemTable_transitions : sdLdMemTable.TransitionConstraints := by
   rw [Table.TransitionConstraints]
   intro index
@@ -396,26 +379,14 @@ theorem sdLdMemTable_transitions : sdLdMemTable.TransitionConstraints := by
     have h_range : memRangeSidecarBridge current := by
       exact sdLdMemTable_rangeBridge_zero
     change generatedTransition memFixedColumns 0 previous current
-    simp only [generatedTransition, h_data, sdLdMemSegmentColumns_source,
-      sdLdMemPermutationColumns_source]
-    refine ⟨?_, ?_, h_range⟩
+    simp only [generatedTransition, h_data, sdLdMemSegmentColumns_source]
+    refine ⟨?_, h_range⟩
     · norm_num [ZiskFv.Airs.Mem.segmentResidualEveryRow, memWindow, h_current,
         h_previous, sdLdMemSegmentColumns, ZiskFv.Airs.Mem.previous_row_step,
         ZiskFv.Airs.Mem.delta_addr, ZiskFv.Airs.Mem.segment_previous_addr,
         ZiskFv.Airs.Mem.delta_step, ZiskFv.Airs.Mem.segment_previous_value_0,
         ZiskFv.Airs.Mem.segment_previous_value_1, sdMemRow, memRowOf,
         memReadSameAddrOf, memValueOf]
-    · norm_num [ZiskFv.Airs.Mem.permutation_every_row, memWindow, h_current,
-        h_previous, h_data, sdLdMemPermutationColumns, ZiskFv.Airs.Mem.gsum_increment_1,
-        ZiskFv.Airs.Mem.gsum_dual_step, ZiskFv.Airs.Mem.gsum_increment_0,
-        ZiskFv.Airs.Mem.gsum_primary_mem, ZiskFv.Airs.Mem.gsum_dual_mem,
-        sdLdMemSegmentColumns, ZiskFv.Airs.Mem.direct_gsum_0, ZiskFv.Airs.Mem.direct_gsum_1,
-        ZiskFv.Airs.Mem.direct_gsum_distance_base_0,
-        ZiskFv.Airs.Mem.direct_gsum_distance_base_1,
-        ZiskFv.Airs.Mem.direct_gsum_distance_end_0,
-        ZiskFv.Airs.Mem.direct_gsum_distance_end_1,
-        ZiskFv.Airs.Mem.gsum_accumulator_delta, sdMemRow, memRowOf,
-        memReadSameAddrOf, memValueOf] ; decide
   · have h_eq : index = ⟨1, by simp⟩ := Fin.ext (by omega)
     subst index
     let previous := sdLdMemTable.previousEnvironment ⟨1, by simp⟩
@@ -430,33 +401,21 @@ theorem sdLdMemTable_transitions : sdLdMemTable.TransitionConstraints := by
     have h_range : memRangeSidecarBridge current := by
       exact sdLdMemTable_rangeBridge_one
     change generatedTransition memFixedColumns 1 previous current
-    simp only [generatedTransition, h_data, sdLdMemSegmentColumns_source,
-      sdLdMemPermutationColumns_source]
-    refine ⟨?_, ?_, h_range⟩
+    simp only [generatedTransition, h_data, sdLdMemSegmentColumns_source]
+    refine ⟨?_, h_range⟩
     · norm_num [ZiskFv.Airs.Mem.segmentResidualEveryRow, memWindow, h_current,
         h_previous, sdLdMemSegmentColumns, ZiskFv.Airs.Mem.previous_row_step,
         ZiskFv.Airs.Mem.delta_addr, ZiskFv.Airs.Mem.segment_previous_addr,
         ZiskFv.Airs.Mem.delta_step, ZiskFv.Airs.Mem.segment_previous_value_0,
         ZiskFv.Airs.Mem.segment_previous_value_1, sdMemRow, ldMemRow, memRowOf,
         memReadSameAddrOf, memValueOf]
-    · norm_num [ZiskFv.Airs.Mem.permutation_every_row, memWindow, h_current,
-        h_previous, h_data, sdLdMemPermutationColumns, ZiskFv.Airs.Mem.gsum_increment_1,
-        ZiskFv.Airs.Mem.gsum_dual_step, ZiskFv.Airs.Mem.gsum_increment_0,
-        ZiskFv.Airs.Mem.gsum_primary_mem, ZiskFv.Airs.Mem.gsum_dual_mem,
-        sdLdMemSegmentColumns, ZiskFv.Airs.Mem.direct_gsum_0, ZiskFv.Airs.Mem.direct_gsum_1,
-        ZiskFv.Airs.Mem.direct_gsum_distance_base_0,
-        ZiskFv.Airs.Mem.direct_gsum_distance_base_1,
-        ZiskFv.Airs.Mem.direct_gsum_distance_end_0,
-        ZiskFv.Airs.Mem.direct_gsum_distance_end_1,
-        ZiskFv.Airs.Mem.gsum_accumulator_delta, sdMemRow, ldMemRow, memRowOf,
-        memReadSameAddrOf, memValueOf] ; decide
 
-/-- The full `mem.pil` generated surface (segment 0--23 and permutation
-24--33) is available from this table's ordinary constraints and indexed
-transition certificate; it is not a separate accepted-trace premise. -/
+/-- Operational `mem.pil` segment constraints `0..23` follow from this
+table's ordinary constraints and indexed transition, without an additional
+accepted-trace premise or a scalar stage-2 restriction. -/
 theorem sdLdMemTable_generatedConstraintFacts :
     MemTableGeneratedConstraintFacts sdLdMemTable (memOfTableData sdLdMemTable)
-      (memSegmentOfTableData sdLdMemTable) (memPermutationOfTableData sdLdMemTable) := by
+      (memSegmentOfTableData sdLdMemTable) := by
   exact memTableGeneratedConstraintFacts_of_component_constraints_transitions
     sdLdMemTable rfl sdLdMemTable_constraints sdLdMemTable_transitions
 

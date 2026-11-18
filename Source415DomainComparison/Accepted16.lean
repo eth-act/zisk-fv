@@ -1,3 +1,4 @@
+import Source415DomainComparison.LegacyMemFacts
 import Source415DomainComparison.Old16
 import ZiskFv.AirsClean.FullEnsemble.Balance.RowsBridgeFacts
 import ZiskFv.AirsClean.FullEnsemble.Balance.TableProjections
@@ -22,7 +23,7 @@ committed instructions, so its step count need not equal the ROM length.
 The circuit is an **Air.Flat ensemble**: a collection of AIRs (the Main table
 plus the binary / arithmetic / memory / lookup tables) wired together by shared
 *channels* — the operation bus and the lookup / permutation buses.
-`(fullRv64imEnsemble length program).ensemble` is just that collection of column
+`(Legacy457.fullRv64imEnsemble length program).ensemble` is just that collection of column
 layouts and channels; it holds no data of its own.
 
 The `witness` is the ensemble *filled in* with concrete Goldilocks values: every
@@ -61,7 +62,7 @@ def MutableMemPresent
         (ZiskFv.AirsClean.FullEnsemble.Legacy45.fullRv64imEnsemble programLength program).ensemble) :
     Prop :=
   ∃ table ∈ witness.allTables,
-    table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus ∧
+    table.component = ZiskFv.AirsClean.Mem.Legacy457.componentWithDualMemBus ∧
       0 < table.table.length
 
 /-- Derived fixed-column facts for Main's `main_step` ROM companion column.
@@ -116,7 +117,7 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
   mem_replay_table : ∀ (_h : MutableMemPresent witness),
     { table : Air.Flat.Table FGL //
       table ∈ witness.allTables ∧
-        table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus ∧
+        table.component = ZiskFv.AirsClean.Mem.Legacy457.componentWithDualMemBus ∧
           0 < table.table.length }
   /-- Structural source-correlation certificate for the guarded Mem AIR source:
       every mutable-Mem table in the accepted witness is the selected source
@@ -125,7 +126,7 @@ structure AcceptedZiskTrace (numInstructions : Nat) where
       visible per factor. -/
   mem_replay_source_covers : ∀ (h : MutableMemPresent witness),
     ∀ table ∈ witness.allTables,
-      table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus →
+      table.component = ZiskFv.AirsClean.Mem.Legacy457.componentWithDualMemBus →
         table = (mem_replay_table h).1
   /-- Component-owned predecessor/current transitions hold on every table row.
       This includes Main's PC handshake (`main.pil:409-410`) and MemAlign's
@@ -172,7 +173,7 @@ theorem AcceptedZiskTrace.memReplayRowRanges {n : Nat}
       (trace.memReplayTable h_present)
       (ZiskFv.AirsClean.FullEnsemble.memOfTableData
         (trace.memReplayTable h_present)) := by
-  apply ZiskFv.AirsClean.FullEnsemble.memTableGeneratedRangeFacts_of_component_constraints_canonical
+  apply ZiskFv.AirsClean.FullEnsemble.HistoricalMemFacts.memTableGeneratedRangeFacts_of_component_constraints_canonical
   · exact (trace.mem_replay_table h_present).2.2.1
   · exact trace.constraints_hold (trace.memReplayTable h_present)
       (trace.mem_replay_table h_present).2.1
@@ -184,15 +185,15 @@ theorem AcceptedZiskTrace.memReplayRowRanges {n : Nat}
 theorem AcceptedZiskTrace.memReplayGeneratedConstraintFacts {n : Nat}
     (trace : AcceptedZiskTrace n)
     (h_present : MutableMemPresent trace.witness) :
-    ZiskFv.AirsClean.FullEnsemble.MemTableGeneratedConstraintFacts
+    ZiskFv.AirsClean.FullEnsemble.HistoricalMemFacts.MemTableGeneratedConstraintFacts
       (trace.memReplayTable h_present)
       (ZiskFv.AirsClean.FullEnsemble.memOfTableData
         (trace.memReplayTable h_present))
       (ZiskFv.AirsClean.FullEnsemble.memSegmentOfTableData
         (trace.memReplayTable h_present))
-      (ZiskFv.AirsClean.FullEnsemble.memPermutationOfTableData
+      (ZiskFv.AirsClean.FullEnsemble.HistoricalMemFacts.memPermutationOfTableData
         (trace.memReplayTable h_present)) := by
-  apply ZiskFv.AirsClean.FullEnsemble.memTableGeneratedConstraintFacts_of_component_constraints_transitions
+  apply ZiskFv.AirsClean.FullEnsemble.HistoricalMemFacts.memTableGeneratedConstraintFacts_of_component_constraints_transitions
   · exact (trace.mem_replay_table h_present).2.2.1
   · exact trace.constraints_hold (trace.memReplayTable h_present)
       (trace.mem_replay_table h_present).2.1

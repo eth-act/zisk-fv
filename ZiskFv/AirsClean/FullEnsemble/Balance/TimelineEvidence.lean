@@ -135,9 +135,8 @@ theorem activeMemReplayEntriesOfTableRow_chronological_of_memTableGeneratedRowsB
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (idx : Fin table.table.length) :
     ZiskFv.AirsClean.Mem.MemoryBusRowsChronological
@@ -178,9 +177,8 @@ theorem primaryReplayEntry_timestamp_le_activeMemReplayEntry_of_memTableGenerate
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (idx : Fin table.table.length)
     {entry : Interaction.MemoryBusEntry FGL}
@@ -239,9 +237,8 @@ theorem previous_primary_step_le_step_of_memTableGeneratedRowsBridge
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (idx : Fin table.table.length)
     (h_same_addr : mem.addr_changes idx.val = 0)
@@ -251,7 +248,7 @@ theorem previous_primary_step_le_step_of_memTableGeneratedRowsBridge
   exact
     ZiskFv.Airs.Mem.previous_primary_step_le_step_of_same_addr_not_boundary_segment_every_row
       (cols := segment) (v := mem) (row := idx.val)
-      (h_bridge.generatedAt idx).1 h_same_addr h_not_boundary
+      (h_bridge.segmentAt idx) h_same_addr h_not_boundary
       (h_ranges.stepColumns idx)
       (wr_val_lt_two_of_memTableGeneratedRowsBridge h_bridge idx)
       (h_ranges.incrementChunks idx) h_no_dual
@@ -264,9 +261,8 @@ theorem previous_dual_step_le_step_of_memTableGeneratedRowsBridge
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (idx : Fin table.table.length)
     (h_same_addr : mem.addr_changes idx.val = 0)
@@ -276,7 +272,7 @@ theorem previous_dual_step_le_step_of_memTableGeneratedRowsBridge
   exact
     ZiskFv.Airs.Mem.previous_dual_step_le_step_of_same_addr_not_boundary_segment_every_row
       (cols := segment) (v := mem) (row := idx.val)
-      (h_bridge.generatedAt idx).1 h_same_addr h_not_boundary
+      (h_bridge.segmentAt idx) h_same_addr h_not_boundary
       (h_ranges.stepColumns idx)
       (wr_val_lt_two_of_memTableGeneratedRowsBridge h_bridge idx)
       (h_ranges.incrementChunks idx) h_dual
@@ -291,9 +287,8 @@ theorem previous_activeMemReplayEntry_timestamp_le_current_primary_of_same_addr_
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (idx : Fin table.table.length)
     (h_same_addr : mem.addr_changes idx.val = 0)
@@ -400,9 +395,8 @@ theorem previous_primaryReplayEntry_timestamp_le_current_primary_of_same_addr_me
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (idx : Fin table.table.length)
     (h_same_addr : mem.addr_changes idx.val = 0)
@@ -454,9 +448,8 @@ theorem previous_addr_lt_addr_of_addr_change_not_boundary_memTableGeneratedRowsB
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (idx : Fin table.table.length)
     (h_addr_change : mem.addr_changes idx.val = 1)
@@ -466,7 +459,7 @@ theorem previous_addr_lt_addr_of_addr_change_not_boundary_memTableGeneratedRowsB
   exact
     ZiskFv.Airs.Mem.previous_addr_lt_addr_of_addr_change_not_boundary_segment_every_row
       (cols := segment) (v := mem) (row := idx.val)
-      (h_bridge.generatedAt idx).1 h_addr_change h_not_boundary
+      (h_bridge.segmentAt idx) h_addr_change h_not_boundary
       (h_ranges.addrColumns idx) (h_ranges.addrColumns previousIdx)
       (h_ranges.incrementChunks idx)
 
@@ -481,9 +474,8 @@ theorem previous_addr_le_addr_of_nonfirst_memTableGeneratedRowsBridge
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (idx : Fin table.table.length)
@@ -512,9 +504,8 @@ theorem addr_le_of_index_le_memTableGeneratedRowsBridge
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (earlier later : Fin table.table.length)
@@ -544,9 +535,8 @@ theorem addr_eq_of_index_between_same_addr_memTableGeneratedRowsBridge
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (left mid right : Fin table.table.length)
@@ -576,9 +566,8 @@ theorem addr_changes_eq_zero_of_between_same_addr_memTableGeneratedRowsBridge
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (left current right : Fin table.table.length)
@@ -628,9 +617,8 @@ theorem prior_activeMemReplayEntry_timestamp_le_current_primary_of_same_addr_mem
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (priorIdx selectedIdx : Fin table.table.length)
@@ -714,9 +702,8 @@ theorem prior_activeMemReplayEntry_timestamp_le_activeMemReplayEntry_of_same_add
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (priorIdx selectedIdx : Fin table.table.length)
@@ -768,9 +755,8 @@ theorem activeMemReplayRowsOfTable_pairwise_timestamp_toNat_le_of_same_ptr
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment) :
     (activeMemReplayRowsOfTable table).Pairwise
@@ -857,9 +843,8 @@ theorem prior_addr_ne_of_addr_change_memTableGeneratedRowsBridge
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (idx : Fin table.table.length)
@@ -900,9 +885,8 @@ theorem previous_segment_addr_lt_two_pow_29_of_memTableGeneratedRowsBridge
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_segment_ranges : MemSegmentGeneratedRangeFacts segment)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
@@ -911,7 +895,7 @@ theorem previous_segment_addr_lt_two_pow_29_of_memTableGeneratedRowsBridge
   let idx0 : Fin table.table.length := ⟨0, h_nonempty⟩
   have h_segment :
       ZiskFv.Airs.Mem.segment_every_row segment mem 0 := by
-    simpa [idx0] using (h_bridge.generatedAt idx0).1
+    simpa [idx0] using h_bridge.segmentAt idx0
   have h_boundary : segment.segment_l1 0 = 1 :=
     h_fixed.segmentL1_first h_nonempty
   have h_prev_lt_33 : segment.previous_segment_addr.val < 2 ^ 33 :=
@@ -957,9 +941,8 @@ theorem previous_segment_addr_le_addr_memTableGeneratedRowsBridge
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (h_previous_segment_addr_range : segment.previous_segment_addr.val < 2 ^ 29)
@@ -974,7 +957,7 @@ theorem previous_segment_addr_le_addr_memTableGeneratedRowsBridge
         let idx0 : Fin table.table.length := ⟨0, h_n_lt⟩
         have h_segment :
             ZiskFv.Airs.Mem.segment_every_row segment mem 0 := by
-          simpa [idx0] using (h_bridge.generatedAt idx0).1
+          simpa [idx0] using h_bridge.segmentAt idx0
         have h_boundary : segment.segment_l1 0 = 1 := h_fixed.segmentL1_first h_n_lt
         have h_spec := rowAt_spec_of_memTableGeneratedRowsBridge h_bridge idx0
         rcases ZiskFv.AirsClean.Mem.addr_changes_boolean_of_spec
@@ -1018,9 +1001,8 @@ theorem previous_segment_addr_lt_addr_of_addr_change_memTableGeneratedRowsBridge
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (h_previous_segment_addr_range : segment.previous_segment_addr.val < 2 ^ 29)
@@ -1031,7 +1013,7 @@ theorem previous_segment_addr_lt_addr_of_addr_change_memTableGeneratedRowsBridge
   · let idx0 : Fin table.table.length := ⟨0, by omega⟩
     have h_segment :
         ZiskFv.Airs.Mem.segment_every_row segment mem 0 := by
-      simpa [idx0] using (h_bridge.generatedAt idx0).1
+      simpa [idx0] using h_bridge.segmentAt idx0
     have h_boundary : segment.segment_l1 0 = 1 :=
       h_fixed.segmentL1_first idx0.isLt
     have h_prev_expr :=
@@ -1070,9 +1052,8 @@ theorem previousSegmentSeedDisjoint_of_addr_change_memTableGeneratedRowsBridge
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (h_previous_segment_addr_range : segment.previous_segment_addr.val < 2 ^ 29)
@@ -1108,9 +1089,8 @@ theorem readEventReplayAgreement_after_zeroMemoryOfRows_splitPrefix_addr_change_
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (idx preloadIdx : Fin table.table.length)
@@ -1196,9 +1176,8 @@ theorem readEventReplayAgreement_after_previousSegmentInitialMemory_splitPrefix_
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (idx preloadIdx : Fin table.table.length)
@@ -1296,10 +1275,9 @@ theorem readEventReplayAgreement_after_initialMemory_splitPrefix_to_selected_mem
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
     (initialMemory : Std.ExtHashMap Nat (BitVec 8))
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (selectedIdx : Fin table.table.length)
     (h_boundary_same_addr :
@@ -1468,9 +1446,8 @@ theorem readEventReplayAgreement_after_zeroMemoryOfRows_splitPrefix_to_selected_
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (selectedIdx : Fin table.table.length)
@@ -1533,9 +1510,8 @@ theorem activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_memTableGeneratedRow
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (h_boundary_same_addr :
@@ -1594,9 +1570,8 @@ theorem addr_changes_eq_one_of_first_segment_row_zero_memTableGeneratedRowsBridg
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (h_first_segment : segment.is_first_segment = 1)
     {providerRow : Array FGL}
@@ -1608,8 +1583,8 @@ theorem addr_changes_eq_one_of_first_segment_row_zero_memTableGeneratedRowsBridg
     simp⟩
   have h_segment :
       ZiskFv.Airs.Mem.segment_every_row segment mem 0 := by
-    have h_generated := h_bridge.generatedAt idx0
-    simpa [idx0] using h_generated.1
+    have h_generated := h_bridge.segmentAt idx0
+    simpa [idx0] using h_generated
   have h_boundary : segment.segment_l1 0 = 1 := by
     have h_nonempty : 0 < table.table.length := by
       rw [h_split]
@@ -1629,9 +1604,8 @@ theorem activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_firstSegment_memTabl
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (h_first_segment : segment.is_first_segment = 1) :
@@ -1661,9 +1635,8 @@ theorem readEventReplayAgreement_after_previousSegmentInitialMemory_row_zero_mem
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     {providerRow : Array FGL}
     {laterRows : List (Array FGL)}
@@ -1679,8 +1652,8 @@ theorem readEventReplayAgreement_after_previousSegmentInitialMemory_row_zero_mem
     simp⟩
   have h_segment :
       ZiskFv.Airs.Mem.segment_every_row segment mem 0 := by
-    have h_generated := h_bridge.generatedAt idx0
-    simpa [idx0] using h_generated.1
+    have h_generated := h_bridge.segmentAt idx0
+    simpa [idx0] using h_generated
   have h_boundary : segment.segment_l1 0 = 1 := by
     have h_nonempty : 0 < table.table.length := by
       rw [h_split]
@@ -1735,9 +1708,8 @@ theorem activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_previousSegmentIniti
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (h_addr_change_seed_disjoint :
@@ -1806,9 +1778,8 @@ theorem activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_previousSegmentIniti
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (h_previous_segment_addr_range : segment.previous_segment_addr.val < 2 ^ 29) :
@@ -1832,9 +1803,8 @@ theorem activeMemReplayRowsOfTablePrimaryReadPrefixSound_of_previousSegmentIniti
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_segment_ranges : MemSegmentGeneratedRangeFacts segment)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
@@ -1858,9 +1828,8 @@ theorem readEventReplayAgreement_after_zeroMemoryOfRows_splitPrefix_addr_change_
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (idx : Fin table.table.length)
@@ -1956,10 +1925,9 @@ theorem activeMemReplayRowsOfTablePrefixReadSound_of_memTableGeneratedRowsBridge
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
     (initialMemory : Std.ExtHashMap Nat (BitVec 8))
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_primary_read :
       ActiveMemReplayRowsOfTablePrimaryReadPrefixSound initialMemory table) :
     ActiveMemReplayRowsOfTablePrefixReadSound initialMemory table := by
@@ -1980,9 +1948,8 @@ theorem activeMemReplayRowsOfTablePrefixReadSound_of_firstSegment_memTableGenera
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (h_first_segment : segment.is_first_segment = 1) :
@@ -2007,9 +1974,8 @@ theorem activeMemReplayRowsOfTablePrefixReadSound_of_previousSegmentInitialMemor
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (h_previous_segment_addr_range : segment.previous_segment_addr.val < 2 ^ 29) :
@@ -2029,9 +1995,8 @@ theorem activeMemReplayRowsOfTablePrefixReadSound_of_previousSegmentInitialMemor
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_segment_ranges : MemSegmentGeneratedRangeFacts segment)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
@@ -2105,15 +2070,14 @@ theorem is_first_segment_eq_one_or_zero_of_memTableGeneratedRowsBridge
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_nonempty : 0 < table.table.length) :
     segment.is_first_segment = 1 ∨ segment.is_first_segment = 0 := by
   let idx0 : Fin table.table.length := ⟨0, h_nonempty⟩
   have h_segment :
       ZiskFv.Airs.Mem.segment_every_row segment mem 0 := by
-    simpa [idx0] using (h_bridge.generatedAt idx0).1
+    simpa [idx0] using h_bridge.segmentAt idx0
   rcases h_segment with
     ⟨h_first_bool, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _⟩
   rcases mul_eq_zero.mp h_first_bool with h_zero | h_one_sub
@@ -2134,10 +2098,9 @@ def acceptedMemoryReplayEvidence_of_firstSegment_memTableGeneratedRowsBridge
     {rows : List (Interaction.MemoryBusEntry FGL)}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
     (h_rows : rows = activeMemReplayRowsOfTable table)
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (h_first_segment : segment.is_first_segment = 1) :
@@ -2165,10 +2128,9 @@ def acceptedMemoryReplayEvidence_of_previousSegmentInitialMemory_memTableGenerat
     {rows : List (Interaction.MemoryBusEntry FGL)}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
     (h_rows : rows = activeMemReplayRowsOfTable table)
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
     (h_previous_segment_addr_range : segment.previous_segment_addr.val < 2 ^ 29) :
@@ -2195,10 +2157,9 @@ def acceptedMemoryReplayEvidence_of_previousSegmentInitialMemory_memTableGenerat
     {rows : List (Interaction.MemoryBusEntry FGL)}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
     (h_rows : rows = activeMemReplayRowsOfTable table)
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_segment_ranges : MemSegmentGeneratedRangeFacts segment)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
@@ -2226,10 +2187,9 @@ def acceptedMemoryReplayEvidence_of_segmentSelector_memTableGeneratedRowsBridge
     {rows : List (Interaction.MemoryBusEntry FGL)}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
     (h_rows : rows = activeMemReplayRowsOfTable table)
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_segment_ranges : MemSegmentGeneratedRangeFacts segment)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
@@ -2256,10 +2216,9 @@ def acceptedMemoryReplayEvidence_of_memTableGeneratedRowsBridge_segmentRangeFact
     {rows : List (Interaction.MemoryBusEntry FGL)}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount : ℕ}
     (h_rows : rows = activeMemReplayRowsOfTable table)
-    (h_bridge : MemTableGeneratedRowsBridge table mem segment permutation rowCount)
+    (h_bridge : MemTableGeneratedRowsBridge table mem segment rowCount)
     (h_ranges : MemTableGeneratedRangeFacts table mem)
     (h_segment_ranges : MemSegmentGeneratedRangeFacts segment)
     (h_fixed : MemTableGeneratedFixedColumnFacts table segment)
@@ -2288,7 +2247,6 @@ def acceptedMemoryReplayEvidence_of_fullWitnessMemReplayBridge
     (table := h_bridge.table)
     (mem := h_bridge.mem)
     (segment := h_bridge.segment)
-    (permutation := h_bridge.permutation)
     (rowCount := h_bridge.rowCount)
     h_bridge.rows_eq
     h_bridge.generatedRows

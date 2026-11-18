@@ -19,14 +19,16 @@ import Source415DomainComparison.ReverseFields
 import Source415DomainComparison.ProjectionRetraction
 import Source415DomainComparison.SourceCommitmentBoundary
 
-/-! PRIVATE comparative proof root. This deliberately does not change the
-production root or claim that the two Accepted contracts are interchangeable.
-All comparison declarations, including snapshots and seven genuine current
-constructions, are reachable for elaboration and complete raw trust auditing.
-Forward completion chooses genuine ordered request histograms; it is not
-equality to an arbitrary committed source-provider raw. Reverse projection
-allows arbitrary accepted source prefixes. No definitional equality, equality
-of discarded provider commitments, or protected public cutover is claimed. -/
+/-! Historical comparative proof root. Both endpoints are frozen: historical45
+old16 and historical457 old18 retain the original numeric Mem D1. The reverse
+old18→old16 theorem and the seven genuine old-domain constructions therefore
+do not silently acquire the corrected production Mem domain. ConcreteOldWorlds
+also retains the original ADD prefix-one case and proves old Sd/Ld numeric D1
+on the original rows/data. Forward completion chooses genuine ordered request
+histograms; it is not equality to arbitrary committed provider raw. Reverse
+projection allows arbitrary accepted source prefixes. The separate Source458
+transport is one-way old18→corrected18, not an inverse numeric reconstruction.
+No production root or protected acceptance contract is changed here. -/
 
 namespace ZiskFv.AirsClean.FullEnsemble.DomainComparison
 
@@ -38,7 +40,7 @@ open ZiskFv.AirsClean.ZiskInstructionRom (Program)
     (constraints : old.Constraints) :
     (completedWitness old raw).Constraints ∧
       (ZiskFv.Compliance.Legacy45.MutableMemPresent old ↔
-        ZiskFv.Compliance.MutableMemPresent (completedWitness old raw)) :=
+        ZiskFv.Compliance.Legacy457.MutableMemPresent (completedWitness old raw)) :=
   ⟨completed_constraints old raw constraints, completed_mutableMemPresent old raw⟩
 
 end ZiskFv.AirsClean.FullEnsemble.DomainComparison

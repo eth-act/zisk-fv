@@ -145,22 +145,6 @@ def memSegmentColumnsOfProverDataAndFixed
   distance_end_1 := proverDataScalar data MemRawSidecarDataKey.Segment.distanceEnd1
   segment_l1 := segmentL1
 
-/-- Permutation/direct-update sidecar columns decoded from shared prover data,
-with `__L1__` supplied by the component-owned fixed schema. -/
-@[reducible]
-def memPermutationColumnsOfProverDataAndFixed
-    (data : ProverData FGL) (l1 : Nat -> FGL) :
-    ZiskFv.Airs.Mem.PermutationColumns FGL where
-  std_alpha := proverDataScalar data MemRawSidecarDataKey.Permutation.stdAlpha
-  std_gamma := proverDataScalar data MemRawSidecarDataKey.Permutation.stdGamma
-  l1 := l1
-  im_direct_0 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect0
-  im_direct_1 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect1
-  im_direct_2 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect2
-  im_direct_3 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect3
-  im_direct_4 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect4
-  im_direct_5 := proverDataScalar data MemRawSidecarDataKey.Permutation.imDirect5
-
 /-- Legacy all-prover-data decoder retained for the existing high-level
 sidecar package. New live-component code must use
 `memSegmentColumnsOfProverDataAndFixed`. -/
@@ -170,15 +154,5 @@ def memSegmentColumnsOfProverData
     ZiskFv.Airs.Mem.SegmentColumns FGL :=
   memSegmentColumnsOfProverDataAndFixed data
     (proverDataColumn data MemRawSidecarDataKey.Segment.segmentL1)
-
-/-- Legacy all-prover-data decoder retained for the existing high-level
-sidecar package. New live-component code must use
-`memPermutationColumnsOfProverDataAndFixed`. -/
-@[reducible]
-def memPermutationColumnsOfProverData
-    (data : ProverData FGL) :
-    ZiskFv.Airs.Mem.PermutationColumns FGL :=
-  memPermutationColumnsOfProverDataAndFixed data
-    (proverDataColumn data MemRawSidecarDataKey.Permutation.l1)
 
 end ZiskFv.AirsClean.Mem

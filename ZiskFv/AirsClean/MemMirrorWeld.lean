@@ -1,139 +1,30 @@
 import Extraction.Mem
 import ZiskFv.AirsClean.Mem.Circuit
 import ZiskFv.AirsClean.Mem.Bridge
+import Extraction.MemGeneratedArtifact
 
 /-!
-# Machine-checked weld: Mem constraint mirrors ↔ generated extraction
+# Operational Mem segment correspondence
 
-The Mem AIR has **three** hand-written mirrors of the same generated constraint
-set, and until this module their correspondence to
-`build/extraction/Extraction/Mem.lean` was asserted only by comments:
+The live component retains the nine local equations and the full generated
+segment/continuity family0..23. Numeric protocol equations24..33 are NOT
+base-field live restrictions: their independent typed source audits remain in
+Mem.Stage2 and Mem.SourceFinalizerEquation, and in the normal generated bridge.
+GROUP0 and all three extension coefficients are never represented by AIR0 or
+the unused scalar witness payload.
 
-* `ZiskFv/Airs/Mem.lean` — `segment_every_row` (generated `0..23`) and
-  `permutation_every_row` (generated `24..33`), stated over `Valid_Mem`,
-  `SegmentColumns`, `PermutationColumns`;
-* `ZiskFv/AirsClean/Mem/Constraints.lean` — `segmentGeneratedConstraintAssertions`
-  and `permutationGeneratedConstraintAssertions`, the same 34 as a Clean
-  `assertZero` source (already tied to the previous item in both directions by
-  `ZiskFv/AirsClean/Mem/Bridge.lean`);
-* `ZiskFv/AirsClean/Mem/Constraints.lean` — `main`, and its mirror predicate
-  `ZiskFv/AirsClean/Mem/Spec.lean` `Spec`: the nine single-row stage-1-only
-  constraints, generated `{3,4,5,6,7,8,18,21,23}`. This is the mirror that flows
-  into `fullRv64imEnsemble` through `componentWithDualMemBus`.
+The actual complete compiled34 source family, its0..23/24..33 index partition
+and kind-preserving HOT support are checked in Extraction.MemGeneratedArtifact
+BEFORE erasure into the old total scalar Circuit interface. The trace adapter
+below binds all13 primary columns, AIR0..14 and SEGMENT_L1 to their real source.
+All other methods remain ARBITRARY cold fillers. Whole-family kernel proofs
+show every one of0..23 and its segment bridge independent of EVERY filler.
+Only after those proofs is a private canonical completion instantiated.
+Neither support checking nor cold totalization changes any source equation or
+provides numericHolds, native totality, balance or a new Root premise.
 
-A comment is not checked by anything, so a mistyped column index or a dropped
-factor in any of the three would compile and silently prove soundness of a
-circuit that is not ZisK's. This module replaces the comment citations with
-compiled identities covering all 34 generated constraints.
-
-## How the weld works
-
-`Mem.extraction.constraint_N_every_row` is stated against the abstract
-`Extraction.Circuit` interface: its body only ever mentions
-`Extraction.Circuit.main c (id := i) (column := k) (row := r) (rotation := 0)`,
-`Extraction.Circuit.preprocessed`, `Extraction.Circuit.challenge` and
-`Extraction.Circuit.exposed`. Two `Extraction.Circuit` instances are declared
-below whose lanes read the mirrors' own columns, using the layout printed by the
-extractor at `build/extraction/Extraction/Mem.lean:13-25`. Instantiating a
-generated constraint at such a circuit turns it into a polynomial over the
-mirror's fields, and the weld theorems say that polynomial is *definitionally*
-the one the mirror asserts.
-
-Unlike the Arith AIR, Mem's generated constraints are not all single-row:
-`9,10,11,12,33` read trace row `row + 1` and `15,16,19,20,22,26` read
-`row - 1`. `ExtractedMemTrace.mainValue` therefore threads its `row` argument
-through to the `Valid_Mem` column functions rather than ignoring it.
-
-## What the weld does and does not certify
-
-* Coverage is the whole generated set: `constraint_0_every_row` …
-  `constraint_33_every_row`, all 34, each appearing on the right of a weld
-  below. Every weld is `Iff.rfl` — no `simp`, no `linear_combination`. No Mem
-  mirror needed a commuted-addend exception of the kind `Arith.constraint_36`
-  needed.
-* `spec_weld` and `segment_weld`/`permutation_weld` are `Iff`s, so the mirrors
-  assert neither less nor more than the AIR does.
-* `extracted_of_componentWithDualMemBus_constraints` composes `spec_weld` with
-  the already-proved `spec_of_componentWithDualMemBus_constraints`, so those
-  nine generated constraints follow from the *live* `assertZero` list of the
-  component that the ensemble actually contains — not from transcribed prose. A
-  slip that is self-consistent across `Spec`, the `assertZero` expression in
-  `main` and that projection proof is the exact failure this module exists to
-  catch.
-* `extracted_of_segmentConstraintAssertions` /
-  `extracted_of_permutationConstraintAssertions` do the same for all 34 against
-  the Clean assertion sources in `ZiskFv/AirsClean/Mem/Constraints.lean`.
-* `segment_weld`/`permutation_weld` are universally quantified over *arbitrary*
-  `SegmentColumns`, `PermutationColumns`, `Valid_Mem` and trace row. The
-  auto-generated `Extraction.MemGeneratedConstraintBridge` already relates the
-  same 34 to `segment_every_row`/`permutation_every_row`, but only at the single
-  instantiation `MemOfProverData witness table`; the welds here are the
-  ∀-general statement, and are `rfl` rather than `simpa only [...]`.
-* The two derived surfaces in `ZiskFv/Airs/Mem.lean` — `core_every_row` (the
-  nine local equations, consumed by the memory-bus proofs) and
-  `segmentResidualEveryRow` (the other fifteen) — are covered transitively and
-  deliberately get no weld of their own: `core_every_row_of_segment_every_row`
-  and `segmentResidualEveryRow_of_segment_every_row` are positional projections
-  out of `segment_every_row`, so a drift in either fails to typecheck there.
-* It does **not** certify the column layout itself: the four lane maps are
-  handwritten from the extractor header. A *compensating* pair of slips (mirror
-  and map wrong in the same direction) would still be `rfl`. A column-map gate
-  of the kind proposed for Arith on the unmerged `arith-mirror-weld` branch
-  would close this; there is no Mem analogue, so this is an open hole, not a
-  covered one. `extractedMemRowCircuit_pinned` and
-  `extractedMemTraceCircuit_pinned` below are what such a gate would need to
-  hook onto.
-* It does **not** rest on the `0` answers the lane maps give outside the
-  modeled lanes. That is checked by `allConstraints_readOnlyModeledLanes`, not
-  assumed; see "Which lanes a welded constraint is allowed to read".
-
-## Mutation evidence
-
-Fourteen mutations were run against this module and reverted; the exact errors
-are recorded at the declarations they break.
-
-**A correction, because the first version of this section was wrong.** It
-claimed that a self-consistent slip across two hand-written mirrors (generated
-constraint 28's `(1 - is_last_segment)` -> `(1 - is_first_segment)` in both
-`ZiskFv/Airs/Mem.lean` and `ZiskFv/AirsClean/Mem/Constraints.lean`) is caught by
-`permutation_weld` below and by nothing else in the build. **That is false.**
-
-Adversarial review reproduced the mutation and found
-`Extraction.MemGeneratedConstraintBridge` rejects it too, at `:266` and `:515`,
-with this module absent from that target's import closure. That bridge is
-auto-generated, binds `Extraction.Mem.constraint_0..33` to the ProverData-backed
-source, and is a **`defaultTargets` entry in `lakefile.toml`** — so it has been
-gating those mirrors all along.
-
-The wrong conclusion came from measuring with the targeted
-`lake build ZiskFv.AirsClean.MemMirrorWeld` (8203 jobs), which excludes that
-bridge (job 8986 of 9119 in the default build). "Not in my target's import
-closure" was reported as "provably cannot see it". Any mutation conclusion drawn
-from a targeted build carries the same risk; measure against the default build.
-
-**Honest increment of this module**, given that: the `segment_weld` and
-`permutation_weld` families largely duplicate the pre-existing generated bridge.
-What is genuinely new is Part A — `spec_weld` and
-`extracted_of_componentWithDualMemBus_constraints`, over the `Spec`/`main` mirror
-that the generated bridge does not cover — plus `∀`-generality over the single
-`proverData` instantiation the bridge is stated at, and the lane-restriction and
-instance-pinning results.
-
-The other thirteen mutate this module's four lane maps, its weld statements, its
-`Extraction.Circuit` instances and its lane restriction; all thirteen break the
-build. Most surface as `error: Type mismatch / Iff.rfl has type ?m ↔ ?m but is
-expected to have type …`; two (`traceExposedValue` index 9 and
-`traceChallengeValue` index 0) additionally exhaust `maxRecDepth` on the longhand
-`constraint_28_weld`, and one (the challenge-lane negative control) surfaces as a
-deterministic `whnf` heartbeat timeout on `allConstraints_readOnlyModeledLanes`.
-Those are failure modes of the *rejected* defeq check — the unmutated module
-elaborates in about 4s at default `maxRecDepth` and default heartbeats — but they
-are worth knowing when a real drift is being diagnosed.
-
-## Trust note
-
-No axiom, `sorry`, `native_decide`, or other trust marker is added. Every
-declaration is `Iff.rfl`, `rfl`, or a composition of already-proved theorems.
+The pre-existing nine local-row welds, row independence and instance pins remain
+unchanged. No global Extraction.Circuit interface or instance family is added.
 -/
 
 namespace ZiskFv.AirsClean.MemMirrorWeld
@@ -141,10 +32,8 @@ namespace ZiskFv.AirsClean.MemMirrorWeld
 open Goldilocks
 open ZiskFv.AirsClean.Mem (MemRow Spec componentWithDualMemBus
   spec_of_componentWithDualMemBus_constraints SegmentConstraintAssertionWitness
-  PermutationConstraintAssertionWitness segment_every_row_of_constraint_assertions
-  permutation_every_row_of_constraint_assertions)
-open ZiskFv.Airs.Mem (Valid_Mem SegmentColumns PermutationColumns segment_every_row
-  permutation_every_row)
+  segment_every_row_of_constraint_assertions)
+open ZiskFv.Airs.Mem (Valid_Mem SegmentColumns segment_every_row)
 
 /-! ## Part A — the single-row mirror that reaches the ensemble
 
@@ -287,33 +176,45 @@ theorem extracted_of_componentWithDualMemBus_constraints
         (extractedMemRow (eval env componentWithDualMemBus.rowInputVar)) 0 :=
   (spec_weld _).mp (spec_of_componentWithDualMemBus_constraints env h_holds)
 
-/-! ## Part B — the trace-level mirrors, all 34
+/-! ## Part B — all24 operational segment equations
 
-`ZiskFv/Airs/Mem.lean`'s `segment_every_row` and `permutation_every_row` are the
-mirrors that carry the cross-row, preprocessed, exposed and challenge lanes.
-Between them they claim to be the whole generated set. `ExtractedMemTrace` maps
-all four lanes at once so that claim can be checked. -/
+The separately typed protocol audit accounts for24..33. It is not a scalar
+Circuit claim and does not supply live numeric protocol restrictions. -/
 
-/-- An `Extraction.Circuit` over the trace-level mirror's own columns: the
-    stage-1/stage-2 witness columns of a `Valid_Mem`, the preprocessed `l1`
-    selectors, the two permutation challenges, and the fifteen segment publics
-    plus six direct-accumulator inverses in the exposed lane. -/
+/-- The pre-existing free Circuit supplies arbitrary values at COLD methods.
+    These are data, not source-validity or satisfaction hypotheses. -/
+structure MemProbe (F ExtF : Type) where
+  mainCell : ℕ → ℕ → ℕ → ℕ → FGL
+  preprocessedCell : ℕ → ℕ → ℕ → FGL
+  challengeCell : ℕ → FGL
+  exposedCell : ℕ → FGL
+
+instance memProbeCircuit : Extraction.Circuit FGL FGL MemProbe where
+  main c := c.mainCell
+  preprocessed c := c.preprocessedCell
+  challenge c := c.challengeCell
+  exposed c := c.exposedCell
+
 structure ExtractedMemTrace (F ExtF : Type) where
+  private mk ::
   seg : SegmentColumns FGL
-  perm : PermutationColumns FGL
   v : Valid_Mem FGL FGL
+  cold : MemProbe FGL FGL
+  private supported : ∀ index : Fin 24,
+    Extraction.MemGeneratedArtifact.segmentSourceSupported
+      (Extraction.MemGeneratedArtifact.segmentSource index) = true
 
-/-- Stage-1 columns `0..12` and stage-2 columns `0..2`, transcribed from
-    `build/extraction/Extraction/Mem.lean:13-25`. The extractor prints both
-    stage-2 columns 1 and 2 as `im_cluster`; the mirror names them `im_0`/`im_1`
-    and `Extraction.MemGeneratedConstraintBridge.mainValue` makes the same
-    choice.
-
-    The `row` argument is threaded through, not discarded: generated `9,10,11,12`
-    and `33` read `row + 1` and `15,16,19,20,22,26` read `row - 1`. -/
+/-- The support certificate is computed from actual compiled kind-preserving
+    source, not supplied by a caller or filtered by the desired Spec. -/
 @[reducible]
-def traceMainValue (c : ExtractedMemTrace FGL FGL) (id column row _rotation : ℕ) : FGL :=
-  if id = 1 then
+def traceWithCold (seg : SegmentColumns FGL) (v : Valid_Mem FGL FGL)
+    (cold : MemProbe FGL FGL) : ExtractedMemTrace FGL FGL :=
+  ⟨seg, v, cold, Extraction.MemGeneratedArtifact.compiled_segment_source_support⟩
+
+@[reducible]
+def traceMainValue (c : ExtractedMemTrace FGL FGL)
+    (id column row rotation : ℕ) : FGL :=
+  if id = 1 ∧ rotation = 0 then
     match column with
     | 0 => c.v.addr row
     | 1 => c.v.step row
@@ -328,36 +229,19 @@ def traceMainValue (c : ExtractedMemTrace FGL FGL) (id column row _rotation : �
     | 10 => c.v.increment_0 row
     | 11 => c.v.increment_1 row
     | 12 => c.v.read_same_addr row
-    | _ => 0
-  else if id = 2 then
-    match column with
-    | 0 => c.v.gsum row
-    | 1 => c.v.im_0 row
-    | 2 => c.v.im_1 row
-    | _ => 0
-  else
-    0
+    | _ => c.cold.mainCell id column row rotation
+  else c.cold.mainCell id column row rotation
 
-/-- The two preprocessed selector columns: the segment-boundary `l1` used by
-    generated `15,19,20,22,26` and the permutation `l1` used by generated `33`. -/
 @[reducible]
-def tracePreprocessedValue
-    (c : ExtractedMemTrace FGL FGL) (column row _rotation : ℕ) : FGL :=
-  match column with
-  | 0 => c.seg.segment_l1 row
-  | 1 => c.perm.l1 row
-  | _ => 0
+def tracePreprocessedValue (c : ExtractedMemTrace FGL FGL)
+    (column row rotation : ℕ) : FGL :=
+  if column = 0 ∧ rotation = 0 then c.seg.segment_l1 row
+  else c.cold.preprocessedCell column row rotation
 
-/-- The two `std_` permutation challenges read by generated `24..33`. -/
 @[reducible]
 def traceChallengeValue (c : ExtractedMemTrace FGL FGL) (index : ℕ) : FGL :=
-  match index with
-  | 0 => c.perm.std_alpha
-  | 1 => c.perm.std_gamma
-  | _ => 0
+  c.cold.challengeCell index
 
-/-- The exposed lane: `SegmentColumns`' fifteen public values at indices `0..14`
-    and `PermutationColumns`' six direct-accumulator inverses at `15..20`. -/
 @[reducible]
 def traceExposedValue (c : ExtractedMemTrace FGL FGL) (index : ℕ) : FGL :=
   match index with
@@ -376,13 +260,7 @@ def traceExposedValue (c : ExtractedMemTrace FGL FGL) (index : ℕ) : FGL :=
   | 12 => c.seg.distance_base_1
   | 13 => c.seg.distance_end_0
   | 14 => c.seg.distance_end_1
-  | 15 => c.perm.im_direct_0
-  | 16 => c.perm.im_direct_1
-  | 17 => c.perm.im_direct_2
-  | 18 => c.perm.im_direct_3
-  | 19 => c.perm.im_direct_4
-  | 20 => c.perm.im_direct_5
-  | _ => 0
+  | _ => c.cold.exposedCell index
 
 instance extractedMemTraceCircuit : Extraction.Circuit FGL FGL ExtractedMemTrace where
   main := traceMainValue
@@ -390,324 +268,162 @@ instance extractedMemTraceCircuit : Extraction.Circuit FGL FGL ExtractedMemTrace
   challenge := traceChallengeValue
   exposed := traceExposedValue
 
+/-- Fin24 plus the compiled34 partition prevents an unaccounted source tail. -/
+def segmentConstraint (index : Fin 24) :
+    ExtractedMemTrace FGL FGL → ℕ → Prop :=
+  match index.val with
+  | 0 => Mem.extraction.constraint_0_every_row
+  | 1 => Mem.extraction.constraint_1_every_row
+  | 2 => Mem.extraction.constraint_2_every_row
+  | 3 => Mem.extraction.constraint_3_every_row
+  | 4 => Mem.extraction.constraint_4_every_row
+  | 5 => Mem.extraction.constraint_5_every_row
+  | 6 => Mem.extraction.constraint_6_every_row
+  | 7 => Mem.extraction.constraint_7_every_row
+  | 8 => Mem.extraction.constraint_8_every_row
+  | 9 => Mem.extraction.constraint_9_every_row
+  | 10 => Mem.extraction.constraint_10_every_row
+  | 11 => Mem.extraction.constraint_11_every_row
+  | 12 => Mem.extraction.constraint_12_every_row
+  | 13 => Mem.extraction.constraint_13_every_row
+  | 14 => Mem.extraction.constraint_14_every_row
+  | 15 => Mem.extraction.constraint_15_every_row
+  | 16 => Mem.extraction.constraint_16_every_row
+  | 17 => Mem.extraction.constraint_17_every_row
+  | 18 => Mem.extraction.constraint_18_every_row
+  | 19 => Mem.extraction.constraint_19_every_row
+  | 20 => Mem.extraction.constraint_20_every_row
+  | 21 => Mem.extraction.constraint_21_every_row
+  | 22 => Mem.extraction.constraint_22_every_row
+  | _ => Mem.extraction.constraint_23_every_row
+
+/-- EVERY actual operational constraint is independent of ALL arbitrary COLD
+    methods, not merely of a chosen zero completion or selected examples. -/
+theorem segmentConstraints_cold_independent
+    (seg : SegmentColumns FGL) (v : Valid_Mem FGL FGL)
+    (first second : MemProbe FGL FGL) (row : ℕ) (index : Fin 24) :
+    segmentConstraint index (traceWithCold seg v first) row ↔
+      segmentConstraint index (traceWithCold seg v second) row := by
+  fin_cases index <;> exact Iff.rfl
+
+theorem segment_weld_withCold (seg : SegmentColumns FGL)
+    (v : Valid_Mem FGL FGL) (cold : MemProbe FGL FGL) (r : ℕ) :
+    segment_every_row seg v r ↔
+      Mem.extraction.constraint_0_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_1_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_2_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_3_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_4_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_5_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_6_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_7_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_8_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_9_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_10_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_11_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_12_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_13_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_14_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_15_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_16_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_17_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_18_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_19_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_20_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_21_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_22_every_row (traceWithCold seg v cold) r
+      ∧ Mem.extraction.constraint_23_every_row (traceWithCold seg v cold) r :=
+  Iff.rfl
+
+/-- Canonical completion is PRIVATE and occurs only after actual source support
+    and whole-family arbitrary-filler independence. No extension value is filled. -/
+private def coldCompletion : MemProbe FGL FGL where
+  mainCell := fun _ _ _ _ => 0
+  preprocessedCell := fun _ _ _ => 0
+  challengeCell := fun _ => 0
+  exposedCell := fun _ => 0
+
 @[reducible]
-def extractedMemTrace (seg : SegmentColumns FGL) (perm : PermutationColumns FGL)
-    (v : Valid_Mem FGL FGL) : ExtractedMemTrace FGL FGL := ⟨seg, perm, v⟩
+def extractedMemTrace (seg : SegmentColumns FGL)
+    (v : Valid_Mem FGL FGL) : ExtractedMemTrace FGL FGL :=
+  traceWithCold seg v coldCompletion
 
-/-- `mem/pil/mem.pil:103 Mem.is_first_segment*(1-Mem.is_first_segment)` — an
-    exposed-lane-only constraint, welded longhand so the exposed map is readable
-    as source against source.
-
-    Mirror: the first conjunct of `segment_every_row`. -/
-theorem constraint_0_weld (seg : SegmentColumns FGL) (perm : PermutationColumns FGL)
+theorem constraint_0_weld (seg : SegmentColumns FGL)
     (v : Valid_Mem FGL FGL) (r : ℕ) :
-    (seg.is_first_segment * (1 - seg.is_first_segment) = 0)
-      ↔ Mem.extraction.constraint_0_every_row (extractedMemTrace seg perm v) r :=
+    (seg.is_first_segment * (1 - seg.is_first_segment) = 0) ↔
+      Mem.extraction.constraint_0_every_row (extractedMemTrace seg v) r :=
   Iff.rfl
 
-/-- `mem/pil/mem.pil:369 'l1*(addr-segment_last_addr)` — a `row + 1`
-    preprocessed-gated constraint, welded longhand so the row direction is
-    readable as source against source. Compare `constraint_19_weld`, which reads
-    `row - 1`.
-
-    Mirror: the twelfth conjunct of `segment_every_row`. -/
-theorem constraint_11_weld (seg : SegmentColumns FGL) (perm : PermutationColumns FGL)
+theorem constraint_11_weld (seg : SegmentColumns FGL)
     (v : Valid_Mem FGL FGL) (r : ℕ) :
-    (seg.segment_l1 (r + 1) * (v.addr r - seg.segment_last_addr) = 0)
-      ↔ Mem.extraction.constraint_11_every_row (extractedMemTrace seg perm v) r :=
+    (seg.segment_l1 (r + 1) * (v.addr r - seg.segment_last_addr) = 0) ↔
+      Mem.extraction.constraint_11_every_row (extractedMemTrace seg v) r :=
   Iff.rfl
 
-/-- `mem/pil/mem.pil:401 (1-addr_changes)*(addr-'addr)` — a `row - 1`
-    constraint, where `ZiskFv.Airs.Mem.segment_previous_addr` is the mirror's
-    name for the `segment_l1`-blended previous address.
-
-    Mirror: the twentieth conjunct of `segment_every_row`. -/
-theorem constraint_19_weld (seg : SegmentColumns FGL) (perm : PermutationColumns FGL)
+theorem constraint_19_weld (seg : SegmentColumns FGL)
     (v : Valid_Mem FGL FGL) (r : ℕ) :
     ((1 - v.addr_changes r) *
-        (v.addr r - ZiskFv.Airs.Mem.segment_previous_addr seg v r) = 0)
-      ↔ Mem.extraction.constraint_19_every_row (extractedMemTrace seg perm v) r :=
+        (v.addr r - ZiskFv.Airs.Mem.segment_previous_addr seg v r) = 0) ↔
+      Mem.extraction.constraint_19_every_row (extractedMemTrace seg v) r :=
   Iff.rfl
 
-/-- `mem/pil/mem.pil:283` — a challenge-reading accumulator constraint, welded
-    longhand so the challenge map is readable as source against source.
-    `ZiskFv.Airs.Mem.direct_gsum_1` is the mirror's name for the
-    `std_alpha`/`std_gamma` combination.
-
-    Mirror: the fifth conjunct of `permutation_every_row`. -/
-theorem constraint_28_weld (seg : SegmentColumns FGL) (perm : PermutationColumns FGL)
-    (v : Valid_Mem FGL FGL) (r : ℕ) :
-    (perm.im_direct_1 * ZiskFv.Airs.Mem.direct_gsum_1 seg perm
-        - (1 - seg.is_last_segment) = 0)
-      ↔ Mem.extraction.constraint_28_every_row (extractedMemTrace seg perm v) r :=
-  Iff.rfl
-
-/-- `segment_every_row` is, conjunct for conjunct and in order, generated
-    `0..23`.
-
-    Quantified over arbitrary `SegmentColumns`, `Valid_Mem` and trace row, so
-    this strictly generalizes the `MemOfProverData`-instantiated correspondence
-    in the auto-generated `Extraction.MemGeneratedConstraintBridge`. -/
-theorem segment_weld (seg : SegmentColumns FGL) (perm : PermutationColumns FGL)
+theorem segment_weld (seg : SegmentColumns FGL)
     (v : Valid_Mem FGL FGL) (r : ℕ) :
     segment_every_row seg v r ↔
-      Mem.extraction.constraint_0_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_1_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_2_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_3_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_4_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_5_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_6_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_7_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_8_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_9_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_10_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_11_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_12_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_13_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_14_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_15_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_16_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_17_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_18_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_19_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_20_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_21_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_22_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_23_every_row (extractedMemTrace seg perm v) r :=
-  Iff.rfl
-
-/-- `permutation_every_row` is, conjunct for conjunct and in order, generated
-    `24..33` — the challenge-reading half of the AIR.
-
-    Under the "F-only slice" convention used for Arith these ten would be out of
-    scope, because there the stage-2/challenge constraints are represented by
-    channel `push`/`lookup` operations rather than `assertZero`. Mem is
-    different: `ZiskFv/Airs/Mem.lean` models the challenge lane explicitly as
-    `PermutationColumns.std_alpha`/`std_gamma`, so the ten are ordinary
-    polynomial identities over named columns and weld like the rest. -/
-theorem permutation_weld (seg : SegmentColumns FGL) (perm : PermutationColumns FGL)
-    (v : Valid_Mem FGL FGL) (r : ℕ) :
-    permutation_every_row seg perm v r ↔
-      Mem.extraction.constraint_24_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_25_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_26_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_27_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_28_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_29_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_30_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_31_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_32_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_33_every_row (extractedMemTrace seg perm v) r :=
-  Iff.rfl
-
-/-! ### From the Clean assertion sources
-
-`ZiskFv/AirsClean/Mem/Constraints.lean` restates the same 34 as two Clean
-`assertZero` circuits, and `ZiskFv/AirsClean/Mem/Bridge.lean` already projects
-the `ZiskFv/Airs/Mem.lean` mirrors out of them. Composing with the welds above
-ties the generated constraints to those `assertZero` expressions too, so all
-three Mem mirrors are now pinned to the extraction rather than to each other. -/
+      Mem.extraction.constraint_0_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_1_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_2_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_3_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_4_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_5_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_6_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_7_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_8_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_9_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_10_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_11_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_12_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_13_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_14_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_15_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_16_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_17_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_18_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_19_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_20_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_21_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_22_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_23_every_row (extractedMemTrace seg v) r :=
+  segment_weld_withCold seg v coldCompletion r
 
 theorem extracted_of_segmentConstraintAssertions
     {seg : SegmentColumns FGL} {v : Valid_Mem FGL FGL} {r : ℕ}
-    (perm : PermutationColumns FGL)
     (w : SegmentConstraintAssertionWitness seg v r) :
-    Mem.extraction.constraint_0_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_1_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_2_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_3_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_4_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_5_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_6_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_7_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_8_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_9_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_10_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_11_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_12_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_13_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_14_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_15_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_16_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_17_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_18_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_19_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_20_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_21_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_22_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_23_every_row (extractedMemTrace seg perm v) r :=
-  (segment_weld seg perm v r).mp (segment_every_row_of_constraint_assertions w)
-
-theorem extracted_of_permutationConstraintAssertions
-    {seg : SegmentColumns FGL} {perm : PermutationColumns FGL}
-    {v : Valid_Mem FGL FGL} {r : ℕ}
-    (w : PermutationConstraintAssertionWitness seg perm v r) :
-    Mem.extraction.constraint_24_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_25_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_26_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_27_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_28_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_29_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_30_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_31_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_32_every_row (extractedMemTrace seg perm v) r
-      ∧ Mem.extraction.constraint_33_every_row (extractedMemTrace seg perm v) r :=
-  (permutation_weld seg perm v r).mp (permutation_every_row_of_constraint_assertions w)
-
-/-! ## Which lanes a welded constraint is allowed to read
-
-The four lane maps are total, so they have to answer somewhere they are not
-modeling: `traceMainValue` returns `0` for every `id ∉ {1,2}` and every column
-past the layout, the other three return `0` past their last index, and all four
-ignore `rotation`. `extractedMemRowCircuit` goes further and stubs
-`preprocessed`, `challenge` and `exposed` to `0` outright, and ignores the
-constraint's `row`. Those answers are only harmless if no welded constraint can
-observe them; if one could, the weld would be certifying a polynomial the AIR
-does not assert. This section checks that instead of asserting it.
-
-`MemProbe` is the *free* `Extraction.Circuit`: every lane is an unconstrained
-function field. Instantiating a generated constraint there turns each cell read
-into an application of a variable, so a `rfl`-level identity between a probe
-circuit and its restriction is a statement about which cells the generated body
-mentions — not about their values. -/
-
-/-- The free `Extraction.Circuit` over `FGL`: each lane is a function field. -/
-structure MemProbe (F ExtF : Type) where
-  mainCell : ℕ → ℕ → ℕ → ℕ → FGL
-  preprocessedCell : ℕ → ℕ → ℕ → FGL
-  challengeCell : ℕ → FGL
-  exposedCell : ℕ → FGL
-
-instance memProbeCircuit : Extraction.Circuit FGL FGL MemProbe where
-  main c := c.mainCell
-  preprocessed c := c.preprocessedCell
-  challenge c := c.challengeCell
-  exposed c := c.exposedCell
-
-/-- `c` cut down to the lanes `extractedMemTraceCircuit` actually models: stage 1
-    columns `< 13`, stage 2 columns `< 3`, rotation `0`, preprocessed columns
-    `< 2`, challenge indices `< 2`, exposed indices `< 21`; `0` everywhere else.
-
-    Note what is *not* restricted: the trace row. `traceMainValue` threads it
-    through, and generated `9,10,11,12,15,16,19,20,22,26,33` genuinely read
-    rows other than the constraint's own. -/
-@[reducible]
-def restrictToModeledLanes (c : MemProbe FGL FGL) : MemProbe FGL FGL where
-  mainCell := fun id column row rotation =>
-    if ((id = 1 ∧ column < 13) ∨ (id = 2 ∧ column < 3)) ∧ rotation = 0 then
-      c.mainCell id column row rotation
-    else 0
-  preprocessedCell := fun column row rotation =>
-    if column < 2 ∧ rotation = 0 then c.preprocessedCell column row rotation else 0
-  challengeCell := fun index => if index < 2 then c.challengeCell index else 0
-  exposedCell := fun index => if index < 21 then c.exposedCell index else 0
-
-/-- `P c r` is unchanged by zeroing every lane the trace column map does not
-    model.
-
-    Unfolded: `P c r` may mention `c.mainCell 1 k _ 0` for `k < 13`,
-    `c.mainCell 2 k _ 0` for `k < 3`, `c.preprocessedCell k _ 0` for `k < 2`,
-    `c.challengeCell k` for `k < 2` and `c.exposedCell k` for `k < 21`, and
-    nothing else. A read outside those ranges, or at a nonzero rotation, would
-    leave a free `c.<lane> …` on the left of the `Iff` with no counterpart on the
-    right, and `Iff.rfl` would not typecheck. -/
-@[reducible]
-def ReadsOnlyModeledLanes (P : MemProbe FGL FGL → ℕ → Prop) : Prop :=
-  ∀ (c : MemProbe FGL FGL) (r : ℕ), P c r ↔ P (restrictToModeledLanes c) r
-
-/-- All 34 generated Mem constraints read only the lanes the trace column map
-    models.
-
-    The property is not vacuous. Each of these four weakenings of
-    `restrictToModeledLanes` was applied and reverted, and each makes this
-    theorem fail to elaborate — reported error verbatim:
-
-    * `exposedCell` cut at `< 20` instead of `< 21`:
-      `Iff.rfl … expected to have type constraint_33_every_row x✝¹ x✝ ↔
-      constraint_33_every_row (restrictToModeledLanes x✝¹) x✝` (index 20 is
-      `im_direct_5`);
-    * `preprocessedCell` cut at `< 1` instead of `< 2`: the same error on
-      `constraint_33_every_row`, which reads the permutation `l1`;
-    * `mainCell`'s stage-1 branch cut at `< 12` instead of `< 13`: the same
-      error on `constraint_22_every_row`, a `read_same_addr` reader;
-    * `challengeCell` cut at `< 1` instead of `< 2`:
-      `(deterministic) timeout at whnf, maximum number of heartbeats (200000)
-      has been reached` on this declaration — a rejected defeq check that is too
-      deep to report cleanly rather than an accepted one.
-
-    So each of the four bounds is doing work, and the `0` defaults outside them
-    are not what makes any weld above hold. -/
-theorem allConstraints_readOnlyModeledLanes :
-    ReadsOnlyModeledLanes Mem.extraction.constraint_0_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_1_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_2_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_3_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_4_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_5_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_6_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_7_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_8_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_9_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_10_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_11_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_12_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_13_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_14_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_15_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_16_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_17_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_18_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_19_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_20_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_21_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_22_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_23_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_24_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_25_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_26_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_27_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_28_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_29_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_30_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_31_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_32_every_row
-    ∧ ReadsOnlyModeledLanes Mem.extraction.constraint_33_every_row :=
-  ⟨fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl,
-   fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl,
-   fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl,
-   fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl,
-   fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl,
-   fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl,
-   fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl,
-   fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl, fun _ _ => Iff.rfl,
-   fun _ _ => Iff.rfl, fun _ _ => Iff.rfl⟩
-
-/-- `extractedMemTrace seg perm v` re-expressed in the free circuit. Composed
-    with `allConstraints_readOnlyModeledLanes` this says: the `0` defaults of the
-    four trace lane maps cannot be what makes `segment_weld` or
-    `permutation_weld` hold, because no generated constraint can observe them. -/
-@[reducible]
-def probeOfTrace (seg : SegmentColumns FGL) (perm : PermutationColumns FGL)
-    (v : Valid_Mem FGL FGL) : MemProbe FGL FGL where
-  mainCell := traceMainValue (extractedMemTrace seg perm v)
-  preprocessedCell := tracePreprocessedValue (extractedMemTrace seg perm v)
-  challengeCell := traceChallengeValue (extractedMemTrace seg perm v)
-  exposedCell := traceExposedValue (extractedMemTrace seg perm v)
-
-theorem traceWelds_probeBridge (seg : SegmentColumns FGL) (perm : PermutationColumns FGL)
-    (v : Valid_Mem FGL FGL) (r : ℕ) :
-    (Mem.extraction.constraint_0_every_row (extractedMemTrace seg perm v) r
-        ↔ Mem.extraction.constraint_0_every_row (probeOfTrace seg perm v) r)
-      ∧ (Mem.extraction.constraint_11_every_row (extractedMemTrace seg perm v) r
-        ↔ Mem.extraction.constraint_11_every_row (probeOfTrace seg perm v) r)
-      ∧ (Mem.extraction.constraint_19_every_row (extractedMemTrace seg perm v) r
-        ↔ Mem.extraction.constraint_19_every_row (probeOfTrace seg perm v) r)
-      ∧ (Mem.extraction.constraint_28_every_row (extractedMemTrace seg perm v) r
-        ↔ Mem.extraction.constraint_28_every_row (probeOfTrace seg perm v) r)
-      ∧ (Mem.extraction.constraint_33_every_row (extractedMemTrace seg perm v) r
-        ↔ Mem.extraction.constraint_33_every_row (probeOfTrace seg perm v) r) :=
-  ⟨Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl, Iff.rfl⟩
+    Mem.extraction.constraint_0_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_1_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_2_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_3_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_4_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_5_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_6_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_7_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_8_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_9_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_10_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_11_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_12_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_13_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_14_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_15_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_16_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_17_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_18_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_19_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_20_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_21_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_22_every_row (extractedMemTrace seg v) r
+      ∧ Mem.extraction.constraint_23_every_row (extractedMemTrace seg v) r :=
+  (segment_weld seg v r).mp (segment_every_row_of_constraint_assertions w)
 
 /-- `extractedMemRow row` re-expressed in the free circuit: `rowMainValue` in the
     stage-1 lane, `0` in every stub lane. -/
@@ -718,11 +434,8 @@ def probeOfRow (row : MemRow FGL) : MemProbe FGL FGL where
   challengeCell := fun _ => 0
   exposedCell := fun _ => 0
 
-/-- The bridge from `extractedMemRowCircuit`, at which Part A's welds are stated,
-    into the free circuit. Composed with `allConstraints_readOnlyModeledLanes` it
-    gives: none of the nine single-row constraints can observe a stubbed lane, so
-    the `preprocessed`/`challenge`/`exposed` stubs and the discarded
-    `row`/`rotation` arguments cannot be what makes a Part A weld true. -/
+/-- The unchanged nine local predicates agree through their two existing
+    Circuit instances, independently of the row index used here. -/
 theorem rowWelds_probeBridge (row : MemRow FGL) (r : ℕ) :
     (Mem.extraction.constraint_3_every_row (extractedMemRow row) r
         ↔ Mem.extraction.constraint_3_every_row (probeOfRow row) r)
@@ -751,8 +464,8 @@ theorem rowWelds_probeBridge (row : MemRow FGL) (r : ℕ) :
     It is specific to these nine. The same statement for `constraint_11` at the
     trace circuit — which reads `row + 1` — was tried and rejected:
     `Iff.rfl … but is expected to have type
-    Mem.extraction.constraint_11_every_row (extractedMemTrace seg perm v) r ↔
-    Mem.extraction.constraint_11_every_row (extractedMemTrace seg perm v) r'`.
+    Mem.extraction.constraint_11_every_row (extractedMemTrace seg v) r ↔
+    Mem.extraction.constraint_11_every_row (extractedMemTrace seg v) r'`.
     Part B is stated at a universally quantified `r` for exactly that reason. -/
 theorem rowWelds_rowIrrelevant (row : MemRow FGL) (r r' : ℕ) :
     (Mem.extraction.constraint_3_every_row (extractedMemRow row) r

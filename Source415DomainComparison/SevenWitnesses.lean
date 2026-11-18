@@ -1,3 +1,4 @@
+import Source458DomainComparison.ConcreteOldWorlds
 import ZiskFv.Compliance.SingleAddWitness
 import ZiskFv.Compliance.AddSpinWitness
 import ZiskFv.Compliance.AddAddiSpinWitness
@@ -9,16 +10,18 @@ import ZiskFv.Compliance.DivSpinWitness
 /-!
 # Seven existing actual source-provider witnesses
 
-These are the seven concrete current Compliance constructions, not frozen-old
-accepted witnesses or an oldAccepted → newAccepted transport theorem. Each named
-result records existing constraints and full channel balance, an actual nonempty
-Main table, and the actual two full-domain packed-source providers in that same
-witness. No equivalence of accepted domains is asserted here.
+These are genuine historical457 old18 accepted constructions, not casts of
+corrected-domain witnesses. Their original raw rows/data and both complete
+source providers are retained. ConcreteOldWorlds separately proves the old
+scalar Mem D1 on the real Sd/Ld data and preserves the original prefix cases.
+The older16↔18 comparison therefore keeps two historical endpoints; the separate
+458 transport is only old18→corrected18. No converse accepted domain is claimed.
 -/
 
 namespace ZiskFv.AirsClean.FullEnsemble.DomainComparison.SevenWitnesses
 
 open Goldilocks Air.Flat
+open ZiskFv.Compliance.Legacy457
 open ZiskFv.Compliance.Instantiation
 open ZiskFv.AirsClean.PackedVirtualTableSources
 open ZiskFv.Compliance.RegisterMemBusBalance (addX1Program addX1Row)
@@ -55,17 +58,29 @@ theorem extensionProvider_full_rawRows (physical : Witness FGL) (data : ProverDa
 section
 open ZiskFv.Compliance.SingleAddWitness
 
-/-- The existing actual `singleAddWitness`, with both complete source providers. -/
+/-- The genuine historical `singleAddWitness` carrier, with both complete original source providers. -/
 theorem singleAdd_actual :
-    ActualEvidence singleAddWitness (mainSingleRowTable 1 addX1Program addX1Row)
+    ActualEvidence ConcreteOldWorlds.singleAddAcceptedTrace.witness (mainSingleRowTable 1 addX1Program addX1Row)
       noRequestBinarySourceTable noRequestExtensionSourceTable
       ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData where
-  constraints := singleAddWitness_constraints
-  balanced := singleAddWitness_balancedChannels
-  main_mem := by simp [singleAddWitness, singleAddTables]
+  constraints := ConcreteOldWorlds.singleAddAcceptedTrace.constraints_hold
+  balanced := ConcreteOldWorlds.singleAddAcceptedTrace.channels_balanced
+  main_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .singleAdd
+    · change _ ∈ singleAddWitness.tables
+      simp [singleAddWitness, singleAddTables]
+    · decide
   main_nonempty := by decide
-  binary_mem := by simp [singleAddWitness, singleAddTables]
-  extension_mem := by simp [singleAddWitness, singleAddTables]
+  binary_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .singleAdd
+    · change _ ∈ singleAddWitness.tables
+      simp [singleAddWitness, singleAddTables]
+    · decide
+  extension_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .singleAdd
+    · change _ ∈ singleAddWitness.tables
+      simp [singleAddWitness, singleAddTables]
+    · decide
   binary_full := rfl
   extension_full := rfl
 
@@ -74,17 +89,29 @@ end
 section
 open ZiskFv.Compliance.AddSpinWitness
 
-/-- The existing actual `addSpinWitness`, with both complete source providers. -/
+/-- The genuine historical `addSpinWitness` carrier, with both complete original source providers. -/
 theorem addSpin_actual :
-    ActualEvidence addSpinWitness (addSpinMainTable)
+    ActualEvidence ConcreteOldWorlds.addSpinAcceptedTrace.witness (addSpinMainTable)
       noRequestBinarySourceTable noRequestExtensionSourceTable
       ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData where
-  constraints := addSpinWitness_constraints
-  balanced := addSpinWitness_balancedChannels
-  main_mem := by simp [addSpinWitness, addSpinTables]
+  constraints := ConcreteOldWorlds.addSpinAcceptedTrace.constraints_hold
+  balanced := ConcreteOldWorlds.addSpinAcceptedTrace.channels_balanced
+  main_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .addSpin
+    · change _ ∈ addSpinWitness.tables
+      simp [addSpinWitness, addSpinTables]
+    · decide
   main_nonempty := by decide
-  binary_mem := by simp [addSpinWitness, addSpinTables]
-  extension_mem := by simp [addSpinWitness, addSpinTables]
+  binary_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .addSpin
+    · change _ ∈ addSpinWitness.tables
+      simp [addSpinWitness, addSpinTables]
+    · decide
+  extension_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .addSpin
+    · change _ ∈ addSpinWitness.tables
+      simp [addSpinWitness, addSpinTables]
+    · decide
   binary_full := rfl
   extension_full := rfl
 
@@ -93,17 +120,29 @@ end
 section
 open ZiskFv.Compliance.AddAddiSpinWitness
 
-/-- The existing actual `addAddiSpinWitness`, with both complete source providers. -/
+/-- The genuine historical `addAddiSpinWitness` carrier, with both complete original source providers. -/
 theorem addAddiSpin_actual :
-    ActualEvidence addAddiSpinWitness (addAddiSpinMainTable)
+    ActualEvidence ConcreteOldWorlds.addAddiSpinAcceptedTrace.witness (addAddiSpinMainTable)
       noRequestBinarySourceTable noRequestExtensionSourceTable
       ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData where
-  constraints := addAddiSpinWitness_constraints
-  balanced := addAddiSpinWitness_balancedChannels
-  main_mem := by simp [addAddiSpinWitness, addAddiSpinTables]
+  constraints := ConcreteOldWorlds.addAddiSpinAcceptedTrace.constraints_hold
+  balanced := ConcreteOldWorlds.addAddiSpinAcceptedTrace.channels_balanced
+  main_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .addAddiSpin
+    · change _ ∈ addAddiSpinWitness.tables
+      simp [addAddiSpinWitness, addAddiSpinTables]
+    · decide
   main_nonempty := by decide
-  binary_mem := by simp [addAddiSpinWitness, addAddiSpinTables]
-  extension_mem := by simp [addAddiSpinWitness, addAddiSpinTables]
+  binary_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .addAddiSpin
+    · change _ ∈ addAddiSpinWitness.tables
+      simp [addAddiSpinWitness, addAddiSpinTables]
+    · decide
+  extension_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .addAddiSpin
+    · change _ ∈ addAddiSpinWitness.tables
+      simp [addAddiSpinWitness, addAddiSpinTables]
+    · decide
   binary_full := rfl
   extension_full := rfl
 
@@ -112,17 +151,29 @@ end
 section
 open ZiskFv.Compliance.AddFaithfulPaddedWitness
 
-/-- The existing actual `addFaithfulWitness`, with both complete source providers. -/
+/-- The genuine historical `addFaithfulWitness` carrier, with both complete original source providers. -/
 theorem addFaithful_actual :
-    ActualEvidence addFaithfulWitness (addFaithfulMainTable)
+    ActualEvidence ConcreteOldWorlds.addFaithfulAcceptedTrace.witness (addFaithfulMainTable)
       noRequestBinarySourceTable noRequestExtensionSourceTable
       ZiskFv.AirsClean.FullEnsemble.noRequestPackedSources emptyData where
-  constraints := addFaithfulWitness_constraints
-  balanced := addFaithfulWitness_balancedChannels
-  main_mem := by simp [addFaithfulWitness, addFaithfulTables]
+  constraints := ConcreteOldWorlds.addFaithfulAcceptedTrace.constraints_hold
+  balanced := ConcreteOldWorlds.addFaithfulAcceptedTrace.channels_balanced
+  main_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .addFaithful
+    · change _ ∈ addFaithfulWitness.tables
+      simp [addFaithfulWitness, addFaithfulTables]
+    · decide
   main_nonempty := by decide
-  binary_mem := by simp [addFaithfulWitness, addFaithfulTables]
-  extension_mem := by simp [addFaithfulWitness, addFaithfulTables]
+  binary_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .addFaithful
+    · change _ ∈ addFaithfulWitness.tables
+      simp [addFaithfulWitness, addFaithfulTables]
+    · decide
+  extension_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .addFaithful
+    · change _ ∈ addFaithfulWitness.tables
+      simp [addFaithfulWitness, addFaithfulTables]
+    · decide
   binary_full := rfl
   extension_full := rfl
 
@@ -131,17 +182,29 @@ end
 section
 open ZiskFv.Compliance.JalrSpinWitness
 
-/-- The existing actual `jalrWitness`, with both complete source providers. -/
+/-- The genuine historical `jalrWitness` carrier, with both complete original source providers. -/
 theorem jalr_actual :
-    ActualEvidence jalrWitness (jalrMainTable)
+    ActualEvidence ConcreteOldWorlds.jalrAcceptedTrace.witness (jalrMainTable)
       jalrBinarySourceTable jalrExtensionSourceTable
       jalrPackedSources emptyData where
-  constraints := jalrWitness_constraints
-  balanced := jalrWitness_balancedChannels
-  main_mem := by simp [jalrWitness, jalrTables]
+  constraints := ConcreteOldWorlds.jalrAcceptedTrace.constraints_hold
+  balanced := ConcreteOldWorlds.jalrAcceptedTrace.channels_balanced
+  main_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .jalr
+    · change _ ∈ jalrWitness.tables
+      simp [jalrWitness, jalrTables]
+    · decide
   main_nonempty := by decide
-  binary_mem := by simp [jalrWitness, jalrTables]
-  extension_mem := by simp [jalrWitness, jalrTables]
+  binary_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .jalr
+    · change _ ∈ jalrWitness.tables
+      simp [jalrWitness, jalrTables]
+    · decide
+  extension_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .jalr
+    · change _ ∈ jalrWitness.tables
+      simp [jalrWitness, jalrTables]
+    · decide
   binary_full := rfl
   extension_full := rfl
 
@@ -150,17 +213,29 @@ end
 section
 open ZiskFv.Compliance.SdLdSpinWitness
 
-/-- The existing actual `sdLdWitness`, with both complete source providers. -/
+/-- The genuine historical `sdLdWitness` carrier, with both complete original source providers. -/
 theorem sdLd_actual :
-    ActualEvidence sdLdWitness (sdLdTableWithData sdLdMainTable)
+    ActualEvidence ConcreteOldWorlds.sdLdAcceptedTrace.witness (sdLdTableWithData sdLdMainTable)
       sdLdBinarySourceTable sdLdExtensionSourceTable
       sdLdPackedSources ZiskFv.Compliance.sdLdMemData where
-  constraints := sdLdWitness_constraints
-  balanced := sdLdWitness_balancedChannels
-  main_mem := by simp [sdLdWitness, sdLdTables]
+  constraints := ConcreteOldWorlds.sdLdAcceptedTrace.constraints_hold
+  balanced := ConcreteOldWorlds.sdLdAcceptedTrace.channels_balanced
+  main_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .sdLd
+    · change _ ∈ sdLdWitness.tables
+      simp [sdLdWitness, sdLdTables]
+    · decide
   main_nonempty := by decide
-  binary_mem := by simp [sdLdWitness, sdLdTables]
-  extension_mem := by simp [sdLdWitness, sdLdTables]
+  binary_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .sdLd
+    · change _ ∈ sdLdWitness.tables
+      simp [sdLdWitness, sdLdTables]
+    · decide
+  extension_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .sdLd
+    · change _ ∈ sdLdWitness.tables
+      simp [sdLdWitness, sdLdTables]
+    · decide
   binary_full := rfl
   extension_full := rfl
 
@@ -169,17 +244,29 @@ end
 section
 open ZiskFv.Compliance.DivSpinWitness
 
-/-- The existing actual `divSpinWitness`, with both complete source providers. -/
+/-- The genuine historical `divSpinWitness` carrier, with both complete original source providers. -/
 theorem divSpin_actual :
-    ActualEvidence divSpinWitness (divSpinMainTable)
+    ActualEvidence ConcreteOldWorlds.divSpinAcceptedTrace.witness (divSpinMainTable)
       divSpinBinarySourceTable divSpinExtensionSourceTable
       divSpinPackedSources emptyData where
-  constraints := divSpinWitness_constraints
-  balanced := divSpinWitness_balancedChannels
-  main_mem := by simp [divSpinWitness, divSpinTables]
+  constraints := ConcreteOldWorlds.divSpinAcceptedTrace.constraints_hold
+  balanced := ConcreteOldWorlds.divSpinAcceptedTrace.channels_balanced
+  main_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .divSpin
+    · change _ ∈ divSpinWitness.tables
+      simp [divSpinWitness, divSpinTables]
+    · decide
   main_nonempty := by decide
-  binary_mem := by simp [divSpinWitness, divSpinTables]
-  extension_mem := by simp [divSpinWitness, divSpinTables]
+  binary_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .divSpin
+    · change _ ∈ divSpinWitness.tables
+      simp [divSpinWitness, divSpinTables]
+    · decide
+  extension_mem := by
+    apply ConcreteOldWorlds.sourceTable_preserved .divSpin
+    · change _ ∈ divSpinWitness.tables
+      simp [divSpinWitness, divSpinTables]
+    · decide
   binary_full := rfl
   extension_full := rfl
 

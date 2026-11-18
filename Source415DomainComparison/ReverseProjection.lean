@@ -1,3 +1,4 @@
+import Source458DomainComparison.WitnessTransport
 import Source415DomainComparison.OldChannelStreams
 import ZiskFv.AirsClean.FullEnsemble.Balance.BinaryTableProviderMatch
 
@@ -25,7 +26,7 @@ def newTable (new : NewWitness p program) (index : Fin 17) : Table FGL :=
 
 theorem newTable_component (new : NewWitness p program) (index : Fin 17) :
     (newTable new index).component =
-      (fullRv64imEnsemble p program).ensemble.tables.get
+      (Legacy457.fullRv64imEnsemble p program).ensemble.tables.get
         ⟨index.val, by change index.val < 17; exact index.isLt⟩ :=
   (new.same_circuits index.val (by change index.val < 17; exact index.isLt)).symm
 
@@ -220,7 +221,16 @@ theorem projected_binary_constraints (new : NewWitness p program)
     rw [binary_static_lookups] at hl
     obtain ⟨index, _, rfl⟩ := List.mem_map.mp hl
     exact static_lookup_contains _ _ _
-      (binary_all_eight new hc hb (newTable_mem new 12) (newTable_component new 12) hr index)
+      (binary_all_eight (MemDomainComparison.eraseLegacyMem new)
+        (MemDomainComparison.eraseLegacyMem_constraints new hc)
+        (MemDomainComparison.eraseLegacyMem_balancedChannels new hb)
+        (MemDomainComparison.nonMem_table_preserved new _ (newTable_mem new 12) (by
+          intro hm
+          have hw := congrArg (fun c : Component FGL => c.rawWidth) hm
+          rw [newTable_component] at hw
+          change (39 : Nat) = 17 at hw
+          omega))
+        (newTable_component new 12) hr index)
 
 theorem projected_extension_constraints (new : NewWitness p program)
     (hc : new.Constraints) (hb : new.BalancedChannels) :
@@ -241,7 +251,15 @@ theorem projected_extension_constraints (new : NewWitness p program)
     · rw [extension_static_lookups] at hl
       obtain ⟨index, _, rfl⟩ := List.mem_map.mp hl
       exact static_lookup_contains _ _ _
-        (extension_all_eight new hc hb (newTable_mem new 11)
+        (extension_all_eight (MemDomainComparison.eraseLegacyMem new)
+          (MemDomainComparison.eraseLegacyMem_constraints new hc)
+          (MemDomainComparison.eraseLegacyMem_balancedChannels new hb)
+          (MemDomainComparison.nonMem_table_preserved new _ (newTable_mem new 11) (by
+            intro hm
+            have hw := congrArg (fun c : Component FGL => c.rawWidth) hm
+            rw [newTable_component] at hw
+            change (29 : Nat) = 17 at hw
+            omega))
           (newTable_component new 11) hr index)
     · exact h.2 lookup hl
 

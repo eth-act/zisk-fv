@@ -119,8 +119,8 @@ stdenv.mkDerivation {
       --air Mem \
       --output $out/MemGeneratedArtifact.lean
 
-    # Bridge tying `Extraction.Mem.constraint_0..33` to the
-    # ProverData-backed Mem source surface used by the generated artifact.
+    # Bridge the operational `Extraction.Mem.constraint_0..23` surface to
+    # segment facts; check typed c24..33 separately with all coordinates/GROUP0.
     ${pil-extract}/bin/pil-extract mem-generated-constraint-bridge \
       --output $out/MemGeneratedConstraintBridge.lean
 

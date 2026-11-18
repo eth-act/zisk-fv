@@ -50,7 +50,7 @@ theorem AcceptedZiskTrace.memReplayRangeSidecarBridge
     (generatedTransition_iff_canonicalTableData (trace.memReplayTable h_present)
       (trace.mem_replay_table h_present).2.2.1 idx).mp
       h_transition
-  exact h_generated.2.2
+  exact h_generated.2
 
 private theorem AcceptedZiskTrace.memReplayDistanceBase0Range
     {n : Nat} (trace : AcceptedZiskTrace n)
@@ -200,7 +200,6 @@ def AcceptedZiskTrace.memReplayBridge {n : Nat} (trace : AcceptedZiskTrace n)
     FullWitnessMemReplayBridge trace.witness (trace.memReplayRows h_present) :=
   fullWitnessMemReplayBridge_of_memTable_with_fixedColumns
     (segment := memSegmentOfTableData (trace.memReplayTable h_present))
-    (permutation := memPermutationOfTableData (trace.memReplayTable h_present))
     (gsum := ZiskFv.AirsClean.Mem.memSidecarGsumOfProverData
       (trace.memReplayTable h_present).data)
     (im0 := ZiskFv.AirsClean.Mem.memSidecarIm0OfProverData
@@ -211,8 +210,7 @@ def AcceptedZiskTrace.memReplayBridge {n : Nat} (trace : AcceptedZiskTrace n)
     (trace.mem_replay_table h_present).2.2.1
     (by
       simpa only [memOfTableData] using
-        generatedAt_of_memTableGeneratedConstraintFacts
-          (trace.memReplayGeneratedConstraintFacts h_present))
+        (trace.memReplayGeneratedConstraintFacts h_present).segmentAt)
     (by
       simpa only [memOfTableData] using trace.memReplayRowRanges h_present)
     (trace.memReplaySegmentRanges h_present)

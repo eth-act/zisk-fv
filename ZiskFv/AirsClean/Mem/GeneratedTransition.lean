@@ -246,17 +246,14 @@ def memRangeSidecarBridge (current : Environment FGL) : Prop :=
     ∧ current memDistanceEnd1Expr =
       proverDataScalar current.data MemRawSidecarDataKey.Segment.distanceEnd1
 
-/-- All non-local generated Mem equations at one row, sourced from canonical
-live data and the component's fixed schema. -/
+/-- Non-local segment equations and source-distance ties for the operational
+Mem abstraction. Numeric stage-2 equations are audited separately (#458). -/
 def generatedTransition (columns : IndexedFixedColumns FGL 17)
     (index : Nat) (previous current : Environment FGL) : Prop :=
   let mem := memWindow index previous current
   let segment := memSegmentColumnsOfProverDataAndFixed current.data
     (fun row => columns.fixedAt MemFixedColumn.segmentL1 row)
-  let permutation := memPermutationColumnsOfProverDataAndFixed current.data
-    (fun row => columns.fixedAt MemFixedColumn.l1 row)
   ZiskFv.Airs.Mem.segmentResidualEveryRow segment mem index
-    ∧ ZiskFv.Airs.Mem.permutation_every_row segment permutation mem index
     ∧ memRangeSidecarBridge current
 
 end ZiskFv.AirsClean.Mem

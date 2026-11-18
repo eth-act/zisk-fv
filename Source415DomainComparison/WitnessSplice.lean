@@ -3,7 +3,7 @@ import ZiskFv.AirsClean.PackedVirtualTableSources
 import Source415DomainComparison.FieldTransport
 
 /-!
-# Concrete old16 to source18 witness splice
+# Concrete historical45 old16 to historical457 old18 witness splice
 
 This is a data construction, not an acceptance equivalence. The fifteen old
 physical tables are retained in order, except that the two Binary-family
@@ -25,7 +25,7 @@ abbrev OldWitness (p : Nat) (program : Program p) :=
   EnsembleWitness (Legacy45.fullRv64imEnsemble p program).ensemble
 
 abbrev NewWitness (p : Nat) (program : Program p) :=
-  EnsembleWitness (fullRv64imEnsemble p program).ensemble
+  EnsembleWitness (Legacy457.fullRv64imEnsemble p program).ensemble
 
 theorem old_tables_length (old : OldWitness p program) : old.tables.length = 15 :=
   old.same_length.symm
@@ -179,7 +179,7 @@ theorem completed_allTables_length (old : OldWitness p program) (raw : Witness F
 
 theorem model_component_rosters_differ :
     (Legacy45.fullRv64imEnsemble p program).ensemble.allTables ≠
-      (fullRv64imEnsemble p program).ensemble.allTables := by
+      (Legacy457.fullRv64imEnsemble p program).ensemble.allTables := by
   intro h
   have hn := congrArg List.length h
   change (16 : Nat) = 18 at hn
@@ -237,9 +237,9 @@ theorem completed_component_membership (old : OldWitness p program) (raw : Witne
   simpa only [completedTables, List.cons_append, List.append_assoc, List.nil_append] using hs
 
 theorem completed_mem_membership (old : OldWitness p program) (raw : Witness FGL)
-    (table : Table FGL) (hc : table.component = Mem.componentWithDualMemBus) :
+    (table : Table FGL) (hc : table.component = Mem.Legacy457.componentWithDualMemBus) :
     table ∈ old.allTables ↔ table ∈ (completedWitness old raw).allTables :=
-  completed_component_membership old raw Mem.componentWithDualMemBus
+  completed_component_membership old raw Mem.Legacy457.componentWithDualMemBus
     (by change (17 : Nat) ∉ [29, 39, 10, 1]; decide) table hc
 
 theorem completed_main_membership (old : OldWitness p program) (raw : Witness FGL)
@@ -252,7 +252,7 @@ theorem completed_main_membership (old : OldWitness p program) (raw : Witness FG
 full source tables are nonempty. Their raw width is1, not the mutable-Mem17. -/
 theorem completed_mutableMemPresent (old : OldWitness p program) (raw : Witness FGL) :
     ZiskFv.Compliance.Legacy45.MutableMemPresent old ↔
-      ZiskFv.Compliance.MutableMemPresent (completedWitness old raw) :=
+      ZiskFv.Compliance.Legacy457.MutableMemPresent (completedWitness old raw) :=
   ZiskFv.Compliance.DomainComparison.mutableMemPresent_iff old (completedWitness old raw)
     (completed_mem_membership old raw)
 

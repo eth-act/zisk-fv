@@ -135,8 +135,15 @@ EXTRA_MIRRORS: list[tuple[str, str, str]] = [
      "trace-accessor record the pre-Clean Mem mirrors are stated over"),
     ("ZiskFv/Airs/Mem.lean", "segment_every_row",
      "generated 0-23; welded whole by MemMirrorWeld.segment_weld"),
-    ("ZiskFv/Airs/Mem.lean", "permutation_every_row",
-     "generated 24-33; welded whole by MemMirrorWeld.permutation_weld"),
+    ("ZiskFv/AirsClean/Mem/Stage2/Local.lean", "decode_polynomial_correspondence",
+     "SOURCE-AUDIT actual typed 24-32, all3coefficients, postcondition of computed "
+     "decode; not numericHolds, production totality or Root consumption"),
+    ("ZiskFv/AirsClean/Mem/SourceFinalizerEquation.lean", "compiled_constraint_eq_expected",
+     "SOURCE-AUDIT actual compiled c33 shape, distinct GROUP0 and ordered direct6; "
+     "not a scalar live permutation weld"),
+    ("ZiskFv/AirsClean/Mem/SourceFinalizerEquation.lean", "three_coordinate_equations_iff",
+     "SOURCE-AUDIT c33 equation on ALL3 coordinates with the same base selector; "
+     "not a Root satisfaction premise or a numeric logUp proof"),
     ("ZiskFv/Airs/Mem.lean", "core_every_row",
      "9 of segment_every_row's clauses, projected out; MemMirrorWeld docstring "
      "claims this one is \"consumed by the memory-bus proofs\""),
