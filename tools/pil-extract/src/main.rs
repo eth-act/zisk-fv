@@ -1976,8 +1976,8 @@ def proverDataMemCircuit
 def sourceTrace
     {length : ℕ} {program : Program length}
     (c : ProverDataMemCircuit program FGL FGL) :
-    ZiskFv.AirsClean.MemMirror.ExtractedMemTrace FGL FGL :=
-  ZiskFv.AirsClean.MemMirror.extractedMemTrace
+    ZiskFv.AirsClean.MemMirrorWeld.ExtractedMemTrace FGL FGL :=
+  ZiskFv.AirsClean.MemMirrorWeld.extractedMemTrace
     (SegmentOfProverData c.witness) (MemOfProverData c.witness c.table)
 
 @[reducible]
@@ -1985,28 +1985,28 @@ def mainValue
     {length : ℕ} {program : Program length}
     (c : ProverDataMemCircuit program FGL FGL)
     (id column row rotation : ℕ) : FGL :=
-  ZiskFv.AirsClean.MemMirror.traceMainValue (sourceTrace c) id column row rotation
+  ZiskFv.AirsClean.MemMirrorWeld.traceMainValue (sourceTrace c) id column row rotation
 
 @[reducible]
 def preprocessedValue
     {length : ℕ} {program : Program length}
     (c : ProverDataMemCircuit program FGL FGL)
     (column row rotation : ℕ) : FGL :=
-  ZiskFv.AirsClean.MemMirror.tracePreprocessedValue (sourceTrace c) column row rotation
+  ZiskFv.AirsClean.MemMirrorWeld.tracePreprocessedValue (sourceTrace c) column row rotation
 
 @[reducible]
 def challengeValue
     {length : ℕ} {program : Program length}
     (c : ProverDataMemCircuit program FGL FGL)
     (index : ℕ) : FGL :=
-  ZiskFv.AirsClean.MemMirror.traceChallengeValue (sourceTrace c) index
+  ZiskFv.AirsClean.MemMirrorWeld.traceChallengeValue (sourceTrace c) index
 
 @[reducible]
 def exposedValue
     {length : ℕ} {program : Program length}
     (c : ProverDataMemCircuit program FGL FGL)
     (index : ℕ) : FGL :=
-  ZiskFv.AirsClean.MemMirror.traceExposedValue (sourceTrace c) index
+  ZiskFv.AirsClean.MemMirrorWeld.traceExposedValue (sourceTrace c) index
 
 instance proverDataMemCircuitExtractionCircuit
     {length : ℕ} {program : Program length} :
