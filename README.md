@@ -83,9 +83,10 @@ trust/scripts/check-all-semantic.sh
 ```
 
 The default build also checks the supplemental `Source415DomainComparison`
-library. These comparison and constructibility proofs are not imported by the
-production `ZiskFv` root and do not assert that the old and corrected accepted
-domains, or their native committed witnesses, are identical.
+and `Source458DomainComparison` libraries. They preserve the historical
+provider-domain comparisons and the one-way historical-to-corrected Mem
+transport. These proofs are not imported by the production `ZiskFv` root and
+do not assert equality of accepted domains or native committed witnesses.
 
 The full repository test path, including the pinned Aeneas production-backed
 lowering extraction harness, is:

@@ -1,7 +1,7 @@
 name = "zisk-fv"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["ZiskFv", "Extraction", "Source415DomainComparison"]
+defaultTargets = ["ZiskFv", "Extraction", "Source415DomainComparison", "Source458DomainComparison"]
 moreLeanArgs = ["--tstack=400000"]
 
 [leanOptions]
@@ -74,6 +74,12 @@ roots = ["ZiskFv"]
 [[lean_lib]]
 name = "Source415DomainComparison"
 roots = ["Source415DomainComparison"]
+
+# The historical scalar-Mem domain and its one-way corrected-domain transport.
+# All comparison/concrete-witness modules are reached by this real proof root.
+[[lean_lib]]
+name = "Source458DomainComparison"
+roots = ["Source458DomainComparison"]
 
 # The REAL Aeneas-extracted ZisK lowerer (`trust/aeneas/ProductionM2.lean`,
 # `import Aeneas`). Imported by ZiskFv/Compliance/AeneasBridgeTrust/Extraction.lean
