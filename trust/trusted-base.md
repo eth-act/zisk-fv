@@ -349,7 +349,7 @@ or premises, generated targets and transitive source-data aliases, and checks
 the proof's full type/value axiom closure. This is build-only source fidelity:
 it does not grant Root/model-consumption credit or numerical logUp soundness.
 
-This materially expands the accepted-model domain; an unchanged public
+The live Mem correction materially expands the accepted-model domain; an unchanged public
 field list is not a claim of unchanged acceptance. The comparison-only
 historical Mem/old18 snapshots retain the original restriction, and the
 one-way transport preserves raw rows/data, fixed materialization, channel
