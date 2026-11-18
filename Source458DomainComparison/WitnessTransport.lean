@@ -284,16 +284,17 @@ theorem old_mem_component_of_width (old : OldWitness p program) (table : Table F
     (ht : table ∈ old.allTables) (hw : table.component.rawWidth = 17) :
     table.component = Mem.Legacy457.componentWithDualMemBus := by
   have hc := EnsembleWitness.mem_allTables_component_of_mem_allTables ht
-  simp only [Legacy457.fullRv64imEnsemble, Legacy457.fullRv64imSoundEnsemble,
-    circuit_norm, Ensemble.allTables, List.mem_cons, List.not_mem_nil, or_false] at hc
-  rcases hc with
-    hc | hc | hc | hc | hc | hc | hc | hc | hc |
-    hc | hc | hc | hc | hc | hc | hc | hc | hc
+  rcases List.mem_iff_get.mp hc with ⟨⟨index, bound⟩, source⟩
+  have width :
+      ((Legacy457.fullRv64imEnsemble p program).ensemble.allTables.get
+        ⟨index, bound⟩).rawWidth = 17 := by
+    rw [source]
+    exact hw
+  change index < 18 at bound
+  interval_cases index
   all_goals first
-    | exact hc
-    | (have impossible := congrArg (fun component : Component FGL => component.rawWidth) hc
-       rw [hw] at impossible
-       norm_num at impossible)
+    | exact source.symm
+    | cases width
 
 theorem eraseLegacyMem_constraints (old : OldWitness p program)
     (h : old.Constraints) : (eraseLegacyMem old).Constraints := by
