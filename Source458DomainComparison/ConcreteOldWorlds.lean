@@ -109,26 +109,47 @@ private theorem historicalTable_mem_component (table : Table FGL)
 @[simp] private theorem historicalTable_table (table : Table FGL) :
     (historicalTable table).table = table.table := by
   classical
-  by_cases h : table.component = Mem.componentWithDualMemBus
-  · simp only [historicalTable, dif_pos h, Table.table, h] <;> rfl
-  · rw [historicalTable_of_ne table h]
+  rcases table with ⟨component, rawRows, data, uniform, domain⟩
+  unfold historicalTable
+  split
+  · rename_i h
+    change component = Mem.componentWithDualMemBus at h
+    subst component
+    rfl
+  · rfl
 
 @[simp] private theorem historicalTable_fixedAt (table : Table FGL) (slot row : Nat) :
     (historicalTable table).fixedAt slot row = table.fixedAt slot row := by
   classical
-  by_cases h : table.component = Mem.componentWithDualMemBus
-  · simp only [historicalTable, dif_pos h, Table.fixedAt, h] <;> rfl
-  · rw [historicalTable_of_ne table h]
+  rcases table with ⟨component, rawRows, data, uniform, domain⟩
+  unfold historicalTable
+  split
+  · rename_i h
+    change component = Mem.componentWithDualMemBus at h
+    subst component
+    rfl
+  · rfl
 
 @[simp] private theorem historicalTable_environment (table : Table FGL) (row : Array FGL) :
     (historicalTable table).environment row = table.environment row := by
   simp only [Table.environment, historicalTable_data]
 
+private theorem historicalListGet_of_eq {α : Type*} {left right : List α}
+    (rows : left = right) (index : Nat)
+    (leftBound : index < left.length) (rightBound : index < right.length) :
+    left.get ⟨index, leftBound⟩ = right.get ⟨index, rightBound⟩ := by
+  cases rows
+  rfl
+
 @[simp] private theorem historicalTable_environmentAt (table : Table FGL)
     (index : Fin (historicalTable table).length) :
     (historicalTable table).environmentAt index =
       table.environmentAt ⟨index.val, by simpa only [historicalTable_length] using index.isLt⟩ := by
-  simp only [Table.environmentAt, historicalTable_environment, historicalTable_table]
+  simp only [Table.environmentAt, historicalTable_environment]
+  exact congrArg table.environment
+    (historicalListGet_of_eq (historicalTable_table table) index.val
+      (by simpa only [Table.table_length] using index.isLt)
+      (by simpa only [Table.table_length, historicalTable_length] using index.isLt))
 
 @[simp] private theorem historicalTable_successorEnvironment (table : Table FGL)
     (index : Fin (historicalTable table).length) :
@@ -190,7 +211,7 @@ def witness (example : Example) : EnsembleWitness
       | (symm
          apply historicalTable_component_of_width _ _
            ((sourceTrace example).witness.same_circuits _ sourceBound).symm
-         decide)
+         exact of_decide_eq_true rfl)
   same_data := by
     intro table ht
     rcases List.mem_map.mp ht with ⟨source, hs, rfl⟩
@@ -241,15 +262,18 @@ private theorem source_mem_component_of_width (example : Example) (table : Table
     (ht : table ∈ (sourceTrace example).witness.allTables)
     (hw : table.component.rawWidth = 17) : table.component = Mem.componentWithDualMemBus := by
   have hc := EnsembleWitness.mem_allTables_component_of_mem_allTables ht
-  simp only [FullEnsemble.fullRv64imEnsemble, FullEnsemble.fullRv64imSoundEnsemble,
-    circuit_norm, Ensemble.allTables] at hc
-  rcases hc with hc | hc | hc | hc | hc | hc | hc | hc | hc |
-    hc | hc | hc | hc | hc | hc | hc | hc | hc
+  rcases List.mem_iff_get.mp hc with ⟨⟨index, bound⟩, source⟩
+  have width :
+      ((FullEnsemble.fullRv64imEnsemble (sourceTrace example).programLength
+        (sourceTrace example).program).ensemble.allTables.get
+          ⟨index, bound⟩).rawWidth = 17 := by
+    rw [source]
+    exact hw
+  change index < 18 at bound
+  interval_cases index
   all_goals first
-    | exact hc
-    | (have impossible := congrArg (fun c : Component FGL => c.rawWidth) hc
-       rw [hw] at impossible
-       norm_num at impossible)
+    | exact source.symm
+    | cases width
 
 private theorem historical_mem_source (example : Example) (table : Table FGL)
     (ht : table ∈ (sourceTrace example).witness.allTables)
