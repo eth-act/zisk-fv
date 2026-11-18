@@ -1500,6 +1500,8 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
 
     let mut out = String::new();
     writeln!(out, "import ZiskFv.AirsClean.FullEnsemble.Balance").unwrap();
+    writeln!(out, "import Extraction.LookupWiring").unwrap();
+    writeln!(out, "import ZiskFv.AirsClean.Mem.Stage2.Equations").unwrap();
     writeln!(out).unwrap();
     writeln!(out, "set_option linter.all false").unwrap();
     writeln!(out).unwrap();
@@ -1529,6 +1531,59 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
     writeln!(out, "open ZiskFv.AirsClean.ZiskInstructionRom (Program)").unwrap();
     writeln!(out, "open ZiskFv.AirsClean.FullEnsemble").unwrap();
     writeln!(out).unwrap();
+    lookup_wiring::write_mem_constraint_sources(&mut out, hit.air)?;
+    writeln!(
+        out,
+        "def compiledMemSourceScope : Nat × Nat := ({}, {})",
+        hit.airgroup_idx, hit.air_idx
+    )
+    .unwrap();
+    out.push_str(
+        r#"
+theorem compiledMemSource_scope :
+    compiledMemSourceScope =
+      (Extraction.LookupWiring.SourceSchema.air_Mem.groupIndex,
+       Extraction.LookupWiring.SourceSchema.air_Mem.airIndex) := rfl
+
+theorem compiledMemSource_count : compiledMemSource.toArray.size = 34 := rfl
+
+def segmentSource (index : Fin 24) : Extraction.LookupWiring.Expr :=
+  compiledMemSource[index.val]'(by have := index.isLt; omega)
+
+def protocolSource (index : Fin 10) : Extraction.LookupWiring.Expr :=
+  compiledMemSource[24 + index.val]'(by have := index.isLt; omega)
+
+theorem sourceIndexPartition :
+    List.range 24 ++ (List.range 10).map (24 + ·) = List.range 34 := by decide
+
+/-- Exact HOT support before erasing source kinds into a scalar Circuit.
+    Unsupported kinds/stages/indices/rotations are rejected, not assigned zero. -/
+def segmentSourceSupported : Extraction.LookupWiring.Expr → Bool
+  | .constant text => text.toNat?.isSome
+  | .witness stage column rotation =>
+      decide (stage = 1 ∧ column < 13 ∧ (rotation = -1 ∨ rotation = 0))
+  | .fixed column rotation =>
+      decide (column = 0 ∧ (rotation = 0 ∨ rotation = 1))
+  | .airValue index => decide (index < 15)
+  | .add left right | .sub left right | .mul left right =>
+      segmentSourceSupported left && segmentSourceSupported right
+  | .neg value => segmentSourceSupported value
+  | .challenge _ _ | .airGroupValue _ | .opaque _ _ => false
+
+theorem compiled_segment_source_support (index : Fin 24) :
+    segmentSourceSupported (segmentSource index) = true := by
+  fin_cases index <;> decide +kernel
+
+theorem protocol_nonlinear_source (index : Fin 9) :
+    protocolSource ⟨index.val, by have := index.isLt; omega⟩ =
+      ZiskFv.AirsClean.Mem.Stage2.actualNonlinear index := by
+  fin_cases index <;> rfl
+
+theorem protocol_finalizer_source :
+    protocolSource 9 = Extraction.LookupWiring.constraint_Mem_33 := rfl
+
+"#,
+    );
     writeln!(
         out,
         "abbrev FullWitness {{length : ℕ}} (program : Program length) : Type 1 :="
@@ -1566,15 +1621,6 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
     )
     .unwrap();
     writeln!(out).unwrap();
-    writeln!(out, "abbrev PermutationOfProverData").unwrap();
-    writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
-    writeln!(
-        out,
-        "    (witness : FullWitness program) : ZiskFv.Airs.Mem.PermutationColumns FGL :="
-    )
-    .unwrap();
-    writeln!(out, "  memPermutationColumnsOfProverData witness.data").unwrap();
-    writeln!(out).unwrap();
     writeln!(out, "abbrev ConstraintAssertions").unwrap();
     writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
     writeln!(out, "    (witness : FullWitness program)").unwrap();
@@ -1583,7 +1629,6 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
     writeln!(out, "    table").unwrap();
     writeln!(out, "    (MemOfProverData witness table)").unwrap();
     writeln!(out, "    (SegmentOfProverData witness)").unwrap();
-    writeln!(out, "    (PermutationOfProverData witness)").unwrap();
     writeln!(out).unwrap();
     writeln!(out, "abbrev RowRangeLookups").unwrap();
     writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
@@ -1626,7 +1671,6 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
     writeln!(out, "    table").unwrap();
     writeln!(out, "    (MemOfProverData witness table)").unwrap();
     writeln!(out, "    (SegmentOfProverData witness)").unwrap();
-    writeln!(out, "    (PermutationOfProverData witness)").unwrap();
     writeln!(out).unwrap();
     writeln!(out, "abbrev RawRowRangeFacts").unwrap();
     writeln!(out, "    {{length : ℕ}} {{program : Program length}}").unwrap();
@@ -1655,7 +1699,6 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
     writeln!(out, "    table").unwrap();
     writeln!(out, "    (MemOfProverData witness table)").unwrap();
     writeln!(out, "    (SegmentOfProverData witness)").unwrap();
-    writeln!(out, "    (PermutationOfProverData witness)").unwrap();
     writeln!(out).unwrap();
     writeln!(out, "@[reducible]").unwrap();
     writeln!(out, "def buildWitnessFacts").unwrap();
@@ -1890,6 +1933,9 @@ fn render_mem_generated_artifact_module(hit: &AirHit<'_>) -> Result<String> {
 fn render_mem_generated_constraint_bridge_module() -> String {
     r#"import Extraction.Mem
 import Extraction.MemGeneratedArtifact
+import ZiskFv.AirsClean.Mem.SourceFinalizerEquation
+import ZiskFv.AirsClean.Mem.Stage2.Local
+import ZiskFv.AirsClean.MemMirrorWeld
 
 set_option linter.all false
 
@@ -1898,11 +1944,11 @@ set_option linter.all false
 
 AUTO-GENERATED by `pil-extract mem-generated-constraint-bridge`.
 
-This module binds the extracted `Extraction.Mem.constraint_0..33` predicates to
-the ProverData-backed Mem source used by `Extraction.MemGeneratedArtifact`.
-It does not prove the constraints; generated proof code must supply the
-`ExtractedConstraintFacts` fields, after which later bridge code can assemble
-the raw Mem source facts consumed by the generated timeline artifact.
+This module binds operational `Extraction.Mem.constraint_0..23` predicates to
+the ProverData-backed segment facts used by `Extraction.MemGeneratedArtifact`.
+It separately checks the actual typed stage2 c24..33 source equations, including
+all three extension coefficients and the distinct GROUP0 kind. Those audits
+do not assert numeric logUp satisfaction or production/native totality.
 -/
 
 namespace Extraction.MemGeneratedConstraintBridge
@@ -1927,89 +1973,40 @@ def proverDataMemCircuit
   table := table
 
 @[reducible]
+def sourceTrace
+    {length : ℕ} {program : Program length}
+    (c : ProverDataMemCircuit program FGL FGL) :
+    ZiskFv.AirsClean.MemMirror.ExtractedMemTrace FGL FGL :=
+  ZiskFv.AirsClean.MemMirror.extractedMemTrace
+    (SegmentOfProverData c.witness) (MemOfProverData c.witness c.table)
+
+@[reducible]
 def mainValue
     {length : ℕ} {program : Program length}
     (c : ProverDataMemCircuit program FGL FGL)
     (id column row rotation : ℕ) : FGL :=
-  let mem := MemOfProverData c.witness c.table
-  if id = 1 then
-    match column with
-    | 0 => mem.addr row
-    | 1 => mem.step row
-    | 2 => mem.sel row
-    | 3 => mem.addr_changes row
-    | 4 => mem.step_dual row
-    | 5 => mem.sel_dual row
-    | 6 => mem.value_0 row
-    | 7 => mem.value_1 row
-    | 8 => mem.wr row
-    | 9 => mem.previous_step row
-    | 10 => mem.increment_0 row
-    | 11 => mem.increment_1 row
-    | 12 => mem.read_same_addr row
-    | _ => 0
-  else if id = 2 then
-    match column with
-    | 0 => mem.gsum row
-    | 1 => mem.im_0 row
-    | 2 => mem.im_1 row
-    | _ => 0
-  else
-    0
+  ZiskFv.AirsClean.MemMirror.traceMainValue (sourceTrace c) id column row rotation
 
 @[reducible]
 def preprocessedValue
     {length : ℕ} {program : Program length}
     (c : ProverDataMemCircuit program FGL FGL)
     (column row rotation : ℕ) : FGL :=
-  let segment := SegmentOfProverData c.witness
-  let permutation := PermutationOfProverData c.witness
-  match column with
-  | 0 => segment.segment_l1 row
-  | 1 => permutation.l1 row
-  | _ => 0
+  ZiskFv.AirsClean.MemMirror.tracePreprocessedValue (sourceTrace c) column row rotation
 
 @[reducible]
 def challengeValue
     {length : ℕ} {program : Program length}
     (c : ProverDataMemCircuit program FGL FGL)
     (index : ℕ) : FGL :=
-  let permutation := PermutationOfProverData c.witness
-  match index with
-  | 0 => permutation.std_alpha
-  | 1 => permutation.std_gamma
-  | _ => 0
+  ZiskFv.AirsClean.MemMirror.traceChallengeValue (sourceTrace c) index
 
 @[reducible]
 def exposedValue
     {length : ℕ} {program : Program length}
     (c : ProverDataMemCircuit program FGL FGL)
     (index : ℕ) : FGL :=
-  let segment := SegmentOfProverData c.witness
-  let permutation := PermutationOfProverData c.witness
-  match index with
-  | 0 => segment.segment_id
-  | 1 => segment.is_first_segment
-  | 2 => segment.is_last_segment
-  | 3 => segment.previous_segment_value_0
-  | 4 => segment.previous_segment_value_1
-  | 5 => segment.previous_segment_step
-  | 6 => segment.previous_segment_addr
-  | 7 => segment.segment_last_value_0
-  | 8 => segment.segment_last_value_1
-  | 9 => segment.segment_last_step
-  | 10 => segment.segment_last_addr
-  | 11 => segment.distance_base_0
-  | 12 => segment.distance_base_1
-  | 13 => segment.distance_end_0
-  | 14 => segment.distance_end_1
-  | 15 => permutation.im_direct_0
-  | 16 => permutation.im_direct_1
-  | 17 => permutation.im_direct_2
-  | 18 => permutation.im_direct_3
-  | 19 => permutation.im_direct_4
-  | 20 => permutation.im_direct_5
-  | _ => 0
+  ZiskFv.AirsClean.MemMirror.traceExposedValue (sourceTrace c) index
 
 instance proverDataMemCircuitExtractionCircuit
     {length : ℕ} {program : Program length} :
@@ -2019,8 +2016,8 @@ instance proverDataMemCircuitExtractionCircuit
   challenge := challengeValue
   exposed := exposedValue
 
-/-- Extracted Mem generated constraints `0..=33` for the ProverData-backed Mem
-    circuit selected by the generated artifact wrapper. -/
+/-- Operational segment constraints `0..=23` for the ProverData-backed Mem
+    circuit. Numeric protocol equations are independently audited below. -/
 structure ExtractedConstraintFacts
     {length : ℕ} {program : Program length}
     (witness : FullWitness program)
@@ -2097,36 +2094,6 @@ structure ExtractedConstraintFacts
   constraint_23 :
     ∀ idx : Fin table.table.length,
       Mem.extraction.constraint_23_every_row (proverDataMemCircuit witness table) idx.val
-  constraint_24 :
-    ∀ idx : Fin table.table.length,
-      Mem.extraction.constraint_24_every_row (proverDataMemCircuit witness table) idx.val
-  constraint_25 :
-    ∀ idx : Fin table.table.length,
-      Mem.extraction.constraint_25_every_row (proverDataMemCircuit witness table) idx.val
-  constraint_26 :
-    ∀ idx : Fin table.table.length,
-      Mem.extraction.constraint_26_every_row (proverDataMemCircuit witness table) idx.val
-  constraint_27 :
-    ∀ idx : Fin table.table.length,
-      Mem.extraction.constraint_27_every_row (proverDataMemCircuit witness table) idx.val
-  constraint_28 :
-    ∀ idx : Fin table.table.length,
-      Mem.extraction.constraint_28_every_row (proverDataMemCircuit witness table) idx.val
-  constraint_29 :
-    ∀ idx : Fin table.table.length,
-      Mem.extraction.constraint_29_every_row (proverDataMemCircuit witness table) idx.val
-  constraint_30 :
-    ∀ idx : Fin table.table.length,
-      Mem.extraction.constraint_30_every_row (proverDataMemCircuit witness table) idx.val
-  constraint_31 :
-    ∀ idx : Fin table.table.length,
-      Mem.extraction.constraint_31_every_row (proverDataMemCircuit witness table) idx.val
-  constraint_32 :
-    ∀ idx : Fin table.table.length,
-      Mem.extraction.constraint_32_every_row (proverDataMemCircuit witness table) idx.val
-  constraint_33 :
-    ∀ idx : Fin table.table.length,
-      Mem.extraction.constraint_33_every_row (proverDataMemCircuit witness table) idx.val
 
 @[reducible]
 def rawConstraintFacts_of_extractedConstraintFacts
@@ -2148,13 +2115,6 @@ def rawConstraintFacts_of_extractedConstraintFacts
         h.constraint_12 idx, h.constraint_13 idx, h.constraint_14 idx, h.constraint_15 idx,
         h.constraint_16 idx, h.constraint_17 idx, h.constraint_18 idx, h.constraint_19 idx,
         h.constraint_20 idx, h.constraint_21 idx, h.constraint_22 idx, h.constraint_23 idx⟩
-  permutationAt := by
-    intro idx
-    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
-      challengeValue, exposedValue, proverDataMemCircuit] using
-      ⟨h.constraint_24 idx, h.constraint_25 idx, h.constraint_26 idx, h.constraint_27 idx,
-        h.constraint_28 idx, h.constraint_29 idx, h.constraint_30 idx, h.constraint_31 idx,
-        h.constraint_32 idx, h.constraint_33 idx⟩
 
 @[reducible]
 def extractedConstraintFacts_of_rawConstraintFacts
@@ -2379,59 +2339,68 @@ def extractedConstraintFacts_of_rawConstraintFacts
       ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
       ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
       ZiskFv.Airs.Mem.delta_addr] using h23
-  constraint_24 := by
-    intro idx
-    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
-    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
-      challengeValue, exposedValue, proverDataMemCircuit] using h24
-  constraint_25 := by
-    intro idx
-    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
-    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
-      challengeValue, exposedValue, proverDataMemCircuit] using h25
-  constraint_26 := by
-    intro idx
-    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
-    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
-      challengeValue, exposedValue, proverDataMemCircuit] using h26
-  constraint_27 := by
-    intro idx
-    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
-    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
-      challengeValue, exposedValue, proverDataMemCircuit] using h27
-  constraint_28 := by
-    intro idx
-    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
-    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
-      challengeValue, exposedValue, proverDataMemCircuit] using h28
-  constraint_29 := by
-    intro idx
-    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
-    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
-      challengeValue, exposedValue, proverDataMemCircuit] using h29
-  constraint_30 := by
-    intro idx
-    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
-    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
-      challengeValue, exposedValue, proverDataMemCircuit] using h30
-  constraint_31 := by
-    intro idx
-    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
-    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
-      challengeValue, exposedValue, proverDataMemCircuit] using h31
-  constraint_32 := by
-    intro idx
-    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
-    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
-      challengeValue, exposedValue, proverDataMemCircuit] using h32
-  constraint_33 := by
-    intro idx
-    rcases h.permutationAt idx with ⟨h24, h25, h26, h27, h28, h29, h30, h31, h32, h33⟩
-    simpa only [ZiskFv.Airs.Mem.permutation_every_row, mainValue, preprocessedValue,
-      challengeValue, exposedValue, proverDataMemCircuit] using h33
 
-/-- Per-table generated raw source facts: extracted Mem constraints plus the
-    explicit raw range facts that are outside `Extraction.Mem.constraint_0..33`. -/
+/-- Source audits are theorem obligations of the normal generated module, not
+    caller-supplied numeric acceptance fields. -/
+namespace TypedProtocolSource
+
+open ZiskFv.AirsClean.Mem
+open Stage2
+
+theorem nonlinear_shape (equation : Fin 9) :
+    actualNonlinear equation = expectedNonlinear equation :=
+  actualNonlinear_eq_expectedNonlinear equation
+
+theorem nonlinear_source_partition (equation : Fin 9) :
+    protocolSource ⟨equation.val, by have := equation.isLt; omega⟩ =
+      expectedNonlinear equation :=
+  (protocol_nonlinear_source equation).trans (nonlinear_shape equation)
+
+/-- A postcondition of the actual partial factory, not production totality. -/
+theorem nonlinear_coordinates
+    {source : ZiskFv.AirsClean.MemAlignWriteByte.RawSource.Native.SourceObject FGL}
+    (resolved : ZiskFv.AirsClean.MemAlignWriteByte.RawSource.Native.ResolvedOccurrence source)
+    (row : Nat) (values : PolynomialRow)
+    (decoded : decodeRow? resolved row = some values)
+    (equation : Fin 9) (coordinate : Fin 3) :
+    (evaluate? resolved row (actualNonlinear equation)).map
+        (fun value => value.coeff coordinate) =
+      some ((values.residual equation).coeff coordinate) := by
+  rw [decode_polynomial_correspondence resolved row values decoded equation]
+  rfl
+
+theorem finalizer_shape :
+    Extraction.LookupWiring.constraint_Mem_33 = SourceFinalizer.expectedConstraint :=
+  SourceFinalizer.compiled_constraint_eq_expected
+
+theorem finalizer_source_partition :
+    protocolSource 9 = SourceFinalizer.expectedConstraint :=
+  protocol_finalizer_source.trans finalizer_shape
+
+theorem finalizer_kinds :
+    Extraction.LookupWiring.link_Mem_33.selector = .fixed 1 1 ∧
+    Extraction.LookupWiring.link_Mem_33.groupValue = .airGroupValue 0 ∧
+    Extraction.LookupWiring.link_Mem_33.gsum = .witness 2 0 0 ∧
+    Extraction.LookupWiring.link_Mem_33.directTerms =
+      [.airValue 15, .airValue 16, .airValue 17, .airValue 18, .airValue 19, .airValue 20] :=
+  SourceFinalizer.compiled_finalizer_cells
+
+/-- The same base selector scales ALL THREE independent source coordinates.
+    GROUP0 is a distinct source kind, never exposed AIR0 or coefficient0 only. -/
+theorem finalizer_coordinates
+    (cells : Fin 3 → ZiskFv.AirsClean.GsumBoundary.Source FGL) :
+    (∀ coordinate, (cells coordinate).Holds Extraction.LookupWiring.constraint_Mem_33) ↔
+      ∀ coordinate, (cells coordinate).fixed 1 1 *
+        ((cells coordinate).airGroupValue 0 - (cells coordinate).witness 2 0 0 -
+          ((((((cells coordinate).airValue 15 + (cells coordinate).airValue 16) +
+            (cells coordinate).airValue 17) + (cells coordinate).airValue 18) +
+            (cells coordinate).airValue 19) + (cells coordinate).airValue 20)) = 0 :=
+  SourceFinalizer.three_coordinate_equations_iff cells
+
+end TypedProtocolSource
+
+/-- Per-table operational segment facts plus the unchanged explicit raw range
+    facts. Typed protocol source audits are not caller-supplied facts. -/
 structure ExtractedRawSourceFacts
     {length : ℕ} {program : Program length}
     (witness : FullWitness program)
@@ -2830,16 +2799,17 @@ fn render_mem_air_facts_report(
     writeln!(out, "## Lean Package Mapping\n").unwrap();
     writeln!(
         out,
-        "- `MemTableGeneratedConstraintFacts.segmentAt` is sourced from \
-         `segment_every_row`; `.permutationAt` is sourced from \
-         `permutation_every_row`. Lean recombines them into \
-         `MemTableGeneratedAirFacts.generatedAt`."
+        "- `MemTableGeneratedConstraintFacts.segmentAt` and \
+         `MemTableGeneratedAirFacts.segmentAt` retain the operational \
+         `segment_every_row` constraints. Numeric protocol equations \
+         are not live sidecar acceptance restrictions."
     )
     .unwrap();
     writeln!(
         out,
-        "- Expected Mem generated constraint groups: `segment_every_row` \
-         constraints `0..=23`; `permutation_every_row` constraints `24..=33`."
+        "- Operational generated correspondence covers `segment_every_row` \
+         constraints `0..=23`; independent typed source audits retain \
+         actual `24..=33`, all three extension coefficients and GROUP0."
     )
     .unwrap();
     writeln!(
@@ -2897,9 +2867,8 @@ fn render_mem_air_facts_report(
     writeln!(
         out,
         "| `MemTableGeneratedConstraintAssertionFacts` | Clean assertion witnesses \
-         for `segment_every_row` constraints `0..=23` and \
-         `permutation_every_row` constraints `24..=33` over the ProverData \
-         sidecar columns |"
+         for operational `segment_every_row` constraints `0..=23` over the \
+         same ProverData-backed primary and segment columns |"
     )
     .unwrap();
     writeln!(
@@ -2918,13 +2887,14 @@ fn render_mem_air_facts_report(
     writeln!(out).unwrap();
     writeln!(
         out,
-        "Generated modules that prove raw `segment_every_row`, \
-         `permutation_every_row`, and range propositions directly may instead \
-         target \
+        "Generated modules that prove raw `segment_every_row` and range \
+         propositions directly may instead target \
          `Extraction.MemGeneratedConstraintBridge.ExtractedSidecarFacts` for \
          each mutable Mem table. The generated bridge checks both maps: \
-         extracted `constraint_0..33` facts to raw split constraints, and \
-         bit-width/range inequalities to raw row/segment range facts, then \
+         extracted `constraint_0..23` facts to raw segment constraints, and \
+         bit-width/range inequalities to raw row/segment range facts. \
+         Typed `24..33` source audits are checked independently, not supplied \
+         as numeric satisfaction facts by the caller. The bridge then \
          feeds the resulting source facts through \
          `buildWitnessFactsFromExtractedSidecarFacts`. Lower-level modules may \
          still target `ExtractedRawSourceFacts`, expose \
@@ -4588,16 +4558,63 @@ mod tests {
         );
     }
 
+    // This synthetic protobuf fixture tests renderer plumbing and guard rejection;
+    // actual-source kernel correspondence is checked by the emitted Lean module.
+    fn mem_source_partition_fixture() -> Air {
+        Air {
+            name: Some("Mem".into()),
+            num_rows: Some(16),
+            expressions: (0..34)
+                .map(|_| add_expr(const_operand(vec![0]), const_operand(vec![0])))
+                .collect(),
+            constraints: (0..34).map(every_row_constraint).collect(),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn mem_source_partition_rejects_cold_segment_reads_before_erasure() {
+        let baseline = mem_source_partition_fixture();
+        let mut emitted = String::new();
+        lookup_wiring::write_mem_constraint_sources(&mut emitted, &baseline).unwrap();
+        assert!(emitted.contains("Vector Extraction.LookupWiring.Expr 34"));
+        for operand in [
+            witness_operand(2, 0, 0),
+            witness_operand(1, 13, 0),
+            witness_operand(1, 0, 1),
+            fixed_col_operand(1, 0),
+            fixed_col_operand(0, -1),
+            air_value_operand(15),
+            air_group_value_operand(0),
+            challenge_operand(1, 0),
+        ] {
+            let mut changed = baseline.clone();
+            changed.expressions[0] = add_expr(operand, const_operand(vec![0]));
+            let error = lookup_wiring::write_mem_constraint_sources(
+                &mut String::new(), &changed).unwrap_err();
+            assert!(error.to_string().contains("unsupported"));
+        }
+        let mut missing = baseline.clone();
+        missing.constraints.pop();
+        assert!(lookup_wiring::write_mem_constraint_sources(
+            &mut String::new(), &missing).is_err());
+
+        // Protocol source stays typed: it is not erased through the scalar Circuit.
+        let mut typed = baseline;
+        typed.expressions[33] = add_expr(
+            air_group_value_operand(0), witness_operand(2, 0, 0));
+        let mut emitted = String::new();
+        lookup_wiring::write_mem_constraint_sources(&mut emitted, &typed).unwrap();
+        assert!(emitted.contains("Expr.airGroupValue 0"));
+        assert!(emitted.contains("Expr.witness 2 0 (0)"));
+    }
+
     #[test]
     fn mem_generated_artifact_module_wraps_current_timeline_constructor() {
         let pilout = PilOut {
             air_groups: vec![pilout::AirGroup {
                 name: Some("Zisk".into()),
-                airs: vec![Air {
-                    name: Some("Mem".into()),
-                    num_rows: Some(16),
-                    ..Default::default()
-                }],
+                airs: vec![mem_source_partition_fixture()],
                 ..Default::default()
             }],
             ..Default::default()
@@ -4619,14 +4636,19 @@ mod tests {
                 && out.contains("def buildRawFacts")
                 && out.contains("def buildWitnessFactsFromRawFacts")
                 && out.contains("def buildWitnessFactsFromRawParts")
-                && out.contains("FullWitnessMemAirSourceProverDataWitnessFacts witness"),
+                && out.contains("FullWitnessMemAirSourceProverDataWitnessFacts witness")
+                && out.contains("def compiledMemSource")
+                && out.contains("compiled_segment_source_support")
+                && out.contains("protocol_nonlinear_source")
+                && out.contains("protocol_finalizer_source")
+                && out.contains("sourceIndexPartition"),
             "generated module should expose the typed witness-facts contract:\n{}",
             out
         );
         assert!(
             out.contains("MemOfProverData witness table")
                 && out.contains("SegmentOfProverData witness")
-                && out.contains("PermutationOfProverData witness"),
+                && !out.contains("PermutationOfProverData"),
             "generated module should name the ProverData-backed table sources:\n{}",
             out
         );
@@ -4676,15 +4698,26 @@ mod tests {
         assert!(
             out.contains("Mem.extraction.constraint_0_every_row")
                 && out.contains("Mem.extraction.constraint_23_every_row")
-                && out.contains("Mem.extraction.constraint_24_every_row")
-                && out.contains("Mem.extraction.constraint_33_every_row"),
-            "bridge should name the full Mem constraint range:\n{}",
+                && out.contains("namespace TypedProtocolSource")
+                && out.contains("theorem nonlinear_shape")
+                && out.contains("actualNonlinear equation = expectedNonlinear equation")
+                && out.contains("theorem nonlinear_coordinates")
+                && out.contains("(equation : Fin 9) (coordinate : Fin 3)")
+                && out.contains("theorem finalizer_shape")
+                && out.contains("Extraction.LookupWiring.constraint_Mem_33")
+                && out.contains("theorem finalizer_coordinates")
+                && out.contains("cells : Fin 3")
+                && out.contains("SourceFinalizer.three_coordinate_equations_iff cells")
+                && out.contains("groupValue = .airGroupValue 0")
+                && !out.contains("Mem.extraction.constraint_24_every_row")
+                && !out.contains("Mem.extraction.constraint_33_every_row"),
+            "bridge should retain live 0..23 and actual all-coordinate typed 24..33 audits:\n{}",
             out
         );
         assert!(
             out.contains("MemOfProverData c.witness c.table")
                 && out.contains("SegmentOfProverData c.witness")
-                && out.contains("PermutationOfProverData c.witness"),
+                && !out.contains("PermutationOfProverData"),
             "bridge should use the same ProverData-backed sources as the wrapper:\n{}",
             out
         );
@@ -4693,10 +4726,22 @@ mod tests {
                 && out.contains("def extractedConstraintFacts_of_rawConstraintFacts")
                 && out.contains("RawConstraintFacts witness table")
                 && out.contains("segmentAt := by")
-                && out.contains("permutationAt := by"),
-            "bridge should adapt extracted constraints to raw split Mem constraints:\n{}",
+                && !out.contains("permutationAt"),
+            "bridge should adapt extracted segment constraints without numeric protocol facts:\n{}",
             out
         );
+        for index in 0..24 {
+            assert!(
+                out.contains(&format!("  constraint_{index} :")),
+                "missing operational segment constraint {index}"
+            );
+        }
+        for index in 24..34 {
+            assert!(
+                !out.contains(&format!("  constraint_{index} :")),
+                "numeric protocol constraint {index} must not be a live caller fact"
+            );
+        }
         assert!(
             out.contains("def buildRawFactsFromExtractedConstraintsAndRawRanges")
                 && out.contains("def buildWitnessFactsFromExtractedConstraintsAndRawRanges")

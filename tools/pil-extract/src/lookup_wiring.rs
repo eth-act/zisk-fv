@@ -360,6 +360,49 @@ fn operand_uses_extf(
     }
 }
 
+/// Complete Mem source family for the operational/typed audit partition.
+/// Reuse the lossless resolver and printer; never route an unsupported source
+/// kind through the legacy scalar Circuit interface.
+pub(crate) fn write_mem_constraint_sources(out: &mut String, air: &Air) -> Result<()> {
+    if air.name.as_deref() != Some("Mem") || air.constraints.len() != 34 {
+        bail!("Mem source partition requires the actual Mem AIR with exactly 34 constraints");
+    }
+    fn supported(value: &Ast, segment: bool) -> bool {
+        match value {
+            Ast::Constant(value) => {
+                !value.is_empty() && value.bytes().all(|byte| byte.is_ascii_digit())
+            }
+            Ast::Witness { stage, column, row_offset } => {
+                !segment || (*stage == 1 && *column < 13 && matches!(*row_offset, -1 | 0))
+            }
+            Ast::Fixed { column, row_offset } => {
+                !segment || (*column == 0 && matches!(*row_offset, 0 | 1))
+            }
+            Ast::AirValue(index) => !segment || *index < 15,
+            Ast::Challenge { .. } | Ast::AirGroupValue(_) => !segment,
+            Ast::Opaque { .. } => false,
+            Ast::Add(lhs, rhs) | Ast::Sub(lhs, rhs) | Ast::Mul(lhs, rhs) => {
+                supported(lhs, segment) && supported(rhs, segment)
+            }
+            Ast::Neg(value) => supported(value, segment),
+        }
+    }
+    let mut resolver = AstResolver::new(air);
+    out.push_str("open Extraction.LookupWiring (Expr)\n\ndef compiledMemSource : Vector Extraction.LookupWiring.Expr 34 := #v[\n");
+    for (index, constraint) in air.constraints.iter().enumerate() {
+        if !matches!(constraint.constraint.as_ref(), Some(ConstraintKind::EveryRow(_))) {
+            bail!("Mem source constraint {index} is not an every-row constraint");
+        }
+        let expression = resolver.expression(constraint_expression_index(constraint, index)?)?;
+        if !supported(&expression, index < 24) {
+            bail!("Mem source constraint {index} reads an unsupported kind/stage/index/rotation");
+        }
+        writeln!(out, "  {},", lean_expr(&expression))?;
+    }
+    out.push_str("]\n\n");
+    Ok(())
+}
+
 /// Render a closed Lean manifest. The generated `rfl` examples are intentional:
 /// Rust finds a candidate, but the kernel also checks the exact template link.
 pub(crate) fn render(pilout: &PilOut) -> Result<String> {

@@ -1,5 +1,5 @@
 import ZiskFv.AirsClean.GsumBoundary.Model
-import ZiskFv.AirsClean.MemMirrorWeld
+import ZiskFv.AirsClean.Mem.GeneratedTransition
 
 /-! Source-kind boundary for live Mem c33.
 
@@ -114,15 +114,6 @@ theorem linear_coordinate_rejects_nonlinear {F : Type} [Field F]
     evalLinearCoordinate? source (.opaque "unsupported" "payload") = none ∧
     evalLinearCoordinate? source (.constant "unparsed") = none :=
   ⟨rfl, rfl, rfl⟩
-
-/-- The current live Circuit view exposes AIR segment_id at index zero. This
-fact is intentionally not a source-kind correspondence for GROUP result zero. -/
-theorem legacy_exposed_zero (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
-    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
-    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL) :
-    Extraction.Circuit.exposed
-        (MemMirrorWeld.extractedMemTrace segment permutation mem) (index := 0) =
-      segment.segment_id := rfl
 
 /-- A lossless encoding of three arbitrary Goldilocks words into the existing
 single Goldilocks field is impossible; no cardinality restriction is assumed. -/
