@@ -259,17 +259,6 @@ theorem constraints_at_of_segment_every_row
     ZiskFv.Airs.Mem.core_every_row_of_segment_every_row
       (cols := cols) (v := v) (row := r) h_segment
 
-/-- The complete generated Mem every-row surface contains the current local
-    Clean bridge constraints as a projection. -/
-theorem constraints_at_of_generated_every_row
-    (v : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
-    (seg : ZiskFv.Airs.Mem.SegmentColumns FGL)
-    (perm : ZiskFv.Airs.Mem.PermutationColumns FGL)
-    (r : ℕ)
-    (h_generated : ZiskFv.Airs.Mem.generated_every_row seg perm v r) :
-    constraints_at v r := by
-  exact constraints_at_of_segment_every_row v seg r h_generated.1
-
 /-! ## Lookup-derived Mem range witnesses -/
 
 /-- Lookup-aware Clean witness for the ungated mutable-Mem row range checks:

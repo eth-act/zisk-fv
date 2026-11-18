@@ -759,9 +759,9 @@ def memOfTable
   im_0 := im0
   im_1 := im1
 
-/-- Canonical named-column Mem view for a live table. The primary columns come
-from the table's materialized rows, while the selected stage-2 columns come
-from that same table's shared `ProverData`. -/
+/-- Canonical named-column Mem view for a live table. Primary columns come
+from its materialized rows. The unchanged scalar ghost fields retain legacy
+payload from the same `ProverData`; they impose no numeric stage-2 constraint. -/
 @[reducible]
 def memOfTableData (table : Table FGL) : ZiskFv.Airs.Mem.Valid_Mem FGL FGL :=
   memOfTable table
@@ -875,9 +875,6 @@ theorem generatedTransition_iff_canonicalTableData
         (table.previousEnvironment idx) (table.environmentAt idx) ↔
       (ZiskFv.Airs.Mem.segmentResidualEveryRow
           (memSegmentOfTableData table) (memOfTableData table) idx.val
-        ∧ ZiskFv.Airs.Mem.permutation_every_row
-          (memSegmentOfTableData table) (memPermutationOfTableData table)
-          (memOfTableData table) idx.val
         ∧ ZiskFv.AirsClean.Mem.memRangeSidecarBridge (table.environmentAt idx)) := by
   rcases table with ⟨component, rawRows, data, raw_uniform_width, fixed_domain⟩
   change component = ZiskFv.AirsClean.Mem.componentWithDualMemBus at h_component
@@ -893,9 +890,6 @@ theorem generatedTransition_iff_canonicalTableData
       (table.previousEnvironment idx) (table.environmentAt idx) ↔
     (ZiskFv.Airs.Mem.segmentResidualEveryRow
         (memSegmentOfTableData table) (memOfTableData table) idx.val
-      ∧ ZiskFv.Airs.Mem.permutation_every_row
-        (memSegmentOfTableData table) (memPermutationOfTableData table)
-        (memOfTableData table) idx.val
       ∧ ZiskFv.AirsClean.Mem.memRangeSidecarBridge (table.environmentAt idx))
   have h_fixed_at : ∀ slot row : Nat,
       table.fixedAt slot row =
@@ -990,19 +984,14 @@ def previousSegmentInitialMemoryOfRows
 
     `Table.Constraints` is membership-based (`∀ row ∈ table.table`) and does
     not identify a row's list position with the index consumed by
-    `Valid_Mem`/`generated_every_row`. This structure names that missing
-    connection without turning it into an anonymous replay-soundness field:
-    each concrete table position must evaluate to `rowAt mem idx`, and the
-    generated Mem constraints must hold at the same index.
-
-    The generated constraint field cites the complete extracted Mem surface:
-    `generated_every_row = segment_every_row ∧ permutation_every_row`, whose
-    constituent lemmas mirror the cited `mem.pil` constraints. -/
+    `Valid_Mem`/`segment_every_row`. This structure names that connection
+    without assuming replay soundness: each concrete table position evaluates
+    to `rowAt mem idx`, with the same-index segment constraints.
+    Numeric stage-2 equations are not operational replay premises (#458). -/
 structure MemTableGeneratedRowsBridge
     (table : Table FGL)
     (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
     (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
-    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
     (rowCount : ℕ) : Prop where
   component :
     table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus
@@ -1012,9 +1001,9 @@ structure MemTableGeneratedRowsBridge
       eval (table.environment (table.table.get idx))
         ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar =
         ZiskFv.AirsClean.Mem.rowAt mem idx.val
-  generatedAt :
+  segmentAt :
     ∀ idx : Fin table.table.length,
-      ZiskFv.Airs.Mem.generated_every_row segment permutation mem idx.val
+      ZiskFv.Airs.Mem.segment_every_row segment mem idx.val
 
 /-- Build the indexed row bridge from the concrete table projection.
 
@@ -1024,23 +1013,22 @@ structure MemTableGeneratedRowsBridge
 theorem memTableGeneratedRowsBridge_of_memOfTable
     {table : Table FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {gsum im0 im1 : ℕ → FGL}
     (h_component :
       table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
-    (h_generatedAt :
+    (h_segmentAt :
       ∀ idx : Fin table.table.length,
-        ZiskFv.Airs.Mem.generated_every_row
-          segment permutation (memOfTable table gsum im0 im1) idx.val) :
+        ZiskFv.Airs.Mem.segment_every_row
+          segment (memOfTable table gsum im0 im1) idx.val) :
     MemTableGeneratedRowsBridge
       table (memOfTable table gsum im0 im1)
-      segment permutation table.table.length where
+      segment table.table.length where
   component := h_component
   length_eq := rfl
   rowAt_eq := by
     intro idx
     exact (rowAt_memOfTable table gsum im0 im1 idx).symm
-  generatedAt := h_generatedAt
+  segmentAt := h_segmentAt
 
 /-- Concrete range facts for the indexed Mem table rows.
 
@@ -1255,50 +1243,32 @@ def memSegmentGeneratedRangeLookupFacts_of_rangeFacts
     ZiskFv.AirsClean.Mem.distanceBaseRangeLookupWitness_of_range_fact
       h_ranges.distanceBaseChunks
 
-/-- Extractor-facing generated Mem AIR facts for one concrete table segment.
-
-    This is the remaining generated/source surface after the table projection,
-    fixed `SEGMENT_L1` shape, active-row equality, and nonempty evidence are
-    constructed locally. It intentionally contains only PIL-generated row facts
-    and range-check facts; replay soundness is derived downstream from these
-    facts by `acceptedMemoryReplayEvidence_of_memTableGeneratedRowsBridge_segmentRangeFacts`. -/
+/-- Operational segment and range facts for one concrete Mem table.
+    Numeric stage-2 source audits are separate from these replay premises. -/
 structure MemTableGeneratedAirFacts
     (table : Table FGL)
     (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
-    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
-    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL) : Prop where
-  generatedAt :
-    ∀ idx : Fin table.table.length,
-      ZiskFv.Airs.Mem.generated_every_row segment permutation mem idx.val
-  rowRanges : MemTableGeneratedRangeFacts table mem
-  segmentRanges : MemSegmentGeneratedRangeFacts segment
-
-/-- Split extractor-facing generated Mem constraints for one concrete table.
-
-    `pil-extract mem-air-facts` reports this exact split: generated Mem
-    constraints `0..=23` are the `segment_every_row` surface, and constraints
-    `24..=33` are the `permutation_every_row` surface. A generated Lean module
-    can prove these two fields separately, then assemble
-    `MemTableGeneratedAirFacts` without reintroducing a replay-soundness
-    assumption. -/
-structure MemTableGeneratedConstraintFacts
-    (table : Table FGL)
-    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
-    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
-    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL) : Prop where
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL) : Prop where
   segmentAt :
     ∀ idx : Fin table.table.length,
       ZiskFv.Airs.Mem.segment_every_row segment mem idx.val
-  permutationAt :
+  rowRanges : MemTableGeneratedRangeFacts table mem
+  segmentRanges : MemSegmentGeneratedRangeFacts segment
+
+/-- Extractor-facing operational Mem constraints `0..=23`.
+    The independent typed source audits cover stage-2 constraints `24..=33`;
+    their former scalar encoding is not a live acceptance restriction. -/
+structure MemTableGeneratedConstraintFacts
+    (table : Table FGL)
+    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL) : Prop where
+  segmentAt :
     ∀ idx : Fin table.table.length,
-      ZiskFv.Airs.Mem.permutation_every_row segment permutation mem idx.val
+      ZiskFv.Airs.Mem.segment_every_row segment mem idx.val
 
-/-- Derive the full generated Mem constraint surface from one live table.
-
-The component's ordinary constraints supply the nine row-local equations; its
-right-indexed transition supplies the remaining segment residual and all
-permutation equations. Both paths read the same materialized rows, selected
-`ProverData`, and component-owned fixed schema. -/
+/-- Derive operational segment constraints from one live table. Ordinary row
+constraints supply the local equations and the indexed transition supplies the
+remaining segment residual, over the same rows, data and fixed schema. -/
 theorem memTableGeneratedConstraintFacts_of_component_constraints_transitions
     (table : Table FGL)
     (h_component :
@@ -1306,20 +1276,16 @@ theorem memTableGeneratedConstraintFacts_of_component_constraints_transitions
     (h_constraints : table.Constraints)
     (h_transitions : table.TransitionConstraints) :
     MemTableGeneratedConstraintFacts
-      table (memOfTableData table) (memSegmentOfTableData table)
-      (memPermutationOfTableData table) := by
+      table (memOfTableData table) (memSegmentOfTableData table) := by
   have transitionFacts : ∀ idx : Fin table.length,
       ZiskFv.Airs.Mem.segmentResidualEveryRow
-          (memSegmentOfTableData table) (memOfTableData table) idx.val
-        ∧ ZiskFv.Airs.Mem.permutation_every_row
-          (memSegmentOfTableData table) (memPermutationOfTableData table)
-          (memOfTableData table) idx.val := by
+          (memSegmentOfTableData table) (memOfTableData table) idx.val := by
     intro idx
     have h_transition := (generatedTransition_iff_canonicalTableData table h_component idx).mp
       (by simpa only [h_component, ZiskFv.AirsClean.Mem.componentWithDualMemBus] using
         h_transitions idx)
-    exact ⟨h_transition.1, h_transition.2.1⟩
-  refine ⟨?_, ?_⟩
+    exact h_transition.1
+  refine ⟨?_⟩
   · intro idx
     have h_mem : table.table.get idx ∈ table.table :=
       List.mem_iff_get.mpr ⟨idx, rfl⟩
@@ -1340,11 +1306,7 @@ theorem memTableGeneratedConstraintFacts_of_component_constraints_transitions
     let transitionIdx : Fin table.length := ⟨idx.val, by
       simpa only [Table.table_length] using idx.isLt⟩
     exact ZiskFv.Airs.Mem.segment_every_row_of_core_and_residual
-      h_core (transitionFacts transitionIdx).1
-  · intro idx
-    let transitionIdx : Fin table.length := ⟨idx.val, by
-      simpa only [Table.table_length] using idx.isLt⟩
-    exact (transitionFacts transitionIdx).2
+      h_core (transitionFacts transitionIdx)
 
 /-- Type-level package for raw generated Mem facts.
 
@@ -1353,25 +1315,19 @@ theorem memTableGeneratedConstraintFacts_of_component_constraints_transitions
 structure MemTableGeneratedRawSourceFacts
     (table : Table FGL)
     (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
-    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
-    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL) : Type where
-  constraints : MemTableGeneratedConstraintFacts table mem segment permutation
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL) : Type where
+  constraints : MemTableGeneratedConstraintFacts table mem segment
   rowRanges : MemTableGeneratedRangeFacts table mem
   segmentRanges : MemSegmentGeneratedRangeFacts segment
 
-/-- Clean assertion source for the split generated Mem constraint groups. -/
+/-- Clean assertion source for the operational segment constraints. -/
 structure MemTableGeneratedConstraintAssertionFacts
     (table : Table FGL)
     (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
-    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
-    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL) : Type 1 where
+    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL) : Type 1 where
   segmentAt :
     ∀ idx : Fin table.table.length,
       ZiskFv.AirsClean.Mem.SegmentConstraintAssertionWitness segment mem idx.val
-  permutationAt :
-    ∀ idx : Fin table.table.length,
-      ZiskFv.AirsClean.Mem.PermutationConstraintAssertionWitness
-        segment permutation mem idx.val
 
 /-- Project split generated Mem constraint facts from their Clean assertion
     witnesses. -/
@@ -1379,18 +1335,13 @@ def memTableGeneratedConstraintFacts_of_assertionFacts
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     (h_assertions :
-      MemTableGeneratedConstraintAssertionFacts table mem segment permutation) :
-    MemTableGeneratedConstraintFacts table mem segment permutation where
+      MemTableGeneratedConstraintAssertionFacts table mem segment) :
+    MemTableGeneratedConstraintFacts table mem segment where
   segmentAt := by
     intro idx
     exact ZiskFv.AirsClean.Mem.segment_every_row_of_constraint_assertions
       (h_assertions.segmentAt idx)
-  permutationAt := by
-    intro idx
-    exact ZiskFv.AirsClean.Mem.permutation_every_row_of_constraint_assertions
-      (h_assertions.permutationAt idx)
 
 /-- Build Clean assertion witnesses from raw split generated Mem constraints.
 
@@ -1401,33 +1352,13 @@ def memTableGeneratedConstraintAssertionFacts_of_constraintFacts
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     (h_constraints :
-      MemTableGeneratedConstraintFacts table mem segment permutation) :
-    MemTableGeneratedConstraintAssertionFacts table mem segment permutation where
+      MemTableGeneratedConstraintFacts table mem segment) :
+    MemTableGeneratedConstraintAssertionFacts table mem segment where
   segmentAt := by
     intro idx
     exact ZiskFv.AirsClean.Mem.segmentConstraintAssertionWitness_of_segment_every_row
       (h_constraints.segmentAt idx)
-  permutationAt := by
-    intro idx
-    exact
-      ZiskFv.AirsClean.Mem.permutationConstraintAssertionWitness_of_permutation_every_row
-        (h_constraints.permutationAt idx)
-
-/-- Recombine the extractor's split generated-constraint groups into the
-    `generated_every_row` package consumed by existing replay proofs. -/
-theorem generatedAt_of_memTableGeneratedConstraintFacts
-    {table : Table FGL}
-    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
-    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
-    (h_constraints :
-      MemTableGeneratedConstraintFacts table mem segment permutation) :
-    ∀ idx : Fin table.table.length,
-      ZiskFv.Airs.Mem.generated_every_row segment permutation mem idx.val := by
-  intro idx
-  exact ⟨h_constraints.segmentAt idx, h_constraints.permutationAt idx⟩
 
 /-- Assemble `MemTableGeneratedAirFacts` from the extractor's split generated
     constraint groups plus the explicit range-check surfaces. -/
@@ -1435,13 +1366,12 @@ def memTableGeneratedAirFacts_of_constraintFacts
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     (h_constraints :
-      MemTableGeneratedConstraintFacts table mem segment permutation)
+      MemTableGeneratedConstraintFacts table mem segment)
     (h_rowRanges : MemTableGeneratedRangeFacts table mem)
     (h_segmentRanges : MemSegmentGeneratedRangeFacts segment) :
-    MemTableGeneratedAirFacts table mem segment permutation where
-  generatedAt := generatedAt_of_memTableGeneratedConstraintFacts h_constraints
+    MemTableGeneratedAirFacts table mem segment where
+  segmentAt := h_constraints.segmentAt
   rowRanges := h_rowRanges
   segmentRanges := h_segmentRanges
 
@@ -1451,12 +1381,11 @@ def memTableGeneratedRawSourceFacts_of_witnessFacts
     {table : Table FGL}
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     (h_constraints :
-      MemTableGeneratedConstraintAssertionFacts table mem segment permutation)
+      MemTableGeneratedConstraintAssertionFacts table mem segment)
     (h_rowRanges : MemTableGeneratedRangeLookupFacts table mem)
     (h_segmentRanges : MemSegmentGeneratedRangeLookupFacts segment) :
-    MemTableGeneratedRawSourceFacts table mem segment permutation where
+    MemTableGeneratedRawSourceFacts table mem segment where
   constraints := memTableGeneratedConstraintFacts_of_assertionFacts h_constraints
   rowRanges := memTableGeneratedRangeFacts_of_lookupFacts h_rowRanges
   segmentRanges := memSegmentGeneratedRangeFacts_of_lookupFacts h_segmentRanges
@@ -1466,17 +1395,16 @@ def memTableGeneratedRawSourceFacts_of_witnessFacts
 theorem memTableGeneratedRowsBridge_of_memOfTable_airFacts
     {table : Table FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {gsum im0 im1 : ℕ → FGL}
     (h_component :
       table.component = ZiskFv.AirsClean.Mem.componentWithDualMemBus)
     (h_air :
       MemTableGeneratedAirFacts
-        table (memOfTable table gsum im0 im1) segment permutation) :
+        table (memOfTable table gsum im0 im1) segment) :
     MemTableGeneratedRowsBridge
       table (memOfTable table gsum im0 im1)
-      segment permutation table.table.length :=
-  memTableGeneratedRowsBridge_of_memOfTable h_component h_air.generatedAt
+      segment table.table.length :=
+  memTableGeneratedRowsBridge_of_memOfTable h_component h_air.segmentAt
 
 /-- Fixed-column facts for one generated Mem table segment.
 
@@ -1566,26 +1494,20 @@ theorem memTableGeneratedFixedColumnFacts_of_component_fixedColumns
         exact Nat.ne_of_gt h_pos
       simp [h_mod_ne]
 
-/-- Typed Lean target for the Mem AIR facts source reported by
-    `pil-extract mem-air-facts`.
-
-    The extractor/report surface identifies the stage-2 accumulator columns,
-    the generated segment/permutation formulas, the fixed `SEGMENT_L1` shape,
-    and the range-check metadata. This object packages those source columns and
-    the resulting `MemTableGeneratedAirFacts` for the concrete table projection.
-    It is deliberately a source package, not replay evidence: accepted replay
-    and timeline evidence are derived by the constructors below. -/
+/-- Operational segment/range source for a concrete Mem table.
+    The scalar ghost functions are retained as uninterpreted payload in
+    `Valid_Mem`, not as a source-faithful extension-field encoding. Accepted
+    replay is derived from the segment and range facts carried here. -/
 structure MemTableGeneratedAirSource
     (table : Table FGL) : Type 1 where
   segment : ZiskFv.Airs.Mem.SegmentColumns FGL
-  permutation : ZiskFv.Airs.Mem.PermutationColumns FGL
   gsum : ℕ → FGL
   im0 : ℕ → FGL
   im1 : ℕ → FGL
   facts :
     MemTableGeneratedAirFacts
       table (memOfTable table gsum im0 im1)
-      (segmentWithFixedL1 segment) permutation
+      (segmentWithFixedL1 segment)
 
 namespace MemTableGeneratedAirSource
 
@@ -1600,7 +1522,7 @@ def fixedSegment {table : Table FGL} (source : MemTableGeneratedAirSource table)
   segmentWithFixedL1 source.segment
 
 theorem toFacts {table : Table FGL} (source : MemTableGeneratedAirSource table) :
-    MemTableGeneratedAirFacts table source.mem source.fixedSegment source.permutation :=
+    MemTableGeneratedAirFacts table source.mem source.fixedSegment :=
   source.facts
 
 end MemTableGeneratedAirSource

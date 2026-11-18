@@ -25,15 +25,14 @@ def MemoryBusRowsChronological
 
 /-! ## Generated Mem full-trace construction surface -/
 
-/-- All named generated Mem constraints hold for the active row range
-represented by `rowCount`. -/
+/-- Operational segment constraints `0..23` hold throughout `rowCount`.
+Numeric stage-2 source audits are not replay premises. -/
 def GeneratedMemRows
     (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
     (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
-    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
     (rowCount : ℕ) : Prop :=
   ∀ row, row < rowCount →
-    ZiskFv.Airs.Mem.generated_every_row segment permutation mem row
+    ZiskFv.Airs.Mem.segment_every_row segment mem row
 
 /-- Row-order facts extracted from accepted Mem sorting, segment-boundary, and
 multiplicity constraints before replay soundness is constructed.
@@ -62,12 +61,11 @@ row facts. -/
 theorem core_every_row_of_generated_mem_rows
     {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
     {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
     {rowCount row : ℕ}
-    (generatedRows : GeneratedMemRows mem segment permutation rowCount)
+    (generatedRows : GeneratedMemRows mem segment rowCount)
     (h_row : row < rowCount) :
     ZiskFv.Airs.Mem.core_every_row mem row :=
-  ZiskFv.Airs.Mem.core_every_row_of_generated_every_row
+  ZiskFv.Airs.Mem.core_every_row_of_segment_every_row
     (generatedRows row h_row)
 
 /-- Prefix-indexed replay facts imply the recursive row-level replay predicate

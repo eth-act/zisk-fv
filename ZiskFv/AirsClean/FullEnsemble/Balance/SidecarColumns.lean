@@ -44,24 +44,21 @@ abbrev memPermutationColumnsOfProverData (data : ProverData FGL) :
     ZiskFv.Airs.Mem.PermutationColumns FGL :=
   ZiskFv.AirsClean.Mem.memPermutationColumnsOfProverData data
 
-/-- Table-level sidecar for generated raw Mem AIR source data.
-
-    Generated/full-ensemble code can use this object when it has the concrete
-    stage-2 columns and raw split facts for one witness table, but has not yet
-    packaged them into the witness-wide `FullWitnessMemAirSourceRawFacts`
-    callback. This remains a source-data contract: the raw facts are supplied
-    explicitly, and replay evidence is still derived downstream. -/
+/-- Table-level operational segment and range source for one Mem table.
+    Scalar ghost functions retain uninterpreted payload in `Valid_Mem`;
+    this package neither checks numerical stage-2 equations nor claims a
+    source-faithful Ext3 encoding. Replay evidence is derived downstream from
+    the segment and range facts, not supplied here. -/
 structure MemTableGeneratedRawSourceSidecar
     (table : Table FGL) : Type 1 where
   segment : ZiskFv.Airs.Mem.SegmentColumns FGL
-  permutation : ZiskFv.Airs.Mem.PermutationColumns FGL
   gsum : ℕ → FGL
   im0 : ℕ → FGL
   im1 : ℕ → FGL
   facts :
     MemTableGeneratedRawSourceFacts
       table (memOfTable table gsum im0 im1)
-      (segmentWithFixedL1 segment) permutation
+      (segmentWithFixedL1 segment)
 
 namespace MemTableGeneratedRawSourceSidecar
 
@@ -77,11 +74,11 @@ def fixedSegment {table : Table FGL} (sidecar : MemTableGeneratedRawSourceSideca
 
 def toRawFacts {table : Table FGL} (sidecar : MemTableGeneratedRawSourceSidecar table) :
     MemTableGeneratedRawSourceFacts
-      table sidecar.mem sidecar.fixedSegment sidecar.permutation :=
+      table sidecar.mem sidecar.fixedSegment :=
   sidecar.facts
 
 def toAirFacts {table : Table FGL} (sidecar : MemTableGeneratedRawSourceSidecar table) :
-    MemTableGeneratedAirFacts table sidecar.mem sidecar.fixedSegment sidecar.permutation :=
+    MemTableGeneratedAirFacts table sidecar.mem sidecar.fixedSegment :=
   memTableGeneratedAirFacts_of_constraintFacts
     sidecar.facts.constraints
     sidecar.facts.rowRanges
@@ -90,7 +87,6 @@ def toAirFacts {table : Table FGL} (sidecar : MemTableGeneratedRawSourceSidecar 
 def toAirSource {table : Table FGL} (sidecar : MemTableGeneratedRawSourceSidecar table) :
     MemTableGeneratedAirSource table where
   segment := sidecar.segment
-  permutation := sidecar.permutation
   gsum := sidecar.gsum
   im0 := sidecar.im0
   im1 := sidecar.im1
@@ -114,11 +110,9 @@ def memTableGeneratedRawSourceSidecar_of_proverData
           (memSidecarGsumOfProverData data)
           (memSidecarIm0OfProverData data)
           (memSidecarIm1OfProverData data))
-        (segmentWithFixedL1 (memSegmentColumnsOfProverData data))
-        (memPermutationColumnsOfProverData data)) :
+        (segmentWithFixedL1 (memSegmentColumnsOfProverData data))) :
     MemTableGeneratedRawSourceSidecar table where
   segment := memSegmentColumnsOfProverData data
-  permutation := memPermutationColumnsOfProverData data
   gsum := memSidecarGsumOfProverData data
   im0 := memSidecarIm0OfProverData data
   im1 := memSidecarIm1OfProverData data
@@ -136,8 +130,7 @@ def memTableGeneratedRawSourceSidecar_of_proverDataWitnessFacts
           (memSidecarGsumOfProverData data)
           (memSidecarIm0OfProverData data)
           (memSidecarIm1OfProverData data))
-        (segmentWithFixedL1 (memSegmentColumnsOfProverData data))
-        (memPermutationColumnsOfProverData data))
+        (segmentWithFixedL1 (memSegmentColumnsOfProverData data)))
     (h_rowRanges :
       MemTableGeneratedRangeLookupFacts
         table
@@ -164,47 +157,42 @@ def memTableGeneratedRawSourceSidecar_of_proverDataWitnessFacts
 def memTableGeneratedAirSource_of_parts
     (table : Table FGL)
     (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
-    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
     (gsum im0 im1 : ℕ → FGL)
-    (h_generatedAt :
+    (h_segmentAt :
       ∀ idx : Fin table.table.length,
-        ZiskFv.Airs.Mem.generated_every_row
-          (segmentWithFixedL1 segment) permutation
+        ZiskFv.Airs.Mem.segment_every_row
+          (segmentWithFixedL1 segment)
           (memOfTable table gsum im0 im1) idx.val)
     (h_rowRanges :
       MemTableGeneratedRangeFacts table (memOfTable table gsum im0 im1))
     (h_segmentRanges : MemSegmentGeneratedRangeFacts (segmentWithFixedL1 segment)) :
     MemTableGeneratedAirSource table where
   segment := segment
-  permutation := permutation
   gsum := gsum
   im0 := im0
   im1 := im1
   facts :=
-    { generatedAt := h_generatedAt
+    { segmentAt := h_segmentAt
       rowRanges := h_rowRanges
       segmentRanges := h_segmentRanges }
 
-/-- Build the typed Mem AIR source from the extractor's split generated
-    constraint groups. This mirrors the generated constraint grouping reported
-    by `pil-extract mem-air-facts`: segment constraints `0..=23`, permutation
-    constraints `24..=33`, and the explicit range-check facts. -/
+/-- Build the operational Mem source from segment constraints `0..=23` and
+    the explicit range-check facts. Typed stage-2 source audits are separate. -/
 def memTableGeneratedAirSource_of_constraintFacts
     (table : Table FGL)
     (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
-    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
     (gsum im0 im1 : ℕ → FGL)
     (h_constraints :
       MemTableGeneratedConstraintFacts
         table (memOfTable table gsum im0 im1)
-        (segmentWithFixedL1 segment) permutation)
+        (segmentWithFixedL1 segment))
     (h_rowRanges :
       MemTableGeneratedRangeFacts table (memOfTable table gsum im0 im1))
     (h_segmentRanges : MemSegmentGeneratedRangeFacts (segmentWithFixedL1 segment)) :
     MemTableGeneratedAirSource table :=
   memTableGeneratedAirSource_of_parts
-    table segment permutation gsum im0 im1
-    (generatedAt_of_memTableGeneratedConstraintFacts h_constraints)
+    table segment gsum im0 im1
+    (h_constraints.segmentAt)
     h_rowRanges
     h_segmentRanges
 
@@ -212,26 +200,24 @@ def memTableGeneratedAirSource_of_constraintFacts
     witnesses.
 
     This is the narrow generated/full-ensemble target after the Mem source
-    surface has been made lookup-aware: generated code supplies assertion
-    witnesses for the split generated constraints plus lookup witnesses for the
-    row and segment range facts, and Lean projects those witnesses to the raw
-    AIR facts consumed by replay. -/
+    surface has been made lookup-aware: generated code supplies segment
+    assertion witnesses and row/segment range lookup witnesses; replay facts
+    are derived downstream. -/
 def memTableGeneratedAirSource_of_witnessFacts
     (table : Table FGL)
     (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
-    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
     (gsum im0 im1 : ℕ → FGL)
     (h_constraints :
       MemTableGeneratedConstraintAssertionFacts
         table (memOfTable table gsum im0 im1)
-        (segmentWithFixedL1 segment) permutation)
+        (segmentWithFixedL1 segment))
     (h_rowRanges :
       MemTableGeneratedRangeLookupFacts table (memOfTable table gsum im0 im1))
     (h_segmentRanges :
       MemSegmentGeneratedRangeLookupFacts (segmentWithFixedL1 segment)) :
     MemTableGeneratedAirSource table :=
   memTableGeneratedAirSource_of_constraintFacts
-    table segment permutation gsum im0 im1
+    table segment gsum im0 im1
     (memTableGeneratedConstraintFacts_of_assertionFacts h_constraints)
     (memTableGeneratedRangeFacts_of_lookupFacts h_rowRanges)
     (memSegmentGeneratedRangeFacts_of_lookupFacts h_segmentRanges)

@@ -182,10 +182,10 @@ theorem AcceptedZiskTrace.memReplayRowRanges {n : Nat}
   · exact trace.constraints_hold (trace.memReplayTable h_present)
       (trace.mem_replay_table h_present).2.1
 
-/-- The selected mutable-Mem table's generated constraints are derived from
-    its live row constraints and right-indexed transition. The source is the
-    same materialized table data and component-owned fixed schema consumed by
-    the verifier; no accepted-trace generated-constraint certificate remains. -/
+/-- Derive the selected mutable-Mem table's operational segment constraints
+from its live rows and right-indexed transition over the same materialized
+data and component-owned fixed schema. Numeric stage-2 source audits are
+separate; no additional accepted-trace certificate is assumed. -/
 theorem AcceptedZiskTrace.memReplayGeneratedConstraintFacts {n : Nat}
     (trace : AcceptedZiskTrace n)
     (h_present : MutableMemPresent trace.witness) :
@@ -194,8 +194,6 @@ theorem AcceptedZiskTrace.memReplayGeneratedConstraintFacts {n : Nat}
       (ZiskFv.AirsClean.FullEnsemble.memOfTableData
         (trace.memReplayTable h_present))
       (ZiskFv.AirsClean.FullEnsemble.memSegmentOfTableData
-        (trace.memReplayTable h_present))
-      (ZiskFv.AirsClean.FullEnsemble.memPermutationOfTableData
         (trace.memReplayTable h_present)) := by
   apply ZiskFv.AirsClean.FullEnsemble.memTableGeneratedConstraintFacts_of_component_constraints_transitions
   · exact (trace.mem_replay_table h_present).2.2.1
