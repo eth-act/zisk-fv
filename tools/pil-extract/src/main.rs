@@ -2344,7 +2344,7 @@ def extractedConstraintFacts_of_rawConstraintFacts
       ZiskFv.Airs.Mem.segment_previous_value_1, ZiskFv.Airs.Mem.delta_step,
       ZiskFv.Airs.Mem.delta_addr] using h23
 
-/-- Source audits are theorem obligations of the normal generated module, not
+/- Source audits are theorem obligations of the normal generated module, not
     caller-supplied numeric acceptance fields. -/
 namespace TypedProtocolSource
 
