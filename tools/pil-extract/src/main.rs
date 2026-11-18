@@ -2887,6 +2887,23 @@ fn render_mem_air_facts_report(
     writeln!(out).unwrap();
     writeln!(
         out,
+        "Separate generator-checked source obligations, not callback fields: \
+         `compiledMemSource` contains all 34 compiled constraints, and \
+         `sourceIndexPartition` accounts for operational `0..=23` plus typed \
+         protocol `24..=33`. `compiled_segment_source_support` checks the \
+         kind-preserving operational source before scalar Circuit erasure. \
+         `TypedProtocolSource.nonlinear_source_partition` and \
+         `.finalizer_source_partition` identify the actual typed protocol ASTs; \
+         `.nonlinear_coordinates` is a postcondition of successful `decodeRow?`, \
+         and `.finalizer_coordinates` uses the same base selector on all three \
+         extension coefficients and GROUP0, distinct from AIR_VALUE 0. \
+         These audits do not assert numeric logUp satisfaction, production \
+         decoder totality, or scalar sidecar fidelity to extension values."
+    )
+    .unwrap();
+    writeln!(out).unwrap();
+    writeln!(
+        out,
         "Generated modules that prove raw `segment_every_row` and range \
          propositions directly may instead target \
          `Extraction.MemGeneratedConstraintBridge.ExtractedSidecarFacts` for \
@@ -3195,36 +3212,39 @@ fn write_mem_air_sidecar_source_map(
     air_values: &[(u32, u32, String)],
     challenges: &[(u32, u32, String)],
 ) {
-    let mut rows: Vec<(String, String, String, String)> = vec![
+    writeln!(
+        out,
+        "Operational `0..=23` uses the 13 primary columns listed above and the \
+         segment/fixed fields below. The three scalar payload keys are preserved \
+         storage only: they are not three-coefficient extension decoders and \
+         impose no numeric protocol restrictions. Typed `24..=33` source \
+         descriptors are listed separately, without invented ProverData keys.\n"
+    )
+    .unwrap();
+    let rows: Vec<(String, String, String, String)> = vec![
         (
             "`sidecar.gsum row`".into(),
             "`Mem.sidecar.gsum`".into(),
             witness_source(witness_cols, 2, 0),
-            "stage-2 accumulator column".into(),
+            "uninterpreted scalar payload; not an Ext3 accumulator decoder".into(),
         ),
         (
             "`sidecar.im0 row`".into(),
             "`Mem.sidecar.im0`".into(),
             witness_source(witness_cols, 2, 1),
-            "stage-2 intermediate product".into(),
+            "uninterpreted scalar payload; not an Ext3 intermediate decoder".into(),
         ),
         (
             "`sidecar.im1 row`".into(),
             "`Mem.sidecar.im1`".into(),
             witness_source(witness_cols, 2, 2),
-            "stage-2 intermediate product".into(),
+            "uninterpreted scalar payload; not an Ext3 intermediate decoder".into(),
         ),
         (
             "`(segmentWithFixedL1 sidecar.segment).segment_l1 row`".into(),
             "`Mem.sidecar.segment.segment_l1`".into(),
             fixed_source(fixed_cols, 0),
             "deterministic segment boundary fixed column".into(),
-        ),
-        (
-            "`sidecar.permutation.l1 row`".into(),
-            "`Mem.sidecar.permutation.l1`".into(),
-            fixed_source(fixed_cols, 1),
-            "permutation final-row fixed column".into(),
         ),
         (
             "`sidecar.segment.segment_id`".into(),
@@ -3316,28 +3336,8 @@ fn write_mem_air_sidecar_source_map(
             air_value_source(air_values, 1, 14),
             "segment range chunk".into(),
         ),
-        (
-            "`sidecar.permutation.std_alpha`".into(),
-            "`Mem.sidecar.permutation.std_alpha`".into(),
-            challenge_source(challenges, 2, 0),
-            "permutation compression challenge".into(),
-        ),
-        (
-            "`sidecar.permutation.std_gamma`".into(),
-            "`Mem.sidecar.permutation.std_gamma`".into(),
-            challenge_source(challenges, 2, 1),
-            "permutation compression challenge".into(),
-        ),
     ];
 
-    for idx in 0..6 {
-        rows.push((
-            format!("`sidecar.permutation.im_direct_{}`", idx),
-            format!("`Mem.sidecar.permutation.im_direct_{}`", idx),
-            air_value_source(air_values, 2, 15 + idx),
-            "direct-update inverse source".into(),
-        ));
-    }
 
     writeln!(
         out,
@@ -3347,6 +3347,54 @@ fn write_mem_air_sidecar_source_map(
     writeln!(out, "|---|---|---|---|").unwrap();
     for (lean, key, source, role) in rows {
         writeln!(out, "| {} | {} | {} | {} |", lean, key, source, role).unwrap();
+    }
+
+    writeln!(out, "\n### Typed Protocol Source Audit (`24..=33`)\n").unwrap();
+    writeln!(
+        out,
+        "Source shape and all three extension coefficients are audited \
+         independently of the operational sidecar. GROUP0 is AIR_GROUP_VALUE 0, \
+         never the scalar segment AIR_VALUE 0. These descriptors supply no \
+         scalar ProverData key, numeric satisfaction fact, or production \
+         read-success/decoder-totality promise.\n"
+    )
+    .unwrap();
+    writeln!(out, "| Typed source access | Pilout source | Audit role |").unwrap();
+    writeln!(out, "|---|---|---|").unwrap();
+    for (column, role) in [(0, "running sum"), (1, "intermediate 0"), (2, "intermediate 1")] {
+        writeln!(
+            out,
+            "| `.witness 2 {} 0` (all three coefficients) | {} | typed {}; source audit only |",
+            column, witness_source(witness_cols, 2, column), role
+        )
+        .unwrap();
+    }
+    writeln!(
+        out,
+        "| `.fixed 1 1` | {} | final-row selector at row + 1; same base selector on all three coordinates |",
+        fixed_source(fixed_cols, 1)
+    )
+    .unwrap();
+    for (index, role) in [(0, "alpha"), (1, "gamma")] {
+        writeln!(
+            out,
+            "| `.challenge 2 {}` (all three coefficients) | {} | typed compression {}; source audit only |",
+            index, challenge_source(challenges, 2, index), role
+        )
+        .unwrap();
+    }
+    writeln!(
+        out,
+        "| `.airGroupValue 0` (all three coefficients) | AIR_GROUP_VALUE 0 (GROUP0), distinct from AIR_VALUE 0 | typed finalizer group value; no scalar ProverData key |"
+    )
+    .unwrap();
+    for index in 15..21 {
+        writeln!(
+            out,
+            "| `.airValue {}` (all three coefficients) | {} | ordered direct term {}; source audit only |",
+            index, air_value_source(air_values, 2, index), index - 15
+        )
+        .unwrap();
     }
 }
 
@@ -4453,8 +4501,8 @@ mod tests {
             out
         );
         assert!(
-            out.contains("`Mem.sidecar.permutation.im_direct_5`"),
-            "report should name all direct-update inverse keys:\n{}",
+            !out.contains("sidecar.permutation."),
+            "report must not advertise removed scalar permutation ProverData keys:\n{}",
             out
         );
         assert!(
@@ -4485,44 +4533,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn mem_air_facts_report_lists_generated_artifact_contract() {
-        let pilout = PilOut {
-            air_groups: vec![pilout::AirGroup {
-                name: Some("Zisk".into()),
-                airs: vec![Air {
-                    name: Some("Mem".into()),
-                    num_rows: Some(16),
-                    ..Default::default()
-                }],
-                ..Default::default()
-            }],
-            ..Default::default()
-        };
-        let hit = find_air(&pilout, "Mem").unwrap();
-        let out = render_mem_air_facts_report(&pilout, &hit, None, None).unwrap();
-        assert!(
-            out.contains("## Generated Lean Artifact Contract"),
-            "report should include a generated artifact contract section:\n{}",
-            out
-        );
-        assert!(
-            out.contains("`MemTableGeneratedConstraintAssertionFacts`")
-                && out.contains("`MemTableGeneratedRangeLookupFacts`")
-                && out.contains("`MemSegmentGeneratedRangeLookupFacts`"),
-            "report should list all per-table witness fact obligations:\n{}",
-            out
-        );
-        assert!(
-            out.contains("`segment_every_row` constraints `0..=23`")
-                && out.contains("`permutation_every_row` constraints `24..=33`")
-                && out.contains(
-                    "`segmentWithFixedL1 (memSegmentColumnsOfProverData witness.data)`"
-                ),
-            "report should identify the exact generated constraint/range sources:\n{}",
-            out
-        );
-    }
 
     #[test]
     fn mem_air_range_coverage_checks_mem_align_value_width() {
