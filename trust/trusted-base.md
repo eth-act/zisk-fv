@@ -273,34 +273,30 @@ The canonical load proofs derive `LoadByteAgreement` from that byte-local
 timeline evidence plus the circuit-side prefix-read agreement.
 
 Generated/full-ensemble Mem facts target
-`FullWitnessMemAirSourceProverDataWitnessFacts`: Clean assertion/lookup
-witnesses plus named `witness.data` sidecar keys for raw split generated
-constraints, row range facts, segment range facts, and the stage-2 source
-columns for each mutable Mem table. The reproducible generated wrapper
-`Extraction.MemGeneratedArtifact` exposes `buildWitnessFacts`, which assembles
-that target from the three per-table callback families, plus
-`buildRawFacts` and `buildWitnessFactsFromRawParts`, which assemble/adapt raw
-ProverData fact callbacks to the same witness target. It also exposes
-`buildTimelineEvidence`, which passes the assembled facts to
-`fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts`. The top-level
-`nix run .#test` gate compiles the generated `Extraction.Circuit` shim,
-`Extraction.Mem` constraint source, and
-`Extraction.MemGeneratedArtifact` wrapper directly under the generated
-`build/extraction` root. It also compiles
-`Extraction.MemGeneratedConstraintBridge`, which binds those extracted Mem
-constraints to the ProverData-backed source view used by the wrapper, so this
-surface stays synchronized with the checked Lean API.
-`fullWitnessGeneratedTimelineEvidence_of_proverDataWitnessFacts` packages that
-target into a checked generated producer of the public timeline boundary. Lean
-packages the resulting sidecar callback into the witness-selected
-`FullWitnessMemAirSource` via
-`fullWitnessMemAirSourceOfRawSidecars`, and
-`fullWitnessMemoryTimelineEvidence_of_rawSidecars` combines it with only the
-byte-local residual Sail timeline field above. `FullWitnessMemAirSourceRawFacts` and
-`fullWitnessMemoryTimelineEvidence_of_rawFacts` remain compatibility adapters
-for lower-level generated modules that still produce the raw sigma callback;
-`fullWitnessMemAirSourceProverDataWitnessFacts_of_rawFacts` is the checked
-adapter for raw ProverData facts.
+`FullWitnessMemAirSourceProverDataWitnessFacts`: the operational source
+surface is the base-field segment constraints `0..23`, together with the
+unchanged row and segment range facts. The generated
+`Extraction.MemGeneratedArtifact` wrapper assembles those facts and passes
+them to the checked timeline producer. Its
+`Extraction.MemGeneratedConstraintBridge` correspondence is explicitly
+segment-only; it no longer claims that a base-field instance faithfully
+represents all 34 source constraints.
+
+The complete compiled source family is still accounted for. A
+kind-preserving source-support check precedes generic-circuit erasure for
+`0..23`; the mandatory unused total-interface methods are private completion
+only after whole-family independence from arbitrary fillers is proved.
+Unsupported source kinds, stages or indices are not interpreted as zero.
+The separate typed `24..33` audits retain all three extension coefficients,
+the actual AIR-group `gsum_result`, fixed selectors and ordered Direct terms.
+They are source-fidelity checks, not numerical satisfaction, native-producer
+totality or a derivation of channel balance from logUp.
+
+The normal extraction/Lake/full-test graph checks both sides of this split.
+No additional caller-supplied group value, source-coherence certificate,
+parse-success condition or numeric-permutation hypothesis replaces the
+retired scalar restriction. Existing source-to-native/accepted-world
+correlation limitations are not discharged by these local audits.
 
 Retirement path: emit/prove the extractor/full-ensemble
 `FullWitnessMemAirSourceProverDataWitnessFacts`, then prove the whole-execution
@@ -327,22 +323,32 @@ nonempty-table proof. Memory-less traces prove the guard impossible; they do not
 fabricate an empty replay bridge. No generated Mem sidecar remains an
 accepted-trace field: the S3 lifecycle audit found the former segment,
 permutation, `gsum`, `im0`, and `im1` fields unconsumed outside their vacuous
-constructor populations and deleted them. `mem_replay_constraints` is deleted:
-its segment/permutation package is derived from the selected table's live constraints plus its
-right-indexed transition, using canonical table `ProverData` and
-component-owned fixed data. Row range facts are likewise derived from live Mem
-`Table.fromStatic` lookups. `memReplayRows`/`memReplayBridge` construct the
-canonical replay bridge directly, rather than rebuilding a raw sidecar or
-`FullWitnessMemAirSource`. The former segment range field is deleted: its
-canonical `MemSegmentGeneratedRangeFacts` are derived for the selected table
-by `memReplaySegmentRanges`, from `constraints_hold`, `channels_balanced`, and
-`transitions_hold` only. The chain is the generated `ValidatedLink` entries
-for Mem range hints 884/886, `mem.pil:267-268` (with the companion source
-bridge coverage at `mem.pil:285-286`), their linked c24–33 constraints at
-`std_sum.pil:590/599/656/696`, the indexed transition's materialized
-`ProverData` source cells, finished bus-103 balance, and the
-`SpecifiedRangesSlice` static provider. `ProverAssumptions` is
-completeness-only and is not consumed by this derivation.
+constructor populations and deleted them. The selected table's segment
+package is derived from its live constraints and indexed transition, using
+the canonical table `ProverData` and component-owned fixed data. Row range
+facts remain derived from live Mem `Table.fromStatic` lookups.
+`memReplayRows`/`memReplayBridge` construct the canonical replay bridge
+directly, rather than rebuilding a raw sidecar.
+
+The #458 correction removes the incorrect scalar `24..33` restriction from
+live D1, retaining exactly `segmentResidualEveryRow ∧ memRangeSidecarBridge`.
+The semantic replay proof uses the segment equations, ranges, fixed
+selectors, ordering and seed facts; it does not consume the retired scalar
+accumulator arithmetic. `channels_balanced` remains the same separate
+accepted-trace certificate under the existing permutation boundary.
+All real lookup messages, raw weights, zero coefficients and ordering are
+retained. Segment range facts still derive from the accepted constraints,
+finished bus-103 balance and indexed transition; source tuple
+correspondence and the typed stage-two audits are distinct from a numerical
+permutation proof. `ProverAssumptions` remains completeness-only.
+
+This materially expands the accepted-model domain; an unchanged public
+field list is not a claim of unchanged acceptance. The comparison-only
+historical Mem/old18 snapshots retain the original restriction, and the
+one-way transport preserves raw rows/data, fixed materialization, channel
+streams, selected Mem/covers/Main height, replay rows and initial memory.
+There is no converse reconstruction of scalar numeric constraints,
+old/new definitional equality or original native-commitment identity claim.
 `mem_replay_source_covers` remains the
 matching structural source-correlation certificate: every mutable-Mem table in
 the witness is the selected source table.
