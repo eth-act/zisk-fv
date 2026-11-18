@@ -40,10 +40,6 @@ abbrev memSegmentColumnsOfProverData (data : ProverData FGL) :
     ZiskFv.Airs.Mem.SegmentColumns FGL :=
   ZiskFv.AirsClean.Mem.memSegmentColumnsOfProverData data
 
-abbrev memPermutationColumnsOfProverData (data : ProverData FGL) :
-    ZiskFv.Airs.Mem.PermutationColumns FGL :=
-  ZiskFv.AirsClean.Mem.memPermutationColumnsOfProverData data
-
 /-- Table-level operational segment and range source for one Mem table.
     Scalar ghost functions retain uninterpreted payload in `Valid_Mem`;
     this package neither checks numerical stage-2 equations nor claims a

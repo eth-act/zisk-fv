@@ -432,44 +432,6 @@ def segmentConstraintAssertionWitness_of_segment_every_row
   · simpa [segmentGeneratedConstraintAssertions, ZiskFv.Airs.Mem.segment_every_row,
       circuit_norm] using h_segment
 
-/-- Clean assertion witness for generated Mem constraints `24..=33`. -/
-structure PermutationConstraintAssertionWitness
-    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
-    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
-    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
-    (row : ℕ) where
-  offset : ℕ
-  env : Environment FGL
-  holds :
-    ConstraintsHold.Soundness env
-      ((permutationGeneratedConstraintAssertions segment permutation mem row).operations offset)
-
-/-- Project generated Mem constraints `24..=33` from their assertion source. -/
-theorem permutation_every_row_of_constraint_assertions
-    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
-    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
-    {row : ℕ}
-    (w : PermutationConstraintAssertionWitness segment permutation mem row) :
-    ZiskFv.Airs.Mem.permutation_every_row segment permutation mem row := by
-  have h_holds := w.holds
-  simpa [permutationGeneratedConstraintAssertions,
-    ZiskFv.Airs.Mem.permutation_every_row, circuit_norm] using h_holds
-
-/-- Build the generated-constraint assertion witness from the raw
-    `permutation_every_row` proposition. -/
-def permutationConstraintAssertionWitness_of_permutation_every_row
-    {segment : ZiskFv.Airs.Mem.SegmentColumns FGL}
-    {permutation : ZiskFv.Airs.Mem.PermutationColumns FGL}
-    {mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL}
-    {row : ℕ}
-    (h_permutation : ZiskFv.Airs.Mem.permutation_every_row segment permutation mem row) :
-    PermutationConstraintAssertionWitness segment permutation mem row := by
-  refine ⟨0, ?_, ?_⟩
-  · exact ⟨fun _ => 0, fun _ _ => #[]⟩
-  · simpa [permutationGeneratedConstraintAssertions,
-      ZiskFv.Airs.Mem.permutation_every_row, circuit_norm] using h_permutation
-
 /-- **Bridge theorem.** Given a row of a `Valid_Mem` satisfying the
     9 Clean Component constraints and the boolean range assumptions,
     the Mem per-row Spec holds. -/

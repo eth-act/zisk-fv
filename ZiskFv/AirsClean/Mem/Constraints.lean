@@ -161,47 +161,6 @@ def segmentGeneratedConstraintAssertions
     (mem.value_1 row - ZiskFv.Airs.Mem.segment_previous_value_1 segment mem row)))
   assertZero (.const ((mem.addr_changes row * (1 - mem.wr row)) * mem.value_1 row))
 
-/-- Generated Mem permutation/accumulator constraints `24..=33`, rendered as
-    a Clean assertion source over concrete named columns. -/
-@[circuit_norm]
-def permutationGeneratedConstraintAssertions
-    (segment : ZiskFv.Airs.Mem.SegmentColumns FGL)
-    (permutation : ZiskFv.Airs.Mem.PermutationColumns FGL)
-    (mem : ZiskFv.Airs.Mem.Valid_Mem FGL FGL)
-    (row : ℕ) : Circuit FGL Unit := do
-  assertZero (.const (mem.im_0 row *
-    (ZiskFv.Airs.Mem.gsum_increment_1 permutation mem row *
-      ZiskFv.Airs.Mem.gsum_dual_step permutation mem row)
-    - ((18446744069414584320 * ZiskFv.Airs.Mem.gsum_dual_step permutation mem row)
-      + ((0 - mem.sel_dual row) *
-        ZiskFv.Airs.Mem.gsum_increment_1 permutation mem row))))
-  assertZero (.const (mem.im_1 row *
-    (ZiskFv.Airs.Mem.gsum_primary_mem permutation mem row *
-      ZiskFv.Airs.Mem.gsum_dual_mem permutation mem row)
-    - (mem.sel row * ZiskFv.Airs.Mem.gsum_dual_mem permutation mem row
-      + mem.sel_dual row * ZiskFv.Airs.Mem.gsum_primary_mem permutation mem row)))
-  assertZero (.const (ZiskFv.Airs.Mem.gsum_accumulator_delta permutation mem row *
-    ZiskFv.Airs.Mem.gsum_increment_0 permutation mem row + 1))
-  assertZero (.const (permutation.im_direct_0 *
-    ZiskFv.Airs.Mem.direct_gsum_0 segment permutation + 1))
-  assertZero (.const (permutation.im_direct_1 *
-    ZiskFv.Airs.Mem.direct_gsum_1 segment permutation
-      - (1 - segment.is_last_segment)))
-  assertZero (.const (permutation.im_direct_2 *
-    ZiskFv.Airs.Mem.direct_gsum_distance_base_0 segment permutation + 1))
-  assertZero (.const (permutation.im_direct_3 *
-    ZiskFv.Airs.Mem.direct_gsum_distance_base_1 segment permutation + 1))
-  assertZero (.const (permutation.im_direct_4 *
-    ZiskFv.Airs.Mem.direct_gsum_distance_end_0 segment permutation + 1))
-  assertZero (.const (permutation.im_direct_5 *
-    ZiskFv.Airs.Mem.direct_gsum_distance_end_1 segment permutation + 1))
-  assertZero (.const (permutation.l1 (row + 1) *
-    (segment.segment_id - mem.gsum row
-      - (((((permutation.im_direct_0 + permutation.im_direct_1)
-        + permutation.im_direct_2) + permutation.im_direct_3)
-        + permutation.im_direct_4) + permutation.im_direct_5))))
-
-
 /-! ## T4.0.7 — memory-bus provider emission
 
 `memWithMemBus` extends Mem's per-row `main` circuit with the

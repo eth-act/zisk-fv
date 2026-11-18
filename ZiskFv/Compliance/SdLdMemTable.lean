@@ -300,28 +300,11 @@ private def sdLdMemSegmentColumns : ZiskFv.Airs.Mem.SegmentColumns FGL where
   distance_end_1 := 1023
   segment_l1 := fun row => memFixedColumns.fixedAt MemFixedColumn.segmentL1 row
 
-private def sdLdMemPermutationColumns : ZiskFv.Airs.Mem.PermutationColumns FGL where
-  std_alpha := 0
-  std_gamma := 1
-  l1 := fun row => memFixedColumns.fixedAt MemFixedColumn.l1 row
-  im_direct_0 := 1537228672451215360
-  im_direct_1 := 0
-  im_direct_2 := 10110234730352224099
-  im_direct_3 := 10110234730352224099
-  im_direct_4 := 10110234730352224099
-  im_direct_5 := 10110234730352224099
-
 private theorem sdLdMemSegmentColumns_source :
     memSegmentColumnsOfProverDataAndFixed sdLdMemData
       (fun row => memFixedColumns.fixedAt MemFixedColumn.segmentL1 row) =
       sdLdMemSegmentColumns := by
   simp [sdLdMemSegmentColumns]
-
-private theorem sdLdMemPermutationColumns_source :
-    memPermutationColumnsOfProverDataAndFixed sdLdMemData
-      (fun row => memFixedColumns.fixedAt MemFixedColumn.l1 row) =
-      sdLdMemPermutationColumns := by
-  simp [sdLdMemPermutationColumns]
 
 @[simp] theorem sdLdMemTable_memRowAt_zero :
     memRowFromEnvironment (sdLdMemTable.environmentAt ⟨0, by simp⟩) = sdMemRow := by

@@ -776,13 +776,6 @@ def memSegmentOfTableData (table : Table FGL) : ZiskFv.Airs.Mem.SegmentColumns F
   ZiskFv.AirsClean.Mem.memSegmentColumnsOfProverDataAndFixed table.data
     (fun row => table.fixedAt ZiskFv.AirsClean.Mem.MemFixedColumn.segmentL1 row)
 
-/-- Canonical generated-permutation columns for a live Mem table. `__L1__`
-comes only from the component-owned fixed schema, not from prover data. -/
-@[reducible]
-def memPermutationOfTableData (table : Table FGL) : ZiskFv.Airs.Mem.PermutationColumns FGL :=
-  ZiskFv.AirsClean.Mem.memPermutationColumnsOfProverDataAndFixed table.data
-    (fun row => table.fixedAt ZiskFv.AirsClean.Mem.MemFixedColumn.l1 row)
-
 /-- In-range concrete table projection agrees with `List.get`. -/
 theorem memTableRowAtOrZero_get
     (table : Table FGL)
