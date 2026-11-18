@@ -85,32 +85,38 @@ theorem retargetTable_mem_component (table : Table FGL)
 @[simp] theorem retargetTable_table (table : Table FGL) :
     (retargetTable table).table = table.table := by
   classical
+  rcases table with ⟨component, rawRows, data, uniform, domain⟩
   unfold retargetTable
   split
   · rename_i h
-    unfold Table.table
-    rw [h] <;> rfl
+    change component = Mem.Legacy457.componentWithDualMemBus at h
+    subst component
+    rfl
   · rfl
 
 @[simp] theorem retargetTable_fixedAt (table : Table FGL) (slot row : Nat) :
     (retargetTable table).fixedAt slot row = table.fixedAt slot row := by
   classical
+  rcases table with ⟨component, rawRows, data, uniform, domain⟩
   unfold retargetTable
   split
   · rename_i h
-    unfold Table.fixedAt
-    rw [h] <;> rfl
+    change component = Mem.Legacy457.componentWithDualMemBus at h
+    subst component
+    rfl
   · rfl
 
 @[simp] theorem retargetTable_materializeRow (table : Table FGL)
     (index : Nat) (raw : Array FGL) :
     (retargetTable table).materializeRow index raw = table.materializeRow index raw := by
   classical
+  rcases table with ⟨component, rawRows, data, uniform, domain⟩
   unfold retargetTable
   split
   · rename_i h
-    unfold Table.materializeRow
-    rw [h] <;> rfl
+    change component = Mem.Legacy457.componentWithDualMemBus at h
+    subst component
+    rfl
   · rfl
 
 @[simp] theorem retargetTable_environment (table : Table FGL) (row : Array FGL) :
