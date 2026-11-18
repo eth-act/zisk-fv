@@ -85,34 +85,54 @@ theorem retargetTable_mem_component (table : Table FGL)
 @[simp] theorem retargetTable_table (table : Table FGL) :
     (retargetTable table).table = table.table := by
   classical
-  by_cases h : table.component = Mem.Legacy457.componentWithDualMemBus
-  · simp only [retargetTable, dif_pos h, Table.table, h] <;> rfl
-  · rw [retargetTable_of_ne table h]
+  unfold retargetTable
+  split
+  · rename_i h
+    unfold Table.table
+    rw [h] <;> rfl
+  · rfl
 
 @[simp] theorem retargetTable_fixedAt (table : Table FGL) (slot row : Nat) :
     (retargetTable table).fixedAt slot row = table.fixedAt slot row := by
   classical
-  by_cases h : table.component = Mem.Legacy457.componentWithDualMemBus
-  · simp only [retargetTable, dif_pos h, Table.fixedAt, h] <;> rfl
-  · rw [retargetTable_of_ne table h]
+  unfold retargetTable
+  split
+  · rename_i h
+    unfold Table.fixedAt
+    rw [h] <;> rfl
+  · rfl
 
 @[simp] theorem retargetTable_materializeRow (table : Table FGL)
     (index : Nat) (raw : Array FGL) :
     (retargetTable table).materializeRow index raw = table.materializeRow index raw := by
   classical
-  by_cases h : table.component = Mem.Legacy457.componentWithDualMemBus
-  · simp only [retargetTable, dif_pos h, Table.materializeRow, h] <;> rfl
-  · rw [retargetTable_of_ne table h]
+  unfold retargetTable
+  split
+  · rename_i h
+    unfold Table.materializeRow
+    rw [h] <;> rfl
+  · rfl
 
 @[simp] theorem retargetTable_environment (table : Table FGL) (row : Array FGL) :
     (retargetTable table).environment row = table.environment row := by
   simp only [Table.environment, retargetTable_data]
 
+private theorem list_get_of_eq {α : Type*} {left right : List α}
+    (rows : left = right) (index : Nat)
+    (leftBound : index < left.length) (rightBound : index < right.length) :
+    left.get ⟨index, leftBound⟩ = right.get ⟨index, rightBound⟩ := by
+  cases rows
+  rfl
+
 @[simp] theorem retargetTable_environmentAt (table : Table FGL)
     (index : Fin (retargetTable table).length) :
     (retargetTable table).environmentAt index =
       table.environmentAt ⟨index.val, by simpa only [retargetTable_length] using index.isLt⟩ := by
-  simp only [Table.environmentAt, retargetTable_environment, retargetTable_table]
+  simp only [Table.environmentAt, retargetTable_environment]
+  exact congrArg table.environment
+    (list_get_of_eq (retargetTable_table table) index.val
+      (by simpa only [Table.table_length] using index.isLt)
+      (by simpa only [Table.table_length, retargetTable_length] using index.isLt))
 
 @[simp] theorem retargetTable_previousEnvironment (table : Table FGL)
     (index : Fin (retargetTable table).length) :
@@ -221,7 +241,7 @@ def eraseLegacyMem (old : OldWitness p program) : NewWitness p program where
       | exact (retargetTable_mem_component _ (old.same_circuits _ oldBound).symm).symm
       | (symm
          apply retargetTable_component_of_width _ _ (old.same_circuits _ oldBound).symm
-         decide)
+         exact of_decide_eq_true rfl)
   same_data := by
     intro table ht
     rcases List.mem_map.mp ht with ⟨source, hs, rfl⟩
@@ -265,7 +285,7 @@ theorem old_mem_component_of_width (old : OldWitness p program) (table : Table F
     table.component = Mem.Legacy457.componentWithDualMemBus := by
   have hc := EnsembleWitness.mem_allTables_component_of_mem_allTables ht
   simp only [Legacy457.fullRv64imEnsemble, Legacy457.fullRv64imSoundEnsemble,
-    circuit_norm, Ensemble.allTables] at hc
+    circuit_norm, Ensemble.allTables, List.mem_cons, List.not_mem_nil, or_false] at hc
   rcases hc with
     hc | hc | hc | hc | hc | hc | hc | hc | hc |
     hc | hc | hc | hc | hc | hc | hc | hc | hc
