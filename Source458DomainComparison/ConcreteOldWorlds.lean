@@ -490,8 +490,8 @@ private theorem singleAdd_source_no_mem :
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals first
     | (have impossible := congrArg (fun c : Component FGL => c.rawWidth) hc
-       norm_num at impossible
-       done)
+       revert impossible
+       decide)
     | (change (0 : Nat) < 0 at hn
        omega)
 
@@ -541,9 +541,9 @@ theorem witness_transitions (exampleCase : Example) : (witness exampleCase).Tran
       apply emptyCases_no_mem exampleCase he
       refine ⟨source, hs, hm, ?_⟩
       rw [Table.table_length]
-      have bound := index.isLt
-      rw [historicalTable_length] at bound
-      omega
+      have bound : index.val < source.length := by
+        simpa only [historicalTable_length] using index.isLt
+      exact lt_of_le_of_lt (Nat.zero_le index.val) bound
   · rw [historicalTable_of_ne source hm]
     exact (sourceTrace exampleCase).transitions_hold source hs
 

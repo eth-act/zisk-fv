@@ -14,6 +14,7 @@ namespace ZiskFv.AirsClean.FullEnsemble.HistoricalMemFacts
 open Goldilocks Air.Flat
 
 /-- The literal retired scalar decoder, confined to historical comparisons. -/
+@[reducible]
 def memPermutationOfTableData (table : Table FGL) :
     ZiskFv.AirsClean.Mem.Legacy457.PermutationColumns FGL :=
   ZiskFv.AirsClean.Mem.Legacy457.permutationColumnsOfProverDataAndFixed table.data
@@ -68,12 +69,37 @@ theorem generatedTransition_iff_canonicalTableData
   · simp only [ZiskFv.AirsClean.Mem.Legacy457.generatedTransition,
       ZiskFv.AirsClean.Mem.memWindow]
     rw [h_current, h_previous, h_data]
-    simp [memOfTableData, memOfTable, h_fixed_at, h_zero]
+    have h_previous_eq : idx.val - 1 = idx.val := by omega
+    simp only [memSegmentOfTableData, memPermutationOfTableData, h_fixed_at,
+      h_previous_eq, ite_true, ite_false, ZiskFv.AirsClean.Mem.rowAt,
+      ZiskFv.Airs.Mem.segmentResidualEveryRow, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.delta_addr, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1,
+      ZiskFv.AirsClean.Mem.Legacy457.permutation_every_row,
+      ZiskFv.AirsClean.Mem.Legacy457.gsum_increment_1,
+      ZiskFv.AirsClean.Mem.Legacy457.gsum_dual_step,
+      ZiskFv.AirsClean.Mem.Legacy457.gsum_increment_0,
+      ZiskFv.AirsClean.Mem.Legacy457.gsum_primary_mem,
+      ZiskFv.AirsClean.Mem.Legacy457.gsum_dual_mem,
+      ZiskFv.AirsClean.Mem.Legacy457.gsum_accumulator_delta]
   · have h_previous_ne : idx.val - 1 ≠ idx.val := by omega
     simp only [ZiskFv.AirsClean.Mem.Legacy457.generatedTransition,
       ZiskFv.AirsClean.Mem.memWindow]
     rw [h_current, h_previous, h_data]
-    simp [memOfTableData, memOfTable, h_fixed_at, h_previous_ne]
+    simp only [memSegmentOfTableData, memPermutationOfTableData, h_fixed_at,
+      if_neg h_previous_ne, ite_true, ite_false, ZiskFv.AirsClean.Mem.rowAt,
+      ZiskFv.Airs.Mem.segmentResidualEveryRow, ZiskFv.Airs.Mem.previous_row_step,
+      ZiskFv.Airs.Mem.delta_addr, ZiskFv.Airs.Mem.delta_step,
+      ZiskFv.Airs.Mem.segment_previous_addr, ZiskFv.Airs.Mem.segment_previous_value_0,
+      ZiskFv.Airs.Mem.segment_previous_value_1,
+      ZiskFv.AirsClean.Mem.Legacy457.permutation_every_row,
+      ZiskFv.AirsClean.Mem.Legacy457.gsum_increment_1,
+      ZiskFv.AirsClean.Mem.Legacy457.gsum_dual_step,
+      ZiskFv.AirsClean.Mem.Legacy457.gsum_increment_0,
+      ZiskFv.AirsClean.Mem.Legacy457.gsum_primary_mem,
+      ZiskFv.AirsClean.Mem.Legacy457.gsum_dual_mem,
+      ZiskFv.AirsClean.Mem.Legacy457.gsum_accumulator_delta]
 
 theorem memTableGeneratedRangeFacts_of_component_constraints
     (table : Table FGL)
@@ -85,7 +111,7 @@ theorem memTableGeneratedRangeFacts_of_component_constraints
   have rangeAt : ∀ idx : Fin table.table.length,
       ZiskFv.AirsClean.Mem.dualMemRowRangeFacts
         (eval (table.environment (table.table.get idx))
-          ZiskFv.AirsClean.Mem.Legacy457.componentWithDualMemBus.rowInputVar) := by
+          ZiskFv.AirsClean.Mem.componentWithDualMemBus.rowInputVar) := by
     intro idx
     have h_mem : table.table.get idx ∈ table.table :=
       List.mem_iff_get.mpr ⟨idx, rfl⟩
