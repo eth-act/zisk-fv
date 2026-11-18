@@ -75,6 +75,50 @@ def correspondence (ci : ConstantInfo) : Meta.MetaM (Option Json) := do
       ("model", toJson model.toString), ("position", toJson position),
       ("axioms", toJson ((AxiomClosure.rawAxiomDepsForTheorem env ci.name).map Name.toString))]
 
+/-- A maintained expected AST may use the generated AST datatype, constructors
+and recursors, but cannot read generated data. Walk every dependency, including
+foreign helpers and opaque values; an absent declaration fails closed. -/
+def sourceIndependentModel (env : Environment) (raw model : Name) : Bool := Id.run do
+  let some sourceModule := env.getModuleIdxFor? raw | return false
+  let mut seen : NameSet := {}
+  let mut pending := [model]
+  while !pending.isEmpty do
+    let name := pending.head!
+    pending := pending.tail!
+    if seen.contains name then continue
+    seen := seen.insert name
+    let some info := env.find? name | return false
+    if env.getModuleIdxFor? name == some sourceModule then
+      match info with
+      | .defnInfo _ | .opaqueInfo _ | .axiomInfo _ => return false
+      | _ => pure ()
+    for dependency in (ConstantClosure.referencedByCI info).toList do
+      if !seen.contains dependency then pending := dependency :: pending
+  return true
+
+/-- Closed symbolic source fidelity is build-only evidence, not numerical
+protocol soundness or theorem-consumed model composition. No name/index list,
+extra hypothesis, generated target or source-derived alias earns this credit. -/
+def typedSourceCorrespondence (ci : ConstantInfo) : Meta.MetaM (Option Json) := do
+  let .thmInfo _ := ci | return none
+  if !ci.type.isAppOfArity `Eq 3 then return none
+  let sides := ci.type.getAppArgs
+  if sides[0]!.constName? != some `Extraction.LookupWiring.Expr then return none
+  let .const raw _ := sides[1]! | return none
+  let .const model _ := sides[2]! | return none
+  let ["Extraction", "LookupWiring", leaf] := raw.toString.splitOn "." | return none
+  let ["constraint", air, index] := leaf.splitOn "_" | return none
+  if air.isEmpty || index.toNat?.isNone then return none
+  if !ConstantClosure.isProjectName model then return none
+  let env ← getEnv
+  let some (.defnInfo _) := env.find? raw | return none
+  let some (.defnInfo _) := env.find? model | return none
+  if !sourceIndependentModel env raw model then return none
+  return some <| Json.mkObj [
+    ("theorem", toJson ci.name.toString), ("constraint", toJson raw.toString),
+    ("model", toJson model.toString),
+    ("axioms", toJson ((AxiomClosure.rawAxiomDepsForTheorem env ci.name).map Name.toString))]
+
 /-- Stable, lossless-for-accounting declaration graph over the loaded environment.
 Only library leaves that cannot depend on project/generated declarations are pruned. -/
 def report : Meta.MetaM Json := do
@@ -100,6 +144,8 @@ def report : Meta.MetaM Json := do
       ("type", namesJson (ConstantClosure.gatherConsts ci.type {})),
       ("value", namesJson (ci.value?.map (ConstantClosure.gatherConsts · {}) |>.getD {}))]
     if let some proof ← correspondence ci then
+      correspondences := correspondences.push proof
+    if let some proof ← typedSourceCorrespondence ci then
       correspondences := correspondences.push proof
   return Json.mkObj [("schema_version", toJson (1 : Nat)),
     ("declarations", toJson declarations), ("correspondences", toJson correspondences)]

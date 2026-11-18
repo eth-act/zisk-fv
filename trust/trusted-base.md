@@ -342,6 +342,13 @@ finished bus-103 balance and indexed transition; source tuple
 correspondence and the typed stage-two audits are distinct from a numerical
 permutation proof. `ProverAssumptions` remains completeness-only.
 
+Build-fidelity accounting also recognizes kernel-checked, closed equalities
+between an actual compiled `LookupWiring.Expr` constraint and an independent
+maintained expected expression. The compiled reporter rejects extra arguments
+or premises, generated targets and transitive source-data aliases, and checks
+the proof's full type/value axiom closure. This is build-only source fidelity:
+it does not grant Root/model-consumption credit or numerical logUp soundness.
+
 This materially expands the accepted-model domain; an unchanged public
 field list is not a claim of unchanged acceptance. The comparison-only
 historical Mem/old18 snapshots retain the original restriction, and the

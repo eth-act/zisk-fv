@@ -231,8 +231,61 @@ theorem root (c : C Nat Nat) (r offset : Nat) (env : Unit) :
   constraint_0_correspondence c r offset env
 end ZiskFv.ExposureRegression
 """)
+        cls.compile("Extraction.LookupWiring", """
+namespace Extraction.LookupWiring
+inductive Expr where
+  | word : Nat → Expr
+def constraint_Sample_5 : Expr := .word 7
+def constraint_Sample_6 : Nat := 7
+def generatedTarget : Expr := .word 7
+def _root_.ZiskFv.GeneratedExpected.target : Expr := .word 7
+end Extraction.LookupWiring
+""")
+        cls.compile("TypedSource", """
+import Extraction.LookupWiring
+namespace Foreign
+def rawAlias := Extraction.LookupWiring.constraint_Sample_5
+end Foreign
+namespace ZiskFv.ExposureRegression
+open Extraction.LookupWiring
+def expected : Expr := .word 7
+def expectedNat : Nat := 7
+def aliasTarget : Expr := Foreign.rawAlias
+def appliedTarget (_ : Nat) : Expr := .word 7
+theorem checked : constraint_Sample_5 = expected := rfl
+theorem selfEquality : constraint_Sample_5 = constraint_Sample_5 := rfl
+theorem generatedEquality : constraint_Sample_5 = generatedTarget := rfl
+theorem aliasedEquality : constraint_Sample_5 = aliasTarget := rfl
+theorem generatedProjectEquality : constraint_Sample_5 = ZiskFv.GeneratedExpected.target := rfl
+theorem appliedEquality : constraint_Sample_5 = appliedTarget 0 := rfl
+theorem extraArgument (_ : Nat) : constraint_Sample_5 = expected := rfl
+theorem extraPromise (h : constraint_Sample_5 = expected) :
+    constraint_Sample_5 = expected := h
+theorem wrongCarrier : constraint_Sample_6 = expectedNat := rfl
+theorem literalOnly : True := by
+  let _unused := constraint_Sample_5
+  trivial
+theorem root : True := trivial
+end ZiskFv.ExposureRegression
+""")
+        cls.compile("TypedImportOnly", """
+import Extraction.LookupWiring
+namespace ZiskFv.ExposureRegression
+def unusedRawAlias := Extraction.LookupWiring.constraint_Sample_5
+theorem root : True := trivial
+end ZiskFv.ExposureRegression
+""")
+        cls.compile("TypedUnsafe", """
+import TypedSource
+namespace ZiskFv.ExposureRegression
+axiom untrustedEquality : Extraction.LookupWiring.constraint_Sample_5 = expected
+theorem unchecked : Extraction.LookupWiring.constraint_Sample_5 = expected :=
+  untrustedEquality
+end ZiskFv.ExposureRegression
+""")
         cls.reports = {name: cls.report(name) for name in (
-            "Baseline", "Mention", "Family", "UncheckedModel", "CheckedModel", "ConsumedProof")}
+            "Baseline", "Mention", "Family", "UncheckedModel", "CheckedModel", "ConsumedProof",
+            "TypedSource", "TypedImportOnly", "TypedUnsafe")}
 
     @classmethod
     def compile(cls, module, source):
@@ -324,6 +377,31 @@ end ZiskFv.ExposureRegression
                    for index in [*range(49, 61), 63]}
         self.assertTrue(members <= reached)
         self.assertTrue(members <= deps.build_checks())
+
+    def test_closed_typed_source_equality_is_build_only_not_a_model_correspondence(self):
+        deps = self.reports["TypedSource"]
+        records = [proof for proof in deps.correspondences
+                   if proof["constraint"].startswith("Extraction.LookupWiring.constraint_")]
+        self.assertEqual({proof["theorem"] for proof in records},
+                         {"ZiskFv.ExposureRegression.checked"})
+        self.assertEqual(exposure.typed_source_cover(deps, deps.build_checks()), {"Sample": {5}})
+        self.assertEqual(exposure.typed_source_cover(deps, self.root("TypedSource")), {})
+        self.assertEqual(exposure.generated_component_cover(deps, set(deps.nodes))["BinaryAdd"],
+                         set())
+
+    def test_imports_and_raw_aliases_without_a_typed_proof_have_no_build_credit(self):
+        deps = self.reports["TypedImportOnly"]
+        self.assertEqual(exposure.typed_source_cover(deps, deps.build_checks()), {})
+
+    def test_typed_source_proof_axiom_is_rejected_from_actual_elaborated_closure(self):
+        deps = self.reports["TypedUnsafe"]
+        with self.assertRaisesRegex(ValueError, "unchecked typed source correspondence"):
+            exposure.typed_source_cover(deps, deps.build_checks())
+
+    def test_actual_mem_typed_source_equations_keep_their_checked_source_indices(self):
+        deps = self.report("ZiskFv.AirsClean.Mem.Stage2.Equations", production=True)
+        self.assertEqual(exposure.typed_source_cover(deps, deps.build_checks()),
+                         {"Mem": set(range(24, 33))})
 
     def test_report_is_deterministic(self):
         again = self.report("Family")

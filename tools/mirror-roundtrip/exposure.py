@@ -279,6 +279,27 @@ def generated_component_cover(deps: Dependencies, reached: set[str],
     return cover
 
 
+def typed_source_cover(deps: Dependencies, reached: set[str]) -> dict[str, set[int]]:
+    """Closed, source-independent typed AST equalities earn build-only fidelity.
+
+    The compiled reporter checks the complete equality shape and target
+    independence. This route does not grant root/model consumption credit.
+    """
+    cover: dict[str, set[int]] = {}
+    for proof in deps.correspondences:
+        match = re.fullmatch(r"Extraction\.LookupWiring\.constraint_([A-Za-z0-9]+)_(\d+)",
+                             proof["constraint"])
+        if match is None:
+            continue
+        if proof["theorem"] not in deps.nodes or proof["model"] not in deps.nodes:
+            raise ValueError(f"missing compiled typed source boundary: {proof}")
+        if not set(proof["axioms"]) <= {"propext", "Classical.choice", "Quot.sound"}:
+            raise ValueError(f"unchecked typed source correspondence: {proof['theorem']}")
+        if proof["theorem"] in reached:
+            cover.setdefault(match[1], set()).add(int(match[2]))
+    return cover
+
+
 def inventory(deps: Dependencies) -> tuple[list[Row], int, set[int]]:
     pilout = pilout_wire.load(ROOT / "build" / "zisk.pilout")
     facts = survey.air_facts(pilout)
@@ -309,6 +330,7 @@ def inventory(deps: Dependencies) -> tuple[list[Row], int, set[int]]:
     mirror_parse.parse_all(lane_map_for)
     reach = load_reachability()
     build_reached = deps.build_checks()
+    build_typed_cover = typed_source_cover(deps, build_reached)
     root_reached = deps.root("ZiskFv.Compliance.root_soundness")
     root_checks = deps.closure(
         name for name in root_reached
@@ -339,6 +361,7 @@ def inventory(deps: Dependencies) -> tuple[list[Row], int, set[int]]:
             if build_link:
                 consumed_any.add((air, index))
             build_checked = (index in build_cover.get(air, ())
+                             or index in build_typed_cover.get(air, ())
                              or direct in build_reached or build_link)
             correspondence = (index in root_cover.get(air, ()) or root_link
                               or direct in root_checks)
