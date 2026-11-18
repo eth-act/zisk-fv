@@ -63,7 +63,7 @@ private theorem registerStepRangeChannel_ne_memAlignRange :
   simp at h_name
 
 /-- The bus-102 interactions of an accepted witness balance, because the channel is one of the
-six the ensemble finishes. -/
+eight the ensemble finishes. -/
 theorem registerStepRange_balanced_of_witness
     {length : Nat} {program : Program length}
     (witness : EnsembleWitness (fullRv64imEnsemble length program).ensemble)
@@ -71,7 +71,9 @@ theorem registerStepRange_balanced_of_witness
     BalancedInteractions (witness.interactionsWith RegisterStepRangeChannel.toRaw) := by
   have h := h_balanced RegisterStepRangeChannel.toRaw (by
     change RegisterStepRangeChannel.toRaw ∈
-      [RegisterStepRangeChannel.toRaw,
+      [ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw,
+        ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw,
+        RegisterStepRangeChannel.toRaw,
         ZiskFv.Channels.MemAlignRanges.MemAlignRangeChannel.toRaw,
         MemBusChannel.toRaw, OpBusChannel.toRaw, MemAlignRomChannel.toRaw,
         SpecifiedRangesSliceChannel.toRaw]
@@ -307,7 +309,7 @@ theorem exists_registerStepRange_provider_of_pull
       providerTable.component ∈ (fullRv64imEnsemble length program).ensemble.allTables :=
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_providerTable
   rcases component_mem_fullRv64im_cases h_componentMem with
-    h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
+    h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
   · exfalso
     have h_nil : providerTable.interactionsWith RegisterStepRangeChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
@@ -342,6 +344,12 @@ theorem exists_registerStepRange_provider_of_pull
       (by intro h_nil; simp [h_nil] at h_providerInteraction)
   · exact absurd (binaryAdd_table_interactionsWith_registerStepRange_nil h)
       (by intro h_nil; simp [h_nil] at h_providerInteraction)
+  · have h_nil := extensionTableSource_interactionsWith_nil_of_name
+      h RegisterStepRangeChannel.toRaw (by decide)
+    simp [h_nil] at h_providerInteraction
+  · have h_nil := binaryTableSource_interactionsWith_nil_of_name
+      h RegisterStepRangeChannel.toRaw (by decide)
+    simp [h_nil] at h_providerInteraction
   · exfalso
     rcases main_registerStepRange_mult_cases h (h_constraints providerTable h_providerTable)
       h_providerInteraction with h_mult | h_mult

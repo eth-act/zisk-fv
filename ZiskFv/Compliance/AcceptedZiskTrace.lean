@@ -33,6 +33,21 @@ The per-AIR *spec* is not an assumed field: it is derived from these two by
 It is the single object the soundness development quantifies over; everything
 downstream (`SailTrace`, the provider-match wrappers, the per-op
 constructions) is built relative to one of these.
+
+The bounded #415 source correction changes this dependent witness domain:
+the `Unit` ensemble now has 17 physical tables (18 `allTables` entries,
+including the verifier), with genuine bus-125 and bus-124 source providers.
+Their seven fixed fields and unrestricted raw multiplicities come from
+`binary_table.pil:335-336` and `binary_extension_table.pil:204-205`; the
+consumer routes are `binary.pil:115-124` and `binary_extension.pil:91-92`.
+The existing fields below are unchanged. In particular no source-membership,
+row-range, replay-selection, or Main-height premise is added.
+
+This is a corrected accepted-model domain, not definitional equality with
+the former 16-entry domain or identity of upstream native commitments.
+`Source415DomainComparison` separately preserves old execution-table prefixes
+and chosen Mem/replay fields while constructing the two new source histograms;
+it does not assert equality of discarded source commitments or whole #415 closure.
 -/
 
 namespace ZiskFv.Compliance

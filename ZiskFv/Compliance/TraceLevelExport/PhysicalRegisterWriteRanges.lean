@@ -223,17 +223,16 @@ theorem real_stepRegWrite_entry_range
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_logic_provided trace i h_ieo (Or.inl h_op)
     have h_row := (hspec pr hpr)
-    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
     have h_spec_facts := h_row.2
-    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
     have h_op_eq := hmatch.2.1
     simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_pins := ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
-      _ h_spec_facts 14 (by norm_num) h_core h_op_eq.symm
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts 14 (by norm_num) h_core h_op_eq.symm
     have h_carry := ZiskFv.EquivCore.Bridge.Binary.carry_7_zero_AND_row_of_static_facts
-      _ h_core h_wf (by rw [show ZiskFv.Airs.Tables.BinaryTable.OP_AND = 14 from rfl]; exact h_pins.2.2)
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_core h_wf (by rw [show ZiskFv.Airs.Tables.BinaryTable.OP_AND = 14 from rfl]; exact h_pins.2.2)
     exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
   | or c =>
     rw [producerEntry] at he h_ptr ⊢
@@ -246,17 +245,16 @@ theorem real_stepRegWrite_entry_range
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_logic_provided trace i h_ieo (Or.inr (Or.inl h_op))
     have h_row := (hspec pr hpr)
-    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
     have h_spec_facts := h_row.2
-    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
     have h_op_eq := hmatch.2.1
     simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_pins := ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
-      _ h_spec_facts 15 (by norm_num) h_core h_op_eq.symm
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts 15 (by norm_num) h_core h_op_eq.symm
     have h_carry := ZiskFv.EquivCore.Bridge.Binary.carry_7_zero_OR_row_of_static_facts
-      _ h_core h_wf (by rw [show ZiskFv.Airs.Tables.BinaryTable.OP_OR = 15 from rfl]; exact h_pins.2.2)
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_core h_wf (by rw [show ZiskFv.Airs.Tables.BinaryTable.OP_OR = 15 from rfl]; exact h_pins.2.2)
     exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
   | xor c =>
     rw [producerEntry] at he h_ptr ⊢
@@ -269,17 +267,16 @@ theorem real_stepRegWrite_entry_range
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_logic_provided trace i h_ieo (Or.inr (Or.inr h_op))
     have h_row := (hspec pr hpr)
-    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
     have h_spec_facts := h_row.2
-    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
     have h_op_eq := hmatch.2.1
     simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_pins := mode_pins_of_emit_op_eq_16_of_static_spec
-      _ h_spec_facts h_core h_op_eq.symm
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts h_core h_op_eq.symm
     have h_carry := ZiskFv.EquivCore.Bridge.Binary.carry_7_zero_XOR_row_of_static_facts
-      _ h_core h_wf (by rw [show ZiskFv.Airs.Tables.BinaryTable.OP_XOR = 16 from rfl]; exact h_pins.2.2)
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_core h_wf (by rw [show ZiskFv.Airs.Tables.BinaryTable.OP_XOR = 16 from rfl]; exact h_pins.2.2)
     exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
   | andi c =>
     rw [producerEntry] at he h_ptr ⊢
@@ -292,17 +289,16 @@ theorem real_stepRegWrite_entry_range
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_logic_provided trace i h_ieo (Or.inl h_op)
     have h_row := (hspec pr hpr)
-    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
     have h_spec_facts := h_row.2
-    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
     have h_op_eq := hmatch.2.1
     simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_pins := ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
-      _ h_spec_facts 14 (by norm_num) h_core h_op_eq.symm
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts 14 (by norm_num) h_core h_op_eq.symm
     have h_carry := ZiskFv.EquivCore.Bridge.Binary.carry_7_zero_AND_row_of_static_facts
-      _ h_core h_wf (by rw [show ZiskFv.Airs.Tables.BinaryTable.OP_AND = 14 from rfl]; exact h_pins.2.2)
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_core h_wf (by rw [show ZiskFv.Airs.Tables.BinaryTable.OP_AND = 14 from rfl]; exact h_pins.2.2)
     exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
   | ori c =>
     rw [producerEntry] at he h_ptr ⊢
@@ -315,17 +311,16 @@ theorem real_stepRegWrite_entry_range
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_logic_provided trace i h_ieo (Or.inr (Or.inl h_op))
     have h_row := (hspec pr hpr)
-    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
     have h_spec_facts := h_row.2
-    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
     have h_op_eq := hmatch.2.1
     simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_pins := ZiskFv.EquivCore.Bridge.Binary.logic_row_mode_pins_of_emit_op_lt_16_of_static_spec
-      _ h_spec_facts 15 (by norm_num) h_core h_op_eq.symm
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts 15 (by norm_num) h_core h_op_eq.symm
     have h_carry := ZiskFv.EquivCore.Bridge.Binary.carry_7_zero_OR_row_of_static_facts
-      _ h_core h_wf (by rw [show ZiskFv.Airs.Tables.BinaryTable.OP_OR = 15 from rfl]; exact h_pins.2.2)
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_core h_wf (by rw [show ZiskFv.Airs.Tables.BinaryTable.OP_OR = 15 from rfl]; exact h_pins.2.2)
     exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
   | xori c =>
     rw [producerEntry] at he h_ptr ⊢
@@ -338,17 +333,16 @@ theorem real_stepRegWrite_entry_range
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_logic_provided trace i h_ieo (Or.inr (Or.inr h_op))
     have h_row := (hspec pr hpr)
-    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
     have h_spec_facts := h_row.2
-    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
     have h_op_eq := hmatch.2.1
     simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     have h_pins := mode_pins_of_emit_op_eq_16_of_static_spec
-      _ h_spec_facts h_core h_op_eq.symm
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts h_core h_op_eq.symm
     have h_carry := ZiskFv.EquivCore.Bridge.Binary.carry_7_zero_XOR_row_of_static_facts
-      _ h_core h_wf (by rw [show ZiskFv.Airs.Tables.BinaryTable.OP_XOR = 16 from rfl]; exact h_pins.2.2)
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_core h_wf (by rw [show ZiskFv.Airs.Tables.BinaryTable.OP_XOR = 16 from rfl]; exact h_pins.2.2)
     exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
   | sub c =>
     rw [producerEntry] at he h_ptr ⊢
@@ -361,14 +355,13 @@ theorem real_stepRegWrite_entry_range
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_sub_provided trace i h_ieo h_op
     have h_row := (hspec pr hpr)
-    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
     have h_spec_facts := h_row.2
-    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
     have h_op_eq := hmatch.2.1
     simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
-    have h_carry := binary_static_add_sub_entry_range _ h_spec_facts h_core h_wf
+    have h_carry := binary_static_add_sub_entry_range (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts h_core h_wf
       11 (by norm_num) h_op_eq.symm (Or.inr rfl)
     exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
   | add c =>
@@ -383,14 +376,13 @@ theorem real_stepRegWrite_entry_range
     rcases h_disj with ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ |
         ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩
     · have h_row := (hspec pr hpr)
-      rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
       have h_spec_facts := h_row.2
-      have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-      have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+      have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+      have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
       have h_op_eq := hmatch.2.1
       simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
       rw [h_op] at h_op_eq
-      have h_carry := binary_static_add_sub_entry_range _ h_spec_facts h_core h_wf
+      have h_carry := binary_static_add_sub_entry_range (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts h_core h_wf
         10 (by norm_num) h_op_eq.symm (Or.inl rfl)
       exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
     · exact binaryAdd_entry_range i h_sp hpt hpr hcomp hspec hmatch
@@ -406,14 +398,13 @@ theorem real_stepRegWrite_entry_range
     rcases h_disj with ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ |
         ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩
     · have h_row := (hspec pr hpr)
-      rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
       have h_spec_facts := h_row.2
-      have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-      have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+      have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+      have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
       have h_op_eq := hmatch.2.1
       simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
       rw [h_op] at h_op_eq
-      have h_carry := binary_static_add_sub_entry_range _ h_spec_facts h_core h_wf
+      have h_carry := binary_static_add_sub_entry_range (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts h_core h_wf
         10 (by norm_num) h_op_eq.symm (Or.inl rfl)
       exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
     · exact binaryAdd_entry_range i h_sp hpt hpr hcomp hspec hmatch
@@ -428,17 +419,16 @@ theorem real_stepRegWrite_entry_range
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_compare_provided trace i h_ieo (Or.inl h_op)
     have h_row := (hspec pr hpr)
-    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
     have h_spec_facts := h_row.2
-    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
     have h_op_eq := hmatch.2.1
     simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     exact entry_range_of_provider_match i h_sp hmatch
-      (binary_static_compare_c_lo_lt _ h_spec_facts h_core h_wf 7 (by norm_num) h_op_eq.symm
+      (binary_static_compare_c_lo_lt (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts h_core h_wf 7 (by norm_num) h_op_eq.symm
         (fun h => ZiskFv.EquivCore.Bridge.Binary.c_byte_zero_of_chain_wf_LT h))
-      (binary_static_opBus_c_hi_lt _ h_spec_facts)
+      (binary_static_opBus_c_hi_lt (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts)
   | sltu c =>
     rw [producerEntry] at he h_ptr ⊢
     have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
@@ -450,17 +440,16 @@ theorem real_stepRegWrite_entry_range
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_compare_provided trace i h_ieo (Or.inr h_op)
     have h_row := (hspec pr hpr)
-    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
     have h_spec_facts := h_row.2
-    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
     have h_op_eq := hmatch.2.1
     simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     exact entry_range_of_provider_match i h_sp hmatch
-      (binary_static_compare_c_lo_lt _ h_spec_facts h_core h_wf 6 (by norm_num) h_op_eq.symm
+      (binary_static_compare_c_lo_lt (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts h_core h_wf 6 (by norm_num) h_op_eq.symm
         (fun h => ZiskFv.EquivCore.Bridge.Binary.c_byte_zero_of_chain_wf_LTU h))
-      (binary_static_opBus_c_hi_lt _ h_spec_facts)
+      (binary_static_opBus_c_hi_lt (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts)
   | slti c =>
     rw [producerEntry] at he h_ptr ⊢
     have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
@@ -472,17 +461,16 @@ theorem real_stepRegWrite_entry_range
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_compare_provided trace i h_ieo (Or.inl h_op)
     have h_row := (hspec pr hpr)
-    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
     have h_spec_facts := h_row.2
-    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
     have h_op_eq := hmatch.2.1
     simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     exact entry_range_of_provider_match i h_sp hmatch
-      (binary_static_compare_c_lo_lt _ h_spec_facts h_core h_wf 7 (by norm_num) h_op_eq.symm
+      (binary_static_compare_c_lo_lt (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts h_core h_wf 7 (by norm_num) h_op_eq.symm
         (fun h => ZiskFv.EquivCore.Bridge.Binary.c_byte_zero_of_chain_wf_LT h))
-      (binary_static_opBus_c_hi_lt _ h_spec_facts)
+      (binary_static_opBus_c_hi_lt (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts)
   | sltiu c =>
     rw [producerEntry] at he h_ptr ⊢
     have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
@@ -494,17 +482,16 @@ theorem real_stepRegWrite_entry_range
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_compare_provided trace i h_ieo (Or.inr h_op)
     have h_row := (hspec pr hpr)
-    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
     have h_spec_facts := h_row.2
-    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
     have h_op_eq := hmatch.2.1
     simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
     exact entry_range_of_provider_match i h_sp hmatch
-      (binary_static_compare_c_lo_lt _ h_spec_facts h_core h_wf 6 (by norm_num) h_op_eq.symm
+      (binary_static_compare_c_lo_lt (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts h_core h_wf 6 (by norm_num) h_op_eq.symm
         (fun h => ZiskFv.EquivCore.Bridge.Binary.c_byte_zero_of_chain_wf_LTU h))
-      (binary_static_opBus_c_hi_lt _ h_spec_facts)
+      (binary_static_opBus_c_hi_lt (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts)
   | addw c =>
     rw [producerEntry] at he h_ptr ⊢
     have h_sp : (mainTableRowAtOrZero trace.program trace.mainTable i.val).core.store_pc = 0 := by
@@ -516,14 +503,13 @@ theorem real_stepRegWrite_entry_range
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_w_provided trace i h_ieo (Or.inl h_op)
     have h_row := (hspec pr hpr)
-    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
     have h_spec_facts := h_row.2
-    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
     have h_op_eq := hmatch.2.1
     simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
-    have h_carry := binary_static_w_mode_carry_7_zero _ h_spec_facts h_core h_wf
+    have h_carry := binary_static_w_mode_carry_7_zero (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts h_core h_wf
       26 h_op_eq.symm (Or.inl rfl)
     exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
   | subw c =>
@@ -537,14 +523,13 @@ theorem real_stepRegWrite_entry_range
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_w_provided trace i h_ieo (Or.inr h_op)
     have h_row := (hspec pr hpr)
-    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
     have h_spec_facts := h_row.2
-    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
     have h_op_eq := hmatch.2.1
     simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
-    have h_carry := binary_static_w_mode_carry_7_zero _ h_spec_facts h_core h_wf
+    have h_carry := binary_static_w_mode_carry_7_zero (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts h_core h_wf
       27 h_op_eq.symm (Or.inr rfl)
     exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
   | addiw c =>
@@ -558,14 +543,13 @@ theorem real_stepRegWrite_entry_range
     obtain ⟨pt, hpt, pr, hpr, hcomp, hspec, hmatch⟩ :=
       main_request_w_provided trace i h_ieo (Or.inl h_op)
     have h_row := (hspec pr hpr)
-    rw [hcomp, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at h_row
     have h_spec_facts := h_row.2
-    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec _ h_row.1
-    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts _ h_spec_facts
+    have h_core := ZiskFv.AirsClean.Binary.core_every_row_of_spec (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_row.1
+    have h_wf := ZiskFv.AirsClean.Binary.static_table_wf_facts_of_spec_facts (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts
     have h_op_eq := hmatch.2.1
     simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
     rw [h_op] at h_op_eq
-    have h_carry := binary_static_w_mode_carry_7_zero _ h_spec_facts h_core h_wf
+    have h_carry := binary_static_w_mode_carry_7_zero (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput (pt.environment pr)) h_spec_facts h_core h_wf
       26 h_op_eq.symm (Or.inl rfl)
     exact binary_static_entry_range i h_sp hpt hpr hcomp hspec hmatch h_carry
   | mulw c =>

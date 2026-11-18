@@ -60,7 +60,9 @@ theorem memAlignRange_balanced_of_witness
     BalancedInteractions (witness.interactionsWith MemAlignRangeChannel.toRaw) := by
   have h := h_balanced MemAlignRangeChannel.toRaw (by
     change MemAlignRangeChannel.toRaw ∈
-      [ ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
+      [ ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel.toRaw
+      , ZiskFv.Channels.BinaryTable.BinaryTableChannel.toRaw
+      , ZiskFv.Channels.SpecifiedRanges.RegisterStepRangeChannel.toRaw
       , MemAlignRangeChannel.toRaw
       , MemBusChannel.toRaw
       , OpBusChannel.toRaw
@@ -154,7 +156,8 @@ theorem exists_memAlignRangeSlice_provider_of_memAlign_interaction
     EnsembleWitness.mem_allTables_component_of_mem_allTables h_providerTable
   rcases component_mem_fullRv64im_cases h_component_mem with
     h_verifier | h_boundary | h_alignRead | h_alignByte | h_align | h_range | h_rom | h_mem |
-      h_ranges | h_regRange | h_div | h_mul | h_extension | h_binary | h_binaryAdd | h_main
+      h_ranges | h_regRange | h_div | h_mul | h_extension | h_binary | h_binaryAdd |
+      h_extensionSource | h_binarySource | h_main
   · have h_nil : providerTable.interactionsWith MemAlignRangeChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
       rw [h_verifier]
@@ -238,16 +241,32 @@ theorem exists_memAlignRangeSlice_provider_of_memAlign_interaction
   · have h_nil : providerTable.interactionsWith MemAlignRangeChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
       rw [h_extension]
-      change MemAlignRangeChannel.toRaw ∉ [OpBusChannel.toRaw]
-      simp only [List.mem_singleton]
-      exact memAlignRangeChannel_ne_opBus
+      intro h
+      have h_name := List.mem_map_of_mem
+        (f := fun channel : RawChannel FGL => channel.name) h
+      simp [circuit_norm, ZiskFv.AirsClean.Binary.tableConsumerComponent,
+        ZiskFv.AirsClean.Binary.tableConsumerCircuit,
+        ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent,
+        ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerCircuit,
+        ZiskFv.AirsClean.BinaryExtension.tableConsumerCircuit,
+        ZiskFv.Channels.BinaryTable.BinaryTableChannel,
+        ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel,
+        OpBusChannel, MemAlignRangeChannel, Channel.toRaw] at h_name
     simp [h_nil] at h_providerInteraction
   · have h_nil : providerTable.interactionsWith MemAlignRangeChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
       rw [h_binary]
-      change MemAlignRangeChannel.toRaw ∉ [OpBusChannel.toRaw]
-      simp only [List.mem_singleton]
-      exact memAlignRangeChannel_ne_opBus
+      intro h
+      have h_name := List.mem_map_of_mem
+        (f := fun channel : RawChannel FGL => channel.name) h
+      simp [circuit_norm, ZiskFv.AirsClean.Binary.tableConsumerComponent,
+        ZiskFv.AirsClean.Binary.tableConsumerCircuit,
+        ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerComponent,
+        ZiskFv.AirsClean.BinaryExtension.shiftTableConsumerCircuit,
+        ZiskFv.AirsClean.BinaryExtension.tableConsumerCircuit,
+        ZiskFv.Channels.BinaryTable.BinaryTableChannel,
+        ZiskFv.Channels.BinaryExtensionTable.BinaryExtensionTableChannel,
+        OpBusChannel, MemAlignRangeChannel, Channel.toRaw] at h_name
     simp [h_nil] at h_providerInteraction
   · have h_nil : providerTable.interactionsWith MemAlignRangeChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem
@@ -255,6 +274,12 @@ theorem exists_memAlignRangeSlice_provider_of_memAlign_interaction
       change MemAlignRangeChannel.toRaw ∉ [OpBusChannel.toRaw]
       simp only [List.mem_singleton]
       exact memAlignRangeChannel_ne_opBus
+    simp [h_nil] at h_providerInteraction
+  · have h_nil := extensionTableSource_interactionsWith_nil_of_name
+      h_extensionSource MemAlignRangeChannel.toRaw (by decide)
+    simp [h_nil] at h_providerInteraction
+  · have h_nil := binaryTableSource_interactionsWith_nil_of_name
+      h_binarySource MemAlignRangeChannel.toRaw (by decide)
     simp [h_nil] at h_providerInteraction
   · have h_nil : providerTable.interactionsWith MemAlignRangeChannel.toRaw = [] := by
       apply Table.interactionsWith_nil_of_channel_not_mem

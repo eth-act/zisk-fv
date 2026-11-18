@@ -304,7 +304,7 @@ lemma entry_range_of_provider_match
   exact cMemMessage_chunks_of_store_pc_zero _ h_sp
     (hc0_eq ▸ h_clo) (hc1_eq ▸ h_chi)
 
-/-- Bound the actual Main C message using exact static BinaryTable membership and its proved final carry. -/
+/-- Bound Main's C message using full Binary facts derived from its finished source channel. -/
 lemma binary_static_entry_range
     {n : ℕ} {trace : AcceptedZiskTrace n}
     (i : Fin n)
@@ -313,30 +313,35 @@ lemma binary_static_entry_range
     (_ : providerTable ∈ trace.witness.allTables)
     (h_pr : providerRow ∈ providerTable.table)
     (h_component : providerTable.component =
-      ZiskFv.AirsClean.Binary.staticLookupComponent)
-    (h_spec : providerTable.Spec)
+      ZiskFv.AirsClean.Binary.tableConsumerComponent)
+    (h_spec : ∀ row ∈ providerTable.table,
+      ZiskFv.AirsClean.Binary.Spec
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
+          (providerTable.environment row)) ∧
+      ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts
+        (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
+          (providerTable.environment row)))
     (h_match : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main
         (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (ZiskFv.AirsClean.Binary.opBusMessage
-          (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+          (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_carry :
-      (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
         (providerTable.environment providerRow)).chain.carry_7 = 0) :
     ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
       ((cMemMessage
         (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) := by
-  have h_row_spec : ZiskFv.AirsClean.Binary.StaticBinaryTableSpecFacts
-      (ZiskFv.AirsClean.Binary.staticLookupComponent.rowInput
-        (providerTable.environment providerRow)) := by
-    have := h_spec providerRow h_pr
-    rw [h_component, ZiskFv.AirsClean.Binary.staticLookupComponent_spec] at this
-    exact this.2
+  have h_row_spec := (h_spec providerRow h_pr).2
   exact entry_range_of_provider_match i h_sp h_match
-    (binary_static_opBus_c_lo_lt _ h_row_spec h_carry)
-    (binary_static_opBus_c_hi_lt _ h_row_spec)
+    (binary_static_opBus_c_lo_lt
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
+        (providerTable.environment providerRow)) h_row_spec h_carry)
+    (binary_static_opBus_c_hi_lt
+      (ZiskFv.AirsClean.Binary.tableConsumerComponent.rowInput
+        (providerTable.environment providerRow)) h_row_spec)
 
 private lemma binaryAdd_opBus_c_lo_lt (row : ZiskFv.AirsClean.BinaryAdd.BinaryAddRow FGL)
     (h : ZiskFv.AirsClean.BinaryAdd.ComponentSpecFacts row) :
@@ -549,9 +554,9 @@ private lemma binExt_shift_opBus_c_lt
         v 0 (by rw [h_v_op, h]; decide) h_bytes h_wfs h_a_range)
 
 open ZiskFv.AirsClean.BinaryExtension
-  (opBusMessage shiftStaticLookupComponent shiftStaticLookupComponent_spec
+  (opBusMessage shiftTableConsumerComponent Spec
    StaticBinaryExtensionTableSpecFacts ShiftB0RangeSpecFact) in
-/-- Bound the actual Main C message from the matching shift provider's exact static byte lookups. -/
+/-- Bound Main's C message from the actual shift consumer's full source-derived row facts. -/
 lemma binExt_shift_entry_range
     {n : ℕ} {trace : AcceptedZiskTrace n}
     (i : Fin n)
@@ -559,14 +564,19 @@ lemma binExt_shift_entry_range
     {providerTable providerRow}
     (_ : providerTable ∈ trace.witness.allTables)
     (hpr : providerRow ∈ providerTable.table)
-    (hcomp : providerTable.component = shiftStaticLookupComponent)
-    (hspec : providerTable.Spec)
+    (hcomp : providerTable.component = shiftTableConsumerComponent)
+    (hspec : ∀ row ∈ providerTable.table,
+      Spec (shiftTableConsumerComponent.rowInput (providerTable.environment row)) ∧
+      StaticBinaryExtensionTableSpecFacts
+        (shiftTableConsumerComponent.rowInput (providerTable.environment row)) ∧
+      ShiftB0RangeSpecFact
+        (shiftTableConsumerComponent.rowInput (providerTable.environment row)))
     (hmatch : ZiskFv.Airs.OperationBus.matches_entry
       (ZiskFv.Airs.OperationBus.opBus_row_Main
         (mainOfTable trace.program trace.mainTable) i.val)
       (ZiskFv.Channels.OperationBus.OpBusMessage.toEntry
         (opBusMessage
-          (shiftStaticLookupComponent.rowInput
+          (shiftTableConsumerComponent.rowInput
             (providerTable.environment providerRow))) 1))
     (h_main_op :
       (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SLL
@@ -577,9 +587,8 @@ lemma binExt_shift_entry_range
       ∨ (mainOfTable trace.program trace.mainTable).op i.val = ZiskFv.Trusted.OP_SRA_W) :
     ZiskFv.Airs.MemoryBus.memory_entry_chunks_in_range
       ((cMemMessage (mainTableRowAtOrZero trace.program trace.mainTable i.val)).toEntry 1 1) := by
-  set theRow := shiftStaticLookupComponent.rowInput (providerTable.environment providerRow)
+  set theRow := shiftTableConsumerComponent.rowInput (providerTable.environment providerRow)
   have h_row_spec := hspec providerRow hpr
-  rw [hcomp, shiftStaticLookupComponent_spec] at h_row_spec
   have h_op_eq := hmatch.2.1
   simp only [ZiskFv.Airs.OperationBus.opBus_row_Main] at h_op_eq
   rw [h_op_eq] at h_main_op
