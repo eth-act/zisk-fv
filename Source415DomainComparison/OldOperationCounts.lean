@@ -124,7 +124,7 @@ private theorem old_prefix_silent (old : OldWitness p program) (index : Fin 15)
       decide
     · change OpBusChannel.toRaw.name ∉ MemAlignRomSlice.component.circuit.channels.map (·.name)
       decide
-    · change OpBusChannel.toRaw.name ∉ Mem.componentWithDualMemBus.circuit.channels.map (·.name)
+    · change OpBusChannel.toRaw.name ∉ Mem.Legacy457.componentWithDualMemBus.circuit.channels.map (·.name)
       decide
     · change OpBusChannel.toRaw.name ∉ RegisterStepRangeSlice.component.circuit.channels.map (·.name)
       decide

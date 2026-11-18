@@ -66,7 +66,7 @@ theorem projected_old_channel_stream (new : NewWitness p program)
 theorem projected_balanced (new : NewWitness p program) (hb : new.BalancedChannels) :
     (projectedWitness new).BalancedChannels := by
   intro channel hc
-  have hn : channel ∈ (fullRv64imEnsemble p program).ensemble.channels := by
+  have hn : channel ∈ (Legacy457.fullRv64imEnsemble p program).ensemble.channels := by
     rw [current_finished_channels]
     exact List.mem_append_right _ hc
   have h := hb channel hn

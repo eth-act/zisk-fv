@@ -28,11 +28,11 @@ variable {n : Nat}
 no replacement replay rows or newly selected table are introduced. -/
  theorem completed_selected_replay_table (trace : Legacy45.AcceptedZiskTrace n)
     (raw : Witness FGL)
-    (guard : MutableMemPresent (completedWitness trace.witness raw)) :
+    (guard : Legacy457.MutableMemPresent (completedWitness trace.witness raw)) :
     let oldGuard := (completed_mutableMemPresent trace.witness raw).mpr guard
     let table := (trace.mem_replay_table oldGuard).1
     table ∈ (completedWitness trace.witness raw).allTables ∧
-      table.component = Mem.componentWithDualMemBus ∧ 0 < table.table.length := by
+      table.component = Mem.Legacy457.componentWithDualMemBus ∧ 0 < table.table.length := by
   dsimp only
   have selected := (trace.mem_replay_table
     ((completed_mutableMemPresent trace.witness raw).mpr guard)).2
@@ -43,10 +43,10 @@ no replacement replay rows or newly selected table are introduced. -/
 its originally selected member. Proof irrelevance changes no physical Table. -/
  theorem completed_replay_source_covers (trace : Legacy45.AcceptedZiskTrace n)
     (raw : Witness FGL)
-    (guard : MutableMemPresent (completedWitness trace.witness raw))
+    (guard : Legacy457.MutableMemPresent (completedWitness trace.witness raw))
     (table : Table FGL)
     (member : table ∈ (completedWitness trace.witness raw).allTables)
-    (component : table.component = Mem.componentWithDualMemBus) :
+    (component : table.component = Mem.Legacy457.componentWithDualMemBus) :
     table = (trace.mem_replay_table
       ((completed_mutableMemPresent trace.witness raw).mpr guard)).1 :=
   trace.mem_replay_source_covers

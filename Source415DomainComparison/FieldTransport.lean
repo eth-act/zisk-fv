@@ -1,14 +1,15 @@
-import ZiskFv.Compliance.AcceptedZiskTrace
+import Source458DomainComparison.Accepted18
 import Source415DomainComparison.Accepted16
 
 /-!
-# Conditional transport of the actual accepted fields
+# Conditional transport of the historical accepted fields
 
-These are field-assembly lemmas, not accepted-domain equivalence. The concrete
-whole-witness splice must prove the two component-filtered membership equivalences
-and all target verifier predicates. In particular `BalancedChannels` is required
-in full, including interaction-list length bounds, not merely zero balance.
-No public Accepted/Root declaration or mutable-memory guard is changed here.
+Both endpoints here are frozen: historical45 old16 and historical457 old18.
+The retained `toCurrent` name means the latter historical endpoint, not the
+corrected production domain. Production erasure is the distinct Source458
+MemDomainComparison transport. These assembly lemmas require the actual full
+balance predicate, including the original interaction-list length bound.
+No public Accepted/Root declaration or mutable-memory guard changes here.
 -/
 
 namespace ZiskFv.Compliance.DomainComparison
@@ -21,16 +22,16 @@ variable {p : Nat} {program : ZiskInstructionRom.Program p}
 variable (old : Air.Flat.EnsembleWitness
   (FullEnsemble.Legacy45.fullRv64imEnsemble p program).ensemble)
 variable (new : Air.Flat.EnsembleWitness
-  (FullEnsemble.fullRv64imEnsemble p program).ensemble)
+  (FullEnsemble.Legacy457.fullRv64imEnsemble p program).ensemble)
 /- Exact table identity, not equality of decoded or replay rows. This condition
 must be derived from the concrete splice; it quantifies over empty tables too. -/
 variable (mem : ∀ table : Air.Flat.Table FGL,
-  table.component = Mem.componentWithDualMemBus →
+  table.component = Mem.Legacy457.componentWithDualMemBus →
     (table ∈ old.allTables ↔ table ∈ new.allTables))
 
 include mem in
  theorem mutableMemPresent_iff :
-    Legacy45.MutableMemPresent old ↔ MutableMemPresent new := by
+    Legacy45.MutableMemPresent old ↔ Legacy457.MutableMemPresent new := by
   constructor
   · rintro ⟨table, ht, hc, hn⟩
     exact ⟨table, (mem table hc).mp ht, hc, hn⟩
@@ -64,9 +65,9 @@ obligations remain explicit: this does not assert that arbitrary old accepted
 witnesses admit a balanced source18 completion. -/
 def toCurrent {n : Nat} (trace : Legacy45.AcceptedZiskTrace n)
     (new : Air.Flat.EnsembleWitness
-      (FullEnsemble.fullRv64imEnsemble trace.programLength trace.program).ensemble)
+      (FullEnsemble.Legacy457.fullRv64imEnsemble trace.programLength trace.program).ensemble)
     (mem : ∀ table : Air.Flat.Table FGL,
-      table.component = Mem.componentWithDualMemBus →
+      table.component = Mem.Legacy457.componentWithDualMemBus →
         (table ∈ trace.witness.allTables ↔ table ∈ new.allTables))
     (main : ∀ table : Air.Flat.Table FGL,
       table.component = Main.componentWithRomMemAndOpBus trace.programLength trace.program →
@@ -74,7 +75,7 @@ def toCurrent {n : Nat} (trace : Legacy45.AcceptedZiskTrace n)
     (constraints : new.Constraints)
     (transitions : new.TransitionConstraints)
     (cyclic : new.CyclicSuccessorTransitionConstraints)
-    (balance : new.BalancedChannels) : AcceptedZiskTrace n where
+    (balance : new.BalancedChannels) : Legacy457.AcceptedZiskTrace n where
   programLength := trace.programLength
   program := trace.program
   witness := new
@@ -96,11 +97,11 @@ def toCurrent {n : Nat} (trace : Legacy45.AcceptedZiskTrace n)
 
 /-- Reverse assembly has the same exact membership boundary and requires the
 finished old verifier predicates, rather than silently inferring balance. -/
-def toLegacy {n : Nat} (trace : AcceptedZiskTrace n)
+def toLegacy {n : Nat} (trace : Legacy457.AcceptedZiskTrace n)
     (old : Air.Flat.EnsembleWitness
       (FullEnsemble.Legacy45.fullRv64imEnsemble trace.programLength trace.program).ensemble)
     (mem : ∀ table : Air.Flat.Table FGL,
-      table.component = Mem.componentWithDualMemBus →
+      table.component = Mem.Legacy457.componentWithDualMemBus →
         (table ∈ old.allTables ↔ table ∈ trace.witness.allTables))
     (main : ∀ table : Air.Flat.Table FGL,
       table.component = Main.componentWithRomMemAndOpBus trace.programLength trace.program →
@@ -132,9 +133,9 @@ section ForwardSelection
 
 variable {n : Nat} (trace : Legacy45.AcceptedZiskTrace n)
 variable (new : Air.Flat.EnsembleWitness
-  (FullEnsemble.fullRv64imEnsemble trace.programLength trace.program).ensemble)
+  (FullEnsemble.Legacy457.fullRv64imEnsemble trace.programLength trace.program).ensemble)
 variable (mem : ∀ table : Air.Flat.Table FGL,
-  table.component = Mem.componentWithDualMemBus →
+  table.component = Mem.Legacy457.componentWithDualMemBus →
     (table ∈ trace.witness.allTables ↔ table ∈ new.allTables))
 variable (main : ∀ table : Air.Flat.Table FGL,
   table.component = Main.componentWithRomMemAndOpBus trace.programLength trace.program →
@@ -145,13 +146,13 @@ variable (cyclic : new.CyclicSuccessorTransitionConstraints) (balance : new.Bala
 /-- Arbitrary proofs of the objective guard select the exact same table;
 Lean proof irrelevance identifies the guard arguments. -/
 theorem toCurrent_memReplayTable
-    (hn : MutableMemPresent new) (ho : Legacy45.MutableMemPresent trace.witness) :
+    (hn : Legacy457.MutableMemPresent new) (ho : Legacy45.MutableMemPresent trace.witness) :
     (toCurrent trace new mem main constraints transitions cyclic balance).memReplayTable hn =
       trace.memReplayTable ho := by
   rfl
 
 theorem toCurrent_memReplayRows
-    (hn : MutableMemPresent new) (ho : Legacy45.MutableMemPresent trace.witness) :
+    (hn : Legacy457.MutableMemPresent new) (ho : Legacy45.MutableMemPresent trace.witness) :
     (toCurrent trace new mem main constraints transitions cyclic balance).memReplayRows hn =
       trace.memReplayRows ho := by
   rfl
@@ -160,11 +161,11 @@ end ForwardSelection
 
 section ReverseSelection
 
-variable {n : Nat} (trace : AcceptedZiskTrace n)
+variable {n : Nat} (trace : Legacy457.AcceptedZiskTrace n)
 variable (old : Air.Flat.EnsembleWitness
   (FullEnsemble.Legacy45.fullRv64imEnsemble trace.programLength trace.program).ensemble)
 variable (mem : ∀ table : Air.Flat.Table FGL,
-  table.component = Mem.componentWithDualMemBus →
+  table.component = Mem.Legacy457.componentWithDualMemBus →
     (table ∈ old.allTables ↔ table ∈ trace.witness.allTables))
 variable (main : ∀ table : Air.Flat.Table FGL,
   table.component = Main.componentWithRomMemAndOpBus trace.programLength trace.program →
@@ -173,13 +174,13 @@ variable (constraints : old.Constraints) (transitions : old.TransitionConstraint
 variable (cyclic : old.CyclicSuccessorTransitionConstraints) (balance : old.BalancedChannels)
 
 theorem toLegacy_memReplayTable
-    (ho : Legacy45.MutableMemPresent old) (hn : MutableMemPresent trace.witness) :
+    (ho : Legacy45.MutableMemPresent old) (hn : Legacy457.MutableMemPresent trace.witness) :
     (toLegacy trace old mem main constraints transitions cyclic balance).memReplayTable ho =
       trace.memReplayTable hn := by
   rfl
 
 theorem toLegacy_memReplayRows
-    (ho : Legacy45.MutableMemPresent old) (hn : MutableMemPresent trace.witness) :
+    (ho : Legacy45.MutableMemPresent old) (hn : Legacy457.MutableMemPresent trace.witness) :
     (toLegacy trace old mem main constraints transitions cyclic balance).memReplayRows ho =
       trace.memReplayRows hn := by
   rfl

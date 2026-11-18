@@ -35,11 +35,11 @@ theorem old_finished_channels :
     SoundEnsemble.addTable_channels, SoundEnsemble.empty_channels, oldFinishedChannels]
 
 theorem current_finished_channels :
-    (fullRv64imEnsemble p program).ensemble.channels =
+    (Legacy457.fullRv64imEnsemble p program).ensemble.channels =
       [BinaryExtensionTableChannel.toRaw, BinaryTableChannel.toRaw] ++
         (Legacy45.fullRv64imEnsemble p program).ensemble.channels := by
   rw [old_finished_channels]
-  simp [fullRv64imEnsemble, fullRv64imSoundEnsemble,
+  simp [Legacy457.fullRv64imEnsemble, Legacy457.fullRv64imSoundEnsemble,
     SoundEnsemble.toFormal, SoundEnsemble.addFinishedChannel_channels,
     SoundEnsemble.addTable_channels, SoundEnsemble.empty_channels, oldFinishedChannels]
 

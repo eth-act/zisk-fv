@@ -1,3 +1,4 @@
+import Source458DomainComparison.LegacyMem
 import ZiskFv.AirsClean.Main.Circuit
 import ZiskFv.AirsClean.BinaryAdd.Circuit
 import ZiskFv.AirsClean.Binary.Circuit
@@ -150,10 +151,10 @@ def fullRv64imSoundEnsemble (length : ℕ) (program : Program length) :
         (by
           intro channel h
           simp [circuit_norm] at h)
-    |>.addTable ZiskFv.AirsClean.Mem.componentWithDualMemBus
-        (by simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
+    |>.addTable ZiskFv.AirsClean.Mem.Legacy457.componentWithDualMemBus
+        (by simp [circuit_norm, ZiskFv.AirsClean.Mem.Legacy457.componentWithDualMemBus,
           ZiskFv.AirsClean.Mem.circuitWithDualMemBus])
-        (by simp [circuit_norm, ZiskFv.AirsClean.Mem.componentWithDualMemBus,
+        (by simp [circuit_norm, ZiskFv.AirsClean.Mem.Legacy457.componentWithDualMemBus,
           ZiskFv.AirsClean.Mem.circuitWithDualMemBus])
     |>.addFinishedChannel SpecifiedRangesSliceChannel.toRaw
     |>.addTable ZiskFv.AirsClean.MemAlignRomSlice.component
@@ -294,7 +295,7 @@ theorem fullRv64imSoundEnsemble_assumptionsConsistency (length : ℕ) (program :
     (rw [h]
      trivial)
 
-/-- The currently migrated full Clean ensemble for the supported RV64IM
+/-- The frozen historical45 Clean ensemble for the supported RV64IM
     surface. It finishes the operation and memory channels and includes
     lookup-aware Binary/BinaryExtension providers. Main is represented by
     one row-coherent component exposing both operation-bus and memory-bus

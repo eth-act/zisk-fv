@@ -220,7 +220,7 @@ open PackedVirtualTableSources
 /-- A forward existence construction, not equality with an arbitrary source18
 provider commitment. Both full source tables read the same completed raw. -/
 noncomputable def forwardAccepted {n : Nat} (trace : Legacy45.AcceptedZiskTrace n)
-    (base : Witness FGL) : AcceptedZiskTrace n :=
+    (base : Witness FGL) : Legacy457.AcceptedZiskTrace n :=
   let raw := forwardRaw trace.witness trace.constraints_hold trace.channels_balanced base
   { programLength := trace.programLength
     program := trace.program
@@ -244,7 +244,7 @@ theorem forwardAccepted_witness {n : Nat} (trace : Legacy45.AcceptedZiskTrace n)
       (forwardRaw trace.witness trace.constraints_hold trace.channels_balanced base) := rfl
 
 theorem forwardAccepted_selected_replay {n : Nat} (trace : Legacy45.AcceptedZiskTrace n)
-    (base : Witness FGL) (guard : MutableMemPresent (forwardAccepted trace base).witness) :
+    (base : Witness FGL) (guard : Legacy457.MutableMemPresent (forwardAccepted trace base).witness) :
     ((forwardAccepted trace base).mem_replay_table guard).1 =
       (trace.mem_replay_table ((completed_mutableMemPresent trace.witness
         (forwardRaw trace.witness trace.constraints_hold trace.channels_balanced base)).mpr guard)).1 := rfl
