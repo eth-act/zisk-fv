@@ -1557,9 +1557,13 @@ theorem sourceIndexPartition :
     List.range 24 ++ (List.range 10).map (24 + ·) = List.range 34 := by decide
 
 /-- Exact HOT support before erasing source kinds into a scalar Circuit.
-    Unsupported kinds/stages/indices/rotations are rejected, not assigned zero. -/
+    Constant spelling is the producer's nonempty ASCII-decimal grammar, checked
+    through kernel-reducible character data rather than the runtime parser. -/
 def segmentSourceSupported : Extraction.LookupWiring.Expr → Bool
-  | .constant text => text.toNat?.isSome
+  | .constant text =>
+      match text.toList with
+      | [] => false
+      | first :: rest => first.isDigit && rest.all Char.isDigit
   | .witness stage column rotation =>
       decide (stage = 1 ∧ column < 13 ∧ (rotation = -1 ∨ rotation = 0))
   | .fixed column rotation =>
